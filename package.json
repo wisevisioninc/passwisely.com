@@ -69,13 +69,12 @@
         {
           "target": "nsis",
           "arch": [
-            "x64",
-            "arm64"
+            "x64"
           ]
         }
       ],
       "icon": "assets/icons/win/icon.ico",
-      "artifactName": "${productName}-Windows-${version}.${ext}",
+      "artifactName": "${productName}-Windows-${arch}.${ext}",
       "protocols": {
         "name": "passwisely-protocol",
         "schemes": [

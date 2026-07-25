@@ -2,6 +2,16 @@ name: Build Windows installer
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-windows.yml"
+      - "electron/**"
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "bun.lockb"
 
 permissions:
   contents: read

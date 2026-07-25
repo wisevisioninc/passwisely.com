@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-electron/
+release/
+.env
+*.log
+*.logs
+.codex-trash/
+server/temp/
+server/responses/

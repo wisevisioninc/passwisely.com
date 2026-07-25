@@ -1,0 +1,173 @@
+{
+  "name": "passwisely",
+  "version": "1.1.0",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "clean": "rimraf dist dist-electron release",
+    "dev": "cross-env NODE_ENV=development npm run clean && concurrently \"tsc -w -p tsconfig.electron.json\" \"vite\" \"wait-on http://localhost:54321 && electron .\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build:assets": "rimraf dist dist-electron && cross-env NODE_ENV=production vite build && tsc -p tsconfig.electron.json",
+    "build": "npm run typecheck && npm run clean && npm run build:assets && electron-builder",
+    "build:unpacked": "npm run typecheck && npm run clean && npm run build:assets && electron-builder --dir",
+    "dist:mac": "npm run typecheck && npm run clean && npm run build:assets && electron-builder --mac",
+    "dist:win": "npm run typecheck && npm run clean && npm run build:assets && electron-builder --win",
+    "notarize:mac": "node scripts/manual-notarize.js"
+  },
+  "build": {
+    "appId": "com.passwisely.desktop",
+    "productName": "PassWisely",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json",
+      "!**/*.map"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "asar": true,
+    "compression": "maximum",
+    "generateUpdatesFilesForAllChannels": true,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "PassWisely-macOS-${arch}.${ext}",
+      "icon": "assets/icons/mac/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": false,
+      "extendInfo": {
+        "NSScreenCaptureUsageDescription": "PassWisely captures the selected display when you request a screenshot."
+      },
+      "protocols": {
+        "name": "passwisely-protocol",
+        "schemes": [
+          "passwisely"
+        ]
+      }
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icons/win/icon.ico",
+      "artifactName": "${productName}-Windows-${version}.${ext}",
+      "protocols": {
+        "name": "passwisely-protocol",
+        "schemes": [
+          "passwisely"
+        ]
+      },
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/icons/png/icon-256x256.png",
+      "artifactName": "${productName}-Linux-${version}.${ext}",
+      "protocols": {
+        "name": "passwisely-protocol",
+        "schemes": [
+          "passwisely"
+        ]
+      }
+    },
+    "extraMetadata": {
+      "main": "dist-electron/main.js"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "A cross-platform desktop assistant for screenshot and text-based AI problem solving.",
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-toast": "^1.2.2",
+    "@tanstack/react-query": "^5.64.0",
+    "cheerio": "1.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dotenv": "^16.5.0",
+    "electron-log": "^5.2.4",
+    "electron-updater": "^6.3.9",
+    "lucide-react": "^0.460.0",
+    "mammoth": "1.12.0",
+    "openai": "^4.93.0",
+    "pdfjs-dist": "4.10.38",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-syntax-highlighter": "^16.1.1",
+    "tailwind-merge": "^2.5.5",
+    "word-extractor": "1.0.4"
+  },
+  "devDependencies": {
+    "@electron/notarize": "^2.3.0",
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.67",
+    "@types/react-dom": "^18.2.22",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^29.1.4",
+    "electron-builder": "^24.13.3",
+    "postcss": "^8.4.49",
+    "rimraf": "^5.0.10",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.6",
+    "vite-plugin-electron": "^0.28.4",
+    "wait-on": "^7.2.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "0.8.13"
+  }
+}

@@ -12,6 +12,32 @@ import { SaveAiSettingsInput } from "./settings";
 export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
   console.log("Initializing IPC handlers");
 
+  ipcMain.handle("account-get", () => deps.accountService.getAccount());
+  ipcMain.handle(
+    "account-login",
+    (_event, input: { email?: string; password?: string }) =>
+      deps.accountService.login(input?.email || "", input?.password || ""),
+  );
+  ipcMain.handle(
+    "account-register",
+    (
+      _event,
+      input: { email?: string; password?: string; locale?: "zh" | "en" },
+    ) =>
+      deps.accountService.register(
+        input?.email || "",
+        input?.password || "",
+        input?.locale === "en" ? "en" : "zh",
+      ),
+  );
+  ipcMain.handle("account-logout", () => {
+    deps.accountService.clear();
+    return { success: true };
+  });
+  ipcMain.handle("account-open-portal", () =>
+    shell.openExternal(deps.accountService.getAccountUrl()),
+  );
+
   // New handler for processing input text
   ipcMain.handle("process-input-text", async (_event, inputText: string) => {
     try {
@@ -302,11 +328,11 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
 
   // Subscription handlers
   ipcMain.handle("open-settings-portal", () => {
-    return { success: false, error: "No settings portal is configured" };
+    return shell.openExternal(deps.accountService.getAccountUrl());
   });
   ipcMain.handle("open-subscription-portal", async (_event, authData) => {
     try {
-      const url = "https://www.interviewllm.dev";
+      const url = deps.accountService.getAccountUrl();
       await shell.openExternal(url);
       return { success: true };
     } catch (error) {

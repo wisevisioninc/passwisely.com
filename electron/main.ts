@@ -12,6 +12,7 @@ import {
 } from "./settings";
 import { AI_PROVIDERS, AiProviderId } from "./aiProviders";
 import { ShortcutsHelper } from "./shortcuts";
+import { AccountService } from "./account";
 
 // Constants
 const isDev = !app.isPackaged;
@@ -35,6 +36,7 @@ const state = {
   shortcutsHelper: null as ShortcutsHelper | null,
   processingHelper: null as ProcessingHelper | null,
   settingsStore: null as SettingsStore | null,
+  accountService: null as AccountService | null,
 
   // View and state management
   view: "queue" as "queue" | "solutions" | "debug",
@@ -79,6 +81,10 @@ export interface IProcessingHelperDeps {
   setHasDebugged: (value: boolean) => void;
   getHasDebugged: () => boolean;
   PROCESSING_EVENTS: typeof state.PROCESSING_EVENTS;
+  consumeCredits: (
+    action: string,
+    requestId: string,
+  ) => Promise<{ success: boolean; error?: string; credits?: number }>;
 }
 
 export interface IShortcutsHelperDeps {
@@ -119,11 +125,13 @@ export interface IIpcHandlerDeps {
   getAiSettings: () => PublicSettings;
   saveAiSettings: (input: SaveAiSettingsInput) => PublicSettings;
   clearApiKey: (provider?: AiProviderId) => PublicSettings;
+  accountService: AccountService;
 }
 
 // Initialize helpers
 function initializeHelpers() {
   state.settingsStore = new SettingsStore();
+  state.accountService = new AccountService();
   state.screenshotHelper = new ScreenshotHelper(state.view);
   state.processingHelper = new ProcessingHelper({
     getScreenshotHelper,
@@ -142,6 +150,14 @@ function initializeHelpers() {
     deleteScreenshot,
     setHasDebugged,
     getHasDebugged,
+    consumeCredits: async (action: string, requestId: string) => {
+      const result = await state.accountService!.consumeCredits(action, requestId);
+      return {
+        success: result.success,
+        error: result.error,
+        credits: result.user?.credits,
+      };
+    },
     PROCESSING_EVENTS: state.PROCESSING_EVENTS,
   } as IProcessingHelperDeps);
   state.processingHelper.configure(state.settingsStore.getRuntimeConfig());
@@ -596,6 +612,7 @@ async function initializeApp() {
       getAiSettings,
       saveAiSettings,
       clearApiKey,
+      accountService: state.accountService!,
     });
     await createWindow();
     state.shortcutsHelper?.registerGlobalShortcuts();

@@ -427,6 +427,23 @@ const SolutionCommands: React.FC<SolutionCommandsProps> = ({
                       />
                       <AISettings />
 
+                      <button
+                        className="mt-3 w-full flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] text-white/70 hover:bg-white/[0.08]"
+                        onClick={() => window.electronAPI.accountOpenPortal()}
+                      >
+                        <span>PassWisely credits</span>
+                        <strong className="text-violet-300">{credits}</strong>
+                      </button>
+                      <button
+                        className="mt-2 w-full text-[10px] text-white/35 hover:text-red-300"
+                        onClick={async () => {
+                          await window.electronAPI.accountLogout();
+                          window.location.reload();
+                        }}
+                      >
+                        Sign out
+                      </button>
+
                       {/* Credits Display */}
                       {/* <div className="mb-3 px-2 space-y-1">
                         <div className="flex items-center justify-between text-[13px] font-medium text-white/90">

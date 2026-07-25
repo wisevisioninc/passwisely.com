@@ -11,6 +11,19 @@ console.log("Preload script starting...");
 
 // Types for the exposed Electron API
 interface ElectronAPI {
+  accountGet: () => Promise<{
+    success: boolean;
+    user?: { id: string; email: string; locale: "zh" | "en"; credits: number };
+    error?: string;
+  }>;
+  accountLogin: (input: { email: string; password: string }) => Promise<any>;
+  accountRegister: (input: {
+    email: string;
+    password: string;
+    locale: "zh" | "en";
+  }) => Promise<any>;
+  accountLogout: () => Promise<{ success: boolean }>;
+  accountOpenPortal: () => Promise<void>;
   openSubscriptionPortal: (authData: {
     id: string;
     email: string;
@@ -112,6 +125,16 @@ export const PROCESSING_EVENTS = {
 console.log("Preload script is running");
 
 const electronAPI = {
+  accountGet: () => ipcRenderer.invoke("account-get"),
+  accountLogin: (input: { email: string; password: string }) =>
+    ipcRenderer.invoke("account-login", input),
+  accountRegister: (input: {
+    email: string;
+    password: string;
+    locale: "zh" | "en";
+  }) => ipcRenderer.invoke("account-register", input),
+  accountLogout: () => ipcRenderer.invoke("account-logout"),
+  accountOpenPortal: () => ipcRenderer.invoke("account-open-portal"),
   openSubscriptionPortal: async (authData: { id: string; email: string }) => {
     return ipcRenderer.invoke("open-subscription-portal", authData);
   },

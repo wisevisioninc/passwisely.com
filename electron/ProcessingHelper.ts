@@ -1,6 +1,7 @@
 // processingHelper.js
 import fs from "node:fs";
 import path from "node:path"; // Keep path if needed elsewhere, otherwise removable
+import { randomUUID } from "node:crypto";
 import { BrowserWindow } from "electron";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
@@ -148,6 +149,34 @@ export class ProcessingHelper {
     return "Write all explanatory prose and answers in English. JSON property names must remain exactly as requested.";
   }
 
+  private async chargeCredits(
+    action: string,
+    eventName: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    const result = await this.deps.consumeCredits(action, randomUUID());
+    const mainWindow = this.deps.getMainWindow();
+    if (result.success) {
+      if (
+        typeof result.credits === "number" &&
+        mainWindow &&
+        !mainWindow.isDestroyed()
+      ) {
+        mainWindow.webContents.send("credits-updated", result.credits);
+      }
+      return { success: true };
+    }
+    const error = result.error || "Unable to use credits.";
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (/sign in|authentication|unauthorized/i.test(error)) {
+        mainWindow.webContents.send(this.deps.PROCESSING_EVENTS.UNAUTHORIZED);
+      } else if (/not enough|credit/i.test(error)) {
+        mainWindow.webContents.send(this.deps.PROCESSING_EVENTS.OUT_OF_CREDITS);
+      }
+      mainWindow.webContents.send(eventName, error);
+    }
+    return { success: false, error };
+  }
+
   public async processResume(
     request: ResumeRequest,
   ): Promise<ResumeProcessResponse> {
@@ -179,6 +208,18 @@ export class ProcessingHelper {
         error: "请提供 Job Description，以生成针对性的面试准备建议。",
       };
     }
+
+    const resumeCreditAction =
+      action === "review"
+        ? "resume_review"
+        : action === "optimize"
+          ? "resume_optimize"
+          : "interview_plan";
+    const charge = await this.chargeCredits(
+      resumeCreditAction,
+      this.deps.PROCESSING_EVENTS.INITIAL_SOLUTION_ERROR,
+    );
+    if (!charge.success) return { success: false, error: charge.error };
 
     this.currentResumeAbortController?.abort();
     this.currentResumeAbortController = new AbortController();
@@ -257,6 +298,15 @@ export class ProcessingHelper {
         this.deps.PROCESSING_EVENTS.INITIAL_SOLUTION_ERROR, // Use a relevant error event
         `${this.config.providerLabel} client is not initialized. Check the API key.`,
       );
+      return;
+    }
+
+    if (
+      !(await this.chargeCredits(
+        "solve",
+        this.deps.PROCESSING_EVENTS.INITIAL_SOLUTION_ERROR,
+      )).success
+    ) {
       return;
     }
 
@@ -463,6 +513,16 @@ export class ProcessingHelper {
         return;
       }
 
+      if (
+        !(await this.chargeCredits(
+          "solve",
+          this.deps.PROCESSING_EVENTS.INITIAL_SOLUTION_ERROR,
+        )).success
+      ) {
+        this.currentProcessingAbortController = null;
+        return;
+      }
+
       try {
         // Load image data directly (NO COMPRESSION)
         const imageObjects = await Promise.all(
@@ -636,6 +696,16 @@ export class ProcessingHelper {
           this.deps.PROCESSING_EVENTS.DEBUG_ERROR,
           `${this.config.providerLabel} model ${this.config.model} is configured as text-only. Enable vision or select a vision-capable model in AI Settings.`,
         );
+        this.currentExtraProcessingAbortController = null;
+        return;
+      }
+
+      if (
+        !(await this.chargeCredits(
+          "debug",
+          this.deps.PROCESSING_EVENTS.DEBUG_ERROR,
+        )).success
+      ) {
         this.currentExtraProcessingAbortController = null;
         return;
       }

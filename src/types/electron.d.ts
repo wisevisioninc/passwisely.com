@@ -10,6 +10,45 @@ import type {
 } from "../../electron/settings"
 
 export interface ElectronAPI {
+  accountGet: () => Promise<{
+    success: boolean
+    user?: {
+      id: string
+      email: string
+      locale: "zh" | "en"
+      credits: number
+    }
+    error?: string
+  }>
+  accountLogin: (input: {
+    email: string
+    password: string
+  }) => Promise<{
+    success: boolean
+    user?: {
+      id: string
+      email: string
+      locale: "zh" | "en"
+      credits: number
+    }
+    error?: string
+  }>
+  accountRegister: (input: {
+    email: string
+    password: string
+    locale: "zh" | "en"
+  }) => Promise<{
+    success: boolean
+    user?: {
+      id: string
+      email: string
+      locale: "zh" | "en"
+      credits: number
+    }
+    error?: string
+  }>
+  accountLogout: () => Promise<{ success: boolean }>
+  accountOpenPortal: () => Promise<void>
   openSubscriptionPortal: (authData: {
     id: string
     email: string

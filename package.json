@@ -75,6 +75,7 @@
       ],
       "icon": "assets/icons/win/icon.ico",
       "artifactName": "${productName}-Windows-${arch}.${ext}",
+      "signAndEditExecutable": false,
       "protocols": {
         "name": "passwisely-protocol",
         "schemes": [

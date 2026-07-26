@@ -53,6 +53,21 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
     <div>
       <div className="pt-2 w-fit cursor-default">
         <div className="text-xs text-white/90 backdrop-blur-md bg-black/60 rounded-lg py-2 px-4 flex items-center justify-center gap-4">
+          <button
+            type="button"
+            aria-label="PassWisely"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 p-0.5 shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-colors hover:bg-white/15"
+          >
+            <img
+              src="/logo192.png"
+              alt="PassWisely"
+              draggable={false}
+              className="h-7 w-7 select-none rounded-[10px]"
+            />
+          </button>
+
+          <div className="h-4 w-px bg-white/20" />
+
           {/* Screenshot */}
           <div
             className="flex items-center gap-2 cursor-default rounded px-2 py-1.5 hover:bg-white/10 transition-colors"

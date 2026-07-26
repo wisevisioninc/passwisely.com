@@ -40,5 +40,6 @@ next-env.d.ts
 *.tsbuildinfo
 /dist/
 /.wrangler/
+/.wise-data/
 /outputs/
 /work/

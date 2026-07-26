@@ -292,8 +292,95 @@ export function PassWiselySite() {
     [transactions, locale],
   );
 
+  const ui = locale === "zh" ? {
+    downloadBar: "现在下载，注册即得 10 积分",
+    macArmShort: "Mac · Apple 芯片",
+    macIntelShort: "Mac · Intel",
+    winShort: "Windows · x64",
+    heroKicker: "你的 AI 求职副驾驶",
+    heroTitle: "下一场面试，",
+    heroAccent: "把思路讲漂亮。",
+    heroBody: "看懂截图、拆解问题、组织表达，再把答案变成你真正能讲清楚的思路。一个桌面工作台，覆盖算法、系统设计、调试和简历准备。",
+    primaryCta: "免费下载桌面端",
+    secondaryCta: "先看看怎么用",
+    ethical: "为学习与面试准备而设计 · 请遵守面试规则",
+    capture: "已捕获面试题",
+    thinking: "正在构建回答",
+    answerTitle: "清晰回答框架",
+    demoSteps: ["澄清约束", "拆分架构", "分析权衡"],
+    companies: "为这些目标岗位做好准备",
+    roleList: ["软件工程", "系统设计", "全栈开发", "AI / ML", "数据分析", "产品技术面", "校招实习"],
+    flowEyebrow: "从问题到表达",
+    flowTitle: "不是替你背答案，而是帮你建立答题节奏",
+    proofTitle: "求职准备需要的能力，一处完成",
+    proofBody: "无需在截图工具、聊天窗口、代码编辑器和简历文档之间反复切换。",
+    comparison: [
+      ["截图连续上下文", "✓", "—", "—"],
+      ["算法与系统设计结构", "✓", "△", "—"],
+      ["桌面快捷键工作流", "✓", "—", "—"],
+      ["多模型自由选择", "✓", "△", "—"],
+      ["积分透明可追踪", "✓", "—", "—"],
+    ],
+    comparisonHeaders: ["能力", "PassWisely", "通用聊天工具", "手动搜索"],
+    metrics: [["9+", "AI 模型"], ["2", "桌面系统"], ["10", "注册赠送积分"], ["1", "标准解题积分"]],
+    useEyebrow: "覆盖每一种技术面",
+    useTitle: "从第一轮筛选，到最终轮陈述",
+    useBody: "选择场景，PassWisely 会自动调整回答结构、深度和表达方式。",
+    trustTitle: "你的密钥留在设备上",
+    trustBody: "AI 密钥由操作系统凭据保护功能加密保存；账户只记录积分余额和必要的交易明细。",
+    finalTitle: "准备好，把下一题讲清楚了吗？",
+    finalBody: "免费下载桌面端，创建账户即得 10 个体验积分。",
+  } : {
+    downloadBar: "Download now and get 10 credits when you sign up",
+    macArmShort: "Mac · Apple silicon",
+    macIntelShort: "Mac · Intel",
+    winShort: "Windows · x64",
+    heroKicker: "Your AI career copilot",
+    heroTitle: "Your next interview.",
+    heroAccent: "Explain it beautifully.",
+    heroBody: "Understand screenshots, break down the problem, shape the narrative, and turn an answer into reasoning you can actually explain. One desktop workspace for coding, system design, debugging, and resume preparation.",
+    primaryCta: "Download the desktop app",
+    secondaryCta: "See how it works",
+    ethical: "Built for learning and interview preparation · Follow your interview rules",
+    capture: "Interview prompt captured",
+    thinking: "Building your answer",
+    answerTitle: "A clear answer framework",
+    demoSteps: ["Clarify constraints", "Shape the system", "Explain trade-offs"],
+    companies: "Prepare for the roles you want",
+    roleList: ["Software engineering", "System design", "Full stack", "AI / ML", "Data analytics", "Technical PM", "New grad"],
+    flowEyebrow: "From prompt to presence",
+    flowTitle: "Don’t memorize answers. Build a rhythm you can explain.",
+    proofTitle: "Everything your interview prep needs, in one place",
+    proofBody: "Stop bouncing between screenshot tools, chat windows, code editors, and resume documents.",
+    comparison: [
+      ["Continuous screenshot context", "✓", "—", "—"],
+      ["Coding + system design structure", "✓", "△", "—"],
+      ["Keyboard-first desktop flow", "✓", "—", "—"],
+      ["Freedom to choose AI models", "✓", "△", "—"],
+      ["Transparent credit history", "✓", "—", "—"],
+    ],
+    comparisonHeaders: ["Capability", "PassWisely", "Generic chat", "Manual search"],
+    metrics: [["9+", "AI models"], ["2", "desktop systems"], ["10", "welcome credits"], ["1", "credit per standard solve"]],
+    useEyebrow: "Every technical interview",
+    useTitle: "From first screen to final-round storytelling",
+    useBody: "Choose the situation. PassWisely adapts the structure, depth, and delivery of your answer.",
+    trustTitle: "Your keys stay on your device",
+    trustBody: "AI keys are encrypted by your operating system. Your account stores only the credit balance and essential transaction history.",
+    finalTitle: "Ready to explain the next problem clearly?",
+    finalBody: "Download the desktop app for free and get 10 trial credits when you create an account.",
+  };
+
   return (
     <main id="top">
+      <aside className="download-ribbon" aria-label="Desktop downloads">
+        <span>{ui.downloadBar}</span>
+        <div>
+          <a href="/api/download/mac-arm64">{ui.macArmShort}<b>↓</b></a>
+          <a href="/api/download/mac-x64">{ui.macIntelShort}<b>↓</b></a>
+          <a href="/api/download/windows-x64">{ui.winShort}<b>↓</b></a>
+        </div>
+      </aside>
+
       <header className="nav-wrap">
         <nav className="nav container" aria-label="Primary navigation">
           <Logo />
@@ -318,92 +405,138 @@ export function PassWiselySite() {
         </nav>
       </header>
 
-      <section className="hero container">
+      <section className="hero container" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="eyebrow"><span />{t.eyebrow}</p>
-          <h1>{t.titleA}<em>{t.titleB}</em></h1>
-          <p className="hero-lead">{t.lead}</p>
+          <div className="availability-pill"><i />{ui.heroKicker}</div>
+          <h1 id="hero-title">{ui.heroTitle}<em>{ui.heroAccent}</em></h1>
+          <p className="hero-lead">{ui.heroBody}</p>
           <div className="hero-buttons">
-            <a className="button button-primary" href="#download">{t.downloadMac}</a>
-            <a className="button button-secondary" href="#download">{t.downloadWin}</a>
+            <a className="button button-primary" href="#download">{ui.primaryCta}<span>↘</span></a>
+            <a className="button button-secondary" href="#how">{ui.secondaryCta}<span>→</span></a>
           </div>
-          <p className="free-note"><span>✓</span>{t.free}</p>
-          <div className="proof-row">
-            {t.proof.map((item) => <span key={item}>{item}</span>)}
-          </div>
+          <p className="free-note"><span>✓</span>{ui.ethical}</p>
         </div>
-        <div className="product-stage" aria-label="PassWisely product preview">
-          <div className="stage-glow" />
-          <div className="window">
-            <div className="window-bar">
-              <div className="traffic"><i /><i /><i /></div>
-              <span className="window-brand">
-                <img src="/passwisely-logo.png" alt="" width="512" height="512" />
-                PassWisely
-              </span>
-              <b>⌘ B</b>
+
+        <div className="product-stage" aria-label="Animated PassWisely product preview">
+          <div className="orbit orbit-one" />
+          <div className="orbit orbit-two" />
+          <div className="demo-window">
+            <div className="demo-topbar">
+              <span className="window-brand"><img src="/passwisely-logo.png" alt="" width="512" height="512" />PassWisely</span>
+              <div className="demo-status"><i />AI ready</div>
+              <b>⌘ ⇧ S</b>
             </div>
-            <div className="question-card">
-              <span className="question-label">SYSTEM DESIGN</span>
-              <h3>{t.mockQuestion}</h3>
-              <p>{t.mockAnswer}</p>
-            </div>
-            <div className="step-grid">
-              {t.mockStep.map((step, index) => (
-                <div key={step} className={index === 2 ? "step active" : "step"}>
-                  <span>0{index + 1}</span><b>{step}</b>
+            <div className="demo-body">
+              <aside className="demo-rail" aria-hidden="true">
+                <span className="active">⌁</span><span>◇</span><span>⌘</span><span>◫</span>
+              </aside>
+              <div className="demo-main">
+                <div className="capture-toast"><span>✓</span><div><b>{ui.capture}</b><small>Screenshot 01 · 2.4s</small></div></div>
+                <div className="prompt-card">
+                  <span>SYSTEM DESIGN</span>
+                  <h3>{t.mockQuestion}</h3>
+                  <div className="prompt-meta"><i />Scale: 10M users <i />Realtime</div>
                 </div>
-              ))}
-            </div>
-            <div className="code-card">
-              <div><span className="code-purple">class</span> MessageRouter {"{"}</div>
-              <div>&nbsp;&nbsp;<span className="code-blue">async</span> route(message) {"{"}</div>
-              <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="code-gray">{"// shard by conversation"}</span></div>
-              <div>&nbsp;&nbsp;&nbsp;&nbsp;<span className="code-purple">return</span> this.partition.send(message)</div>
-              <div>&nbsp;&nbsp;{"}"}</div>
-              <div>{"}"}</div>
-            </div>
-            <div className="window-footer">
-              <span><i className="status-dot" /> Ready</span>
-              <span>48 credits</span>
+                <div className="answer-card">
+                  <div className="answer-head"><div><span>{ui.thinking}</span><h4>{ui.answerTitle}</h4></div><b>01:24</b></div>
+                  <div className="answer-grid">
+                    {ui.demoSteps.map((step, index) => <div key={step} className={`answer-step step-${index + 1}`}><span>0{index + 1}</span><b>{step}</b><i /></div>)}
+                  </div>
+                  <div className="mini-code" aria-hidden="true">
+                    <span><i className="c-cyan" />class MessageRouter {"{"}</span>
+                    <span><i />&nbsp;&nbsp;route(message, shard) {"{"}</span>
+                    <span><i className="c-coral" />&nbsp;&nbsp;&nbsp;&nbsp;return queue.publish(message)</span>
+                    <span><i />&nbsp;&nbsp;{"}"}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+          <div className="shortcut-float"><span>Instant capture</span><b>⌘ ⇧ 1</b></div>
+          <div className="credit-float"><span>Credit balance</span><b>48</b></div>
         </div>
       </section>
 
-      <section className="section container" id="features">
-        <div className="section-heading">
-          <p className="eyebrow"><span />{t.sectionEyebrow}</p>
-          <h2>{t.sectionTitle}</h2>
+      <section className="role-strip" aria-label={ui.companies}>
+        <div className="container">
+          <p>{ui.companies}</p>
+          <div>{ui.roleList.map((role) => <span key={role}>{role}</span>)}</div>
+        </div>
+      </section>
+
+      <section className="section container" id="how">
+        <div className="section-heading split-heading">
+          <div><p className="eyebrow"><span />{ui.flowEyebrow}</p><h2>{ui.flowTitle}</h2></div>
           <p>{t.sectionLead}</p>
         </div>
-        <div className="feature-grid">
-          {t.features.map(([number, title, description]) => (
-            <article className="feature-card" key={number}>
-              <span className="feature-number">{number}</span>
+        <div className="steps">
+          {t.steps.map(([title, description], index) => (
+            <article key={title}>
+              <span>0{index + 1}</span>
+              <div className="step-icon" aria-hidden="true">{index === 0 ? "↓" : index === 1 ? "⌁" : "↗"}</div>
               <h3>{title}</h3>
               <p>{description}</p>
-              <i className="feature-line" />
             </article>
           ))}
         </div>
       </section>
 
-      <section className="how-section" id="how">
+      <section className="feature-section" id="features">
         <div className="container">
           <div className="section-heading centered">
-            <p className="eyebrow"><span />{t.howEyebrow}</p>
-            <h2>{t.howTitle}</h2>
+            <p className="eyebrow"><span />{t.sectionEyebrow}</p>
+            <h2>{t.sectionTitle}</h2>
+            <p>{ui.proofBody}</p>
           </div>
-          <div className="steps">
-            {t.steps.map(([title, description], index) => (
-              <article key={title}>
-                <span>{index + 1}</span>
+          <div className="feature-grid">
+            {t.features.map(([number, title, description], index) => (
+              <article className={`feature-card feature-${index + 1}`} key={number}>
+                <div className="feature-top"><span className="feature-number">{number}</span><i>↗</i></div>
+                <div className="feature-visual" aria-hidden="true"><span /><span /><span /></div>
                 <h3>{title}</h3>
                 <p>{description}</p>
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="comparison-section">
+        <div className="container comparison-layout">
+          <div className="comparison-copy">
+            <p className="eyebrow eyebrow-light"><span />PassWisely Desktop</p>
+            <h2>{ui.proofTitle}</h2>
+            <p>{ui.proofBody}</p>
+            <div className="metric-grid">
+              {ui.metrics.map(([value, label]) => <div key={label}><strong>{value}</strong><span>{label}</span></div>)}
+            </div>
+          </div>
+          <div className="comparison-table" role="table">
+            <div className="comparison-row comparison-header" role="row">
+              {ui.comparisonHeaders.map((item) => <span role="columnheader" key={item}>{item}</span>)}
+            </div>
+            {ui.comparison.map((row) => (
+              <div className="comparison-row" role="row" key={row[0]}>
+                {row.map((item, index) => <span role="cell" className={index === 1 ? "ours" : ""} key={`${row[0]}-${index}`}>{item}</span>)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section container use-section">
+        <div className="section-heading centered">
+          <p className="eyebrow"><span />{ui.useEyebrow}</p>
+          <h2>{ui.useTitle}</h2>
+          <p>{ui.useBody}</p>
+        </div>
+        <div className="use-marquee">
+          {[...ui.roleList, ...ui.roleList].map((role, index) => <span key={`${role}-${index}`}>{role}<i>✦</i></span>)}
+        </div>
+        <div className="privacy-card">
+          <div className="privacy-icon">⌁</div>
+          <div><h3>{ui.trustTitle}</h3><p>{ui.trustBody}</p></div>
+          <div className="encrypted-pill"><i />Encrypted locally</div>
         </div>
       </section>
 
@@ -417,33 +550,36 @@ export function PassWiselySite() {
           {t.packs.map(([id, name, credits, price, description], index) => (
             <article className={index === 1 ? "price-card featured" : "price-card"} key={id}>
               {index === 1 && <span className="popular">{t.popular}</span>}
+              <span className="pack-index">0{index + 1}</span>
               <h3>{name}</h3>
               <div className="price"><strong>{price}</strong><span>USD</span></div>
               <div className="credits"><b>{credits}</b><span>credits</span></div>
               <p>{description}</p>
-              <button className="button button-primary" disabled={busy} onClick={() => void buy(id as PackId)}>{t.buy}</button>
+              <button className="button button-primary" disabled={busy} onClick={() => void buy(id as PackId)}>{t.buy}<span>→</span></button>
             </article>
           ))}
         </div>
       </section>
 
       <section className="download-section" id="download">
+        <div className="download-orb" />
         <div className="container download-inner">
           <div>
             <p className="eyebrow eyebrow-light"><span />PassWisely Desktop</p>
-            <h2>{t.downloadTitle}</h2>
-            <p>{t.downloadLead}</p>
+            <h2>{ui.finalTitle}</h2>
+            <p>{ui.finalBody}</p>
+            <div className="download-proof"><span>✓ macOS</span><span>✓ Windows</span><span>✓ 10 credits</span></div>
           </div>
           <div className="download-buttons">
-            <button className="download-button" type="button" onClick={() => window.location.assign("/api/download/mac-arm64")}><b>⌘</b><span>{t.macArm}<small>DMG</small></span></button>
-            <button className="download-button" type="button" onClick={() => window.location.assign("/api/download/mac-x64")}><b>⌘</b><span>{t.macIntel}<small>DMG</small></span></button>
-            <button className="download-button" type="button" onClick={() => window.location.assign("/api/download/windows-x64")}><b>⊞</b><span>{t.windows}<small>EXE</small></span></button>
+            <a className="download-button" href="/api/download/mac-arm64"><b>⌘</b><span>{t.macArm}<small>DMG · FREE DOWNLOAD</small></span><i>↓</i></a>
+            <a className="download-button" href="/api/download/mac-x64"><b>⌘</b><span>{t.macIntel}<small>DMG · FREE DOWNLOAD</small></span><i>↓</i></a>
+            <a className="download-button" href="/api/download/windows-x64"><b>⊞</b><span>{t.windows}<small>EXE · FREE DOWNLOAD</small></span><i>↓</i></a>
           </div>
         </div>
       </section>
 
       <section className="section container faq-section">
-        <div className="section-heading"><h2>{t.faqTitle}</h2></div>
+        <div className="section-heading"><p className="eyebrow"><span />FAQ</p><h2>{t.faqTitle}</h2></div>
         <div className="faq-list">
           {t.faqs.map(([question, answer]) => (
             <details key={question}>
@@ -454,10 +590,12 @@ export function PassWiselySite() {
         </div>
       </section>
 
-      <footer className="footer container">
-        <Logo />
-        <p>{t.footer}</p>
-        <div><a href="mailto:support@passwisely.com">support@passwisely.com</a></div>
+      <footer className="site-footer">
+        <div className="container footer">
+          <Logo />
+          <p>{t.footer}</p>
+          <div><a href="mailto:support@passwisely.com">support@passwisely.com</a></div>
+        </div>
       </footer>
 
       {notice && <div className="notice" role="status" onClick={() => setNotice("")}>{notice}</div>}

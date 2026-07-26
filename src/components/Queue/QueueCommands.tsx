@@ -5,6 +5,7 @@ import { COMMAND_KEY } from "../../utils/platform";
 import { LanguageSelector } from "../shared/LanguageSelector";
 import { QuerySelector } from "../shared/QueryText";
 import { AISettings } from "../shared/AISettings";
+import { ResumePanel } from "../shared/ResumePanel";
 
 interface QueueCommandsProps {
   onTooltipVisibilityChange: (visible: boolean, height: number) => void;
@@ -14,7 +15,6 @@ interface QueueCommandsProps {
   setLanguage: (language: string) => void;
   currentQuery: string;
   setQuery: (query: string) => void;
-  onOpenResume: () => void;
 }
 
 const QueueCommands: React.FC<QueueCommandsProps> = ({
@@ -25,48 +25,29 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
   setLanguage,
   currentQuery,
   setQuery,
-  onOpenResume,
 }) => {
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
-  const [inputValue, setInputValue] = useState(""); // State for input value
+  const [activePanel, setActivePanel] = useState<
+    "settings" | "resume" | null
+  >(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
-    let tooltipHeight = 0;
-    if (tooltipRef.current && isTooltipVisible) {
-      tooltipHeight = tooltipRef.current.offsetHeight + 10;
+    const panel = tooltipRef.current;
+    if (!activePanel || !panel) {
+      onTooltipVisibilityChange(false, 0);
+      return;
     }
-    onTooltipVisibilityChange(isTooltipVisible, tooltipHeight);
-  }, [isTooltipVisible]);
 
-  const handleMouseEnter = () => {
-    setIsTooltipVisible(true);
-  };
+    const reportSize = () => {
+      onTooltipVisibilityChange(true, panel.offsetHeight + 10);
+    };
+    const observer = new ResizeObserver(reportSize);
+    observer.observe(panel);
+    reportSize();
 
-  const handleMouseLeave = () => {
-    setIsTooltipVisible(false);
-  };
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(event.target.value);
-  };
-
-  // const handleButtonClick = () => {
-  //   // Send the input value to the main process
-  //   window.electronAPI
-  //     .processInputText(inputValue)
-  //     .then((response) => {
-  //       if (response.success) {
-  //         console.log("Input text processed successfully");
-  //       } else {
-  //         console.error("Failed to process input text:", response.error);
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error invoking process-input-text:", error);
-  //     });
-  // };
+    return () => observer.disconnect();
+  }, [activePanel, onTooltipVisibilityChange]);
 
   return (
     <div>
@@ -171,16 +152,6 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={onOpenResume}
-            className="flex items-center gap-1.5 rounded px-2 py-1.5 text-[11px] leading-none text-white/80 transition-colors hover:bg-white/10"
-            aria-label="打开简历助手"
-          >
-            <FileUser className="h-3.5 w-3.5 text-blue-300" />
-            简历
-          </button>
-
           {/* Separator */}
           <div className="mx-2 h-4 w-px bg-white/20" />
 
@@ -192,8 +163,16 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
             <button
               type="button"
               aria-label="Settings"
-              onClick={() => setIsTooltipVisible((visible) => !visible)}
-              className="w-4 h-4 flex items-center justify-center cursor-default text-white/70 hover:text-white/90 transition-colors"
+              onClick={() =>
+                setActivePanel((panel) =>
+                  panel === "settings" ? null : "settings",
+                )
+              }
+              className={`flex h-7 items-center gap-1.5 rounded px-2 text-[11px] transition-colors ${
+                activePanel === "settings"
+                  ? "bg-white/10 text-white"
+                  : "text-white/70 hover:bg-white/10 hover:text-white/90"
+              }`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -208,13 +187,14 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
+              Settings
             </button>
 
             {/* Tooltip Content */}
-            {isTooltipVisible && (
+            {activePanel === "settings" && (
               <div
                 ref={tooltipRef}
-                className="absolute top-full left-0 mt-2 w-80 transform -translate-x-[calc(50%-12px)]"
+                className="absolute right-0 top-full mt-2 w-80"
                 style={{ zIndex: 100 }}
               >
                 {/* Add transparent bridge */}
@@ -435,6 +415,39 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
                       </button> */}
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative inline-block">
+            <button
+              type="button"
+              aria-label="Resume"
+              onClick={() =>
+                setActivePanel((panel) =>
+                  panel === "resume" ? null : "resume",
+                )
+              }
+              className={`flex h-7 items-center gap-1.5 rounded px-2 text-[11px] transition-colors ${
+                activePanel === "resume"
+                  ? "bg-white/10 text-white"
+                  : "text-white/70 hover:bg-white/10 hover:text-white/90"
+              }`}
+            >
+              <FileUser className="h-3.5 w-3.5 text-cyan-300" />
+              Resume
+            </button>
+
+            {activePanel === "resume" && (
+              <div
+                ref={tooltipRef}
+                className="absolute right-0 top-full mt-2 w-[390px]"
+                style={{ zIndex: 100 }}
+              >
+                <div className="absolute -top-2 right-0 h-2 w-full" />
+                <div className="overflow-hidden rounded-xl border border-white/10 bg-black/80 shadow-2xl backdrop-blur-xl">
+                  <ResumePanel />
                 </div>
               </div>
             )}

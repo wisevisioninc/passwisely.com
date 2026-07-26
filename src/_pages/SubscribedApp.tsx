@@ -1,7 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import Queue from "../_pages/Queue";
-import ResumeAssistant from "../_pages/ResumeAssistant";
 import Solutions from "../_pages/Solutions";
 import { useToast } from "../contexts/toast";
 
@@ -21,9 +20,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
   setQuery,
 }) => {
   const queryClient = useQueryClient();
-  const [view, setView] = useState<
-    "queue" | "solutions" | "debug" | "resume"
-  >("queue");
+  const [view, setView] = useState<"queue" | "solutions" | "debug">("queue");
   const containerRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
 
@@ -98,7 +95,6 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
       {view === "queue" ? (
         <Queue
           setView={(nextView) => setView(nextView)}
-          onOpenResume={() => setView("resume")}
           credits={credits}
           currentLanguage={currentLanguage}
           setLanguage={setLanguage}
@@ -114,8 +110,6 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
           currentQuery={currentQuery}
           setQuery={setQuery}
         />
-      ) : view === "resume" ? (
-        <ResumeAssistant onClose={() => setView("queue")} />
       ) : null}
     </div>
   );

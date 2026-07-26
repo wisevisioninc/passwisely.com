@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ScreenshotQueue from "../components/Queue/ScreenshotQueue";
 import QueueCommands from "../components/Queue/QueueCommands";
@@ -18,7 +18,6 @@ async function fetchScreenshots(): Promise<Screenshot[]> {
 
 interface QueueProps {
   setView: (view: "queue" | "solutions" | "debug") => void;
-  onOpenResume: () => void;
   credits: number;
   currentLanguage: string;
   setLanguage: (language: string) => void;
@@ -28,7 +27,6 @@ interface QueueProps {
 
 const Queue: React.FC<QueueProps> = ({
   setView,
-  onOpenResume,
   credits,
   currentLanguage,
   setLanguage,
@@ -127,10 +125,13 @@ const Queue: React.FC<QueueProps> = ({
     };
   }, [isTooltipVisible, tooltipHeight]);
 
-  const handleTooltipVisibilityChange = (visible: boolean, height: number) => {
-    setIsTooltipVisible(visible);
-    setTooltipHeight(height);
-  };
+  const handleTooltipVisibilityChange = useCallback(
+    (visible: boolean, height: number) => {
+      setIsTooltipVisible(visible);
+      setTooltipHeight(height);
+    },
+    [],
+  );
 
   return (
     <div ref={contentRef} className={`bg-transparent w-1/2`}>
@@ -150,7 +151,6 @@ const Queue: React.FC<QueueProps> = ({
             setLanguage={setLanguage}
             currentQuery={currentQuery}
             setQuery={setQuery}
-            onOpenResume={onOpenResume}
           />
         </div>
       </div>

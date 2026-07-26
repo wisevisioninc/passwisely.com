@@ -137,7 +137,37 @@ a { color: inherit; text-decoration: none; }
 }
 .hero h1 em { display: block; color: var(--blue); font-family: Georgia, "Noto Serif SC", serif; font-weight: 500; }
 .hero-lead { margin: 28px 0 0; max-width: 590px; color: var(--muted); font-size: 17px; line-height: 1.78; }
-.hero-buttons { display: flex; gap: 11px; margin-top: 34px; }
+.hero-buttons { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 34px; }
+.platform-download {
+  min-height: 62px;
+  display: inline-grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 20px 7px 8px;
+  color: #05263a;
+  border: 1px solid rgba(7,29,45,.08);
+  border-radius: 999px;
+  box-shadow: 0 15px 32px rgba(8,120,209,.16);
+  transition: transform .2s, box-shadow .2s, filter .2s;
+}
+.platform-download:hover { transform: translateY(-3px); box-shadow: 0 20px 40px rgba(8,120,209,.22); filter: saturate(1.08); }
+.windows-download { background: linear-gradient(135deg, #56dce0, #56bce8); }
+.mac-download { background: linear-gradient(135deg, var(--mint), #75e4bf); }
+.platform-icon {
+  width: 47px;
+  height: 47px;
+  display: grid;
+  place-items: center;
+  color: white;
+  border-radius: 50%;
+  background: var(--navy);
+  font-size: 21px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+}
+.platform-download > span:last-child { display: grid; gap: 2px; text-align: left; }
+.platform-download b { font-size: 14px; }
+.platform-download small { color: rgba(5,38,58,.62); font-size: 8px; font-weight: 750; letter-spacing: .02em; }
 .free-note { display: flex; align-items: center; gap: 8px; margin: 18px 0 0; color: #71818a; font-size: 11px; }
 .free-note span { display: grid; place-items: center; width: 17px; height: 17px; color: #0b715a; border-radius: 50%; background: #d8f7ec; font-weight: 900; }
 
@@ -356,7 +386,7 @@ a { color: inherit; text-decoration: none; }
   .container { width: min(100% - 28px, 1200px); }
   .download-ribbon { justify-content: flex-start; overflow-x: auto; padding-inline: 14px; scrollbar-width: none; }.download-ribbon > span { display: none; }.download-ribbon > div { min-width: max-content; }
   .nav { height: 66px; }.brand { font-size: 17px; }.brand-mark { width: 33px; height: 33px; }.nav-actions .button { padding: 0 10px; font-size: 10px; }.locale-toggle { display: none; }
-  .hero { padding-top: 62px; padding-bottom: 70px; gap: 34px; }.hero h1 { font-size: 49px; }.hero-lead { font-size: 15px; }.hero-buttons { flex-direction: column; }.hero-buttons .button { width: 100%; }
+  .hero { padding-top: 62px; padding-bottom: 70px; gap: 34px; }.hero h1 { font-size: 49px; }.hero-lead { font-size: 15px; }.hero-buttons { flex-direction: column; }.platform-download { width: 100%; }
   .product-stage { padding-block: 16px 36px; }.demo-window { border-radius: 18px; transform: none; }.demo-body { min-height: 410px; grid-template-columns: 42px 1fr; }.demo-main { padding: 12px; }.demo-rail span { width: 26px; height: 26px; }.prompt-card { padding: 18px 14px; }.prompt-card h3 { font-size: 14px; }.answer-card { padding: 12px; }.answer-grid { grid-template-columns: 1fr; }.answer-step { min-height: 42px; }.mini-code { font-size: 6px; }.capture-toast { right: 8px; top: 8px; }.shortcut-float { left: -4px; bottom: 8px; }.credit-float { display: none; }.orbit { display: none; }
   .section, .feature-section, .comparison-section { padding-block: 84px; }.section-heading h2, .comparison-copy h2, .download-inner h2 { font-size: 38px; }.split-heading { gap: 22px; }
   .steps, .feature-grid { grid-template-columns: 1fr; }.steps article { min-height: 280px; }

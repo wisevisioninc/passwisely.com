@@ -301,8 +301,8 @@ export function PassWiselySite() {
     heroTitle: "下一场面试，",
     heroAccent: "把思路讲漂亮。",
     heroBody: "看懂截图、拆解问题、组织表达，再把答案变成你真正能讲清楚的思路。一个桌面工作台，覆盖算法、系统设计、调试和简历准备。",
-    primaryCta: "免费下载桌面端",
-    secondaryCta: "先看看怎么用",
+    downloadWinCta: "下载 Windows 版",
+    downloadMacCta: "下载 Mac 版",
     ethical: "为学习与面试准备而设计 · 请遵守面试规则",
     capture: "已捕获面试题",
     thinking: "正在构建回答",
@@ -339,8 +339,8 @@ export function PassWiselySite() {
     heroTitle: "Your next interview.",
     heroAccent: "Explain it beautifully.",
     heroBody: "Understand screenshots, break down the problem, shape the narrative, and turn an answer into reasoning you can actually explain. One desktop workspace for coding, system design, debugging, and resume preparation.",
-    primaryCta: "Download the desktop app",
-    secondaryCta: "See how it works",
+    downloadWinCta: "Get for Windows",
+    downloadMacCta: "Get for Mac",
     ethical: "Built for learning and interview preparation · Follow your interview rules",
     capture: "Interview prompt captured",
     thinking: "Building your answer",
@@ -411,8 +411,14 @@ export function PassWiselySite() {
           <h1 id="hero-title">{ui.heroTitle}<em>{ui.heroAccent}</em></h1>
           <p className="hero-lead">{ui.heroBody}</p>
           <div className="hero-buttons">
-            <a className="button button-primary" href="#download">{ui.primaryCta}<span>↘</span></a>
-            <a className="button button-secondary" href="#how">{ui.secondaryCta}<span>→</span></a>
+            <a className="platform-download windows-download" href="/api/download/windows-x64">
+              <span className="platform-icon">⊞</span>
+              <span><b>{ui.downloadWinCta}</b><small>Windows 10/11 · x64</small></span>
+            </a>
+            <a className="platform-download mac-download" href="/api/download/mac-arm64">
+              <span className="platform-icon">⌘</span>
+              <span><b>{ui.downloadMacCta}</b><small>macOS · Apple silicon</small></span>
+            </a>
           </div>
           <p className="free-note"><span>✓</span>{ui.ethical}</p>
         </div>

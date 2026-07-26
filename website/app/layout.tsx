@@ -10,8 +10,16 @@ export const metadata: Metadata = {
   description:
     "A private AI desktop copilot for technical interviews, coding problems, system design, and resume preparation.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico" },
+      {
+        url: "/passwisely-logo-192.png",
+        type: "image/png",
+        sizes: "192x192",
+      },
+    ],
     shortcut: "/favicon.ico",
+    apple: "/passwisely-logo-192.png",
   },
   openGraph: {
     title: "PassWisely — Think clearly under pressure",

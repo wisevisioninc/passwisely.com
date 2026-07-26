@@ -35,9 +35,9 @@ a { color: inherit; text-decoration: none; }
 .nav { height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 28px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 760; letter-spacing: -.03em; font-size: 20px; }
 .brand-mark {
-  display: grid; place-items: center; width: 32px; height: 32px; color: white;
-  border-radius: 10px 10px 10px 3px; background: linear-gradient(145deg, #8a73ff, #5b3dea);
-  box-shadow: 0 7px 18px rgba(93,64,226,.24); font-family: Georgia, serif; font-style: italic;
+  display: block; width: 36px; height: 36px; object-fit: contain;
+  border-radius: 11px;
+  box-shadow: 0 7px 18px rgba(17,112,193,.16);
 }
 .nav-links { display: flex; align-items: center; gap: 30px; color: #5c5964; font-size: 14px; }
 .nav-links a:hover { color: var(--ink); }
@@ -71,6 +71,8 @@ a { color: inherit; text-decoration: none; }
 .window { position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.16); border-radius: 24px; padding: 0 22px 18px; color: #f7f5ff; background: linear-gradient(155deg, #201b2f, #110e19 76%); box-shadow: 0 45px 90px rgba(27,19,54,.28), 0 0 0 7px rgba(116,87,255,.05); transform: perspective(1200px) rotateY(-3deg) rotateX(1deg); }
 .window::before { content: ""; position: absolute; width: 240px; height: 240px; top: -120px; right: -80px; background: rgba(118,82,255,.28); filter: blur(60px); }
 .window-bar { position: relative; height: 60px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.09); font-size: 12px; color: #a8a1b8; }
+.window-brand { display: inline-flex; align-items: center; gap: 7px; }
+.window-brand img { width: 18px; height: 18px; object-fit: contain; border-radius: 5px; }
 .window-bar b { font-size: 10px; padding: 5px 7px; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; background: rgba(255,255,255,.05); }
 .traffic { display: flex; gap: 6px; }
 .traffic i { width: 8px; height: 8px; border-radius: 50%; background: #4a4458; }

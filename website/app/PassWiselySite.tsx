@@ -173,7 +173,13 @@ const copy = {
 function Logo() {
   return (
     <a className="brand" href="#top" aria-label="PassWisely home">
-      <span className="brand-mark">P</span>
+      <img
+        className="brand-mark"
+        src="/passwisely-logo.png"
+        alt=""
+        width="512"
+        height="512"
+      />
       <span>PassWisely</span>
     </a>
   );
@@ -331,7 +337,10 @@ export function PassWiselySite() {
           <div className="window">
             <div className="window-bar">
               <div className="traffic"><i /><i /><i /></div>
-              <span>PassWisely</span>
+              <span className="window-brand">
+                <img src="/passwisely-logo.png" alt="" width="512" height="512" />
+                PassWisely
+              </span>
               <b>⌘ B</b>
             </div>
             <div className="question-card">

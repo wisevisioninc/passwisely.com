@@ -5,10 +5,9 @@ module.exports = {
     {
       name: "passwisely-web",
       cwd: __dirname,
-      script: "/home/jerry/.local/bin/pnpm",
+      script: "/home/jerry/.nvm/versions/node/v22.15.0/bin/node",
       args: [
-        "exec",
-        "wrangler",
+        "node_modules/wrangler/bin/wrangler.js",
         "dev",
         "--config",
         "dist/server/wrangler.json",

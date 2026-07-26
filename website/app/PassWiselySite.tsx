@@ -297,13 +297,13 @@ export function PassWiselySite() {
     macArmShort: "Mac · Apple 芯片",
     macIntelShort: "Mac · Intel",
     winShort: "Windows · x64",
-    heroKicker: "你的 AI 求职副驾驶",
-    heroTitle: "下一场面试，",
-    heroAccent: "把思路讲漂亮。",
-    heroBody: "看懂截图、拆解问题、组织表达，再把答案变成你真正能讲清楚的思路。一个桌面工作台，覆盖算法、系统设计、调试和简历准备。",
+    heroKicker: "为技术面试与求职准备而打造",
+    heroTitle: "技术面试的 AI 求职副驾驶",
+    heroAccent: "让每个答案都清晰有力",
+    heroBody: "截图识题、结构化解题、系统设计、代码调试与简历准备集中在一个桌面工作台。支持多种 AI 模型，并持续围绕真实求职场景优化工作流。",
     downloadWinCta: "下载 Windows 版",
     downloadMacCta: "下载 Mac 版",
-    ethical: "为学习与面试准备而设计 · 请遵守面试规则",
+    ethical: "无需信用卡 · 注册即送 10 积分",
     capture: "已捕获面试题",
     thinking: "正在构建回答",
     answerTitle: "清晰回答框架",
@@ -335,13 +335,13 @@ export function PassWiselySite() {
     macArmShort: "Mac · Apple silicon",
     macIntelShort: "Mac · Intel",
     winShort: "Windows · x64",
-    heroKicker: "Your AI career copilot",
-    heroTitle: "Your next interview.",
-    heroAccent: "Explain it beautifully.",
-    heroBody: "Understand screenshots, break down the problem, shape the narrative, and turn an answer into reasoning you can actually explain. One desktop workspace for coding, system design, debugging, and resume preparation.",
+    heroKicker: "Built for technical interviews and career preparation",
+    heroTitle: "The AI Copilot",
+    heroAccent: "For Technical Interviews",
+    heroBody: "Screenshot understanding, structured solutions, system design, code debugging, and resume preparation in one desktop workspace. Choose from leading AI models and follow a workflow shaped around real job-search scenarios.",
     downloadWinCta: "Get for Windows",
     downloadMacCta: "Get for Mac",
-    ethical: "Built for learning and interview preparation · Follow your interview rules",
+    ethical: "No credit card needed · Get 10 credits when you sign up",
     capture: "Interview prompt captured",
     thinking: "Building your answer",
     answerTitle: "A clear answer framework",
@@ -372,15 +372,6 @@ export function PassWiselySite() {
 
   return (
     <main id="top">
-      <aside className="download-ribbon" aria-label="Desktop downloads">
-        <span>{ui.downloadBar}</span>
-        <div>
-          <a href="/api/download/mac-arm64">{ui.macArmShort}<b>↓</b></a>
-          <a href="/api/download/mac-x64">{ui.macIntelShort}<b>↓</b></a>
-          <a href="/api/download/windows-x64">{ui.winShort}<b>↓</b></a>
-        </div>
-      </aside>
-
       <header className="nav-wrap">
         <nav className="nav container" aria-label="Primary navigation">
           <Logo />
@@ -405,7 +396,8 @@ export function PassWiselySite() {
         </nav>
       </header>
 
-      <section className="hero container" aria-labelledby="hero-title">
+      <section className="hero-section" aria-labelledby="hero-title">
+        <div className="hero container">
         <div className="hero-copy">
           <div className="availability-pill"><i />{ui.heroKicker}</div>
           <h1 id="hero-title">{ui.heroTitle}<em>{ui.heroAccent}</em></h1>
@@ -460,6 +452,7 @@ export function PassWiselySite() {
           </div>
           <div className="shortcut-float"><span>Instant capture</span><b>⌘ ⇧ 1</b></div>
           <div className="credit-float"><span>Credit balance</span><b>48</b></div>
+        </div>
         </div>
       </section>
 

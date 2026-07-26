@@ -76,7 +76,20 @@ npm run dist:mac
 npm run dist:win
 ```
 
-Unsigned macOS builds work for local testing. Distribution requires an Apple Developer ID and notarization. After signing, notarize the `.app` bundle with:
+Unsigned macOS builds are ad-hoc signed as a complete bundle so local packages
+cannot contain the inconsistent partial signature that macOS reports as
+“damaged.” Public distribution still requires a Developer ID Application
+certificate and Apple notarization.
+
+The release pipeline automatically notarizes and staples the app after a real
+Developer ID signature is applied. Configure one of the supported notarytool
+credential sets before building:
+
+- `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID`
+- `APPLE_API_KEY`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER`
+- `APPLE_KEYCHAIN_PROFILE`, plus optional `APPLE_KEYCHAIN`
+
+For a manual notarization diagnostic, run:
 
 ```bash
 APPLE_ID=... APPLE_APP_SPECIFIC_PASSWORD=... APPLE_TEAM_ID=... \

@@ -33,3 +33,20 @@ staging builds, override it with `PASSWISELY_API_URL`.
 
 Every usage request includes a unique request ID. The API reserves that ID
 before updating the balance, so retries cannot charge twice.
+
+## wise production deployment
+
+The public domain points to `8.219.140.215`. The application listens only on
+`127.0.0.1:3011`; Nginx is the public HTTP/HTTPS entry point. The production
+service has its own systemd unit and does not modify the units or Nginx files
+used by WiseVision, WiseDrama, or other sites on the same server.
+
+After a successful build and local D1 migration, a server administrator can
+activate the service, Nginx virtual host, and Let's Encrypt certificate with:
+
+```bash
+sudo bash /home/jerry/codebase/passwisely/website/scripts/activate-wise-production.sh
+```
+
+Optional Stripe values belong in the untracked
+`/home/jerry/codebase/passwisely/website/.env.production` file.

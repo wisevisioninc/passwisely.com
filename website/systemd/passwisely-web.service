@@ -1,0 +1,22 @@
+[Unit]
+Description=PassWisely web application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jerry
+Group=jerry
+WorkingDirectory=/home/jerry/codebase/passwisely/website
+Environment=NODE_ENV=production
+Environment=PATH=/home/jerry/.nvm/versions/node/v22.15.0/bin:/home/jerry/.local/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=-/home/jerry/codebase/passwisely/website/.env.production
+ExecStart=/home/jerry/.nvm/versions/node/v22.15.0/bin/node node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --ip 127.0.0.1 --port 3011 --persist-to /home/jerry/codebase/passwisely/website/.wise-data --local
+Restart=always
+RestartSec=3
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

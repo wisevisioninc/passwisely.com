@@ -4,6 +4,7 @@ import path from "node:path"
 const [platform, filePath, baseUrl = "https://passwisely.com"] =
   process.argv.slice(2)
 const uploadKey = process.env.RELEASE_UPLOAD_KEY
+const sitesBypassToken = process.env.SITES_BYPASS_TOKEN
 
 if (!platform || !filePath || !uploadKey) {
   console.error(
@@ -25,6 +26,9 @@ endpoint.searchParams.set("platform", platform)
 const headers = {
   "content-type": "application/json",
   "x-upload-key": uploadKey,
+  ...(sitesBypassToken
+    ? { authorization: `Bearer ${sitesBypassToken}` }
+    : {}),
 }
 
 async function jsonResponse(response) {

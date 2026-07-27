@@ -74,6 +74,8 @@ activate the service, Nginx virtual host, and Let's Encrypt certificate with:
 sudo bash /home/jerry/codebase/passwisely/website/scripts/activate-wise-production.sh
 ```
 
-Payment values belong in the untracked
-`/home/jerry/codebase/passwisely/website/.env.production` file. Apply every
-file in `drizzle/` in journal order before restarting the service.
+Payment values belong in the untracked, mode `0600`
+`/home/jerry/codebase/passwisely/website/.env.production` file. The production
+Wrangler command loads that file with `--env-file`, which makes the values
+available as Worker bindings. Apply every file in `drizzle/` in journal order
+before restarting the service.

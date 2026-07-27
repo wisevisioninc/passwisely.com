@@ -38,8 +38,12 @@ export const purchases = sqliteTable(
     packId: text("pack_id").notNull(),
     credits: integer("credits").notNull(),
     amountCents: integer("amount_cents").notNull(),
-    currency: text("currency").notNull().default("usd"),
+    currency: text("currency").notNull().default("CNY"),
     status: text("status").notNull().default("pending"),
+    provider: text("provider").notNull().default("stripe"),
+    merchantOrderNo: text("merchant_order_no"),
+    amountMinor: integer("amount_minor"),
+    providerTransactionId: text("provider_transaction_id"),
     stripeSessionId: text("stripe_session_id"),
     stripePaymentIntent: text("stripe_payment_intent"),
     createdAt: integer("created_at").notNull(),
@@ -47,6 +51,11 @@ export const purchases = sqliteTable(
   },
   (table) => [
     uniqueIndex("purchases_stripe_session_unique").on(table.stripeSessionId),
+    uniqueIndex("purchases_merchant_order_unique").on(table.merchantOrderNo),
+    uniqueIndex("purchases_provider_transaction_unique").on(
+      table.provider,
+      table.providerTransactionId,
+    ),
   ],
 );
 

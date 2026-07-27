@@ -1,10 +1,12 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 type Locale = "zh" | "en";
 type AuthMode = "login" | "register";
 type PackId = "starter" | "pro" | "max";
+type PaymentProvider = "alipay" | "wechat";
 
 interface User {
   id: string;
@@ -62,9 +64,9 @@ const copy = {
     buy: "购买积分",
     popular: "最受欢迎",
     packs: [
-      ["starter", "轻量包", "100", "$9", "适合短期面试准备"],
-      ["pro", "进阶包", "400", "$29", "适合完整求职周期"],
-      ["max", "冲刺包", "1,000", "$59", "适合高频训练与多轮面试"],
+      ["starter", "轻量包", "100", "¥9", "适合短期面试准备"],
+      ["pro", "进阶包", "400", "¥29", "适合完整求职周期"],
+      ["max", "冲刺包", "1,000", "¥59", "适合高频训练与多轮面试"],
     ],
     downloadTitle: "准备好更从容地面对下一题了吗？",
     downloadLead: "下载桌面端，注册后立即获得 10 个体验积分。",
@@ -135,9 +137,9 @@ const copy = {
     buy: "Buy credits",
     popular: "Most popular",
     packs: [
-      ["starter", "Starter", "100", "$9", "For a focused interview sprint"],
-      ["pro", "Pro", "400", "$29", "For a complete job-search cycle"],
-      ["max", "Max", "1,000", "$59", "For high-volume practice and interview loops"],
+      ["starter", "Starter", "100", "¥9", "For a focused interview sprint"],
+      ["pro", "Pro", "400", "¥29", "For a complete job-search cycle"],
+      ["max", "Max", "1,000", "¥59", "For high-volume practice and interview loops"],
     ],
     downloadTitle: "Ready to feel calmer on the next question?",
     downloadLead: "Download the desktop app and get 10 trial credits after registration.",
@@ -189,6 +191,11 @@ export function PassWiselySite() {
   const [locale, setLocale] = useState<Locale>("zh");
   const [authOpen, setAuthOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [paymentPack, setPaymentPack] = useState<PackId | null>(null);
+  const [wechatPayment, setWechatPayment] = useState<{
+    orderId: string;
+    url: string;
+  } | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -211,6 +218,27 @@ export function PassWiselySite() {
       queueMicrotask(() => setNotice(copy[nextLocale].paymentSuccess));
     }
   }, []);
+
+  useEffect(() => {
+    if (!wechatPayment) return;
+    const poll = window.setInterval(async () => {
+      const response = await fetch(
+        `/api/payments/status/${encodeURIComponent(wechatPayment.orderId)}`,
+        { credentials: "include" },
+      );
+      if (!response.ok) return;
+      const payload = (await response.json()) as {
+        order?: { status?: string };
+      };
+      if (payload.order?.status === "completed") {
+        window.clearInterval(poll);
+        setWechatPayment(null);
+        setNotice(copy[locale].paymentSuccess);
+        await refreshAccount();
+      }
+    }, 2000);
+    return () => window.clearInterval(poll);
+  }, [wechatPayment, locale]);
 
   async function refreshAccount() {
     const response = await fetch("/api/account", { credentials: "include" });
@@ -268,16 +296,32 @@ export function PassWiselySite() {
       setAuthOpen(true);
       return;
     }
+    setPaymentPack(packId);
+  }
+
+  async function pay(provider: PaymentProvider) {
+    if (!paymentPack) return;
     setBusy(true);
     setNotice("");
     const response = await fetch("/api/checkout", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ packId }),
+      body: JSON.stringify({ packId: paymentPack, provider }),
     });
-    const payload = (await response.json()) as { url?: string; error?: string };
+    const payload = (await response.json()) as {
+      url?: string;
+      orderId?: string;
+      error?: string;
+    };
     setBusy(false);
-    if (payload.url) window.location.assign(payload.url);
+    if (payload.url) {
+      setPaymentPack(null);
+      if (provider === "wechat" && payload.orderId) {
+        setWechatPayment({ orderId: payload.orderId, url: payload.url });
+      } else {
+        window.location.assign(payload.url);
+      }
+    }
     else setNotice(payload.error || "Checkout is unavailable.");
   }
 
@@ -551,7 +595,7 @@ export function PassWiselySite() {
               {index === 1 && <span className="popular">{t.popular}</span>}
               <span className="pack-index">0{index + 1}</span>
               <h3>{name}</h3>
-              <div className="price"><strong>{price}</strong><span>USD</span></div>
+              <div className="price"><strong>{price}</strong><span>CNY</span></div>
               <div className="credits"><b>{credits}</b><span>credits</span></div>
               <p>{description}</p>
               <button className="button button-primary" disabled={busy} onClick={() => void buy(id as PackId)}>{t.buy}<span>→</span></button>
@@ -611,6 +655,34 @@ export function PassWiselySite() {
               <button className="button button-primary" disabled={busy} type="submit">{authMode === "login" ? t.submitLogin : t.submitRegister}</button>
             </form>
             <button className="switch-auth" onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? t.switchRegister : t.switchLogin}</button>
+          </section>
+        </div>
+      )}
+
+      {paymentPack && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setPaymentPack(null)}>
+          <section className="modal payment-modal" role="dialog" aria-modal="true" aria-label={locale === "zh" ? "选择支付方式" : "Choose payment method"} onMouseDown={(event) => event.stopPropagation()}>
+            <button className="modal-close" aria-label={t.close} onClick={() => setPaymentPack(null)}>×</button>
+            <Logo />
+            <h2>{locale === "zh" ? "选择支付方式" : "Choose payment method"}</h2>
+            <p>{locale === "zh" ? "人民币支付，由福建智感灵眸科技有限公司收款。" : "Payment is collected in CNY by Fujian Zhigan Lingmou Technology Co., Ltd."}</p>
+            <div className="payment-options">
+              <button className="payment-option alipay" disabled={busy} onClick={() => void pay("alipay")}><b>支</b><span><strong>支付宝</strong><small>Alipay</small></span><i>→</i></button>
+              <button className="payment-option wechat" disabled={busy} onClick={() => void pay("wechat")}><b>微</b><span><strong>微信支付</strong><small>WeChat Pay</small></span><i>→</i></button>
+            </div>
+            <small className="payment-note">{locale === "zh" ? "支付成功后由官方异步通知自动入账，请勿重复支付。" : "Credits are added after the signed provider callback is verified."}</small>
+          </section>
+        </div>
+      )}
+
+      {wechatPayment && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={() => setWechatPayment(null)}>
+          <section className="modal wechat-qr-modal" role="dialog" aria-modal="true" aria-label={locale === "zh" ? "微信支付" : "WeChat Pay"} onMouseDown={(event) => event.stopPropagation()}>
+            <button className="modal-close" aria-label={t.close} onClick={() => setWechatPayment(null)}>×</button>
+            <h2>{locale === "zh" ? "微信扫码支付" : "Scan with WeChat"}</h2>
+            <div className="wechat-qr"><QRCodeSVG value={wechatPayment.url} size={224} level="M" /></div>
+            <p>{locale === "zh" ? "请使用微信扫一扫完成支付，本页面会自动确认到账。" : "Use WeChat to scan. This page will confirm the payment automatically."}</p>
+            <div className="payment-waiting"><i />{locale === "zh" ? "等待支付结果" : "Waiting for payment"}</div>
           </section>
         </div>
       )}

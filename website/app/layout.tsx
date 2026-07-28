@@ -31,10 +31,10 @@ export const metadata: Metadata = {
     siteName: "PassWisely",
     images: [
       {
-        url: "/og.png",
-        width: 1680,
-        height: 945,
-        alt: "PassWisely — Think clearly under pressure.",
+        url: "/og-premium.png",
+        width: 1672,
+        height: 941,
+        alt: "PassWisely — 实时AI面试隐身助手",
       },
     ],
   },
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "PassWisely — AI Interview Copilot",
     description: "Think clearly under pressure with a private desktop copilot.",
-    images: ["/og.png"],
+    images: ["/og-premium.png"],
   },
 };
 

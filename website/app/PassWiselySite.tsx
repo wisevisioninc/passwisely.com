@@ -342,7 +342,7 @@ export function PassWiselySite() {
     macIntelShort: "Mac · Intel",
     winShort: "Windows · x64",
     heroKicker: "为技术面试与求职准备而打造",
-    heroTitle: "技术面试的 AI 求职副驾驶",
+    heroTitle: "隐身的实时AI面试助手",
     heroAccent: "让每个答案都清晰有力",
     heroBody: "截图识题、结构化解题、系统设计、代码调试与简历准备集中在一个桌面工作台。支持多种 AI 模型，并持续围绕真实求职场景优化工作流。",
     downloadWinCta: "下载 Windows 版",

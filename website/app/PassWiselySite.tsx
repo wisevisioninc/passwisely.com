@@ -342,8 +342,8 @@ export function PassWiselySite() {
     macIntelShort: "Mac · Intel",
     winShort: "Windows · x64",
     heroKicker: "为技术面试与求职准备而打造",
-    heroTitle: "隐身的实时AI面试助手",
-    heroAccent: "让每个答案都清晰有力",
+    heroTitle: "实时AI面试隐身助手",
+    heroAccent: "",
     heroBody: "截图识题、结构化解题、系统设计、代码调试与简历准备集中在一个桌面工作台。支持多种 AI 模型，并持续围绕真实求职场景优化工作流。",
     downloadWinCta: "下载 Windows 版",
     downloadMacCta: "下载 Mac 版",
@@ -444,7 +444,7 @@ export function PassWiselySite() {
         <div className="hero container">
         <div className="hero-copy">
           <div className="availability-pill"><i />{ui.heroKicker}</div>
-          <h1 id="hero-title">{ui.heroTitle}<em>{ui.heroAccent}</em></h1>
+          <h1 id="hero-title">{ui.heroTitle}{ui.heroAccent && <em>{ui.heroAccent}</em>}</h1>
           <p className="hero-lead">{ui.heroBody}</p>
           <div className="hero-buttons">
             <a className="platform-download windows-download" href="/api/download/windows-x64">

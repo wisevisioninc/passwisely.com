@@ -1,5 +1,6 @@
-import { getD1 } from "@/db";
 import { verifyStripeSignature } from "@/lib/stripe";
+import { completePurchase } from "@/lib/payments/orders";
+import { adminRest } from "@/lib/supabase";
 
 interface StripeEvent {
   id: string;
@@ -26,41 +27,38 @@ export async function POST(request: Request) {
   if (!purchaseId) {
     return Response.json({ error: "Missing purchase metadata." }, { status: 400 });
   }
-  const now = Math.floor(Date.now() / 1000);
-  const db = getD1();
-  await db.batch([
-    db
-      .prepare(
-        `UPDATE users
-         SET credits = credits + (
-           SELECT credits FROM purchases WHERE id = ? AND status = 'pending'
-         ), updated_at = ?
-         WHERE id = (
-           SELECT user_id FROM purchases WHERE id = ? AND status = 'pending'
-         )`,
-      )
-      .bind(purchaseId, now, purchaseId),
-    db
-      .prepare(
-        `INSERT OR IGNORE INTO credit_transactions
-         (id, user_id, amount, balance_after, type, reference, created_at)
-         SELECT ?, p.user_id, p.credits, u.credits, 'purchase', ?, ?
-         FROM purchases p JOIN users u ON u.id = p.user_id
-         WHERE p.id = ? AND p.status = 'pending'`,
-      )
-      .bind(crypto.randomUUID(), `purchase:${purchaseId}`, now, purchaseId),
-    db
-      .prepare(
-        `UPDATE purchases
-         SET status = 'completed', stripe_payment_intent = ?, completed_at = ?
-         WHERE id = ? AND status = 'pending'`,
-      )
-      .bind(event.data?.object?.payment_intent || null, now, purchaseId),
-    db
-      .prepare(
-        "INSERT OR IGNORE INTO webhook_events (id, event_type, created_at) VALUES (?, ?, ?)",
-      )
-      .bind(event.id, event.type, now),
-  ]);
+  const rows = await adminRest<
+    Array<{
+      id: string;
+      user_id: string;
+      merchant_order_no: string;
+      provider: "stripe";
+      credits: number;
+      amount_minor: number;
+      currency: string;
+      status: string;
+      provider_transaction_id: string | null;
+    }>
+  >(
+    `purchases?id=eq.${encodeURIComponent(purchaseId)}&select=id,user_id,merchant_order_no,provider,credits,amount_minor,currency,status,provider_transaction_id&limit=1`,
+  );
+  const row = rows[0];
+  if (!row) return Response.json({ error: "Order not found." }, { status: 404 });
+  await completePurchase({
+    purchase: {
+      id: row.id,
+      userId: row.user_id,
+      merchantOrderNo: row.merchant_order_no,
+      provider: row.provider,
+      credits: row.credits,
+      amountMinor: row.amount_minor,
+      currency: row.currency,
+      status: row.status,
+      providerTransactionId: row.provider_transaction_id,
+    },
+    transactionId: event.data?.object?.payment_intent || event.id,
+    eventId: event.id,
+    eventType: event.type,
+  });
   return Response.json({ received: true });
 }

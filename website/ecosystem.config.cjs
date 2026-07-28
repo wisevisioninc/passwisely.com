@@ -17,6 +17,8 @@ module.exports = {
         "3011",
         "--persist-to",
         path.join(__dirname, ".wise-data"),
+        "--env-file",
+        ".env.production",
         "--local",
       ],
       interpreter: "none",

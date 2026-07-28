@@ -1,8 +1,17 @@
 import { cookies } from "next/headers";
-import { getD1 } from "@/db";
+import {
+  adminRest,
+  getAuthUser,
+  getProfile,
+  refreshSession,
+  signOut,
+  type ProfileRow,
+  type SupabaseSession,
+} from "@/lib/supabase";
 
-const SESSION_COOKIE = "pw_session";
-const SESSION_SECONDS = 60 * 60 * 24 * 30;
+const ACCESS_COOKIE = "pw_access";
+const REFRESH_COOKIE = "pw_refresh";
+const DESKTOP_SESSION_SECONDS = 60 * 60 * 24 * 30;
 const encoder = new TextEncoder();
 
 export interface AccountUser {
@@ -12,86 +21,31 @@ export interface AccountUser {
   credits: number;
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
+function profileToUser(profile: ProfileRow): AccountUser {
+  return {
+    id: profile.id,
+    email: profile.email,
+    locale: profile.locale,
+    credits: profile.credits,
+  };
+}
+
+function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
-}
-
-function base64ToBytes(value: string): Uint8Array {
-  const binary = atob(value);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-}
-
-function randomToken(byteLength = 32): string {
-  return bytesToBase64(crypto.getRandomValues(new Uint8Array(byteLength)))
+  return btoa(binary)
     .replaceAll("+", "-")
     .replaceAll("/", "_")
     .replaceAll("=", "");
 }
 
+function randomToken(byteLength = 32): string {
+  return bytesToBase64Url(crypto.getRandomValues(new Uint8Array(byteLength)));
+}
+
 async function sha256(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", encoder.encode(value));
-  return bytesToBase64(new Uint8Array(digest));
-}
-
-export async function hashPassword(
-  password: string,
-  salt = bytesToBase64(crypto.getRandomValues(new Uint8Array(16))),
-): Promise<{ hash: string; salt: string }> {
-  const passwordKey = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const firstStage = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      hash: "SHA-256",
-      salt: base64ToBytes(salt).buffer as ArrayBuffer,
-      iterations: 100_000,
-    },
-    passwordKey,
-    256,
-  );
-  const secondStageKey = await crypto.subtle.importKey(
-    "raw",
-    firstStage,
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const secondSalt = await crypto.subtle.digest(
-    "SHA-256",
-    encoder.encode(`passwisely:v2:${salt}`),
-  );
-  const finalBits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      hash: "SHA-256",
-      salt: secondSalt,
-      iterations: 100_000,
-    },
-    secondStageKey,
-    256,
-  );
-  return { hash: bytesToBase64(new Uint8Array(finalBits)), salt };
-}
-
-export async function verifyPassword(
-  password: string,
-  expectedHash: string,
-  salt: string,
-): Promise<boolean> {
-  const { hash } = await hashPassword(password, salt);
-  if (hash.length !== expectedHash.length) return false;
-  let difference = 0;
-  for (let index = 0; index < hash.length; index += 1) {
-    difference |= hash.charCodeAt(index) ^ expectedHash.charCodeAt(index);
-  }
-  return difference === 0;
+  return bytesToBase64Url(new Uint8Array(digest));
 }
 
 export function normalizeEmail(value: unknown): string {
@@ -114,58 +68,77 @@ export function validateCredentials(email: string, password: unknown): string | 
   return null;
 }
 
-export async function createSession(userId: string): Promise<void> {
-  const token = randomToken();
-  const tokenHash = await sha256(token);
-  const now = Math.floor(Date.now() / 1000);
-  await getD1()
-    .prepare(
-      "INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)",
-    )
-    .bind(tokenHash, userId, now + SESSION_SECONDS, now)
-    .run();
+async function setWebSession(session: SupabaseSession): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
+  const secure = process.env.NODE_ENV !== "development";
+  cookieStore.set(ACCESS_COOKIE, session.access_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV !== "development",
+    secure,
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_SECONDS,
+    maxAge: Math.max(60, session.expires_in || 3600),
   });
+  cookieStore.set(REFRESH_COOKIE, session.refresh_token, {
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: DESKTOP_SESSION_SECONDS,
+  });
+}
+
+export async function createSession(session: SupabaseSession): Promise<void> {
+  await setWebSession(session);
 }
 
 export async function clearSession(): Promise<void> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (token) {
-    await getD1()
-      .prepare("DELETE FROM sessions WHERE token_hash = ?")
-      .bind(await sha256(token))
-      .run();
+  const accessToken = cookieStore.get(ACCESS_COOKIE)?.value;
+  if (accessToken) await signOut(accessToken).catch(() => undefined);
+  for (const name of [ACCESS_COOKIE, REFRESH_COOKIE]) {
+    cookieStore.set(name, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
   }
-  cookieStore.set(SESSION_COOKIE, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV !== "development",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+}
+
+async function userFromAccessToken(accessToken: string): Promise<AccountUser | null> {
+  try {
+    const authUser = await getAuthUser(accessToken);
+    const profile = await getProfile(authUser.id);
+    return profile ? profileToUser(profile) : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getCurrentUser(): Promise<AccountUser | null> {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  const now = Math.floor(Date.now() / 1000);
-  const row = await getD1()
-    .prepare(
-      `SELECT u.id, u.email, u.locale, u.credits
-       FROM sessions s
-       JOIN users u ON u.id = s.user_id
-       WHERE s.token_hash = ? AND s.expires_at > ?`,
-    )
-    .bind(await sha256(token), now)
-    .first<AccountUser>();
-  return row || null;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get(ACCESS_COOKIE)?.value || "";
+  if (accessToken) {
+    const user = await userFromAccessToken(accessToken);
+    if (user) return user;
+  }
+
+  const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value || "";
+  if (!refreshToken) return null;
+  try {
+    const session = await refreshSession(refreshToken);
+    try {
+      await setWebSession(session);
+    } catch {
+      // Server-rendered reads may not be allowed to mutate cookies. The API
+      // route that follows will refresh and persist the session.
+    }
+    const profile = await getProfile(session.user.id);
+    return profile ? profileToUser(profile) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function jsonError(message: string, status: number): Response {
@@ -180,28 +153,30 @@ export function getBearerToken(request: Request): string {
 export async function getApiUser(request: Request): Promise<AccountUser | null> {
   const token = getBearerToken(request);
   if (!token) return getCurrentUser();
-  const now = Math.floor(Date.now() / 1000);
-  return (
-    (await getD1()
-      .prepare(
-        `SELECT u.id, u.email, u.locale, u.credits
-         FROM sessions s
-         JOIN users u ON u.id = s.user_id
-         WHERE s.token_hash = ? AND s.expires_at > ?`,
-      )
-      .bind(await sha256(token), now)
-      .first<AccountUser>()) || null
+
+  const supabaseUser = await userFromAccessToken(token);
+  if (supabaseUser) return supabaseUser;
+
+  const tokenHash = await sha256(token);
+  const sessions = await adminRest<Array<{ user_id: string }>>(
+    `desktop_sessions?token_hash=eq.${encodeURIComponent(tokenHash)}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=user_id&limit=1`,
   );
+  const userId = sessions[0]?.user_id;
+  if (!userId) return null;
+  const profile = await getProfile(userId);
+  return profile ? profileToUser(profile) : null;
 }
 
 export async function createApiSession(userId: string): Promise<string> {
   const token = randomToken();
-  const now = Math.floor(Date.now() / 1000);
-  await getD1()
-    .prepare(
-      "INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)",
-    )
-    .bind(await sha256(token), userId, now + SESSION_SECONDS, now)
-    .run();
+  await adminRest("desktop_sessions", {
+    method: "POST",
+    headers: { prefer: "return=minimal" },
+    body: JSON.stringify({
+      token_hash: await sha256(token),
+      user_id: userId,
+      expires_at: new Date(Date.now() + DESKTOP_SESSION_SECONDS * 1000).toISOString(),
+    }),
+  });
   return token;
 }

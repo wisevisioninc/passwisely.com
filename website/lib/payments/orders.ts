@@ -1,4 +1,4 @@
-import { getD1 } from "@/db";
+import { adminRest, adminRpc } from "@/lib/supabase";
 import {
   CREDIT_PACKS,
   type CreditPackId,
@@ -9,7 +9,7 @@ export interface PurchaseRow {
   id: string;
   userId: string;
   merchantOrderNo: string;
-  provider: PaymentProvider;
+  provider: PaymentProvider | "stripe";
   credits: number;
   amountMinor: number;
   currency: string;
@@ -39,48 +39,67 @@ export async function createPurchase(input: {
     status: "pending",
     providerTransactionId: null,
   };
-  await getD1()
-    .prepare(
-      `INSERT INTO purchases
-       (id, user_id, pack_id, credits, amount_cents, currency, status,
-        provider, merchant_order_no, amount_minor, created_at)
-       VALUES (?, ?, ?, ?, ?, 'CNY', 'pending', ?, ?, ?, ?)`,
-    )
-    .bind(
-      purchase.id,
-      purchase.userId,
-      input.packId,
-      purchase.credits,
-      purchase.amountMinor,
-      purchase.provider,
-      purchase.merchantOrderNo,
-      purchase.amountMinor,
-      Math.floor(Date.now() / 1000),
-    )
-    .run();
+  await adminRest("purchases", {
+    method: "POST",
+    headers: { prefer: "return=minimal" },
+    body: JSON.stringify({
+      id: purchase.id,
+      user_id: purchase.userId,
+      pack_id: input.packId,
+      credits: purchase.credits,
+      amount_minor: purchase.amountMinor,
+      currency: purchase.currency,
+      status: purchase.status,
+      provider: purchase.provider,
+      merchant_order_no: purchase.merchantOrderNo,
+    }),
+  });
   return purchase;
 }
 
 export async function findPurchaseByMerchantOrder(
   merchantOrderNo: string,
 ): Promise<PurchaseRow | null> {
-  const row = await getD1()
-    .prepare(
-      `SELECT id, user_id AS userId, merchant_order_no AS merchantOrderNo,
-              provider, credits, amount_minor AS amountMinor, currency, status,
-              provider_transaction_id AS providerTransactionId
-       FROM purchases WHERE merchant_order_no = ?`,
-    )
-    .bind(merchantOrderNo)
-    .first<PurchaseRow>();
-  return row || null;
+  const rows = await adminRest<
+    Array<{
+      id: string;
+      user_id: string;
+      merchant_order_no: string;
+      provider: PaymentProvider | "stripe";
+      credits: number;
+      amount_minor: number;
+      currency: string;
+      status: string;
+      provider_transaction_id: string | null;
+    }>
+  >(
+    `purchases?merchant_order_no=eq.${encodeURIComponent(merchantOrderNo)}&select=id,user_id,merchant_order_no,provider,credits,amount_minor,currency,status,provider_transaction_id&limit=1`,
+  );
+  const row = rows[0];
+  return row
+    ? {
+        id: row.id,
+        userId: row.user_id,
+        merchantOrderNo: row.merchant_order_no,
+        provider: row.provider,
+        credits: row.credits,
+        amountMinor: row.amount_minor,
+        currency: row.currency,
+        status: row.status,
+        providerTransactionId: row.provider_transaction_id,
+      }
+    : null;
 }
 
 export async function markPurchaseFailed(id: string): Promise<void> {
-  await getD1()
-    .prepare("UPDATE purchases SET status = 'failed' WHERE id = ? AND status = 'pending'")
-    .bind(id)
-    .run();
+  await adminRest(
+    `purchases?id=eq.${encodeURIComponent(id)}&status=eq.pending`,
+    {
+      method: "PATCH",
+      headers: { prefer: "return=minimal" },
+      body: JSON.stringify({ status: "failed" }),
+    },
+  );
 }
 
 export async function completePurchase(input: {
@@ -89,7 +108,6 @@ export async function completePurchase(input: {
   eventType: string;
   transactionId: string;
 }): Promise<"completed" | "duplicate"> {
-  const db = getD1();
   if (
     input.purchase.status === "completed" &&
     input.purchase.providerTransactionId === input.transactionId
@@ -99,54 +117,10 @@ export async function completePurchase(input: {
   if (input.purchase.status !== "pending") {
     throw new Error(`Purchase is not payable: ${input.purchase.status}`);
   }
-  const claimed = await db
-    .prepare(
-      "UPDATE purchases SET status = 'processing' WHERE id = ? AND status = 'pending'",
-    )
-    .bind(input.purchase.id)
-    .run();
-  if ((claimed.meta?.changes || 0) !== 1) return "duplicate";
-
-  const now = Math.floor(Date.now() / 1000);
-  try {
-    await db.batch([
-      db
-        .prepare("UPDATE users SET credits = credits + ?, updated_at = ? WHERE id = ?")
-        .bind(input.purchase.credits, now, input.purchase.userId),
-      db
-        .prepare(
-          `INSERT INTO credit_transactions
-           (id, user_id, amount, balance_after, type, reference, created_at)
-           SELECT ?, ?, ?, credits, 'purchase', ?, ? FROM users WHERE id = ?`,
-        )
-        .bind(
-          crypto.randomUUID(),
-          input.purchase.userId,
-          input.purchase.credits,
-          `purchase:${input.purchase.id}`,
-          now,
-          input.purchase.userId,
-        ),
-      db
-        .prepare(
-          `UPDATE purchases SET status = 'completed',
-           provider_transaction_id = ?, completed_at = ?
-           WHERE id = ? AND status = 'processing'`,
-        )
-        .bind(input.transactionId, now, input.purchase.id),
-      db
-        .prepare(
-          `INSERT OR IGNORE INTO webhook_events
-           (id, event_type, created_at) VALUES (?, ?, ?)`,
-        )
-        .bind(input.eventId, input.eventType, now),
-    ]);
-  } catch (error) {
-    await db
-      .prepare("UPDATE purchases SET status = 'pending' WHERE id = ? AND status = 'processing'")
-      .bind(input.purchase.id)
-      .run();
-    throw error;
-  }
-  return "completed";
+  return adminRpc<"completed" | "duplicate">("complete_purchase", {
+    p_purchase_id: input.purchase.id,
+    p_transaction_id: input.transactionId,
+    p_event_id: input.eventId,
+    p_event_type: input.eventType,
+  });
 }

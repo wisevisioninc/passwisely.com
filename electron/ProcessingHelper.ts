@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path"; // Keep path if needed elsewhere, otherwise removable
 import { randomUUID } from "node:crypto";
-import { BrowserWindow } from "electron";
+import { BrowserWindow, nativeImage } from "electron";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
 
@@ -140,6 +140,10 @@ export class ProcessingHelper {
         }
       } else if (error.status === 429) {
         message += " Rate limit or quota exceeded.";
+      } else if (error.status === 413) {
+        return this.config.responseLanguage === "zh-CN"
+          ? "请求内容过大。请减少截图数量后重试；PassWisely 会自动压缩新提交的截图。"
+          : "The request is too large. Please remove some screenshots and try again; PassWisely automatically compresses newly submitted screenshots.";
       } else if (error.status >= 500) {
         message += ` Server error from ${this.config.providerLabel}. Try again later.`;
       } else if (error.message) {
@@ -157,6 +161,58 @@ export class ProcessingHelper {
       console.error("Non-API Error:", error);
       return error.message || "An unexpected error occurred.";
     }
+  }
+
+  /**
+   * Keep vision requests below the relay body limit without making text in
+   * interview screenshots unreadable. Five encoded images remain under the
+   * 12 MB API ceiling even on high-resolution Retina displays.
+   */
+  private prepareImageForModel(filePath: string): {
+    data: string;
+    mimeType: "image/jpeg";
+  } {
+    const source = nativeImage.createFromPath(filePath);
+    if (source.isEmpty()) {
+      throw new Error(`Unable to decode screenshot: ${filePath}`);
+    }
+
+    const maxEncodedBytes = 1_400_000;
+    const maxEdges = [1920, 1600, 1280];
+    const qualities = [86, 76, 66];
+    const originalSize = source.getSize();
+    let lastBuffer = source.toJPEG(66);
+
+    for (const maxEdge of maxEdges) {
+      const scale = Math.min(
+        1,
+        maxEdge / Math.max(originalSize.width, originalSize.height),
+      );
+      const candidate =
+        scale < 1
+          ? source.resize({
+              width: Math.max(1, Math.round(originalSize.width * scale)),
+              height: Math.max(1, Math.round(originalSize.height * scale)),
+              quality: "best",
+            })
+          : source;
+
+      for (const quality of qualities) {
+        const buffer = candidate.toJPEG(quality);
+        lastBuffer = buffer;
+        if (buffer.byteLength <= maxEncodedBytes) {
+          return {
+            data: buffer.toString("base64"),
+            mimeType: "image/jpeg",
+          };
+        }
+      }
+    }
+
+    return {
+      data: lastBuffer.toString("base64"),
+      mimeType: "image/jpeg",
+    };
   }
 
   private getResponseLanguageInstruction(): string {
@@ -545,7 +601,8 @@ export class ProcessingHelper {
       }
 
       try {
-        // Load image data directly (NO COMPRESSION)
+        // Optimize screenshots before Base64 encoding so Retina captures do
+        // not exceed the AI relay request limit.
         const imageObjects = await Promise.all(
           screenshotQueue.map(async (filePath) => {
             if (!fs.existsSync(filePath)) {
@@ -553,16 +610,12 @@ export class ProcessingHelper {
               return null; // Skip missing files
             }
             try {
-              const data = fs.readFileSync(filePath).toString("base64");
+              const { data, mimeType } = this.prepareImageForModel(filePath);
               // Basic check for valid base64 start
               if (!data || data.length < 10) {
                 console.warn(`Failed to read or empty file: ${filePath}`);
                 return null;
               }
-              const mimeType =
-                path.extname(filePath).toLowerCase() === ".png"
-                  ? "image/png"
-                  : "image/jpeg";
               return {
                 path: filePath,
                 // preview: await this.screenshotHelper.getImagePreview(filePath), // Can skip preview generation here if not needed immediately
@@ -746,15 +799,11 @@ export class ProcessingHelper {
               return null;
             }
             try {
-              const data = fs.readFileSync(filePath).toString("base64");
+              const { data, mimeType } = this.prepareImageForModel(filePath);
               if (!data || data.length < 10) {
                 console.warn(`Failed to read or empty extra file: ${filePath}`);
                 return null;
               }
-              const mimeType =
-                path.extname(filePath).toLowerCase() === ".png"
-                  ? "image/png"
-                  : "image/jpeg";
               return { data, mimeType };
             } catch (readError) {
               console.error(`Error reading extra file ${filePath}:`, readError);

@@ -4,6 +4,7 @@ import type {
   ResumeDocumentResponse,
   ResumeProcessResponse,
   ResumeRequest,
+  ResumeResult,
 } from "./resumeTypes";
 import type { PublicSettings, SaveAiSettingsInput } from "./settings";
 
@@ -90,6 +91,7 @@ interface ElectronAPI {
   selectResumeFile: () => Promise<ResumeDocumentResponse>;
   loadResumeUrl: (url: string) => Promise<ResumeDocumentResponse>;
   processResume: (request: ResumeRequest) => Promise<ResumeProcessResponse>;
+  getResumeHistory: () => Promise<ResumeResult[]>;
   saveResumeResult: (input: {
     content: string;
     suggestedName?: string;
@@ -152,6 +154,7 @@ const electronAPI = {
   loadResumeUrl: (url: string) => ipcRenderer.invoke("load-resume-url", url),
   processResume: (request: ResumeRequest) =>
     ipcRenderer.invoke("process-resume", request),
+  getResumeHistory: () => ipcRenderer.invoke("get-resume-history"),
   saveResumeResult: (input: { content: string; suggestedName?: string }) =>
     ipcRenderer.invoke("save-resume-result", input),
   deleteScreenshot: (path: string) =>

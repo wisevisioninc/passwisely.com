@@ -206,11 +206,11 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
   });
 
   ipcMain.handle("process-resume", async (_event, request: ResumeRequest) => {
-    if (!deps.processingHelper) {
-      return { success: false, error: "AI processing is not initialized." };
-    }
-    return deps.processingHelper.processResume(request);
+    return deps.accountService.runResumeAgent(request);
   });
+  ipcMain.handle("get-resume-history", () =>
+    deps.accountService.getLocalResumeHistory(),
+  );
 
   ipcMain.handle(
     "save-resume-result",

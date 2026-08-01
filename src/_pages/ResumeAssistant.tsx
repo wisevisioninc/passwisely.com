@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   BriefcaseBusiness,
-  ClipboardCheck,
   Copy,
   FileText,
   Globe2,
@@ -25,9 +24,9 @@ interface ResumeAssistantProps {
 }
 
 const ACTION_LABELS: Record<ResumeAction, string> = {
-  review: "优化建议",
-  optimize: "优化版简历",
+  optimize: "优化简历",
   interview: "面试准备",
+  history: "历史面经",
 };
 
 const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
@@ -37,12 +36,15 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
   const [resumeText, setResumeText] = useState("");
   const [resumeUrl, setResumeUrl] = useState("");
   const [jobDescription, setJobDescription] = useState("");
+  const [company, setCompany] = useState("");
+  const [role, setRole] = useState("");
   const [loadingSource, setLoadingSource] = useState<"file" | "url" | null>(
     null,
   );
   const [processingAction, setProcessingAction] =
     useState<ResumeAction | null>(null);
   const [result, setResult] = useState<ResumeResult | null>(null);
+  const [history, setHistory] = useState<ResumeResult[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
 
@@ -57,6 +59,10 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
     updateDimensions();
     return () => observer.disconnect();
   }, [result, resumeDocument]);
+
+  useEffect(() => {
+    void window.electronAPI.getResumeHistory().then(setHistory);
+  }, []);
 
   const applyDocument = (document: ResumeDocument) => {
     setResumeDocument(document);
@@ -113,14 +119,29 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
   };
 
   const runAction = async (action: ResumeAction) => {
-    if (resumeText.trim().length < 20) {
+    if (action !== "history" && resumeText.trim().length < 20) {
       showToast("缺少简历", "请先上传简历或粘贴简历文字。", "neutral");
       return;
     }
-    if (action === "interview" && !jobDescription.trim()) {
+    if (action === "interview" && (!jobDescription.trim() || !company.trim())) {
       showToast(
         "缺少 Job Description",
-        "请粘贴目标岗位描述后再生成针对性面试建议。",
+        "请上传简历，并填写 Job Description 和公司。",
+        "neutral",
+      );
+      return;
+    }
+    if (
+      action === "history" &&
+      (!jobDescription.trim() ||
+        !company.trim() ||
+        !role.trim() ||
+        !jobDescription.toLocaleLowerCase().includes(company.trim().toLocaleLowerCase()) ||
+        !jobDescription.toLocaleLowerCase().includes(role.trim().toLocaleLowerCase()))
+    ) {
+      showToast(
+        "缺少岗位信息",
+        "请确保 Job Description 中明确包含公司和岗位名称。",
         "neutral",
       );
       return;
@@ -131,11 +152,17 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
         action,
         resumeText: resumeText.trim(),
         jobDescription: jobDescription.trim() || undefined,
+        company: company.trim() || undefined,
+        role: role.trim() || undefined,
       });
       if (!response.success || !response.data) {
         throw new Error(response.error || "AI 处理失败。");
       }
       setResult(response.data);
+      setHistory((current) => [
+        response.data!,
+        ...current.filter((item) => item.id !== response.data!.id),
+      ]);
       showToast(
         ACTION_LABELS[action],
         `${response.data.provider} / ${response.data.model} 已完成处理。`,
@@ -261,6 +288,20 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
               placeholder="上传后会在这里显示提取内容，也可以直接粘贴简历文字。请检查 PDF 换行和表格提取是否正确；纯图片扫描 PDF 请先进行 OCR。"
               className="h-44 w-full resize-y rounded-lg bg-white/5 p-3 text-[10px] leading-relaxed text-white/85 outline-none ring-1 ring-white/10 focus:ring-blue-400/50"
             />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                value={company}
+                onChange={(event) => setCompany(event.target.value)}
+                placeholder="目标公司（面试准备/历史面经必填）"
+                className="rounded-lg bg-white/5 p-2 text-[10px] outline-none ring-1 ring-white/10 focus:ring-amber-400/50"
+              />
+              <input
+                value={role}
+                onChange={(event) => setRole(event.target.value)}
+                placeholder="岗位名称（历史面经必填）"
+                className="rounded-lg bg-white/5 p-2 text-[10px] outline-none ring-1 ring-white/10 focus:ring-amber-400/50"
+              />
+            </div>
           </section>
 
           <section className="space-y-2">
@@ -282,17 +323,9 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
             <h2 className="text-xs font-medium">3. 选择处理方式</h2>
             <div className="grid grid-cols-3 gap-2">
               <ActionButton
-                icon={<ClipboardCheck className="h-4 w-4" />}
-                title="给出优化意见"
-                description="问题排序、ATS、量化与改写示例"
-                loading={processingAction === "review"}
-                disabled={busy}
-                onClick={() => runAction("review")}
-              />
-              <ActionButton
                 icon={<WandSparkles className="h-4 w-4" />}
-                title="一键优化简历"
-                description="保留事实，生成可直接使用的完整版本"
+                title="优化简历"
+                description="分析优化点并生成可下载的新版本"
                 loading={processingAction === "optimize"}
                 disabled={busy}
                 featured
@@ -300,11 +333,19 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
               />
               <ActionButton
                 icon={<Sparkles className="h-4 w-4" />}
-                title="面试准备建议"
-                description="匹配 JD，预测问题并给出准备计划"
+                title="面试准备"
+                description="结合项目经历与全网资料准备问答"
                 loading={processingAction === "interview"}
                 disabled={busy}
                 onClick={() => runAction("interview")}
+              />
+              <ActionButton
+                icon={<Globe2 className="h-4 w-4" />}
+                title="历史面经"
+                description="搜索目标公司和岗位的候选人面经"
+                loading={processingAction === "history"}
+                disabled={busy}
+                onClick={() => runAction("history")}
               />
             </div>
           </section>
@@ -318,6 +359,10 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
                   </h2>
                   <p className="text-[9px] text-white/40">
                     {result.provider} · {result.model}
+                    {result.version ? ` · v${result.version}` : ""}
+                    {result.creditsCharged
+                      ? ` · ${result.creditsCharged} 积分`
+                      : ""}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -340,6 +385,31 @@ const ResumeAssistant: React.FC<ResumeAssistantProps> = ({ onClose }) => {
               <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words p-3 font-sans text-[10px] leading-relaxed text-white/85">
                 {result.content}
               </pre>
+            </section>
+          )}
+
+          {history.length > 0 && (
+            <section className="space-y-2">
+              <h2 className="text-xs font-medium">本地历史版本</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {history.slice(0, 12).map((item, index) => (
+                  <button
+                    key={item.id || `${item.action}-${item.version}-${index}`}
+                    type="button"
+                    onClick={() => setResult(item)}
+                    className="rounded-lg bg-white/5 p-2 text-left ring-1 ring-white/10 hover:bg-white/10"
+                  >
+                    <div className="text-[10px] text-white/80">
+                      {ACTION_LABELS[item.action]} · v{item.version || 1}
+                    </div>
+                    <div className="mt-1 truncate text-[9px] text-white/35">
+                      {[item.company, item.role, item.createdAt]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </section>
           )}
 

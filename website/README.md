@@ -25,10 +25,18 @@ pnpm test
 - `WECHAT_PAY_MCH_SERIAL_NO`: merchant API certificate serial number.
 - `WECHAT_PAY_PRIVATE_KEY`: merchant API private key in PKCS#8 PEM format.
 - `WECHAT_PAY_API_V3_KEY`: 32-byte API v3 key used to decrypt callbacks.
-- `WECHAT_PAY_PLATFORM_SERIAL_NO`: active WeChat Pay platform certificate/public
-  key serial number.
-- `WECHAT_PAY_PLATFORM_PUBLIC_KEY`: matching WeChat Pay platform public key in
-  PEM format.
+- `WECHAT_PAY_PUBLIC_KEY_ID`: WeChat Pay public-key ID beginning with
+  `PUB_KEY_ID_`.
+- `WECHAT_PAY_PUBLIC_KEY`: the matching downloaded WeChat Pay public key in PEM
+  format (this is not the merchant certificate public key).
+
+For local production builds, `.env.production` may instead set
+`WECHAT_V3_CERT` to the directory containing `apiclient_cert.pem` and
+`apiclient_key.pem`, or set `WECHAT_V3_CERT_PEM` and `WECHAT_V3_CERT_PE` to
+their individual paths. It may set `WECHAT_PUB_KEY` to the downloaded WeChat
+Pay public-key file path. The staging script loads the PEM files into protected
+Worker runtime bindings and derives the merchant certificate serial number.
+`WECHAT_APIV3_KEY` and `WECHAT_PUB_KEY_ID` remain supported aliases.
 - `RELEASE_UPLOAD_KEY`: bearer-like key for the private installer upload route.
 
 Payment secrets must only exist in the server's untracked `.env.production`.

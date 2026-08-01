@@ -76,7 +76,7 @@ const copy = {
     faqTitle: "常见问题",
     faqs: [
       ["积分如何扣除？", "标准解题、调试和追问每次 1 积分；简历分析与针对性准备消耗 2–3 积分。服务端原子扣费，同一次请求不会重复计费。"],
-      ["支持哪些模型？", "桌面端支持 OpenAI、DeepSeek、Kimi、豆包、通义千问、GLM、Gemini 和 Claude，也可配置兼容接口。"],
+      ["支持哪些模型？", "国内模型支持 Kimi、GLM、Qwen 3.5 和 Seed；ChatGPT、Claude Opus 5、Gemini 通过 Wise 服务中转。Kimi 未配置 Key 时默认使用 Wise 的 Kimi K3，并按 token 预算扣除积分。"],
       ["积分会过期吗？", "购买和赠送的积分目前都不会过期，余额与每笔变动会保存在账户中。"],
       ["数据是否安全？", "账户会话使用安全 Cookie；API 密钥由操作系统凭据保护功能加密保存在本机，不会写入网站数据库。"],
     ],
@@ -149,7 +149,7 @@ const copy = {
     faqTitle: "Frequently asked questions",
     faqs: [
       ["How are credits used?", "A standard solve, debug, or follow-up costs 1 credit. Resume analysis and targeted preparation cost 2–3. Server-side atomic deduction prevents duplicate charges for the same request."],
-      ["Which AI models are supported?", "The desktop app supports OpenAI, DeepSeek, Kimi, Doubao, Qwen, GLM, Gemini, Claude, and compatible custom endpoints."],
+      ["Which AI models are supported?", "Domestic options include Kimi, GLM, Qwen 3.5, and Seed. ChatGPT, Claude Opus 5, and Gemini are relayed through Wise. Bring your own API key, or use the Wise default key with credits."],
       ["Do credits expire?", "Purchased and welcome credits currently do not expire. Your account stores the balance and every change."],
       ["How is data protected?", "Account sessions use secure cookies. AI keys are encrypted by the operating system and stay on your device, not in the website database."],
     ],

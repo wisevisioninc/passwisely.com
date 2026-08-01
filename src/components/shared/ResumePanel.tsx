@@ -1,6 +1,5 @@
 import {
   BriefcaseBusiness,
-  ClipboardCheck,
   Copy,
   FileText,
   Globe2,
@@ -10,7 +9,7 @@ import {
   Upload,
   WandSparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type {
   ResumeAction,
@@ -20,9 +19,9 @@ import type {
 import { useToast } from "../../contexts/toast";
 
 const ACTION_LABELS: Record<ResumeAction, string> = {
-  review: "优化建议",
-  optimize: "优化版简历",
+  optimize: "优化简历",
   interview: "面试准备",
+  history: "历史面经",
 };
 
 export function ResumePanel() {
@@ -32,13 +31,20 @@ export function ResumePanel() {
   const [resumeText, setResumeText] = useState("");
   const [resumeUrl, setResumeUrl] = useState("");
   const [jobDescription, setJobDescription] = useState("");
+  const [company, setCompany] = useState("");
+  const [role, setRole] = useState("");
   const [loadingSource, setLoadingSource] = useState<"file" | "url" | null>(
     null,
   );
   const [processingAction, setProcessingAction] =
     useState<ResumeAction | null>(null);
   const [result, setResult] = useState<ResumeResult | null>(null);
+  const [history, setHistory] = useState<ResumeResult[]>([]);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    void window.electronAPI.getResumeHistory().then(setHistory);
+  }, []);
 
   const applyDocument = (document: ResumeDocument) => {
     setResumeDocument(document);
@@ -95,14 +101,29 @@ export function ResumePanel() {
   };
 
   const runAction = async (action: ResumeAction) => {
-    if (resumeText.trim().length < 20) {
+    if (action !== "history" && resumeText.trim().length < 20) {
       showToast("缺少简历", "请先上传简历或粘贴简历文字。", "neutral");
       return;
     }
-    if (action === "interview" && !jobDescription.trim()) {
+    if (action === "interview" && (!jobDescription.trim() || !company.trim())) {
       showToast(
         "缺少 Job Description",
-        "请粘贴目标岗位描述后再生成针对性面试建议。",
+        "请上传简历，并填写 Job Description 和公司。",
+        "neutral",
+      );
+      return;
+    }
+    if (
+      action === "history" &&
+      (!jobDescription.trim() ||
+        !company.trim() ||
+        !role.trim() ||
+        !jobDescription.toLocaleLowerCase().includes(company.trim().toLocaleLowerCase()) ||
+        !jobDescription.toLocaleLowerCase().includes(role.trim().toLocaleLowerCase()))
+    ) {
+      showToast(
+        "缺少岗位信息",
+        "请确保 Job Description 中明确包含公司和岗位名称。",
         "neutral",
       );
       return;
@@ -114,11 +135,17 @@ export function ResumePanel() {
         action,
         resumeText: resumeText.trim(),
         jobDescription: jobDescription.trim() || undefined,
+        company: company.trim() || undefined,
+        role: role.trim() || undefined,
       });
       if (!response.success || !response.data) {
         throw new Error(response.error || "AI 处理失败。");
       }
       setResult(response.data);
+      setHistory((current) => [
+        response.data!,
+        ...current.filter((item) => item.id !== response.data!.id),
+      ]);
       showToast(
         ACTION_LABELS[action],
         `${response.data.provider} / ${response.data.model} 已完成处理。`,
@@ -231,6 +258,20 @@ export function ResumePanel() {
           placeholder="也可以直接粘贴简历全文…"
           className="h-32 w-full resize-y rounded-lg bg-white/[0.06] p-2.5 text-[10px] leading-relaxed outline-none ring-1 ring-white/10 focus:ring-cyan-300/50"
         />
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            value={company}
+            onChange={(event) => setCompany(event.target.value)}
+            placeholder="目标公司"
+            className="rounded-lg bg-white/[0.06] p-2 text-[10px] outline-none ring-1 ring-white/10"
+          />
+          <input
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+            placeholder="岗位名称"
+            className="rounded-lg bg-white/[0.06] p-2 text-[10px] outline-none ring-1 ring-white/10"
+          />
+        </div>
       </section>
 
       <section className="mt-4 space-y-2">
@@ -252,15 +293,8 @@ export function ResumePanel() {
         <h4 className="text-[11px] font-medium">3. 选择处理方式</h4>
         <div className="grid grid-cols-3 gap-1.5">
           <ActionButton
-            icon={<ClipboardCheck className="h-3.5 w-3.5" />}
-            label="优化意见"
-            loading={processingAction === "review"}
-            disabled={busy}
-            onClick={() => runAction("review")}
-          />
-          <ActionButton
             icon={<WandSparkles className="h-3.5 w-3.5" />}
-            label="一键优化"
+            label="优化简历"
             loading={processingAction === "optimize"}
             disabled={busy}
             featured
@@ -272,6 +306,13 @@ export function ResumePanel() {
             loading={processingAction === "interview"}
             disabled={busy}
             onClick={() => runAction("interview")}
+          />
+          <ActionButton
+            icon={<Globe2 className="h-3.5 w-3.5" />}
+            label="历史面经"
+            loading={processingAction === "history"}
+            disabled={busy}
+            onClick={() => runAction("history")}
           />
         </div>
       </section>
@@ -285,6 +326,10 @@ export function ResumePanel() {
               </h4>
               <p className="text-[8px] text-white/40">
                 {result.provider} · {result.model}
+                {result.version ? ` · v${result.version}` : ""}
+                {result.creditsCharged
+                  ? ` · ${result.creditsCharged} 积分`
+                  : ""}
               </p>
             </div>
             <div className="flex gap-1">
@@ -309,6 +354,27 @@ export function ResumePanel() {
           <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words p-3 font-sans text-[10px] leading-relaxed text-white/85">
             {result.content}
           </pre>
+        </section>
+      )}
+
+      {history.length > 0 && (
+        <section className="mt-4 space-y-2">
+          <h4 className="text-[11px] font-medium">本地历史版本</h4>
+          <div className="grid grid-cols-2 gap-1.5">
+            {history.slice(0, 10).map((item, index) => (
+              <button
+                key={item.id || `${item.action}-${item.version}-${index}`}
+                type="button"
+                onClick={() => setResult(item)}
+                className="rounded bg-white/[0.06] p-2 text-left text-[9px] ring-1 ring-white/10 hover:bg-white/10"
+              >
+                {ACTION_LABELS[item.action]} · v{item.version || 1}
+                <span className="mt-1 block truncate text-white/35">
+                  {[item.company, item.role].filter(Boolean).join(" · ")}
+                </span>
+              </button>
+            ))}
+          </div>
         </section>
       )}
 

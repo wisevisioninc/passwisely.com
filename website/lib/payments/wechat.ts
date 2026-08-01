@@ -5,6 +5,38 @@ function randomNonce(): string {
   return crypto.randomUUID().replaceAll("-", "");
 }
 
+async function verifyWechatPayMessage(
+  body: string,
+  headers: Headers,
+): Promise<void> {
+  const config = getWechatPayConfig();
+  const timestamp = headers.get("wechatpay-timestamp") || "";
+  const nonce = headers.get("wechatpay-nonce") || "";
+  const serial = headers.get("wechatpay-serial") || "";
+  const signature = headers.get("wechatpay-signature") || "";
+  if (
+    !timestamp ||
+    !nonce ||
+    !signature ||
+    serial !== config.wechatPayPublicKeyId
+  ) {
+    throw new Error("Invalid WeChat Pay signature headers.");
+  }
+  const timestampSeconds = Number(timestamp);
+  if (
+    !Number.isFinite(timestampSeconds) ||
+    Math.abs(Date.now() / 1000 - timestampSeconds) > 300
+  ) {
+    throw new Error("Expired WeChat Pay signature.");
+  }
+  const valid = await rsaSha256Verify(
+    `${timestamp}\n${nonce}\n${body}\n`,
+    signature,
+    config.wechatPayPublicKey,
+  );
+  if (!valid) throw new Error("Invalid WeChat Pay signature.");
+}
+
 export async function createWechatNativePayment(input: {
   origin: string;
   merchantOrderNo: string;
@@ -38,15 +70,22 @@ export async function createWechatNativePayment(input: {
       authorization,
       "content-type": "application/json",
       "user-agent": "PassWisely/1.0",
+      "wechatpay-serial": config.wechatPayPublicKeyId,
     },
     body,
   });
-  const payload = (await response.json()) as {
+  const responseBody = await response.text();
+  await verifyWechatPayMessage(responseBody, response.headers);
+  const payload = JSON.parse(responseBody) as {
     code_url?: string;
+    code?: string;
     message?: string;
   };
   if (!response.ok || !payload.code_url) {
-    throw new Error(payload.message || "Could not create WeChat Pay order.");
+    throw new Error(
+      [payload.code, payload.message].filter(Boolean).join(": ") ||
+        "Could not create WeChat Pay order.",
+    );
   }
   return { codeUrl: payload.code_url };
 }
@@ -56,22 +95,7 @@ export async function verifyAndDecryptWechatNotification(
   headers: Headers,
 ): Promise<Record<string, unknown>> {
   const config = getWechatPayConfig();
-  const timestamp = headers.get("wechatpay-timestamp") || "";
-  const nonce = headers.get("wechatpay-nonce") || "";
-  const serial = headers.get("wechatpay-serial") || "";
-  const signature = headers.get("wechatpay-signature") || "";
-  if (!timestamp || !nonce || !signature || serial !== config.platformSerialNo) {
-    throw new Error("Invalid WeChat Pay callback headers.");
-  }
-  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) {
-    throw new Error("Expired WeChat Pay callback.");
-  }
-  const valid = await rsaSha256Verify(
-    `${timestamp}\n${nonce}\n${body}\n`,
-    signature,
-    config.platformPublicKey,
-  );
-  if (!valid) throw new Error("Invalid WeChat Pay callback signature.");
+  await verifyWechatPayMessage(body, headers);
   const event = JSON.parse(body) as {
     resource?: {
       ciphertext?: string;

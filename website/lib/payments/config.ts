@@ -12,6 +12,14 @@ export function requiredEnv(name: string): string {
   return value.replaceAll("\\n", "\n");
 }
 
+function requiredOneOf(...names: string[]): string {
+  for (const name of names) {
+    const value = paymentEnv()[name]?.trim();
+    if (value) return value.replaceAll("\\n", "\n");
+  }
+  throw new Error(`Payment configuration is missing: ${names.join(" or ")}`);
+}
+
 export function optionalEnv(name: string, fallback: string): string {
   return paymentEnv()[name]?.trim() || fallback;
 }
@@ -32,12 +40,24 @@ export function getAlipayConfig() {
 
 export function getWechatPayConfig() {
   return {
-    appId: requiredEnv("WECHAT_PAY_APP_ID"),
-    mchId: requiredEnv("WECHAT_PAY_MCH_ID"),
-    merchantSerialNo: requiredEnv("WECHAT_PAY_MCH_SERIAL_NO"),
-    merchantPrivateKey: requiredEnv("WECHAT_PAY_PRIVATE_KEY"),
-    apiV3Key: requiredEnv("WECHAT_PAY_API_V3_KEY"),
-    platformSerialNo: requiredEnv("WECHAT_PAY_PLATFORM_SERIAL_NO"),
-    platformPublicKey: requiredEnv("WECHAT_PAY_PLATFORM_PUBLIC_KEY"),
+    appId: requiredOneOf("WECHAT_PAY_APP_ID", "WECHAT_APP_ID"),
+    mchId: requiredOneOf("WECHAT_PAY_MCH_ID", "WECHAT_MCH_ID"),
+    merchantSerialNo: requiredOneOf(
+      "WECHAT_PAY_MCH_SERIAL_NO",
+      "WECHAT_MCH_SERIAL_NO",
+    ),
+    merchantPrivateKey: requiredOneOf(
+      "WECHAT_PAY_PRIVATE_KEY",
+      "WECHAT_MERCHANT_PRIVATE_KEY",
+    ),
+    apiV3Key: requiredOneOf("WECHAT_PAY_API_V3_KEY", "WECHAT_APIV3_KEY"),
+    wechatPayPublicKeyId: requiredOneOf(
+      "WECHAT_PAY_PUBLIC_KEY_ID",
+      "WECHAT_PUB_KEY_ID",
+    ),
+    wechatPayPublicKey: requiredOneOf(
+      "WECHAT_PAY_PUBLIC_KEY",
+      "WECHAT_PUB_KEY",
+    ),
   };
 }

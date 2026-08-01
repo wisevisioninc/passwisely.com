@@ -146,10 +146,16 @@ export const AISettings: React.FC = () => {
         <span className="text-[12px] font-medium">AI provider</span>
         <span
           className={`text-[10px] ${
-            activeProvider.hasApiKey ? "text-green-300" : "text-amber-300"
+            activeProvider.hasApiKey || activeProvider.route === "wise"
+              ? "text-green-300"
+              : "text-amber-300"
           }`}
         >
-          {activeProvider.hasApiKey ? "Configured" : "Key required"}
+          {activeProvider.hasApiKey
+            ? "自有 Key"
+            : activeProvider.route === "wise"
+              ? "Wise 默认 Key（扣积分）"
+              : "需要 API Key"}
         </span>
       </div>
 
@@ -226,7 +232,7 @@ export const AISettings: React.FC = () => {
         </datalist>
       </div>
 
-      <div>
+      {activeProvider.route === "direct" && <div>
         <div className="mb-1 flex items-center justify-between">
           <label className="text-[9px] text-white/50">OpenAI-compatible Base URL</label>
           {activeProvider.baseUrl !== defaultDefinition.defaultBaseUrl && (
@@ -252,7 +258,7 @@ export const AISettings: React.FC = () => {
           spellCheck={false}
           className="w-full rounded bg-white/10 px-2 py-1.5 text-[10px] outline-none focus:ring-1 focus:ring-blue-400/70"
         />
-      </div>
+      </div>}
 
       <label className="flex cursor-pointer items-start gap-2 rounded bg-white/5 px-2 py-1.5">
         <input
@@ -297,8 +303,13 @@ export const AISettings: React.FC = () => {
           " This provider uses prompt-based JSON output compatibility."}
       </p>
       <p className="text-[9px] leading-relaxed text-white/40">
-        Model IDs and endpoints are editable for new models, private gateways,
-        and deployment-specific IDs such as Volcengine Ark endpoints.
+        {activeProvider.route === "wise"
+          ? settings.provider === "kimi"
+            ? "未配置 Kimi Key，当前通过 Wise 使用 Kimi K3 默认 Key；按请求的最大输入/输出 token 预算扣除积分。"
+            : activeProvider.hasApiKey
+            ? "国外模型由 Wise 服务中转；当前使用你的 API Key，不扣积分。"
+            : "国外模型由 Wise 服务中转；未配置 API Key 时使用服务端默认 Key，并按次扣除积分。"
+          : "国内模型从桌面端直连厂商，请配置对应 API Key。"}
       </p>
     </div>
   );

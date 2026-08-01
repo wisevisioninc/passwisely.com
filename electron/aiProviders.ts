@@ -1,10 +1,9 @@
 export const AI_PROVIDER_IDS = [
-  "openai",
-  "deepseek",
   "kimi",
-  "doubao",
-  "qwen",
   "glm",
+  "qwen",
+  "seed",
+  "openai",
   "gemini",
   "anthropic",
 ] as const;
@@ -29,6 +28,8 @@ export interface AiProviderDefinition {
   supportsJsonMode: boolean;
   apiKeyPlaceholder: string;
   models: AiModelPreset[];
+  route: "direct" | "wise";
+  defaultKeyViaWise?: boolean;
 }
 
 export interface AiRuntimeConfig {
@@ -40,12 +41,15 @@ export interface AiRuntimeConfig {
   supportsVision: boolean;
   supportsJsonMode: boolean;
   responseLanguage: ResponseLanguage;
+  route: "direct" | "wise";
+  usesWiseDefaultKey: boolean;
+  wiseAccessToken?: string;
 }
 
 export const AI_PROVIDERS: AiProviderDefinition[] = [
   {
     id: "openai",
-    label: "OpenAI",
+    label: "ChatGPT",
     defaultBaseUrl: "https://api.openai.com/v1",
     defaultModel: "gpt-4o-mini",
     defaultSupportsVision: true,
@@ -55,37 +59,22 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       { id: "gpt-4o-mini", label: "GPT-4o mini", supportsVision: true },
       { id: "gpt-4o", label: "GPT-4o", supportsVision: true },
     ],
-  },
-  {
-    id: "deepseek",
-    label: "DeepSeek",
-    defaultBaseUrl: "https://api.deepseek.com",
-    defaultModel: "deepseek-chat",
-    defaultSupportsVision: false,
-    supportsJsonMode: true,
-    apiKeyPlaceholder: "sk-...",
-    models: [
-      {
-        id: "deepseek-chat",
-        label: "DeepSeek Chat",
-        supportsVision: false,
-      },
-      {
-        id: "deepseek-reasoner",
-        label: "DeepSeek Reasoner",
-        supportsVision: false,
-      },
-    ],
+    route: "wise",
   },
   {
     id: "kimi",
     label: "Kimi / Moonshot",
     defaultBaseUrl: "https://api.moonshot.cn/v1",
-    defaultModel: "moonshot-v1-8k",
-    defaultSupportsVision: false,
+    defaultModel: "kimi-k3",
+    defaultSupportsVision: true,
     supportsJsonMode: true,
     apiKeyPlaceholder: "sk-...",
     models: [
+      {
+        id: "kimi-k3",
+        label: "Kimi K3 · 1M context",
+        supportsVision: true,
+      },
       {
         id: "moonshot-v1-8k",
         label: "Moonshot v1 8K",
@@ -103,10 +92,12 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       },
       { id: "kimi-k2.5", label: "Kimi K2.5", supportsVision: true },
     ],
+    route: "direct",
+    defaultKeyViaWise: true,
   },
   {
-    id: "doubao",
-    label: "Doubao / Volcengine Ark",
+    id: "seed",
+    label: "Seed / Volcano Engine",
     defaultBaseUrl: "https://ark.cn-beijing.volces.com/api/v3",
     defaultModel: "doubao-seed-1-6-250615",
     defaultSupportsVision: false,
@@ -124,20 +115,21 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
         supportsVision: true,
       },
     ],
+    route: "direct",
   },
   {
     id: "qwen",
     label: "Qwen / DashScope",
     defaultBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    defaultModel: "qwen-plus",
+    defaultModel: "qwen3.5-plus",
     defaultSupportsVision: false,
     supportsJsonMode: true,
     apiKeyPlaceholder: "sk-...",
     models: [
-      { id: "qwen-plus", label: "Qwen Plus", supportsVision: false },
-      { id: "qwen-max", label: "Qwen Max", supportsVision: false },
-      { id: "qwen-vl-plus", label: "Qwen VL Plus", supportsVision: true },
+      { id: "qwen3.5-plus", label: "Qwen 3.5 Plus", supportsVision: true },
+      { id: "qwen3.5-flash", label: "Qwen 3.5 Flash", supportsVision: true },
     ],
+    route: "direct",
   },
   {
     id: "glm",
@@ -152,6 +144,7 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       { id: "glm-4-air", label: "GLM-4 Air", supportsVision: false },
       { id: "glm-4v-plus", label: "GLM-4V Plus", supportsVision: true },
     ],
+    route: "direct",
   },
   {
     id: "gemini",
@@ -173,19 +166,20 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
         supportsVision: true,
       },
     ],
+    route: "wise",
   },
   {
     id: "anthropic",
     label: "Anthropic Claude",
     defaultBaseUrl: "https://api.anthropic.com/v1/",
-    defaultModel: "claude-sonnet-4-20250514",
+    defaultModel: "claude-opus-5",
     defaultSupportsVision: true,
     supportsJsonMode: false,
     apiKeyPlaceholder: "sk-ant-...",
     models: [
       {
-        id: "claude-sonnet-4-20250514",
-        label: "Claude Sonnet 4",
+        id: "claude-opus-5",
+        label: "Claude Opus 5",
         supportsVision: true,
       },
       {
@@ -194,6 +188,7 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
         supportsVision: true,
       },
     ],
+    route: "wise",
   },
 ];
 

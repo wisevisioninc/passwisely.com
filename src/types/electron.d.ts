@@ -3,6 +3,7 @@ import type {
   ResumeDocumentResponse,
   ResumeProcessResponse,
   ResumeRequest,
+  ResumeResult,
 } from "../../electron/resumeTypes"
 import type {
   PublicSettings,
@@ -118,6 +119,7 @@ export interface ElectronAPI {
   selectResumeFile: () => Promise<ResumeDocumentResponse>
   loadResumeUrl: (url: string) => Promise<ResumeDocumentResponse>
   processResume: (request: ResumeRequest) => Promise<ResumeProcessResponse>
+  getResumeHistory: () => Promise<ResumeResult[]>
   saveResumeResult: (input: {
     content: string
     suggestedName?: string

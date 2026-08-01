@@ -8,12 +8,14 @@ export interface ResumeDocument {
   characterCount: number;
 }
 
-export type ResumeAction = "review" | "optimize" | "interview";
+export type ResumeAction = "optimize" | "interview" | "history";
 
 export interface ResumeRequest {
   action: ResumeAction;
   resumeText: string;
   jobDescription?: string;
+  company?: string;
+  role?: string;
 }
 
 export interface ResumeResult {
@@ -21,6 +23,15 @@ export interface ResumeResult {
   content: string;
   provider: string;
   model: string;
+  id?: string;
+  version?: number;
+  creditsCharged?: number;
+  createdAt?: string;
+  company?: string;
+  role?: string;
+  sources?: Array<{ title: string; url: string }>;
+  resumeText?: string;
+  jobDescription?: string;
 }
 
 export interface ResumeDocumentResponse {

@@ -30,6 +30,8 @@ export class ProcessingHelper {
     supportsVision: true,
     supportsJsonMode: true,
     responseLanguage: "zh-CN",
+    route: "wise",
+    usesWiseDefaultKey: true,
   };
 
   // AbortControllers for API requests
@@ -64,8 +66,8 @@ export class ProcessingHelper {
    * Initialize the OpenAI client.
    */
   private initializeAIClient(): void {
-    const { apiKey, baseUrl, provider, providerLabel } = this.config;
-    if (!apiKey) {
+    const { apiKey, baseUrl, provider, providerLabel, route } = this.config;
+    if (!apiKey && route === "direct") {
       console.error(`${providerLabel} API key is not configured.`);
       // Optionally notify the user via the main window if available early
       const mainWindow = this.deps.getMainWindow();
@@ -80,12 +82,27 @@ export class ProcessingHelper {
     }
 
     try {
+      const wiseBaseUrl =
+        (process.env.PASSWISELY_API_URL?.replace(/\/api\/?$/, "") ||
+          "https://passwisely.com") + "/api/ai";
       this.openaiClient = new OpenAI({
-        apiKey,
-        baseURL: baseUrl,
+        apiKey: route === "wise" ? this.config.wiseAccessToken || "signed-out" : apiKey,
+        baseURL: route === "wise" ? wiseBaseUrl : baseUrl,
         defaultHeaders:
-          provider === "anthropic"
-            ? { "anthropic-version": "2023-06-01" }
+          route === "wise"
+            ? {
+                "x-wise-provider": provider,
+                ...(apiKey ? { "x-wise-provider-key": apiKey } : {}),
+              }
+            : undefined,
+        fetch:
+          route === "wise"
+            ? (async (input: RequestInfo | URL, init?: RequestInit) => {
+                const headers = new Headers(init?.headers);
+                const token = this.deps.getWiseAccessToken();
+                headers.set("authorization", `Bearer ${token || "signed-out"}`);
+                return fetch(input, { ...init, headers });
+              }) as typeof fetch
             : undefined,
         timeout: 60000, // 60 second timeout (adjust as needed)
         maxRetries: 1, // Retry once on transient errors
@@ -153,6 +170,10 @@ export class ProcessingHelper {
     action: string,
     eventName: string,
   ): Promise<{ success: boolean; error?: string }> {
+    // Wise performs the authoritative, atomic debit when its default key is
+    // used. Direct providers and BYOK requests are never charged.
+    if (!this.config.usesWiseDefaultKey) return { success: true };
+    if (this.config.route === "wise") return { success: true };
     const result = await this.deps.consumeCredits(action, randomUUID());
     const mainWindow = this.deps.getMainWindow();
     if (result.success) {
@@ -187,7 +208,7 @@ export class ProcessingHelper {
       };
     }
 
-    const action = request?.action;
+    const action = request?.action as "review" | "optimize" | "interview";
     const resumeText = request?.resumeText?.trim() || "";
     const jobDescription = request?.jobDescription?.trim() || "";
     if (!["review", "optimize", "interview"].includes(action)) {
@@ -273,7 +294,7 @@ export class ProcessingHelper {
       return {
         success: true,
         data: {
-          action,
+          action: action === "review" ? "optimize" : action,
           content,
           provider: this.config.providerLabel,
           model: this.config.model,

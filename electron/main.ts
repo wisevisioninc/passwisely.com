@@ -85,6 +85,7 @@ export interface IProcessingHelperDeps {
     action: string,
     requestId: string,
   ) => Promise<{ success: boolean; error?: string; credits?: number }>;
+  getWiseAccessToken: () => string;
 }
 
 export interface IShortcutsHelperDeps {
@@ -158,9 +159,13 @@ function initializeHelpers() {
         credits: result.user?.credits,
       };
     },
+    getWiseAccessToken: () => state.accountService!.getToken(),
     PROCESSING_EVENTS: state.PROCESSING_EVENTS,
   } as IProcessingHelperDeps);
-  state.processingHelper.configure(state.settingsStore.getRuntimeConfig());
+  state.processingHelper.configure({
+    ...state.settingsStore.getRuntimeConfig(),
+    wiseAccessToken: state.accountService.getToken(),
+  });
   state.shortcutsHelper = new ShortcutsHelper({
     getMainWindow,
     takeScreenshot,
@@ -763,6 +768,7 @@ function getAiSettings(): PublicSettings {
       supportsJsonMode: definition.supportsJsonMode,
       apiKeyPlaceholder: definition.apiKeyPlaceholder,
       models: definition.models,
+      route: definition.route,
     }));
     const openai = providers[0];
     return {
@@ -783,14 +789,20 @@ function getAiSettings(): PublicSettings {
 function saveAiSettings(input: SaveAiSettingsInput): PublicSettings {
   if (!state.settingsStore) throw new Error("Settings are not initialized");
   const settings = state.settingsStore.save(input);
-  state.processingHelper?.configure(state.settingsStore.getRuntimeConfig());
+  state.processingHelper?.configure({
+    ...state.settingsStore.getRuntimeConfig(),
+    wiseAccessToken: state.accountService?.getToken(),
+  });
   return settings;
 }
 
 function clearApiKey(provider?: AiProviderId): PublicSettings {
   if (!state.settingsStore) throw new Error("Settings are not initialized");
   const settings = state.settingsStore.clearApiKey(provider);
-  state.processingHelper?.configure(state.settingsStore.getRuntimeConfig());
+  state.processingHelper?.configure({
+    ...state.settingsStore.getRuntimeConfig(),
+    wiseAccessToken: state.accountService?.getToken(),
+  });
   return settings;
 }
 

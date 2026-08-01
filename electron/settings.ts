@@ -40,6 +40,7 @@ export interface PublicProviderSettings {
   supportsJsonMode: boolean;
   apiKeyPlaceholder: string;
   models: AiModelPreset[];
+  route: "direct" | "wise";
 }
 
 export interface PublicSettings {
@@ -65,9 +66,8 @@ export interface SaveAiSettingsInput {
 
 const ENV_PREFIXES: Record<AiProviderId, string[]> = {
   openai: ["OPENAI"],
-  deepseek: ["DEEPSEEK"],
   kimi: ["KIMI", "MOONSHOT"],
-  doubao: ["DOUBAO", "ARK"],
+  seed: ["SEED", "DOUBAO", "ARK"],
   qwen: ["QWEN", "DASHSCOPE"],
   glm: ["GLM", "ZHIPU"],
   gemini: ["GEMINI", "GOOGLE"],
@@ -264,21 +264,40 @@ export class SettingsStore {
       supportsVision: this.getSupportsVision(provider),
       supportsJsonMode: definition.supportsJsonMode,
       responseLanguage: this.getResponseLanguage(),
+      route:
+        definition.route === "wise" ||
+        (definition.defaultKeyViaWise && !this.getApiKey(provider))
+          ? "wise"
+          : "direct",
+      usesWiseDefaultKey:
+        (definition.route === "wise" || definition.defaultKeyViaWise === true) &&
+        !this.getApiKey(provider),
     };
   }
 
   private getPublicProvider(provider: AiProviderId): PublicProviderSettings {
     const definition = getAiProviderDefinition(provider);
+    const hasApiKey = Boolean(this.getApiKey(provider));
     return {
       id: provider,
       label: definition.label,
-      hasApiKey: Boolean(this.getApiKey(provider)),
+      hasApiKey,
       model: this.getModel(provider),
       baseUrl: this.getBaseUrl(provider),
       supportsVision: this.getSupportsVision(provider),
       supportsJsonMode: definition.supportsJsonMode,
       apiKeyPlaceholder: definition.apiKeyPlaceholder,
-      models: definition.models,
+      models:
+        definition.defaultKeyViaWise && !hasApiKey
+          ? definition.models.filter(
+              (model) => model.id === definition.defaultModel,
+            )
+          : definition.models,
+      route:
+        definition.route === "wise" ||
+        (definition.defaultKeyViaWise && !hasApiKey)
+          ? "wise"
+          : "direct",
     };
   }
 

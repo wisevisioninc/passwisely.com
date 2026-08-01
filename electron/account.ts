@@ -1,6 +1,11 @@
 import { app, safeStorage } from "electron";
 import fs from "node:fs";
 import path from "node:path";
+import type {
+  ResumeProcessResponse,
+  ResumeRequest,
+  ResumeResult,
+} from "./resumeTypes";
 
 export interface AccountUser {
   id: string;
@@ -26,6 +31,10 @@ export class AccountService {
     process.env.PASSWISELY_API_URL?.replace(/\/+$/, "") ||
     "https://passwisely.com/api";
   private readonly filePath = path.join(app.getPath("userData"), "account.json");
+  private readonly resumeHistoryPath = path.join(
+    app.getPath("userData"),
+    "resume-agent-history.json",
+  );
 
   private read(): StoredAccount {
     try {
@@ -44,7 +53,7 @@ export class AccountService {
     fs.chmodSync(this.filePath, 0o600);
   }
 
-  private getToken(): string {
+  public getToken(): string {
     const stored = this.read();
     if (stored.encryptedToken && safeStorage.isEncryptionAvailable()) {
       try {
@@ -168,6 +177,93 @@ export class AccountService {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Could not use credits.",
+      };
+    }
+  }
+
+  private readResumeHistory(): ResumeResult[] {
+    try {
+      const value = JSON.parse(fs.readFileSync(this.resumeHistoryPath, "utf8"));
+      return Array.isArray(value) ? value : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private async saveResumeHistory(result: ResumeResult): Promise<void> {
+    const history = [
+      result,
+      ...this.readResumeHistory().filter((item) => item.id !== result.id),
+    ].slice(0, 100);
+    await fs.promises.writeFile(
+      this.resumeHistoryPath,
+      JSON.stringify(history, null, 2),
+      { encoding: "utf8", mode: 0o600 },
+    );
+  }
+
+  public getLocalResumeHistory(): ResumeResult[] {
+    return this.readResumeHistory();
+  }
+
+  public async runResumeAgent(
+    input: ResumeRequest,
+  ): Promise<ResumeProcessResponse> {
+    const agent = {
+      optimize: "resume_opt_agent",
+      interview: "interview_question_agent",
+      history: "history_interview_agent",
+    }[input.action];
+    try {
+      const response = await this.request<{
+        run: {
+          id: string;
+          version: number;
+          result_content: string;
+          model: string;
+          credits_charged: number;
+          created_at: string;
+          company?: string;
+          role?: string;
+          sources?: Array<{ title: string; url: string }>;
+        };
+        credits: number;
+      }>(
+        "/resume/agents",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            agent,
+            resumeText: input.resumeText,
+            jobDescription: input.jobDescription,
+            company: input.company,
+            role: input.role,
+          }),
+        },
+        true,
+      );
+      const run = response.run;
+      const result: ResumeResult = {
+        action: input.action,
+        content: run.result_content,
+        provider: "Wise Agent",
+        model: run.model,
+        id: run.id,
+        version: run.version,
+        creditsCharged: run.credits_charged,
+        createdAt: run.created_at,
+        company: run.company,
+        role: run.role,
+        sources: run.sources || [],
+        resumeText: input.resumeText,
+        jobDescription: input.jobDescription,
+      };
+      await this.saveResumeHistory(result);
+      return { success: true, data: result };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Agent request failed.",
       };
     }
   }

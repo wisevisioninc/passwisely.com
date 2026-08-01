@@ -17,7 +17,12 @@ export default defineConfig({
             sourcemap: true,
             minify: false,
             rollupOptions: {
-              external: ["electron", "pdfjs-dist/legacy/build/pdf.mjs"]
+              external: [
+                "electron",
+                "pdfjs-dist/legacy/build/pdf.mjs",
+                "@grpc/grpc-js",
+                "@grpc/proto-loader"
+              ]
             }
           }
         }

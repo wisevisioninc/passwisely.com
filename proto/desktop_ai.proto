@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package passwisely.desktop.v1;
+
+service DesktopAI {
+  rpc Chat(ChatRequest) returns (ChatResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message ChatRequest {
+  string request_id = 1;
+  string provider = 2;
+  string model = 3;
+  string provider_api_key = 4;
+  repeated ChatMessage messages = 5;
+  uint32 max_tokens = 6;
+  double temperature = 7;
+  bool json_mode = 8;
+}
+
+message ChatMessage {
+  string role = 1;
+  repeated ContentPart parts = 2;
+}
+
+message ContentPart {
+  oneof value {
+    string text = 1;
+    Image image = 2;
+  }
+}
+
+message Image {
+  bytes data = 1;
+  string mime_type = 2;
+  string detail = 3;
+}
+
+message ChatResponse {
+  string id = 1;
+  string model = 2;
+  string content = 3;
+  string finish_reason = 4;
+  uint32 prompt_tokens = 5;
+  uint32 completion_tokens = 6;
+  uint32 total_tokens = 7;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string transport = 2;
+}

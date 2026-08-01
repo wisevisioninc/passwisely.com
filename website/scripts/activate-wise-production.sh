@@ -13,9 +13,11 @@ nginx_target="/etc/nginx/sites-available/passwisely.com"
 nginx_enabled="/etc/nginx/sites-enabled/passwisely.com"
 service_source="${website_root}/systemd/passwisely-web.service"
 service_target="/etc/systemd/system/passwisely-web.service"
+desktop_service_source="${repo_root}/desktop-api/systemd/passwisely-desktop-api.service"
+desktop_service_target="/etc/systemd/system/passwisely-desktop-api.service"
 pm2_bin="/usr/local/bin/pm2"
 
-for required_file in "${nginx_source}" "${service_source}" "${website_root}/dist/server/wrangler.json"; do
+for required_file in "${nginx_source}" "${service_source}" "${desktop_service_source}" "${repo_root}/proto/desktop_ai.proto" "${website_root}/dist/server/wrangler.json"; do
   if [[ ! -f "${required_file}" ]]; then
     echo "Missing required file: ${required_file}"
     exit 1
@@ -29,6 +31,7 @@ if [[ -e "${nginx_target}" ]] && ! cmp -s "${nginx_source}" "${nginx_target}"; t
 fi
 
 install -o root -g root -m 0644 "${service_source}" "${service_target}"
+install -o root -g root -m 0644 "${desktop_service_source}" "${desktop_service_target}"
 systemctl daemon-reload
 
 pm2_was_running=0
@@ -57,6 +60,19 @@ for attempt in {1..20}; do
   sleep 1
 done
 
+systemctl enable passwisely-desktop-api.service
+systemctl restart passwisely-desktop-api.service
+for attempt in {1..20}; do
+  if sudo -u jerry /home/jerry/.nvm/versions/node/v22.15.0/bin/node "${repo_root}/desktop-api/healthcheck.mjs" >/dev/null; then
+    break
+  fi
+  if [[ "${attempt}" -eq 20 ]]; then
+    systemctl status passwisely-desktop-api.service --no-pager
+    exit 1
+  fi
+  sleep 1
+done
+
 install -o root -g root -m 0644 "${nginx_source}" "${nginx_target}"
 ln -sfn "${nginx_target}" "${nginx_enabled}"
 nginx -t
@@ -69,6 +85,11 @@ certbot --nginx \
   --non-interactive \
   --agree-tos \
   --email chenyejin1991@gmail.com
+
+# gRPC requires HTTP/2 on the public TLS listener. Certbot creates these
+# directives, so upgrade them only after certificate provisioning.
+sed -i -E 's/listen 443 ssl;/listen 443 ssl http2;/' "${nginx_target}"
+sed -i -E 's/listen \[::\]:443 ssl ipv6only=on;/listen [::]:443 ssl http2 ipv6only=on;/' "${nginx_target}"
 
 nginx -t
 systemctl reload nginx

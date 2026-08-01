@@ -153,7 +153,10 @@ export async function POST(request: Request) {
   if (!apiKey) return jsonError("The Wise model key is not configured.", 503);
 
   if (!suppliedKey) {
-    const requestId = crypto.randomUUID();
+    const suppliedRequestId = request.headers.get("x-wise-request-id") || "";
+    const requestId = /^[a-zA-Z0-9_-]{16,80}$/.test(suppliedRequestId)
+      ? suppliedRequestId
+      : crypto.randomUUID();
     const cost =
       provider === "kimi" && model === "kimi-k3"
         ? kimiK3MaximumCredits(body)

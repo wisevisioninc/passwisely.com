@@ -12,6 +12,7 @@ import {
   ResumeRequest,
 } from "./resumeTypes";
 import { ScreenshotHelper } from "./ScreenshotHelper";
+import { WiseGrpcClient, WiseGrpcError } from "./WiseGrpcClient";
 import { IProcessingHelperDeps } from "./main"; // Assuming main.ts exports this
 
 // Load environment variables from .env file
@@ -21,6 +22,7 @@ export class ProcessingHelper {
   private deps: IProcessingHelperDeps;
   private screenshotHelper: ScreenshotHelper;
   private openaiClient: OpenAI | null = null;
+  private wiseGrpcClient: WiseGrpcClient | null = null;
   private config: AiRuntimeConfig = {
     provider: "openai",
     providerLabel: "OpenAI",
@@ -58,6 +60,8 @@ export class ProcessingHelper {
     this.currentExtraProcessingAbortController = null;
     this.currentInputTextAbortController = null;
     this.currentResumeAbortController = null;
+    this.wiseGrpcClient?.close();
+    this.wiseGrpcClient = null;
     this.config = config;
     this.initializeAIClient();
   }
@@ -107,8 +111,19 @@ export class ProcessingHelper {
         timeout: 60000, // 60 second timeout (adjust as needed)
         maxRetries: 1, // Retry once on transient errors
       });
+      if (route === "wise") {
+        try {
+          this.wiseGrpcClient = new WiseGrpcClient();
+        } catch (error) {
+          console.warn(
+            "The desktop gRPC channel is unavailable; HTTPS JSON fallback remains active.",
+            error,
+          );
+          this.wiseGrpcClient = null;
+        }
+      }
       console.log(
-        `${providerLabel} client initialized with model ${this.config.model}.`,
+        `${providerLabel} client initialized with model ${this.config.model} (${this.wiseGrpcClient ? "gRPC" : "HTTPS JSON"}).`,
       );
     } catch (error) {
       console.error(`Failed to initialize ${providerLabel} client:`, error);
@@ -124,9 +139,62 @@ export class ProcessingHelper {
     }
   }
 
+  private async createChatCompletion(
+    body: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+    signal: AbortSignal,
+  ): Promise<OpenAI.Chat.ChatCompletion> {
+    if (!this.openaiClient) {
+      throw new Error(`${this.config.providerLabel} client is not initialized.`);
+    }
+
+    const requestId = randomUUID();
+    if (this.config.route === "wise" && this.wiseGrpcClient) {
+      try {
+        return await this.wiseGrpcClient.chat(body, {
+          signal,
+          token: this.deps.getWiseAccessToken() || "signed-out",
+          provider: this.config.provider,
+          providerApiKey: this.config.apiKey || undefined,
+          requestId,
+        });
+      } catch (error) {
+        if (!WiseGrpcClient.isUnavailable(error)) throw error;
+        console.warn(
+          "PassWisely gRPC is unavailable; retrying this request through the HTTPS JSON compatibility route.",
+        );
+      }
+    }
+
+    return this.openaiClient.chat.completions.create(body, {
+      signal,
+      headers:
+        this.config.route === "wise"
+          ? { "x-wise-request-id": requestId }
+          : undefined,
+    });
+  }
+
   // --- Helper Function to Format API Errors ---
   private formatApiError(error: any): string {
-    if (error instanceof OpenAI.APIError) {
+    if (error instanceof WiseGrpcError) {
+      if (error.httpStatus === 401) {
+        return `${this.config.providerLabel} authentication failed. Please sign in again or check the API key.`;
+      }
+      if (error.httpStatus === 402) {
+        return this.config.responseLanguage === "zh-CN"
+          ? "账户积分不足，请购买积分后重试。"
+          : "Your credit balance is too low. Please add credits and try again.";
+      }
+      if (error.httpStatus === 413) {
+        return this.config.responseLanguage === "zh-CN"
+          ? "请求内容过大，请减少截图数量后重试。"
+          : "The request is too large. Please remove some screenshots and try again.";
+      }
+      if (error.httpStatus === 429) {
+        return `${this.config.providerLabel} rate limit or quota exceeded.`;
+      }
+      return `${this.config.providerLabel} error${error.httpStatus ? ` ${error.httpStatus}` : ""}: ${error.message}`;
+    } else if (error instanceof OpenAI.APIError) {
       console.error(`${this.config.providerLabel} API error:`, error);
       let message = `${this.config.providerLabel} error: ${error.status || "unknown"} ${error.name}.`;
       if (error.status === 401) {
@@ -323,7 +391,7 @@ export class ProcessingHelper {
     } as const;
 
     try {
-      const completion = await this.openaiClient.chat.completions.create(
+      const completion = await this.createChatCompletion(
         {
           model: this.config.model,
           messages: [
@@ -343,7 +411,7 @@ export class ProcessingHelper {
           temperature: action === "optimize" ? 0.25 : 0.2,
           max_tokens: 4000,
         },
-        { signal },
+        signal,
       );
       const content = completion.choices[0]?.message?.content?.trim();
       if (!content) {
@@ -402,7 +470,7 @@ export class ProcessingHelper {
       console.log(
         `Sending input text to ${this.config.providerLabel}/${this.config.model}...`,
       );
-      const completion = await this.openaiClient.chat.completions.create(
+      const completion = await this.createChatCompletion(
         {
           model: this.config.model,
           messages: [
@@ -432,7 +500,7 @@ export class ProcessingHelper {
             ? { response_format: { type: "json_object" as const } }
             : {}),
         },
-        { signal }, // Pass the abort signal
+        signal,
       );
 
       const fullResponse = completion.choices[0].message.content;
@@ -682,14 +750,14 @@ export class ProcessingHelper {
             ];
 
           const extractionCompletion =
-            await this.openaiClient.chat.completions.create(
+            await this.createChatCompletion(
               {
                 model: this.config.model,
                 messages: extractionMessages,
                 max_tokens: 2000, // Adjust as needed for expected text length
                 temperature: 0, // Low temp for precise OCR
               },
-              { signal },
+              signal,
             );
           problemText =
             extractionCompletion.choices[0].message.content?.trim() ?? "";
@@ -951,7 +1019,7 @@ Provide your solution in the following JSON format:
   ]
 }`;
 
-      const completion = await this.openaiClient.chat.completions.create(
+      const completion = await this.createChatCompletion(
         {
           model: this.config.model,
           messages: [
@@ -970,7 +1038,7 @@ Provide your solution in the following JSON format:
             ? { response_format: { type: "json_object" as const } }
             : {}),
         },
-        { signal },
+        signal,
       );
 
       const fullResponse = completion.choices[0].message.content;
@@ -1062,7 +1130,7 @@ Provide your response in the following JSON format:
         })),
       ];
 
-      const completion = await this.openaiClient.chat.completions.create(
+      const completion = await this.createChatCompletion(
         {
           model: this.config.model,
           messages: [
@@ -1081,7 +1149,7 @@ Provide your response in the following JSON format:
             ? { response_format: { type: "json_object" as const } }
             : {}),
         },
-        { signal },
+        signal,
       );
 
       const fullResponse = completion.choices[0].message.content;

@@ -12,10 +12,13 @@ const definition = protoLoader.loadSync(
 );
 const loaded = grpc.loadPackageDefinition(definition);
 const Client = loaded.passwisely.desktop.v1.DesktopAI;
-const client = new Client(
-  process.env.PASSWISELY_GRPC_HEALTH_URL || "127.0.0.1:3012",
-  grpc.credentials.createInsecure(),
-);
+const address =
+  process.env.PASSWISELY_GRPC_HEALTH_URL || "127.0.0.1:3012";
+const credentials =
+  process.env.PASSWISELY_GRPC_HEALTH_TLS === "1"
+    ? grpc.credentials.createSsl()
+    : grpc.credentials.createInsecure();
+const client = new Client(address, credentials);
 
 client.Health({}, { deadline: Date.now() + 5_000 }, (error, response) => {
   client.close();

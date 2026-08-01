@@ -168,7 +168,10 @@ export class ProcessingHelper {
    * interview screenshots unreadable. Five encoded images remain under the
    * 12 MB API ceiling even on high-resolution Retina displays.
    */
-  private prepareImageForModel(filePath: string): {
+  private prepareImageForModel(
+    filePath: string,
+    maxEncodedBytes: number,
+  ): {
     data: string;
     mimeType: "image/jpeg";
   } {
@@ -177,9 +180,8 @@ export class ProcessingHelper {
       throw new Error(`Unable to decode screenshot: ${filePath}`);
     }
 
-    const maxEncodedBytes = 1_400_000;
-    const maxEdges = [1920, 1600, 1280];
-    const qualities = [86, 76, 66];
+    const maxEdges = [1920, 1600, 1280, 1024, 800, 640, 512];
+    const qualities = [86, 76, 66, 56, 46, 36];
     const originalSize = source.getSize();
     let lastBuffer = source.toJPEG(66);
 
@@ -601,6 +603,11 @@ export class ProcessingHelper {
       }
 
       try {
+        // Keep the complete JSON request below Nginx's conservative 1 MB
+        // default as well as the larger production relay limit.
+        const imageByteBudget = Math.floor(
+          690_000 / Math.max(1, screenshotQueue.length),
+        );
         // Optimize screenshots before Base64 encoding so Retina captures do
         // not exceed the AI relay request limit.
         const imageObjects = await Promise.all(
@@ -610,7 +617,10 @@ export class ProcessingHelper {
               return null; // Skip missing files
             }
             try {
-              const { data, mimeType } = this.prepareImageForModel(filePath);
+              const { data, mimeType } = this.prepareImageForModel(
+                filePath,
+                imageByteBudget,
+              );
               // Basic check for valid base64 start
               if (!data || data.length < 10) {
                 console.warn(`Failed to read or empty file: ${filePath}`);
@@ -791,6 +801,9 @@ export class ProcessingHelper {
       });
 
       try {
+        const imageByteBudget = Math.floor(
+          690_000 / Math.max(1, extraScreenshotQueue.length),
+        );
         // Load only the *extra* screenshots
         const extraImageObjects = await Promise.all(
           extraScreenshotQueue.map(async (filePath) => {
@@ -799,7 +812,10 @@ export class ProcessingHelper {
               return null;
             }
             try {
-              const { data, mimeType } = this.prepareImageForModel(filePath);
+              const { data, mimeType } = this.prepareImageForModel(
+                filePath,
+                imageByteBudget,
+              );
               if (!data || data.length < 10) {
                 console.warn(`Failed to read or empty extra file: ${filePath}`);
                 return null;

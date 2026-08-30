@@ -46,6 +46,34 @@ try {
   assert.ok(userId);
   assert.equal(registration.payload.user.credits, 10);
 
+  const duplicateRegistration = await request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, locale: "zh", client: "desktop" }),
+  });
+  assert.equal(duplicateRegistration.response.status, 409);
+
+  const wrongPassword = await request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password: `Wrong${crypto.randomUUID()}A1`,
+      client: "desktop",
+    }),
+  });
+  assert.equal(wrongPassword.response.status, 401);
+  assert.equal(wrongPassword.payload.code, "invalid_password");
+
+  const missingEmail = await request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email: `missing-${suffix}@example.com`,
+      password,
+      client: "desktop",
+    }),
+  });
+  assert.equal(missingEmail.response.status, 401);
+  assert.equal(missingEmail.payload.code, "email_not_found");
+
   const initialAccount = await request("/account", {}, token);
   assert.equal(initialAccount.response.status, 200);
   assert.equal(initialAccount.payload.user.credits, 10);
@@ -124,6 +152,9 @@ try {
       success: true,
       registered: true,
       login: true,
+      duplicateRegistrationBlocked: true,
+      invalidPasswordDistinguished: true,
+      missingEmailDistinguished: true,
       welcomeCredits: 10,
       finalCredits: 0,
       duplicateDebitPrevented: true,

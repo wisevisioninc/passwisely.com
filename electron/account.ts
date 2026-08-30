@@ -19,6 +19,16 @@ export interface AccountResult {
   user?: AccountUser;
   token?: string;
   error?: string;
+  errorCode?: string;
+}
+
+class AccountRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+  ) {
+    super(message);
+  }
 }
 
 interface StoredAccount {
@@ -97,10 +107,14 @@ export class AccountService {
     });
     const payload = (await response.json().catch(() => ({}))) as T & {
       error?: string;
+      code?: string;
     };
     if (!response.ok) {
       if (response.status === 401) this.clear();
-      throw new Error(payload.error || `Account service error (${response.status}).`);
+      throw new AccountRequestError(
+        payload.error || `Account service error (${response.status}).`,
+        payload.code,
+      );
     }
     return payload;
   }
@@ -123,6 +137,8 @@ export class AccountService {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Account request failed.",
+        errorCode:
+          error instanceof AccountRequestError ? error.code : undefined,
       };
     }
   }
@@ -177,6 +193,7 @@ export class AccountService {
   }
 
   public async getAccount(): Promise<AccountResult> {
+    if (!this.getToken()) return { success: false };
     try {
       const result = await this.request<{ user: AccountUser }>(
         "/account",

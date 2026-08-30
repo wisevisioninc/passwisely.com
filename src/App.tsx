@@ -111,7 +111,11 @@ function App() {
     return (
       <div className="min-h-[320px] grid place-items-center bg-[#111018] text-white rounded-2xl border border-white/10">
         <div className="text-center">
-          <div className="w-9 h-9 mx-auto rounded-xl bg-violet-500 grid place-items-center font-serif italic">P</div>
+          <img
+            src="./logo512.png"
+            alt="PassWisely"
+            className="w-9 h-9 mx-auto rounded-xl"
+          />
           <p className="mt-4 text-xs text-white/50">Connecting to PassWisely…</p>
         </div>
       </div>

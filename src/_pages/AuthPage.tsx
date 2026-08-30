@@ -23,6 +23,16 @@ export default function AuthPage({
   const [busy, setBusy] = useState(false);
   const isZh = locale === "zh";
 
+  function loginErrorMessage(code?: string, fallback?: string): string {
+    if (code === "email_not_found") {
+      return isZh ? "账号邮箱不存在。" : "No account exists for this email.";
+    }
+    if (code === "invalid_password") {
+      return isZh ? "密码不正确。" : "The password is incorrect.";
+    }
+    return fallback || (isZh ? "操作失败，请重试。" : "Something went wrong.");
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -57,7 +67,12 @@ export default function AuthPage({
         : await window.electronAPI.accountRegister(input);
     setBusy(false);
     if (!result.success || !result.user) {
-      setError(result.error || (isZh ? "操作失败，请重试。" : "Something went wrong."));
+      setError(
+        mode === "login"
+          ? loginErrorMessage(result.errorCode, result.error)
+          : result.error ||
+              (isZh ? "操作失败，请重试。" : "Something went wrong."),
+      );
       return;
     }
     onAuthenticated(result.user);
@@ -67,23 +82,36 @@ export default function AuthPage({
     <div className="min-h-[520px] w-full bg-[#111018] text-white rounded-2xl overflow-hidden shadow-2xl border border-white/10">
       <div className="px-7 py-6 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-2.5 font-semibold tracking-tight">
-          <span className="grid place-items-center w-8 h-8 rounded-xl rounded-bl-sm bg-violet-500 font-serif italic">
-            P
-          </span>
+          <img
+            src="./logo512.png"
+            alt="PassWisely"
+            className="w-8 h-8 rounded-xl"
+          />
           PassWisely
         </div>
-        <div className="flex rounded-lg bg-white/5 p-1 text-[10px]">
+        <div className="flex items-center gap-2 text-[10px]">
+          <div className="flex rounded-lg bg-white/5 p-1">
+            <button
+              className={`px-2 py-1 rounded-md ${isZh ? "bg-white text-black" : "text-white/50"}`}
+              onClick={() => setLocale("zh")}
+            >
+              中
+            </button>
+            <button
+              className={`px-2 py-1 rounded-md ${!isZh ? "bg-white text-black" : "text-white/50"}`}
+              onClick={() => setLocale("en")}
+            >
+              EN
+            </button>
+          </div>
           <button
-            className={`px-2 py-1 rounded-md ${isZh ? "bg-white text-black" : "text-white/50"}`}
-            onClick={() => setLocale("zh")}
+            type="button"
+            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-2 text-white/55 hover:border-red-300/30 hover:bg-red-400/10 hover:text-red-200"
+            onClick={() => void window.electronAPI.quitApp()}
+            aria-label={isZh ? "退出程序" : "Quit application"}
           >
-            中
-          </button>
-          <button
-            className={`px-2 py-1 rounded-md ${!isZh ? "bg-white text-black" : "text-white/50"}`}
-            onClick={() => setLocale("en")}
-          >
-            EN
+            <span aria-hidden="true">⏻</span>
+            {isZh ? "退出" : "Quit"}
           </button>
         </div>
       </div>

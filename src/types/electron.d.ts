@@ -33,6 +33,7 @@ export interface ElectronAPI {
       credits: number
     }
     error?: string
+    errorCode?: string
   }>
   accountRegister: (input: {
     email: string
@@ -47,6 +48,7 @@ export interface ElectronAPI {
       credits: number
     }
     error?: string
+    errorCode?: string
   }>
   accountForgotPassword: (email: string) => Promise<{
     success: boolean
@@ -60,6 +62,7 @@ export interface ElectronAPI {
     error?: string
   }>
   accountLogout: () => Promise<{ success: boolean }>
+  quitApp: () => Promise<{ success: boolean }>
   accountOpenPortal: () => Promise<void>
   openSubscriptionPortal: (authData: {
     id: string

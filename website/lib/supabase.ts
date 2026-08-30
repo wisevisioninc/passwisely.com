@@ -196,6 +196,17 @@ export async function getProfile(userId: string): Promise<ProfileRow | null> {
   return rows[0] || null;
 }
 
+export async function findProfileByEmail(
+  email: string,
+): Promise<ProfileRow | null> {
+  const rows = await request<ProfileRow[]>(
+    `/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=id,email,locale,credits,created_at,updated_at&limit=1`,
+    { method: "GET" },
+    { admin: true },
+  );
+  return rows[0] || null;
+}
+
 export async function upsertProfile(input: {
   id: string;
   email: string;

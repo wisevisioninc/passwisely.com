@@ -32,6 +32,7 @@ interface ElectronAPI {
     newPassword: string;
   }) => Promise<{ success: boolean; error?: string }>;
   accountLogout: () => Promise<{ success: boolean }>;
+  quitApp: () => Promise<{ success: boolean }>;
   accountOpenPortal: () => Promise<void>;
   openSubscriptionPortal: (authData: {
     id: string;
@@ -150,6 +151,7 @@ const electronAPI = {
     newPassword: string;
   }) => ipcRenderer.invoke("account-change-password", input),
   accountLogout: () => ipcRenderer.invoke("account-logout"),
+  quitApp: () => ipcRenderer.invoke("quit-app"),
   accountOpenPortal: () => ipcRenderer.invoke("account-open-portal"),
   openSubscriptionPortal: async (authData: { id: string; email: string }) => {
     return ipcRenderer.invoke("open-subscription-portal", authData);

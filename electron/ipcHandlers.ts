@@ -1,6 +1,6 @@
 // ipcHandlers.ts
 
-import { dialog, ipcMain, shell } from "electron";
+import { app, dialog, ipcMain, shell } from "electron";
 import { randomBytes } from "crypto";
 import fs from "node:fs";
 import { AiProviderId } from "./aiProviders";
@@ -44,6 +44,10 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
   );
   ipcMain.handle("account-logout", () => {
     deps.accountService.clear();
+    return { success: true };
+  });
+  ipcMain.handle("quit-app", () => {
+    app.quit();
     return { success: true };
   });
   ipcMain.handle("account-open-portal", () =>

@@ -145,8 +145,14 @@ export async function getCurrentUser(): Promise<AccountUser | null> {
   }
 }
 
-export function jsonError(message: string, status: number): Response {
-  return Response.json({ error: message }, { status });
+export function jsonError(
+  message: string,
+  status: number,
+  code?: string,
+): Response {
+  return Response.json(code ? { error: message, code } : { error: message }, {
+    status,
+  });
 }
 
 export function getBearerToken(request: Request): string {

@@ -9,6 +9,7 @@ import {
   adminRest,
   createConfirmedUser,
   findAuthUserByEmail,
+  findProfileByEmail,
   getProfile,
   signInWithPassword,
   updateAuthUserPassword,
@@ -154,23 +155,43 @@ export async function POST(request: Request) {
   try {
     session = await signInWithPassword(email, password);
   } catch {
-    const legacy = await getD1()
-      .prepare(
-        `SELECT id, email, locale, credits, password_hash, password_salt
-         FROM users WHERE email = ?`,
-      )
-      .bind(email)
-      .first<LegacyLoginRow>();
-    if (
-      !legacy ||
-      !(await verifyLegacyPassword(password, legacy.password_hash, legacy.password_salt))
-    ) {
-      return jsonError("Email or password is incorrect.", 401);
-    }
+    let legacy: LegacyLoginRow | null;
     try {
-      session = await migrateLegacyUser(legacy, password);
+      legacy = await getD1()
+        .prepare(
+          `SELECT id, email, locale, credits, password_hash, password_salt
+           FROM users WHERE email = ?`,
+        )
+        .bind(email)
+        .first<LegacyLoginRow>();
     } catch {
-      return jsonError("Could not migrate this account. Please try again.", 503);
+      return jsonError("Account service is temporarily unavailable.", 503);
+    }
+    if (legacy) {
+      if (
+        !(await verifyLegacyPassword(
+          password,
+          legacy.password_hash,
+          legacy.password_salt,
+        ))
+      ) {
+        return jsonError("Password is incorrect.", 401, "invalid_password");
+      }
+      try {
+        session = await migrateLegacyUser(legacy, password);
+      } catch {
+        return jsonError("Could not migrate this account. Please try again.", 503);
+      }
+    } else {
+      let profile;
+      try {
+        profile = await findProfileByEmail(email);
+      } catch {
+        return jsonError("Account service is temporarily unavailable.", 503);
+      }
+      return profile
+        ? jsonError("Password is incorrect.", 401, "invalid_password")
+        : jsonError("Account email does not exist.", 401, "email_not_found");
     }
   }
 

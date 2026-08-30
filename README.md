@@ -98,6 +98,27 @@ APPLE_ID=... APPLE_APP_SPECIFIC_PASSWORD=... APPLE_TEAM_ID=... \
 
 Automatic updates are disabled unless `PASSWISELY_UPDATE_URL` points to a generic electron-updater feed.
 
+### Required production release closure
+
+Every user-facing desktop change must complete the entire release chain before
+it is considered finished:
+
+1. Run desktop, website, and live account regression tests.
+2. Increment the desktop version; never overwrite an existing release path.
+3. Build the Windows x64 installer and both macOS architectures.
+4. Sign macOS artifacts with Developer ID, notarize them, staple the Apple
+   tickets, and verify them with `codesign`, `spctl`, and `stapler`.
+5. Upload the three installers to
+   `oss://passwisely-releases-prod/releases/<version>/` and set only those
+   installer objects to `public-read`.
+6. Update both the application download route and the Nginx fallback redirects
+   to the new immutable OSS version path.
+7. Synchronize local, GitHub, and wise, deploy the website, then verify each
+   public download URL, checksum, size, and installer signature.
+
+A source change without the packaged artifacts, OSS upload, download mapping,
+and production verification is not a completed PassWisely release.
+
 ## Security notes
 
 - Renderer isolation is enabled and Node integration is disabled.

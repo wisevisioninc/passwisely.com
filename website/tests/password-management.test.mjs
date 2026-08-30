@@ -34,12 +34,24 @@ test("website and desktop expose forgot and change password controls", async () 
 });
 
 test("desktop login uses the app icon, precise errors, and a quit control", async () => {
-  const [site, preload, handlers, login, accountService] = await Promise.all([
+  const [
+    site,
+    preload,
+    handlers,
+    login,
+    accountService,
+    loginLogo,
+    packagedAppIcon,
+  ] = await Promise.all([
     read("../../src/_pages/AuthPage.tsx"),
     read("../../electron/preload.ts"),
     read("../../electron/ipcHandlers.ts"),
     read("../app/api/auth/login/route.ts"),
     read("../../electron/account.ts"),
+    readFile(new URL("../../public/logo512.png", import.meta.url)),
+    readFile(
+      new URL("../../assets/icons/png/icon-512x512.png", import.meta.url),
+    ),
   ]);
   assert.match(site, /src="\.\/logo512\.png"/);
   assert.doesNotMatch(site, />\s*P\s*</);
@@ -54,4 +66,5 @@ test("desktop login uses the app icon, precise errors, and a quit control", asyn
     accountService,
     /if \(!this\.getToken\(\)\) return \{ success: false \}/,
   );
+  assert.deepEqual(loginLogo, packagedAppIcon);
 });

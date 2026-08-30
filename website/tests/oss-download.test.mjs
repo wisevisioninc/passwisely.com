@@ -18,7 +18,7 @@ test("desktop downloads redirect only to the three public OSS release objects", 
     assert.match(nginx, new RegExp(filename.replaceAll(".", "\\.")));
   }
   assert.match(route, /passwisely-releases-prod\.oss-cn-beijing\.aliyuncs\.com/);
-  assert.match(route, /releases\/v1\.2\.0/);
+  assert.match(route, /releases\/v1\.2\.1/);
   assert.doesNotMatch(route, /AccessKey|R2Bucket/);
   assert.doesNotMatch(nginx, /alias \/home\/jerry\/codebase\/passwisely\/release/);
 });

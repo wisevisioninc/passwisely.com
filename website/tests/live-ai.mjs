@@ -90,7 +90,7 @@ try {
   const account = await api("/account", {}, token);
   assert.equal(account.response.status, 200);
   assert.equal(account.payload.user.credits, 9);
-  assert.equal(account.payload.transactions[0].type, "debit");
+  assert.equal(account.payload.transactions[0].type, "ai_kimi");
 
   console.log(
     JSON.stringify({

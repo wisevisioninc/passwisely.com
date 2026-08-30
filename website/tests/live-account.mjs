@@ -6,6 +6,7 @@ const apiBase = (
 const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 const email = `supabase-e2e-${suffix}@example.com`;
 const password = `Pw${crypto.randomUUID()}A1`;
+const newPassword = `New${crypto.randomUUID()}B2`;
 let userId = "";
 
 async function request(path, init = {}, token = "") {
@@ -80,6 +81,44 @@ try {
   assert.equal(initialAccount.payload.transactions.length, 1);
   assert.equal(initialAccount.payload.transactions[0].type, "welcome");
 
+  const rejectedPasswordChange = await request(
+    "/auth/change-password",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        currentPassword: `Wrong${crypto.randomUUID()}A1`,
+        newPassword,
+      }),
+    },
+    token,
+  );
+  assert.equal(rejectedPasswordChange.response.status, 400);
+
+  const passwordChange = await request(
+    "/auth/change-password",
+    {
+      method: "POST",
+      body: JSON.stringify({ currentPassword: password, newPassword }),
+    },
+    token,
+  );
+  assert.equal(passwordChange.response.status, 200);
+  assert.equal(passwordChange.payload.success, true);
+
+  const oldPasswordLogin = await request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password, client: "desktop" }),
+  });
+  assert.equal(oldPasswordLogin.response.status, 401);
+  assert.equal(oldPasswordLogin.payload.code, "invalid_password");
+
+  const newPasswordLogin = await request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password: newPassword, client: "desktop" }),
+  });
+  assert.equal(newPasswordLogin.response.status, 200);
+  assert.ok(newPasswordLogin.payload.token);
+
   const requestId = `e2e_${crypto.randomUUID().replaceAll("-", "")}`;
   const firstDebit = await request(
     "/credits/consume",
@@ -136,7 +175,7 @@ try {
 
   const login = await request("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password, client: "desktop" }),
+    body: JSON.stringify({ email, password: newPassword, client: "desktop" }),
   });
   assert.equal(login.response.status, 200);
   assert.ok(login.payload.token);
@@ -155,6 +194,9 @@ try {
       duplicateRegistrationBlocked: true,
       invalidPasswordDistinguished: true,
       missingEmailDistinguished: true,
+      passwordChanged: true,
+      oldPasswordRejected: true,
+      newPasswordAccepted: true,
       welcomeCredits: 10,
       finalCredits: 0,
       duplicateDebitPrevented: true,

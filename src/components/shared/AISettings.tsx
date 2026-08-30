@@ -87,6 +87,20 @@ export const AISettings: React.FC = () => {
 
   const save = async () => {
     if (!settings || !activeProvider) return;
+    if (
+      !activeProvider.hasApiKey &&
+      !activeProvider.usesWiseDefaultKey &&
+      !apiKey.trim()
+    ) {
+      showToast(
+        "需要 API Key",
+        settings.provider === "openai"
+          ? "ChatGPT 需要有可用额度的个人 OpenAI API Key；也可以切换到 Kimi。"
+          : `请先填写 ${activeProvider.label} API Key。`,
+        "error",
+      );
+      return;
+    }
     setSaving(true);
     try {
       const result = await window.electronAPI.saveAiSettings({
@@ -146,14 +160,14 @@ export const AISettings: React.FC = () => {
         <span className="text-[12px] font-medium">AI provider</span>
         <span
           className={`text-[10px] ${
-            activeProvider.hasApiKey || activeProvider.route === "wise"
+            activeProvider.hasApiKey || activeProvider.usesWiseDefaultKey
               ? "text-green-300"
               : "text-amber-300"
           }`}
         >
           {activeProvider.hasApiKey
             ? "自有 Key"
-            : activeProvider.route === "wise"
+            : activeProvider.usesWiseDefaultKey
               ? "Wise 默认 Key（扣积分）"
               : "需要 API Key"}
         </span>
@@ -304,11 +318,11 @@ export const AISettings: React.FC = () => {
       </p>
       <p className="text-[9px] leading-relaxed text-white/40">
         {activeProvider.route === "wise"
-          ? settings.provider === "kimi"
+          ? activeProvider.usesWiseDefaultKey
             ? "未配置 Kimi Key，当前通过 Wise 使用 Kimi K3 默认 Key；按请求的最大输入/输出 token 预算扣除积分。"
             : activeProvider.hasApiKey
             ? "国外模型由 Wise 服务中转；当前使用你的 API Key，不扣积分。"
-            : "国外模型由 Wise 服务中转；未配置 API Key 时使用服务端默认 Key，并按次扣除积分。"
+            : "该模型通过 Wise 服务中转，但需要配置你自己的 API Key；Wise 不提供共享 Key。"
           : "国内模型从桌面端直连厂商，请配置对应 API Key。"}
       </p>
     </div>

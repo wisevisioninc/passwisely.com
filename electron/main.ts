@@ -767,18 +767,24 @@ function getAiSettings(): PublicSettings {
       supportsVision: definition.defaultSupportsVision,
       supportsJsonMode: definition.supportsJsonMode,
       apiKeyPlaceholder: definition.apiKeyPlaceholder,
-      models: definition.models,
-      route: definition.route,
+      models: definition.defaultKeyViaWise
+        ? definition.models.filter(
+            (model) => model.id === definition.defaultModel,
+          )
+        : definition.models,
+      route: definition.defaultKeyViaWise ? "wise" : definition.route,
+      usesWiseDefaultKey: definition.defaultKeyViaWise === true,
     }));
-    const openai = providers[0];
+    const kimi =
+      providers.find((provider) => provider.id === "kimi") || providers[0];
     return {
-      provider: "openai",
+      provider: "kimi",
       responseLanguage: "zh-CN",
       hasApiKey: false,
-      model: openai.model,
-      baseUrl: openai.baseUrl,
-      supportsVision: openai.supportsVision,
-      supportsJsonMode: openai.supportsJsonMode,
+      model: kimi.model,
+      baseUrl: kimi.baseUrl,
+      supportsVision: kimi.supportsVision,
+      supportsJsonMode: kimi.supportsJsonMode,
       storageSecure: false,
       providers,
     };

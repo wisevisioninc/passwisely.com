@@ -180,10 +180,18 @@ export async function POST(request: Request) {
     headers.set("authorization", `Bearer ${apiKey}`);
   }
 
+  // Kimi K3 currently accepts temperature=1 only. Desktop actions use lower
+  // temperatures for other providers, so normalize K3 requests at the relay.
+  const upstreamBody =
+    provider === "kimi" && model === "kimi-k3"
+      ? { ...body, temperature: 1 }
+      : body;
   const upstream = await fetch(definition.origin, {
     method: "POST",
     headers,
-    body: JSON.stringify(provider === "anthropic" ? toAnthropic(body) : body),
+    body: JSON.stringify(
+      provider === "anthropic" ? toAnthropic(body) : upstreamBody,
+    ),
     signal: AbortSignal.timeout(90_000),
   }).catch(() => null);
   if (!upstream) return jsonError("Model provider is unavailable.", 502);

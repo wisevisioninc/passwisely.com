@@ -24,11 +24,11 @@ export class ProcessingHelper {
   private openaiClient: OpenAI | null = null;
   private wiseGrpcClient: WiseGrpcClient | null = null;
   private config: AiRuntimeConfig = {
-    provider: "openai",
-    providerLabel: "OpenAI",
+    provider: "kimi",
+    providerLabel: "Kimi / Moonshot",
     apiKey: "",
-    model: "gpt-4o-mini",
-    baseUrl: "https://api.openai.com/v1",
+    model: "kimi-k3",
+    baseUrl: "https://api.moonshot.cn/v1",
     supportsVision: true,
     supportsJsonMode: true,
     responseLanguage: "zh-CN",
@@ -70,15 +70,26 @@ export class ProcessingHelper {
    * Initialize the OpenAI client.
    */
   private initializeAIClient(): void {
-    const { apiKey, baseUrl, provider, providerLabel, route } = this.config;
-    if (!apiKey && route === "direct") {
-      console.error(`${providerLabel} API key is not configured.`);
+    const {
+      apiKey,
+      baseUrl,
+      provider,
+      providerLabel,
+      route,
+      usesWiseDefaultKey,
+    } = this.config;
+    if (!apiKey && !usesWiseDefaultKey) {
+      const message =
+        provider === "openai"
+          ? "ChatGPT requires a personal OpenAI API key with available credit. Open AI Settings to add one, or switch to Kimi."
+          : `${providerLabel} API key is not configured. Open AI Settings to add one.`;
+      console.error(message);
       // Optionally notify the user via the main window if available early
       const mainWindow = this.deps.getMainWindow();
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send(
           this.deps.PROCESSING_EVENTS.API_KEY_INVALID,
-          `${providerLabel} API key is not configured. Open AI Settings to add one.`,
+          message,
         );
       }
       this.openaiClient = null;
@@ -192,6 +203,14 @@ export class ProcessingHelper {
       }
       if (error.httpStatus === 429) {
         return `${this.config.providerLabel} rate limit or quota exceeded.`;
+      }
+      if (
+        error.httpStatus === 503 &&
+        /key is not configured|provider key/i.test(error.message)
+      ) {
+        return this.config.responseLanguage === "zh-CN"
+          ? `${this.config.providerLabel} 服务未配置可用的 API Key。请在 AI 设置中填写个人 Key，或切换到 Kimi。`
+          : `${this.config.providerLabel} does not have an available API key. Add your personal key in AI Settings, or switch to Kimi.`;
       }
       return `${this.config.providerLabel} error${error.httpStatus ? ` ${error.httpStatus}` : ""}: ${error.message}`;
     } else if (error instanceof OpenAI.APIError) {

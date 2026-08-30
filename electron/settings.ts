@@ -41,6 +41,7 @@ export interface PublicProviderSettings {
   apiKeyPlaceholder: string;
   models: AiModelPreset[];
   route: "direct" | "wise";
+  usesWiseDefaultKey: boolean;
 }
 
 export interface PublicSettings {
@@ -184,7 +185,17 @@ export class SettingsStore {
     const environmentProvider = process.env.AI_PROVIDER?.trim().toLowerCase();
     if (isAiProviderId(environmentProvider)) return environmentProvider;
     const storedProvider = this.read().activeProvider;
-    return isAiProviderId(storedProvider) ? storedProvider : "openai";
+    if (isAiProviderId(storedProvider)) {
+      // ChatGPT is relayed through Wise for network compatibility, but Wise
+      // does not provide a shared OpenAI key. Keep existing installations
+      // functional by falling back to the included Kimi channel until the
+      // user saves a personal OpenAI key.
+      if (storedProvider === "openai" && !this.getApiKey("openai")) {
+        return "kimi";
+      }
+      return storedProvider;
+    }
+    return "kimi";
   }
 
   public getApiKey(provider = this.getActiveProvider()): string {
@@ -270,8 +281,7 @@ export class SettingsStore {
           ? "wise"
           : "direct",
       usesWiseDefaultKey:
-        (definition.route === "wise" || definition.defaultKeyViaWise === true) &&
-        !this.getApiKey(provider),
+        definition.defaultKeyViaWise === true && !this.getApiKey(provider),
     };
   }
 
@@ -298,6 +308,8 @@ export class SettingsStore {
         (definition.defaultKeyViaWise && !hasApiKey)
           ? "wise"
           : "direct",
+      usesWiseDefaultKey:
+        definition.defaultKeyViaWise === true && !hasApiKey,
     };
   }
 

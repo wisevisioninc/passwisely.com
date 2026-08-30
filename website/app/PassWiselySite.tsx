@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 type Locale = "zh" | "en";
-type AuthMode = "login" | "register";
+type AuthMode = "login" | "register" | "forgot" | "reset" | "change";
 type PackId = "starter" | "pro" | "max";
 type PaymentProvider = "alipay" | "wechat";
 
@@ -90,6 +90,18 @@ const copy = {
     submitRegister: "注册并领取 10 积分",
     switchRegister: "还没有账户？立即注册",
     switchLogin: "已有账户？直接登录",
+    forgotPassword: "忘记密码？",
+    forgotTitle: "找回密码",
+    forgotLead: "输入注册邮箱，我们会发送安全的重置链接。",
+    sendReset: "发送重置邮件",
+    resetSent: "如果该邮箱已注册，重置链接已发送，请检查收件箱和垃圾邮件。",
+    resetTitle: "设置新密码",
+    currentPassword: "当前密码",
+    newPassword: "新密码",
+    confirmPassword: "确认新密码",
+    changePassword: "修改密码",
+    passwordChanged: "密码已更新。",
+    passwordMismatch: "两次输入的新密码不一致。",
     close: "关闭",
     balance: "当前积分",
     history: "积分明细",
@@ -163,6 +175,18 @@ const copy = {
     submitRegister: "Create account + get 10 credits",
     switchRegister: "New to PassWisely? Create an account",
     switchLogin: "Already registered? Sign in",
+    forgotPassword: "Forgot password?",
+    forgotTitle: "Reset your password",
+    forgotLead: "Enter your account email and we’ll send a secure reset link.",
+    sendReset: "Send reset email",
+    resetSent: "If that email is registered, a reset link has been sent. Check your inbox and spam folder.",
+    resetTitle: "Choose a new password",
+    currentPassword: "Current password",
+    newPassword: "New password",
+    confirmPassword: "Confirm new password",
+    changePassword: "Change password",
+    passwordChanged: "Your password has been updated.",
+    passwordMismatch: "The new passwords do not match.",
     close: "Close",
     balance: "Credit balance",
     history: "Credit activity",
@@ -197,11 +221,22 @@ export function PassWiselySite() {
     url: string;
   } | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [recoveryToken, setRecoveryToken] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const t = copy[locale];
+  const authTitle =
+    authMode === "login"
+      ? t.authLogin
+      : authMode === "register"
+        ? t.authRegister
+        : authMode === "forgot"
+          ? t.forgotTitle
+          : authMode === "change"
+            ? t.changePassword
+            : t.resetTitle;
 
   useEffect(() => {
     const preferred = localStorage.getItem("pw_locale");
@@ -216,6 +251,21 @@ export function PassWiselySite() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("payment") === "success") {
       queueMicrotask(() => setNotice(copy[nextLocale].paymentSuccess));
+    }
+    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const resetToken = fragment.get("access_token") || "";
+    if (fragment.get("type") === "recovery" && resetToken) {
+      queueMicrotask(() => {
+        setRecoveryToken(resetToken);
+        setAuthMode("reset");
+        setAuthOpen(true);
+      });
+    } else if (params.get("reset") === "password") {
+      queueMicrotask(() => setNotice(
+        nextLocale === "zh"
+          ? "重置链接无效或已过期，请重新申请。"
+          : "The reset link is invalid or expired. Request a new one.",
+      ));
     }
   }, []);
 
@@ -281,6 +331,68 @@ export function PassWiselySite() {
     setAuthOpen(false);
     setAccountOpen(true);
     await refreshAccount();
+  }
+
+  async function requestPasswordReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setNotice("");
+    const form = new FormData(event.currentTarget);
+    const response = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: form.get("email") }),
+    });
+    const payload = (await response.json()) as { error?: string };
+    setBusy(false);
+    if (!response.ok) {
+      setNotice(payload.error || "Something went wrong.");
+      return;
+    }
+    setNotice(t.resetSent);
+    setAuthMode("login");
+  }
+
+  async function submitPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setNotice("");
+    const form = new FormData(event.currentTarget);
+    const newPassword = String(form.get("newPassword") || "");
+    if (newPassword !== String(form.get("confirmPassword") || "")) {
+      setBusy(false);
+      setNotice(t.passwordMismatch);
+      return;
+    }
+    const isRecovery = authMode === "reset";
+    const response = await fetch(
+      isRecovery ? "/api/auth/reset-password" : "/api/auth/change-password",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(isRecovery && recoveryToken
+            ? { authorization: `Bearer ${recoveryToken}` }
+            : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          currentPassword: form.get("currentPassword"),
+          password: newPassword,
+          newPassword,
+        }),
+      },
+    );
+    const payload = (await response.json()) as { error?: string };
+    setBusy(false);
+    if (!response.ok) {
+      setNotice(payload.error || "Something went wrong.");
+      return;
+    }
+    setRecoveryToken("");
+    window.history.replaceState({}, "", window.location.pathname);
+    setAuthOpen(false);
+    setNotice(t.passwordChanged);
   }
 
   async function logout() {
@@ -645,16 +757,39 @@ export function PassWiselySite() {
 
       {authOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setAuthOpen(false)}>
-          <section className="modal" role="dialog" aria-modal="true" aria-label={authMode === "login" ? t.authLogin : t.authRegister} onMouseDown={(event) => event.stopPropagation()}>
+          <section className="modal" role="dialog" aria-modal="true" aria-label={authTitle} onMouseDown={(event) => event.stopPropagation()}>
             <button className="modal-close" aria-label={t.close} onClick={() => setAuthOpen(false)}>×</button>
             <Logo />
-            <h2>{authMode === "login" ? t.authLogin : t.authRegister}</h2>
-            <form onSubmit={authenticate}>
-              <label>{t.email}<input name="email" type="email" autoComplete="email" required /></label>
-              <label>{t.password}<input name="password" type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} minLength={10} required /><small>{t.passwordHint}</small></label>
-              <button className="button button-primary" disabled={busy} type="submit">{authMode === "login" ? t.submitLogin : t.submitRegister}</button>
-            </form>
-            <button className="switch-auth" onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? t.switchRegister : t.switchLogin}</button>
+            <h2>{authTitle}</h2>
+            {(authMode === "login" || authMode === "register") && (
+              <>
+                <form onSubmit={authenticate}>
+                  <label>{t.email}<input name="email" type="email" autoComplete="email" required /></label>
+                  <label>{t.password}<input name="password" type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} minLength={10} required /><small>{t.passwordHint}</small></label>
+                  <button className="button button-primary" disabled={busy} type="submit">{authMode === "login" ? t.submitLogin : t.submitRegister}</button>
+                </form>
+                {authMode === "login" && <button className="switch-auth" onClick={() => setAuthMode("forgot")}>{t.forgotPassword}</button>}
+                <button className="switch-auth" onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? t.switchRegister : t.switchLogin}</button>
+              </>
+            )}
+            {authMode === "forgot" && (
+              <>
+                <p>{t.forgotLead}</p>
+                <form onSubmit={requestPasswordReset}>
+                  <label>{t.email}<input name="email" type="email" autoComplete="email" required /></label>
+                  <button className="button button-primary" disabled={busy} type="submit">{t.sendReset}</button>
+                </form>
+                <button className="switch-auth" onClick={() => setAuthMode("login")}>{t.switchLogin}</button>
+              </>
+            )}
+            {(authMode === "reset" || authMode === "change") && (
+              <form onSubmit={submitPassword}>
+                {authMode === "change" && <label>{t.currentPassword}<input name="currentPassword" type="password" autoComplete="current-password" required /></label>}
+                <label>{t.newPassword}<input name="newPassword" type="password" autoComplete="new-password" minLength={10} required /><small>{t.passwordHint}</small></label>
+                <label>{t.confirmPassword}<input name="confirmPassword" type="password" autoComplete="new-password" minLength={10} required /></label>
+                <button className="button button-primary" disabled={busy} type="submit">{authMode === "change" ? t.changePassword : t.resetTitle}</button>
+              </form>
+            )}
           </section>
         </div>
       )}
@@ -699,6 +834,7 @@ export function PassWiselySite() {
                 <div key={item.id}><span><b>{item.type.replaceAll("_", " ")}</b><small>{item.date}</small></span><strong className={item.amount > 0 ? "positive" : ""}>{item.amount > 0 ? "+" : ""}{item.amount}</strong></div>
               ))}
             </div>
+            <button className="button button-secondary" onClick={() => { setAccountOpen(false); setAuthMode("change"); setAuthOpen(true); }}>{t.changePassword}</button>
             <button className="button button-secondary logout" onClick={() => void logout()}>{t.logout}</button>
           </section>
         </div>

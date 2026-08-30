@@ -23,6 +23,14 @@ interface ElectronAPI {
     password: string;
     locale: "zh" | "en";
   }) => Promise<any>;
+  accountForgotPassword: (email: string) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
+  accountChangePassword: (input: {
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   accountLogout: () => Promise<{ success: boolean }>;
   accountOpenPortal: () => Promise<void>;
   openSubscriptionPortal: (authData: {
@@ -135,6 +143,12 @@ const electronAPI = {
     password: string;
     locale: "zh" | "en";
   }) => ipcRenderer.invoke("account-register", input),
+  accountForgotPassword: (email: string) =>
+    ipcRenderer.invoke("account-forgot-password", email),
+  accountChangePassword: (input: {
+    currentPassword: string;
+    newPassword: string;
+  }) => ipcRenderer.invoke("account-change-password", input),
   accountLogout: () => ipcRenderer.invoke("account-logout"),
   accountOpenPortal: () => ipcRenderer.invoke("account-open-portal"),
   openSubscriptionPortal: async (authData: { id: string; email: string }) => {

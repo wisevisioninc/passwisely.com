@@ -139,6 +139,43 @@ export class AccountService {
     return this.authenticate("register", email, password, locale);
   }
 
+  public async requestPasswordReset(email: string): Promise<AccountResult> {
+    try {
+      await this.request("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Password reset is unavailable.",
+      };
+    }
+  }
+
+  public async changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<AccountResult> {
+    try {
+      await this.request(
+        "/auth/change-password",
+        {
+          method: "POST",
+          body: JSON.stringify({ currentPassword, newPassword }),
+        },
+        true,
+      );
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Password could not be changed.",
+      };
+    }
+  }
+
   public async getAccount(): Promise<AccountResult> {
     try {
       const result = await this.request<{ user: AccountUser }>(

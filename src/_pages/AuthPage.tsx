@@ -16,9 +16,10 @@ export default function AuthPage({
   initialError,
   onAuthenticated,
 }: AuthPageProps) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [locale, setLocale] = useState<"zh" | "en">("zh");
   const [error, setError] = useState(initialError || "");
+  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
   const isZh = locale === "zh";
 
@@ -26,7 +27,25 @@ export default function AuthPage({
     event.preventDefault();
     setBusy(true);
     setError("");
+    setSuccess("");
     const form = new FormData(event.currentTarget);
+    if (mode === "forgot") {
+      const result = await window.electronAPI.accountForgotPassword(
+        String(form.get("email") || ""),
+      );
+      setBusy(false);
+      if (result.success) {
+        setSuccess(
+          isZh
+            ? "如果该邮箱已注册，重置链接已发送，请检查收件箱和垃圾邮件。"
+            : "If that email is registered, a reset link has been sent. Check your inbox and spam folder.",
+        );
+        setMode("login");
+      } else {
+        setError(result.error || (isZh ? "发送失败，请稍后重试。" : "Could not send the reset email."));
+      }
+      return;
+    }
     const input = {
       email: String(form.get("email") || ""),
       password: String(form.get("password") || ""),
@@ -78,18 +97,26 @@ export default function AuthPage({
             ? isZh
               ? "欢迎回来"
               : "Welcome back"
-            : isZh
+            : mode === "register" && isZh
               ? "创建你的账户"
-              : "Create your account"}
+              : mode === "register"
+                ? "Create your account"
+                : isZh
+                  ? "找回密码"
+                  : "Reset your password"}
         </h1>
         <p className="text-sm text-white/45 mt-2 leading-6">
           {mode === "login"
             ? isZh
               ? "登录后同步积分并继续使用。"
               : "Sign in to sync your credits and continue."
-            : isZh
+            : mode === "register" && isZh
               ? "新账户立即获得 10 个体验积分。"
-              : "New accounts receive 10 trial credits."}
+              : mode === "register"
+                ? "New accounts receive 10 trial credits."
+                : isZh
+                  ? "输入注册邮箱，我们会发送安全的重置链接。"
+                  : "Enter your account email and we’ll send a secure reset link."}
         </p>
 
         <form className="grid gap-4 mt-7" onSubmit={submit}>
@@ -103,26 +130,33 @@ export default function AuthPage({
               className="h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 outline-none focus:border-violet-400 text-white"
             />
           </label>
-          <label className="grid gap-1.5 text-xs text-white/65">
-            {isZh ? "密码" : "Password"}
-            <input
-              name="password"
-              type="password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              minLength={10}
-              required
-              className="h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 outline-none focus:border-violet-400 text-white"
-            />
-            {mode === "register" && (
-              <span className="text-[10px] text-white/30">
-                {isZh ? "至少 10 位，包含字母和数字" : "10+ characters with a letter and a number"}
-              </span>
-            )}
-          </label>
+          {mode !== "forgot" && (
+            <label className="grid gap-1.5 text-xs text-white/65">
+              {isZh ? "密码" : "Password"}
+              <input
+                name="password"
+                type="password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={10}
+                required
+                className="h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 outline-none focus:border-violet-400 text-white"
+              />
+              {mode === "register" && (
+                <span className="text-[10px] text-white/30">
+                  {isZh ? "至少 10 位，包含字母和数字" : "10+ characters with a letter and a number"}
+                </span>
+              )}
+            </label>
+          )}
 
           {error && (
             <p className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
               {error}
+            </p>
+          )}
+          {success && (
+            <p className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+              {success}
             </p>
           )}
 
@@ -135,7 +169,11 @@ export default function AuthPage({
               ? isZh
                 ? "请稍候…"
                 : "Please wait…"
-              : mode === "login"
+              : mode === "forgot"
+                ? isZh
+                  ? "发送重置邮件"
+                  : "Send reset email"
+                : mode === "login"
                 ? isZh
                   ? "登录"
                   : "Sign in"
@@ -145,11 +183,21 @@ export default function AuthPage({
           </button>
         </form>
 
+        {mode === "login" && (
+          <button
+            className="w-full mt-4 text-xs text-white/45 hover:text-violet-200"
+            onClick={() => { setMode("forgot"); setError(""); setSuccess(""); }}
+          >
+            {isZh ? "忘记密码？" : "Forgot password?"}
+          </button>
+        )}
+
         <button
           className="w-full mt-5 text-xs text-violet-300 hover:text-violet-200"
           onClick={() => {
             setMode(mode === "login" ? "register" : "login");
             setError("");
+            setSuccess("");
           }}
         >
           {mode === "login"

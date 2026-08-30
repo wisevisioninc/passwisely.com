@@ -29,6 +29,8 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
   const [activePanel, setActivePanel] = useState<
     "settings" | "resume" | null
   >(null);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
 
@@ -377,6 +379,49 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
                         <span>PassWisely credits</span>
                         <strong className="text-violet-300">{credits}</strong>
                       </button>
+                      {!showPasswordForm ? (
+                        <button
+                          type="button"
+                          className="mt-2 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] text-white/55 hover:bg-white/[0.08] hover:text-white/80"
+                          onClick={() => setShowPasswordForm(true)}
+                        >
+                          Change password
+                        </button>
+                      ) : (
+                        <form
+                          className="mt-2 grid gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-2"
+                          onSubmit={async (event: React.FormEvent<HTMLFormElement>) => {
+                            event.preventDefault();
+                            const formElement = event.currentTarget;
+                            const form = new FormData(formElement);
+                            const currentPassword = String(form.get("currentPassword") || "");
+                            const newPassword = String(form.get("newPassword") || "");
+                            const confirmPassword = String(form.get("confirmPassword") || "");
+                            if (newPassword !== confirmPassword) {
+                              showToast("Password mismatch", "The new passwords do not match.", "error");
+                              return;
+                            }
+                            setPasswordBusy(true);
+                            const result = await window.electronAPI.accountChangePassword({ currentPassword, newPassword });
+                            setPasswordBusy(false);
+                            if (!result.success) {
+                              showToast("Password not changed", result.error || "Please try again.", "error");
+                              return;
+                            }
+                            formElement.reset();
+                            setShowPasswordForm(false);
+                            showToast("Password updated", "Your password has been changed.", "success");
+                          }}
+                        >
+                          <input name="currentPassword" type="password" autoComplete="current-password" required placeholder="Current password" className="h-8 rounded-md border border-white/10 bg-black/25 px-2 text-[10px] outline-none focus:border-violet-400" />
+                          <input name="newPassword" type="password" autoComplete="new-password" minLength={10} required placeholder="New password" className="h-8 rounded-md border border-white/10 bg-black/25 px-2 text-[10px] outline-none focus:border-violet-400" />
+                          <input name="confirmPassword" type="password" autoComplete="new-password" minLength={10} required placeholder="Confirm new password" className="h-8 rounded-md border border-white/10 bg-black/25 px-2 text-[10px] outline-none focus:border-violet-400" />
+                          <div className="flex gap-2">
+                            <button type="button" className="h-8 flex-1 rounded-md border border-white/10 text-[10px] text-white/55" onClick={() => setShowPasswordForm(false)}>Cancel</button>
+                            <button type="submit" disabled={passwordBusy} className="h-8 flex-1 rounded-md bg-violet-500 text-[10px] font-medium disabled:opacity-50">{passwordBusy ? "Saving…" : "Save"}</button>
+                          </div>
+                        </form>
+                      )}
                       <button
                         className="mt-2 w-full text-[10px] text-white/35 hover:text-red-300"
                         onClick={async () => {

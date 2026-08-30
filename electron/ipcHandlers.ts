@@ -30,6 +30,18 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
         input?.locale === "en" ? "en" : "zh",
       ),
   );
+  ipcMain.handle(
+    "account-forgot-password",
+    (_event, email: string) => deps.accountService.requestPasswordReset(email || ""),
+  );
+  ipcMain.handle(
+    "account-change-password",
+    (_event, input: { currentPassword?: string; newPassword?: string }) =>
+      deps.accountService.changePassword(
+        input?.currentPassword || "",
+        input?.newPassword || "",
+      ),
+  );
   ipcMain.handle("account-logout", () => {
     deps.accountService.clear();
     return { success: true };

@@ -20,6 +20,7 @@
     "productName": "PassWisely",
     "afterPack": "scripts/after-pack-macos.js",
     "afterSign": "scripts/after-sign-macos.js",
+    "afterAllArtifactBuild": "scripts/after-all-artifact-build.js",
     "files": [
       "dist/**/*",
       "dist-electron/**/*",

@@ -48,6 +48,17 @@ export interface ElectronAPI {
     }
     error?: string
   }>
+  accountForgotPassword: (email: string) => Promise<{
+    success: boolean
+    error?: string
+  }>
+  accountChangePassword: (input: {
+    currentPassword: string
+    newPassword: string
+  }) => Promise<{
+    success: boolean
+    error?: string
+  }>
   accountLogout: () => Promise<{ success: boolean }>
   accountOpenPortal: () => Promise<void>
   openSubscriptionPortal: (authData: {

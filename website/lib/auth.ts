@@ -56,6 +56,10 @@ export function validateCredentials(email: string, password: unknown): string | 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     return "Please enter a valid email address.";
   }
+  return validatePassword(password);
+}
+
+export function validatePassword(password: unknown): string | null {
   if (
     typeof password !== "string" ||
     password.length < 10 ||

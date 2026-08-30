@@ -94,6 +94,8 @@ sed -i -E 's/listen \[::\]:443 ssl ipv6only=on;/listen [::]:443 ssl http2 ipv6on
 nginx -t
 systemctl reload nginx
 curl --fail --silent --show-error --location --output /dev/null https://passwisely.com/
+curl --fail --silent --show-error --head https://passwisely.com/api/download/mac-arm64 >/dev/null
+curl --fail --silent --show-error --head https://passwisely.com/api/download/mac-x64 >/dev/null
 
 if [[ "${pm2_was_running}" -eq 1 ]]; then
   sudo -u jerry env PM2_HOME=/home/jerry/.pm2 "${pm2_bin}" delete passwisely-web || true

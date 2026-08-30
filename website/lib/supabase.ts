@@ -110,6 +110,16 @@ export function refreshSession(refreshToken: string): Promise<SupabaseSession> {
   );
 }
 
+export function requestPasswordReset(
+  email: string,
+  redirectTo: string,
+): Promise<unknown> {
+  return request(
+    `/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`,
+    { method: "POST", body: JSON.stringify({ email }) },
+  );
+}
+
 export async function createConfirmedUser(input: {
   email: string;
   password: string;

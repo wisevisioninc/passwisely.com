@@ -119,6 +119,19 @@ it is considered finished:
 A source change without the packaged artifacts, OSS upload, download mapping,
 and production verification is not a completed PassWisely release.
 
+## Supabase Free project health check
+
+The production server runs `website/scripts/supabase-healthcheck.mjs` once per
+day from Jerry's crontab. It makes three small authenticated, read-only queries
+against existing application tables. This produces real database activity and
+checks availability without creating test users or changing business data.
+
+The cron task loads Supabase credentials from `website/.env.production`;
+credentials must never be embedded in the crontab or committed. Successful and
+failed runs are sent to syslog with the tag `passwisely-supabase-health`.
+Supabase only guarantees that paid projects will not be paused for inactivity,
+so production should move to Pro when continuous availability is required.
+
 ## Security notes
 
 - Renderer isolation is enabled and Node integration is disabled.

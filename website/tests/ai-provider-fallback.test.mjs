@@ -23,10 +23,11 @@ test("desktop defaults to the included Kimi channel when OpenAI has no key", asy
   assert.match(ui, /Wise 不提供共享 Key/);
 });
 
-test("Kimi K3 relay normalizes the provider-specific temperature", async () => {
+test("Kimi K3 relay disables slow reasoning with the required temperature", async () => {
   const route = await read("../app/api/ai/chat/completions/route.ts");
   assert.match(route, /provider === "kimi" && model === "kimi-k3"/);
-  assert.match(route, /\{ \.\.\.body, temperature: 1 \}/);
+  assert.match(route, /temperature: 0\.6/);
+  assert.match(route, /thinking: \{ type: "disabled" \}/);
   assert.match(route, /JSON\.stringify\([\s\S]*upstreamBody/);
 });
 

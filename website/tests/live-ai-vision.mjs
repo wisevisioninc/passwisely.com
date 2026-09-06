@@ -11,6 +11,18 @@ const apiBase = (
   process.env.PASSWISELY_TEST_API_URL || "https://passwisely.com/api"
 ).replace(/\/+$/, "");
 const imagePath = process.env.PASSWISELY_TEST_IMAGE;
+const imageMimeType = imagePath?.toLowerCase().endsWith(".png")
+  ? "image/png"
+  : "image/jpeg";
+const testLabel = process.env.PASSWISELY_TEST_LABEL || "LeetCode vision";
+const expectedProblem = new RegExp(
+  process.env.PASSWISELY_TEST_EXPECT || "(?:两数之和|nums|target)",
+  "i",
+);
+const expectedExample = new RegExp(
+  process.env.PASSWISELY_TEST_EXAMPLE || "(?:示例|example|输入|input)",
+  "i",
+);
 const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 const email = `vision-e2e-${suffix}@example.com`;
 const password = `Pw${crypto.randomUUID()}A1`;
@@ -82,9 +94,9 @@ try {
   const metadata = new grpc.Metadata();
   metadata.set("authorization", `Bearer ${token}`);
 
-  const prompt = `Read the screenshot as a programming task and solve it in python.
+  const prompt = `Read the screenshots as one continuous programming task and solve it in python.
 Extract ONLY the programming problem itself into problem_statement. Keep the title when visible, the complete task description, input/output rules, constraints, and all useful examples or test cases. Exclude browser menus, tabs, URLs, site navigation, difficulty/tag/company controls, submission statistics, online-user counts, PassWisely controls, existing editor code, prior solutions, test-result UI, ads, and unrelated surrounding text.
-Return exactly one JSON object with problem_statement, code, thoughts, time_complexity, and space_complexity.`;
+Return exactly one JSON object with problem_statement, complete compilable code without markdown fences, thoughts, time_complexity, and space_complexity.`;
   const startedAt = Date.now();
   const result = await new Promise((resolve, reject) => {
     client.Chat(
@@ -101,7 +113,7 @@ Return exactly one JSON object with problem_statement, code, thoughts, time_comp
             role: "user",
             parts: [
               { text: prompt },
-              { image: { data: image, mimeType: "image/jpeg", detail: "high" } },
+              { image: { data: image, mimeType: imageMimeType, detail: "high" } },
             ],
           },
         ],
@@ -115,12 +127,10 @@ Return exactly one JSON object with problem_statement, code, thoughts, time_comp
     );
   });
   const elapsedMs = Date.now() - startedAt;
+  assert.equal(result.finishReason, "stop");
   const payload = JSON.parse(result.content);
-  assert.match(payload.problem_statement, /(?:两数之和|nums|target)/i);
-  assert.match(
-    payload.problem_statement,
-    /(?:示例|example|\[2\s*,\s*7\s*,\s*11\s*,\s*15\])/i,
-  );
+  assert.match(payload.problem_statement, expectedProblem);
+  assert.match(payload.problem_statement, expectedExample);
   assert.ok(payload.code?.trim());
   assert.ok(payload.time_complexity?.trim());
   assert.doesNotMatch(
@@ -133,10 +143,14 @@ Return exactly one JSON object with problem_statement, code, thoughts, time_comp
   console.log(
     JSON.stringify({
       success: true,
+      testLabel,
       transport: "grpc+protobuf",
       cleanProblem: true,
       nonEmptySolution: true,
       elapsedMs,
+      finishReason: result.finishReason,
+      problemLength: payload.problem_statement.length,
+      codeLength: payload.code.length,
       creditsAfterRequest: account.payload.user.credits,
     }),
   );

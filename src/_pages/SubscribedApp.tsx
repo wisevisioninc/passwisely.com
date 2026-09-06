@@ -46,6 +46,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"queue" | "solutions" | "debug">("queue");
+  const [processingError, setProcessingError] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const processingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -97,12 +98,16 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
     const cleanupFunctions = [
       window.electronAPI.onSolutionStart(() => {
         clearProcessingTimeout();
+        setProcessingError("");
         queryClient.setQueryData(["problem_statement"], null);
         queryClient.setQueryData(["solution"], null);
         setView("solutions");
         processingTimeoutRef.current = setTimeout(() => {
           queryClient.setQueryData(["solution"], null);
           setView("queue");
+          setProcessingError(
+            "AI 服务未在规定时间内返回结果，请检查网络后重试。",
+          );
           showToast(
             "Processing timed out",
             "The AI service did not finish in time. Please try again.",
@@ -119,6 +124,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
       }),
       window.electronAPI.onResetView(() => {
         clearProcessingTimeout();
+        setProcessingError("");
         queryClient.removeQueries({ queryKey: ["screenshots"] });
         queryClient.removeQueries({ queryKey: ["solution"] });
         queryClient.removeQueries({ queryKey: ["problem_statement"] });
@@ -135,6 +141,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
         if (!solution) {
           queryClient.setQueryData(["solution"], null);
           setView("queue");
+          setProcessingError("AI 返回的解答不完整，请重新尝试。不会丢失当前截图。");
           showToast(
             "Processing Failed",
             "The AI service returned an incomplete solution. Please try again.",
@@ -149,7 +156,9 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
         clearProcessingTimeout();
         queryClient.setQueryData(["solution"], null);
         setView("queue");
-        showToast("Error", error, "error");
+        const message = error?.trim() || "处理失败，请重试。";
+        setProcessingError(message);
+        showToast("处理失败", message, "error");
       }),
     ];
     return () => {
@@ -160,6 +169,22 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
 
   return (
     <div ref={containerRef} className="min-h-0">
+      {view === "queue" && processingError && (
+        <div
+          role="alert"
+          className="mx-4 mt-3 flex max-w-xl items-start justify-between gap-3 rounded-lg border border-red-300/30 bg-red-950/80 px-3 py-2 text-xs text-red-50 shadow-lg backdrop-blur-xl"
+        >
+          <span>{processingError}</span>
+          <button
+            type="button"
+            aria-label="Dismiss error"
+            className="shrink-0 text-red-100/70 hover:text-white"
+            onClick={() => setProcessingError("")}
+          >
+            ×
+          </button>
+        </div>
+      )}
       {view === "queue" ? (
         <Queue
           setView={(nextView) => setView(nextView)}

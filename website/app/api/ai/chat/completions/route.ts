@@ -203,11 +203,11 @@ export async function POST(request: Request) {
     headers.set("authorization", `Bearer ${apiKey}`);
   }
 
-  // Kimi K3 currently accepts temperature=1 only. Desktop actions use lower
-  // temperatures for other providers, so normalize K3 requests at the relay.
+  // Disable K3's long reasoning phase for latency-sensitive desktop actions.
+  // The current API requires temperature=0.6 when thinking is disabled.
   const upstreamBody =
     provider === "kimi" && model === "kimi-k3"
-      ? { ...body, temperature: 1 }
+      ? { ...body, temperature: 0.6, thinking: { type: "disabled" } }
       : body;
   const upstream = await fetch(definition.origin, {
     method: "POST",

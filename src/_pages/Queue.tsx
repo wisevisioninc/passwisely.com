@@ -98,15 +98,6 @@ const Queue: React.FC<QueueProps> = ({
       window.electronAPI.onScreenshotTaken(() => refetch()),
       window.electronAPI.onResetView(() => refetch()),
 
-      window.electronAPI.onSolutionError((error: string) => {
-        showToast(
-          "Processing Failed",
-          "There was an error processing your screenshots.",
-          "error",
-        );
-        setView("queue"); // Revert to queue if processing fails
-        console.error("Processing error:", error);
-      }),
       window.electronAPI.onProcessingNoScreenshots(() => {
         showToast(
           "No Screenshots",

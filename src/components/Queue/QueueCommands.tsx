@@ -61,7 +61,7 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 p-0.5 shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-colors hover:bg-white/15"
           >
             <img
-              src="/logo192.png"
+              src="./logo192.png"
               alt="PassWisely"
               draggable={false}
               className="h-7 w-7 select-none rounded-[10px]"

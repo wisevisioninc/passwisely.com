@@ -40,7 +40,9 @@ test("desktop login uses the app icon, precise errors, and a quit control", asyn
     handlers,
     login,
     accountService,
+    toolbar,
     loginLogo,
+    toolbarLogo,
     packagedAppIcon,
   ] = await Promise.all([
     read("../../src/_pages/AuthPage.tsx"),
@@ -48,12 +50,16 @@ test("desktop login uses the app icon, precise errors, and a quit control", asyn
     read("../../electron/ipcHandlers.ts"),
     read("../app/api/auth/login/route.ts"),
     read("../../electron/account.ts"),
+    read("../../src/components/Queue/QueueCommands.tsx"),
     readFile(new URL("../../public/logo512.png", import.meta.url)),
+    readFile(new URL("../../public/logo192.png", import.meta.url)),
     readFile(
       new URL("../../assets/icons/png/icon-512x512.png", import.meta.url),
     ),
   ]);
   assert.match(site, /src="\.\/logo512\.png"/);
+  assert.match(toolbar, /src="\.\/logo192\.png"/);
+  assert.doesNotMatch(toolbar, /src="\/logo192\.png"/);
   assert.doesNotMatch(site, />\s*P\s*</);
   assert.match(site, /账号邮箱不存在/);
   assert.match(site, /密码不正确/);
@@ -67,4 +73,10 @@ test("desktop login uses the app icon, precise errors, and a quit control", asyn
     /if \(!this\.getToken\(\)\) return \{ success: false \}/,
   );
   assert.deepEqual(loginLogo, packagedAppIcon);
+  assert.deepEqual(
+    toolbarLogo,
+    await readFile(
+      new URL("../../assets/icons/png/icon-192x192.png", import.meta.url),
+    ),
+  );
 });

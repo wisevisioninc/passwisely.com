@@ -257,6 +257,11 @@ export default function AdminDashboard() {
     setSaving(true);
     setError("");
     setSaveMessage("");
+    if (!selectedAiKeyConfigured && !apiKeyInput.trim()) {
+      setSaving(false);
+      setError(`请先填写 ${selectedAiDefinition.label} API Key。`);
+      return;
+    }
     const response = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "content-type": "application/json" },

@@ -76,7 +76,7 @@ export async function getDefaultAiConfig(): Promise<DefaultAiConfig> {
         : definition.defaultModel;
     const storedKey =
       settings[`ai_api_key_${provider}`]?.trim() ||
-      settings.ai_default_api_key?.trim();
+      (provider === "kimi" ? settings.ai_default_api_key?.trim() : "");
     const apiKey = storedKey
       ? (await decryptAdminSecret(storedKey)).trim()
       : environmentApiKey(provider);

@@ -32,6 +32,7 @@ test("default model configuration is stored privately in Supabase", async () => 
   assert.match(secrets, /AES-GCM/);
   assert.match(secrets, /passwisely:admin-settings/);
   assert.match(config, /admin_settings\?key=like\.ai_/);
+  assert.match(config, /provider === "kimi" \? settings\.ai_default_api_key/);
   assert.match(config, /Date\.now\(\) \+ 10_000/);
 });
 
@@ -51,6 +52,7 @@ test("Qwen uses the DashScope OpenAI-compatible endpoint and thinking mode", asy
   assert.match(resume, /config\.provider === "qwen"[\s\S]*enable_thinking: true[\s\S]*stream: false/);
   assert.match(dashboard, /ai_api_key_/);
   assert.match(dashboard, /每个模型渠道独立保存/);
+  assert.match(dashboard, /请先填写.*API Key/);
   assert.match(migration, /'ai_api_key_kimi'/);
   assert.match(migration, /'ai_default_api_key'/);
 });

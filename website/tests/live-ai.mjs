@@ -9,6 +9,13 @@ const protoLoader = require("@grpc/proto-loader");
 const apiBase = (
   process.env.PASSWISELY_TEST_API_URL || "https://passwisely.com/api"
 ).replace(/\/+$/, "");
+const requestedProvider = process.env.PASSWISELY_TEST_PROVIDER || "kimi";
+const requestedModel = process.env.PASSWISELY_TEST_MODEL || "kimi-k3";
+const expectedProvider = process.env.PASSWISELY_TEST_EXPECT_PROVIDER || "kimi";
+const expectedModel = new RegExp(
+  process.env.PASSWISELY_TEST_EXPECT_MODEL || "kimi-k3",
+  "i",
+);
 const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 const email = `ai-e2e-${suffix}@example.com`;
 const password = `Pw${crypto.randomUUID()}A1`;
@@ -69,8 +76,8 @@ try {
     client.Chat(
       {
         requestId: `ai_e2e_${crypto.randomUUID().replaceAll("-", "")}`,
-        provider: "kimi",
-        model: "kimi-k3",
+        provider: requestedProvider,
+        model: requestedModel,
         messages: [
           {
             role: "user",
@@ -85,18 +92,21 @@ try {
       (error, response) => (error ? reject(error) : resolve(response)),
     );
   });
-  assert.ok(result.content?.trim(), "Kimi returned an empty answer.");
+  assert.ok(result.content?.trim(), "The default model returned an empty answer.");
+  assert.match(result.model, expectedModel);
 
   const account = await api("/account", {}, token);
   assert.equal(account.response.status, 200);
   assert.equal(account.payload.user.credits, 9);
-  assert.equal(account.payload.transactions[0].type, "ai_kimi");
+  assert.equal(account.payload.transactions[0].type, `ai_${expectedProvider}`);
 
   console.log(
     JSON.stringify({
       success: true,
       transport: "grpc+protobuf",
-      provider: "kimi",
+      requestedProvider,
+      requestedModel,
+      provider: expectedProvider,
       model: result.model,
       nonEmptyAnswer: true,
       creditsAfterRequest: account.payload.user.credits,

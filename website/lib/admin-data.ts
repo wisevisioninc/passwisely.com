@@ -24,6 +24,41 @@ export interface PaymentBreakdown {
   revenue: number;
 }
 
+export interface RequestMinute {
+  minute: string;
+  requests: number;
+  errors: number;
+  avgLatencyMs: number;
+}
+
+export interface RoutePerformance {
+  label: string;
+  requests: number;
+  errors: number;
+  avgLatencyMs: number;
+}
+
+export interface DownloadBreakdown {
+  label: string;
+  total: number;
+  today: number;
+  sevenDays: number;
+}
+
+export interface DownloadPerformance {
+  platform: string;
+  status: "healthy" | "down";
+  objectBytes: number;
+  headLatencyMs: number;
+  ttfbMs: number;
+  sampleBytes: number;
+  transferMs: number;
+  throughputBps: number;
+  estimatedSeconds: number;
+  httpStatus: number;
+  createdAt: string;
+}
+
 export interface AdminStats {
   generatedAt: string;
   totalUsers: number;
@@ -61,6 +96,19 @@ export interface AdminStats {
   actionBreakdown: CountBreakdown[];
   providerBreakdown: CountBreakdown[];
   paymentBreakdown: PaymentBreakdown[];
+  qpsCurrent: number;
+  qpsPeak1h: number;
+  requests5m: number;
+  avgLatencyMs5m: number;
+  maxLatencyMs5m: number;
+  errorRate5m: number;
+  downloadsToday: number;
+  downloads7d: number;
+  downloadsTotal: number;
+  requestSeries: RequestMinute[];
+  routeBreakdown: RoutePerformance[];
+  downloadBreakdown: DownloadBreakdown[];
+  downloadPerformance: DownloadPerformance[];
   services: ServiceHealth[];
   host: HostHealth | null;
 }
@@ -81,7 +129,10 @@ function countBreakdown(value: unknown): CountBreakdown[] {
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
-  const row = await adminRpc<JsonRow>("admin_statistics", {});
+  const [row, performance] = await Promise.all([
+    adminRpc<JsonRow>("admin_statistics", {}),
+    adminRpc<JsonRow>("admin_performance_statistics", {}),
+  ]);
   const daily = Array.isArray(row.daily)
     ? row.daily.map((item) => {
         const day = item as JsonRow;
@@ -105,6 +156,57 @@ export async function getAdminStats(): Promise<AdminStats> {
           attempts: number(payment, "attempts"),
           completed: number(payment, "completed"),
           revenue: number(payment, "revenue"),
+        };
+      })
+    : [];
+  const requestSeries = Array.isArray(performance.request_series)
+    ? performance.request_series.map((item) => {
+        const minute = item as JsonRow;
+        return {
+          minute: String(minute.minute || ""),
+          requests: number(minute, "requests"),
+          errors: number(minute, "errors"),
+          avgLatencyMs: number(minute, "avgLatencyMs"),
+        };
+      })
+    : [];
+  const routeBreakdown = Array.isArray(performance.route_breakdown)
+    ? performance.route_breakdown.map((item) => {
+        const route = item as JsonRow;
+        return {
+          label: String(route.label || "other"),
+          requests: number(route, "requests"),
+          errors: number(route, "errors"),
+          avgLatencyMs: number(route, "avg_latency_ms"),
+        };
+      })
+    : [];
+  const downloadBreakdown = Array.isArray(performance.download_breakdown)
+    ? performance.download_breakdown.map((item) => {
+        const download = item as JsonRow;
+        return {
+          label: String(download.label || "other"),
+          total: number(download, "total"),
+          today: number(download, "today"),
+          sevenDays: number(download, "seven_days"),
+        };
+      })
+    : [];
+  const downloadPerformance = Array.isArray(performance.download_performance)
+    ? performance.download_performance.map((item) => {
+        const download = item as JsonRow;
+        return {
+          platform: String(download.platform || "other"),
+          status: download.status === "healthy" ? "healthy" as const : "down" as const,
+          objectBytes: number(download, "object_bytes"),
+          headLatencyMs: number(download, "head_latency_ms"),
+          ttfbMs: number(download, "ttfb_ms"),
+          sampleBytes: number(download, "sample_bytes"),
+          transferMs: number(download, "transfer_ms"),
+          throughputBps: number(download, "throughput_bps"),
+          estimatedSeconds: number(download, "estimated_seconds"),
+          httpStatus: number(download, "http_status"),
+          createdAt: String(download.created_at || ""),
         };
       })
     : [];
@@ -146,6 +248,19 @@ export async function getAdminStats(): Promise<AdminStats> {
     actionBreakdown: countBreakdown(row.action_breakdown),
     providerBreakdown: countBreakdown(row.provider_breakdown),
     paymentBreakdown,
+    qpsCurrent: number(performance, "qps_current"),
+    qpsPeak1h: number(performance, "qps_peak_1h"),
+    requests5m: number(performance, "requests_5m"),
+    avgLatencyMs5m: number(performance, "avg_latency_ms_5m"),
+    maxLatencyMs5m: number(performance, "max_latency_ms_5m"),
+    errorRate5m: number(performance, "error_rate_5m"),
+    downloadsToday: number(performance, "downloads_today"),
+    downloads7d: number(performance, "downloads_7d"),
+    downloadsTotal: number(performance, "downloads_total"),
+    requestSeries,
+    routeBreakdown,
+    downloadBreakdown,
+    downloadPerformance,
     services: [],
     host: null,
   };

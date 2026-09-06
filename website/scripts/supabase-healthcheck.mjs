@@ -36,16 +36,18 @@ export async function checkAdminStatistics(config, fetchImplementation = globalT
     throw new Error(`Admin statistics check failed (${response.status}): ${(await response.text()).slice(0, 300)}`);
   }
   const statistics = await response.json();
-  for (const key of ["totalUsers", "activeUsers", "dau", "requests7d", "tokens7d", "totalTokens"]) {
+  for (const key of ["totalUsers", "activeUsers", "dau", "requests7d", "tokens7d", "totalTokens", "qpsCurrent", "avgLatencyMs5m", "downloadsTotal"]) {
     if (!Number.isFinite(statistics[key])) throw new Error(`Admin statistics is missing ${key}.`);
   }
   if (!Array.isArray(statistics.daily)) throw new Error("Admin statistics is missing daily usage.");
   return {
     success: true,
-    checks: ["admin-login", "admin-statistics", "service-health"],
+    checks: ["admin-login", "admin-statistics", "service-health", "performance-metrics"],
     summary: {
       totalUsers: statistics.totalUsers,
       dau: statistics.dau,
+      qpsCurrent: statistics.qpsCurrent,
+      downloadsTotal: statistics.downloadsTotal,
       servicesHealthy: Array.isArray(statistics.services)
         ? statistics.services.filter((service) => service.state === "healthy").length
         : 0,

@@ -49,6 +49,19 @@ const EMPTY: AdminStats = {
   actionBreakdown: [],
   providerBreakdown: [],
   paymentBreakdown: [],
+  qpsCurrent: 0,
+  qpsPeak1h: 0,
+  requests5m: 0,
+  avgLatencyMs5m: 0,
+  maxLatencyMs5m: 0,
+  errorRate5m: 0,
+  downloadsToday: 0,
+  downloads7d: 0,
+  downloadsTotal: 0,
+  requestSeries: [],
+  routeBreakdown: [],
+  downloadBreakdown: [],
+  downloadPerformance: [],
   services: [],
   host: null,
 };
@@ -75,6 +88,11 @@ const providerNames: Record<string, string> = {
   wechat: "微信支付",
   stripe: "Stripe",
   other: "其他",
+};
+const platformNames: Record<string, string> = {
+  "mac-arm64": "macOS · Apple 芯片",
+  "mac-x64": "macOS · Intel",
+  "windows-x64": "Windows · x64",
 };
 
 function formatNumber(value: number, compact = false) {
@@ -145,6 +163,15 @@ function Breakdown({ items, names = actionNames }: { items: CountBreakdown[]; na
     <div><span>{names[item.label] || item.label}</span><strong>{formatNumber(item.value)}</strong></div>
     <i><b style={{ width: `${Math.max(3, item.value / max * 100)}%` }} /></i>
   </div>)}</div>;
+}
+
+function RequestRateChart({ points }: { points: AdminStats["requestSeries"] }) {
+  const visible = points.slice(-30);
+  const max = Math.max(1, ...visible.map((point) => point.requests));
+  return <div className="admin-qps-chart" aria-label="最近 30 分钟请求量">
+    {visible.map((point) => <i key={point.minute} title={`${new Date(point.minute).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Shanghai" })} · ${point.requests} 请求`}><b style={{ height: `${Math.max(4, point.requests / max * 100)}%` }} className={point.errors ? "has-error" : ""}/></i>)}
+    {!visible.some((point) => point.requests) && <span>等待采集第一批请求数据</span>}
+  </div>;
 }
 
 function MetricCard({ icon, label, value, detail, accent }: { icon: IconName; label: string; value: string; detail: string; accent: string }) {
@@ -302,6 +329,23 @@ export default function AdminDashboard() {
 
       {view === "services" && <>
         <section className="admin-service-summary"><div><span>服务健康度</span><strong>{stats.services.length ? Math.round(healthyServices / stats.services.length * 100) : 0}%</strong><small>{healthyServices} 项正常，{stats.services.length - healthyServices} 项需关注</small></div><div className="admin-health-ring" style={{ "--health": `${stats.services.length ? healthyServices / stats.services.length * 360 : 0}deg` } as React.CSSProperties}><span>{healthyServices}/{stats.services.length}</span></div></section>
+        <section className="admin-performance-metrics">
+          <article><span>当前 QPS</span><strong>{stats.qpsCurrent.toFixed(3)}</strong><small>最近 5 分钟平均</small></article>
+          <article><span>1 小时峰值 QPS</span><strong>{stats.qpsPeak1h.toFixed(3)}</strong><small>{formatNumber(stats.requests5m)} 次请求 / 5 分钟</small></article>
+          <article><span>平均响应耗时</span><strong>{formatNumber(stats.avgLatencyMs5m)} <em>ms</em></strong><small>最大 {formatNumber(stats.maxLatencyMs5m)} ms</small></article>
+          <article><span>服务端错误率</span><strong>{stats.errorRate5m.toFixed(2)}<em>%</em></strong><small>统计 HTTP 5xx</small></article>
+        </section>
+        <section className="admin-layout-wide admin-performance-layout">
+          <article className="admin-card"><div className="admin-card-heading"><div><span className="admin-card-kicker">REQUEST RATE</span><h2>最近 30 分钟请求量</h2></div><small>应用层实时采集</small></div><RequestRateChart points={stats.requestSeries}/></article>
+          <article className="admin-card"><div className="admin-card-heading"><div><span className="admin-card-kicker">ROUTE LATENCY</span><h2>接口性能</h2></div><small>近 24 小时</small></div>{stats.routeBreakdown.length ? <div className="admin-route-table">{stats.routeBreakdown.map((route) => <div key={route.label}><span>{route.label}</span><strong>{formatNumber(route.requests)}</strong><b>{formatNumber(route.avgLatencyMs)} ms</b><em className={route.errors ? "error" : ""}>{route.errors} 错误</em></div>)}</div> : <div className="admin-empty">性能数据将在新请求进入后显示</div>}</article>
+        </section>
+        <section className="admin-download-summary">
+          <div><span>今日下载</span><strong>{formatNumber(stats.downloadsToday)}</strong></div>
+          <div><span>近 7 日下载</span><strong>{formatNumber(stats.downloads7d)}</strong></div>
+          <div><span>累计下载</span><strong>{formatNumber(stats.downloadsTotal)}</strong></div>
+          {Object.keys(platformNames).map((platform) => { const item = stats.downloadBreakdown.find((download) => download.label === platform); return <div key={platform}><span>{platformNames[platform]}</span><strong>{formatNumber(item?.sevenDays || 0)}</strong><small>7 日 / 累计 {formatNumber(item?.total || 0)}</small></div>; })}
+        </section>
+        <section className="admin-card admin-download-performance"><div className="admin-card-heading"><div><span className="admin-card-kicker">DOWNLOAD PERFORMANCE</span><h2>安装包下载性能</h2></div><small>每小时抽样 256 KB，不完整下载文件</small></div>{stats.downloadPerformance.length ? <div className="admin-download-table"><header><span>安装包</span><span>文件大小</span><span>首包耗时</span><span>抽样速度</span><span>预计完成</span><span>采集时间</span></header>{stats.downloadPerformance.map((download) => <div key={download.platform}><span><i className={download.status}/>{platformNames[download.platform] || download.platform}</span><span>{(download.objectBytes / 1024 / 1024).toFixed(1)} MB</span><span>{download.ttfbMs} ms</span><span>{(download.throughputBps / 1024 / 1024).toFixed(2)} MB/s</span><span>{download.estimatedSeconds.toFixed(1)} 秒</span><span>{download.createdAt ? new Date(download.createdAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false, month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}</span></div>)}</div> : <div className="admin-empty">等待第一次下载性能采集</div>}</section>
         <section className="admin-service-grid">{stats.services.map((service) => <article className="admin-service-card" key={service.id}><div><i className={service.state}/><span>{service.group === "runtime" ? "运行服务" : service.group === "storage" ? "数据服务" : service.group === "delivery" ? "下载交付" : "生产配置"}</span></div><h2>{service.name}</h2><p>{service.detail}</p><footer><span className={`admin-state-${service.state}`}>{service.state === "healthy" ? "正常" : service.state === "degraded" ? "需检查" : "不可用"}</span>{service.latencyMs !== undefined && <b>{service.latencyMs} ms</b>}</footer></article>)}</section>
         <section className="admin-card admin-host-card"><div className="admin-card-heading"><div><span className="admin-card-kicker">WISE HOST</span><h2>服务器资源</h2></div><small>{stats.host ? `已运行 ${formatUptime(stats.host.uptimeSeconds)}` : "暂时无法读取"}</small></div>{stats.host ? <div className="admin-host-grid"><div><div><span>内存使用</span><strong>{stats.host.memoryUsedPercent}%</strong></div><i><b style={{ width: `${stats.host.memoryUsedPercent}%` }}/></i></div><div><div><span>磁盘使用</span><strong>{stats.host.diskUsedPercent}%</strong></div><i><b style={{ width: `${stats.host.diskUsedPercent}%` }}/></i></div><div><span>1 分钟负载</span><strong>{stats.host.loadAverage1m}</strong><small>{stats.host.cpuCount} 核 CPU</small></div><div><span>gRPC 进程</span><strong>{formatNumber(stats.host.processRssBytes / 1024 / 1024)} MB</strong><small>运行 {formatUptime(stats.host.processUptimeSeconds)}</small></div></div> : <div className="admin-empty">服务器健康端点尚未连接</div>}</section>
       </>}

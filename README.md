@@ -142,6 +142,13 @@ revenue, and payment-conversion metrics with live checks for Supabase, the
 website, desktop gRPC API, payment configuration, and all three installer
 downloads.
 
+Application requests are aggregated into one-minute buckets to report current
+and peak QPS, response latency, route volume, and HTTP 5xx rate without storing
+IP addresses or request bodies. Website installer clicks are counted per
+platform. An hourly bounded-range probe downloads only 256 KB from each OSS
+artifact to measure response latency and throughput and estimate completion
+time without repeatedly transferring full installers.
+
 The desktop API exposes host resource data only on the loopback-only
 `127.0.0.1:3013/health` endpoint. It must not be proxied publicly. Dashboard
 data refreshes every 60 seconds while the page is visible.

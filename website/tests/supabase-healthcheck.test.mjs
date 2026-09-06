@@ -9,15 +9,16 @@ test("health check logs into the admin dashboard and fetches statistics", async 
     async (url, init) => {
       requests.push({ url, init });
       if (url.endsWith("/login")) return new Response('{"success":true}', { status: 200, headers: { "set-cookie": "pw_admin=session; Path=/; HttpOnly" } });
-      return Response.json({ totalUsers: 12, activeUsers: 5, dau: 2, requests7d: 18, tokens7d: 4000, totalTokens: 9000, daily: [], services: [{ state: "healthy" }] });
+      return Response.json({ totalUsers: 12, activeUsers: 5, dau: 2, requests7d: 18, tokens7d: 4000, totalTokens: 9000, qpsCurrent: 0.2, avgLatencyMs5m: 42, downloadsTotal: 7, daily: [], services: [{ state: "healthy" }] });
     },
   );
-  assert.deepEqual(result.checks, ["admin-login", "admin-statistics", "service-health"]);
+  assert.deepEqual(result.checks, ["admin-login", "admin-statistics", "service-health", "performance-metrics"]);
   assert.equal(requests.length, 2);
   assert.equal(JSON.parse(requests[0].init.body).username, "admin");
   assert.match(requests[1].init.headers.cookie, /^pw_admin=/);
   assert.equal(result.summary.totalUsers, 12);
   assert.equal(result.summary.servicesHealthy, 1);
+  assert.equal(result.summary.downloadsTotal, 7);
 });
 
 test("health check requires explicit admin credentials", () => {

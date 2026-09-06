@@ -559,11 +559,11 @@ export function PassWiselySite() {
           <h1 id="hero-title">{ui.heroTitle}{ui.heroAccent && <em>{ui.heroAccent}</em>}</h1>
           <p className="hero-lead">{ui.heroBody}</p>
           <div className="hero-buttons">
-            <a className="platform-download windows-download" href="/api/download/windows-x64">
+            <a className="platform-download windows-download" href="/api/track-download/windows-x64">
               <span className="platform-icon">⊞</span>
               <span><b>{ui.downloadWinCta}</b><small>Windows 10/11 · x64</small></span>
             </a>
-            <a className="platform-download mac-download" href="/api/download/mac-arm64">
+            <a className="platform-download mac-download" href="/api/track-download/mac-arm64">
               <span className="platform-icon">⌘</span>
               <span><b>{ui.downloadMacCta}</b><small>macOS · Apple silicon</small></span>
             </a>
@@ -726,9 +726,9 @@ export function PassWiselySite() {
             <div className="download-proof"><span>✓ macOS</span><span>✓ Windows</span><span>✓ 10 credits</span></div>
           </div>
           <div className="download-buttons">
-            <a className="download-button" href="/api/download/mac-arm64"><b>⌘</b><span>{t.macArm}<small>DMG · FREE DOWNLOAD</small></span><i>↓</i></a>
-            <a className="download-button" href="/api/download/mac-x64"><b>⌘</b><span>{t.macIntel}<small>DMG · FREE DOWNLOAD</small></span><i>↓</i></a>
-            <a className="download-button" href="/api/download/windows-x64"><b>⊞</b><span>{t.windows}<small>EXE · FREE DOWNLOAD</small></span><i>↓</i></a>
+            <a className="download-button" href="/api/track-download/mac-arm64"><b>⌘</b><span>{t.macArm}<small>DMG · FREE DOWNLOAD</small></span><i>↓</i></a>
+            <a className="download-button" href="/api/track-download/mac-x64"><b>⌘</b><span>{t.macIntel}<small>DMG · FREE DOWNLOAD</small></span><i>↓</i></a>
+            <a className="download-button" href="/api/track-download/windows-x64"><b>⊞</b><span>{t.windows}<small>EXE · FREE DOWNLOAD</small></span><i>↓</i></a>
           </div>
         </div>
       </section>

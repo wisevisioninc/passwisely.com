@@ -260,7 +260,10 @@ export default function AdminDashboard() {
     const response = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...settings, ai_default_api_key: apiKeyInput }),
+      body: JSON.stringify({
+        ...settings,
+        [`ai_api_key_${selectedAiProvider}`]: apiKeyInput,
+      }),
     });
     setSaving(false);
     if (!response.ok) {
@@ -269,7 +272,10 @@ export default function AdminDashboard() {
       return;
     }
     if (apiKeyInput) {
-      setSettings((value) => ({ ...value, ai_default_api_key_configured: "true" }));
+      setSettings((value) => ({
+        ...value,
+        [`ai_api_key_${selectedAiProvider}_configured`]: "true",
+      }));
       setApiKeyInput("");
     }
     setSaveMessage("配置已保存，新的默认模型将在数秒内用于后续请求。");
@@ -309,6 +315,8 @@ export default function AdminDashboard() {
     ? settings.ai_default_provider
     : "kimi";
   const selectedAiDefinition = AI_PROVIDER_CATALOG[selectedAiProvider];
+  const selectedAiKeyConfigured =
+    settings[`ai_api_key_${selectedAiProvider}_configured`] === "true";
 
   return <main className="admin-app">
     <aside className="admin-sidebar">
@@ -369,12 +377,12 @@ export default function AdminDashboard() {
 
       {view === "settings" && <section className="admin-settings-layout">
         <form className="admin-card admin-settings-card" onSubmit={saveSettings}>
-          <div className="admin-card-heading"><div><span className="admin-card-kicker">AI RUNTIME</span><h2>默认大模型配置</h2></div><span className={`admin-secret-state ${settings.ai_default_api_key_configured === "true" ? "configured" : "missing"}`}>{settings.ai_default_api_key_configured === "true" ? "API Key 已配置" : "API Key 未配置"}</span></div>
-          <label><div><strong>默认模型渠道</strong><span>未填写个人 API Key 的客户端统一使用该渠道</span></div><select value={selectedAiProvider} onChange={(event) => { const provider = isAiProvider(event.target.value) ? event.target.value : "kimi"; setSettings((value) => ({ ...value, ai_default_provider: provider, ai_default_model: AI_PROVIDER_CATALOG[provider].defaultModel })); }}>
+          <div className="admin-card-heading"><div><span className="admin-card-kicker">AI RUNTIME</span><h2>默认大模型配置</h2></div><span className={`admin-secret-state ${selectedAiKeyConfigured ? "configured" : "missing"}`}>{selectedAiKeyConfigured ? "API Key 已配置" : "API Key 未配置"}</span></div>
+          <label><div><strong>默认模型渠道</strong><span>未填写个人 API Key 的客户端统一使用该渠道</span></div><select value={selectedAiProvider} onChange={(event) => { const provider = isAiProvider(event.target.value) ? event.target.value : "kimi"; setApiKeyInput(""); setSaveMessage(""); setSettings((value) => ({ ...value, ai_default_provider: provider, ai_default_model: AI_PROVIDER_CATALOG[provider].defaultModel })); }}>
             {Object.entries(AI_PROVIDER_CATALOG).map(([id, definition]) => <option key={id} value={id}>{definition.label}</option>)}
           </select></label>
           <label><div><strong>模型型号</strong><span>可选择推荐型号，也可以填写服务商支持的自定义型号</span></div><div className="admin-model-field"><input value={settings.ai_default_model || selectedAiDefinition.defaultModel} list="admin-model-options" maxLength={100} spellCheck={false} onChange={(event) => setSettings((value) => ({ ...value, ai_default_model: event.target.value }))}/><datalist id="admin-model-options">{selectedAiDefinition.models.map((model) => <option key={model} value={model}/>)}</datalist><small>当前渠道：{selectedAiDefinition.label}</small></div></label>
-          <label><div><strong>默认 API Key</strong><span>留空表示保留当前 Key；输入新值后会加密写入 Supabase</span></div><div className="admin-model-field"><input type="password" autoComplete="new-password" value={apiKeyInput} maxLength={4096} placeholder={settings.ai_default_api_key_configured === "true" ? "已安全配置 · 输入新 Key 可替换" : "请输入默认 API Key"} onChange={(event) => setApiKeyInput(event.target.value)}/><small>密钥不会通过管理接口回显，也不会写入日志</small></div></label>
+          <label><div><strong>{selectedAiDefinition.label} API Key</strong><span>每个模型渠道独立保存；留空表示保留该渠道当前 Key</span></div><div className="admin-model-field"><input type="password" autoComplete="new-password" value={apiKeyInput} maxLength={4096} placeholder={selectedAiKeyConfigured ? "已安全配置 · 输入新 Key 可替换" : `请输入 ${selectedAiDefinition.label} API Key`} onChange={(event) => setApiKeyInput(event.target.value)}/><small>密钥会加密写入 Supabase，不会通过管理接口回显或写入日志</small></div></label>
           <div className="admin-settings-section"><span className="admin-card-kicker">SITE CONTROL</span><h2>站点配置</h2></div>
           <label><div><strong>开放新用户注册</strong><span>关闭后现有用户仍可正常登录和使用</span></div><select value={settings.registration_enabled || "true"} onChange={(event) => setSettings((value) => ({ ...value, registration_enabled: event.target.value }))}><option value="true">已开启</option><option value="false">已关闭</option></select></label>
           <label><div><strong>客服邮箱</strong><span>用于网站和客户端的用户支持入口</span></div><input type="email" value={settings.support_email || ""} placeholder="support@passwisely.com" onChange={(event) => setSettings((value) => ({ ...value, support_email: event.target.value }))}/></label>

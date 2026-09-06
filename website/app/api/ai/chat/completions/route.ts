@@ -194,6 +194,8 @@ export async function POST(request: Request) {
   const upstreamBody =
     provider === "kimi" && model === "kimi-k3"
       ? { ...effectiveBody, temperature: 0.6, thinking: { type: "disabled" } }
+      : provider === "qwen"
+        ? { ...effectiveBody, enable_thinking: true, stream: false }
       : effectiveBody;
   const upstream = await fetch(definition.origin, {
     method: "POST",

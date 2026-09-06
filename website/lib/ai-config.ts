@@ -24,6 +24,15 @@ function runtimeEnv(): Environment {
   return env as unknown as Environment;
 }
 
+function environmentApiKey(provider: AiProvider): string {
+  const values = runtimeEnv();
+  return (
+    AI_PROVIDER_CATALOG[provider].keyEnvs
+      .map((name) => values[name]?.trim() || "")
+      .find(Boolean) || ""
+  );
+}
+
 function environmentFallback(): DefaultAiConfig {
   const values = runtimeEnv();
   const requestedProvider = values.AI_DEFAULT_PROVIDER?.trim();
@@ -36,7 +45,7 @@ function environmentFallback(): DefaultAiConfig {
   return {
     provider,
     model,
-    apiKey: values[definition.keyEnv]?.trim() || "",
+    apiKey: environmentApiKey(provider),
     source: "environment",
   };
 }
@@ -53,7 +62,7 @@ export async function getDefaultAiConfig(): Promise<DefaultAiConfig> {
   const fallback = environmentFallback();
   try {
     const rows = await adminRest<SettingRow[]>(
-      "admin_settings?key=in.(ai_default_provider,ai_default_model,ai_default_api_key)&select=key,value",
+      "admin_settings?key=like.ai_*&select=key,value",
     );
     const settings = Object.fromEntries(rows.map((row) => [row.key, row.value]));
     const provider = isAiProvider(settings.ai_default_provider)
@@ -65,10 +74,12 @@ export async function getDefaultAiConfig(): Promise<DefaultAiConfig> {
       : provider === fallback.provider
         ? fallback.model
         : definition.defaultModel;
-    const storedKey = settings.ai_default_api_key?.trim();
+    const storedKey =
+      settings[`ai_api_key_${provider}`]?.trim() ||
+      settings.ai_default_api_key?.trim();
     const apiKey = storedKey
       ? (await decryptAdminSecret(storedKey)).trim()
-      : runtimeEnv()[definition.keyEnv]?.trim() || "";
+      : environmentApiKey(provider);
     const value: DefaultAiConfig = {
       provider,
       model,

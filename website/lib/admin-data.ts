@@ -1,5 +1,9 @@
 import type { HostHealth, ServiceHealth } from "@/lib/admin-health";
-import { isAiProvider, isSafeModelName } from "@/lib/ai-catalog";
+import {
+  AI_PROVIDER_IDS,
+  isAiProvider,
+  isSafeModelName,
+} from "@/lib/ai-catalog";
 import { invalidateDefaultAiConfig } from "@/lib/ai-config";
 import { encryptAdminSecret } from "@/lib/admin-secrets";
 import { adminRest, adminRpc } from "@/lib/supabase";
@@ -274,12 +278,24 @@ export async function getAdminSettings(): Promise<Record<string, string>> {
     "admin_settings?select=key,value&order=key.asc",
   );
   const settings = Object.fromEntries(rows.map((row) => [row.key, row.value]));
-  const apiKeyConfigured = Boolean(settings.ai_default_api_key?.trim());
+  const defaultProvider = isAiProvider(settings.ai_default_provider)
+    ? settings.ai_default_provider
+    : "kimi";
+  const legacyKeyConfigured = Boolean(settings.ai_default_api_key?.trim());
   delete settings.ai_default_api_key;
+  for (const provider of AI_PROVIDER_IDS) {
+    const key = `ai_api_key_${provider}`;
+    const configured =
+      Boolean(settings[key]?.trim()) ||
+      (provider === defaultProvider && legacyKeyConfigured);
+    delete settings[key];
+    settings[`${key}_configured`] = configured ? "true" : "false";
+    settings[key] = "";
+  }
   return {
     ...settings,
     ai_default_api_key: "",
-    ai_default_api_key_configured: apiKeyConfigured ? "true" : "false",
+    ai_default_api_key_configured: legacyKeyConfigured ? "true" : "false",
   };
 }
 
@@ -312,15 +328,26 @@ export async function saveAdminSettings(
       value: String(value).slice(0, 500),
       updated_at: new Date().toISOString(),
     }));
-  const apiKey =
+  const legacyApiKey =
     typeof values.ai_default_api_key === "string"
       ? values.ai_default_api_key.trim()
       : "";
-  if (apiKey) {
-    if (apiKey.length > 4096) throw new Error("The default API key is too long.");
+  const apiKeys = AI_PROVIDER_IDS.map((providerId) => ({
+    providerId,
+    value:
+      typeof values[`ai_api_key_${providerId}`] === "string"
+        ? String(values[`ai_api_key_${providerId}`]).trim()
+        : providerId === provider
+          ? legacyApiKey
+          : "",
+  })).filter((item) => item.value);
+  for (const apiKey of apiKeys) {
+    if (apiKey.value.length > 4096) {
+      throw new Error(`The ${apiKey.providerId} API key is too long.`);
+    }
     rows.push({
-      key: "ai_default_api_key",
-      value: await encryptAdminSecret(apiKey),
+      key: `ai_api_key_${apiKey.providerId}`,
+      value: await encryptAdminSecret(apiKey.value),
       updated_at: new Date().toISOString(),
     });
   }

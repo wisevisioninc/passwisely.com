@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { getApiUser, jsonError } from "@/lib/auth";
 import { adminRpc } from "@/lib/supabase";
+import { recordUsage } from "@/lib/admin-data";
 
 type Provider = "openai" | "anthropic" | "gemini" | "kimi";
 type Json = Record<string, unknown>;
@@ -152,11 +153,12 @@ export async function POST(request: Request) {
   const apiKey = suppliedKey || environment()[definition.keyEnv]?.trim() || "";
   if (!apiKey) return jsonError("The Wise model key is not configured.", 503);
 
+  let chargedCredits = 0;
+  const suppliedRequestId = request.headers.get("x-wise-request-id") || "";
+  const requestId = /^[a-zA-Z0-9_-]{16,80}$/.test(suppliedRequestId)
+    ? suppliedRequestId
+    : crypto.randomUUID();
   if (!suppliedKey) {
-    const suppliedRequestId = request.headers.get("x-wise-request-id") || "";
-    const requestId = /^[a-zA-Z0-9_-]{16,80}$/.test(suppliedRequestId)
-      ? suppliedRequestId
-      : crypto.randomUUID();
     const cost =
       provider === "kimi" && model === "kimi-k3"
         ? kimiK3MaximumCredits(body)
@@ -170,6 +172,7 @@ export async function POST(request: Request) {
       p_reference: `ai:${user.id}:${requestId}`,
     });
     if (!result[0]?.success) return jsonError("Not enough credits.", 402);
+    chargedCredits = cost;
   }
 
   const headers = new Headers({ "content-type": "application/json" });
@@ -204,7 +207,17 @@ export async function POST(request: Request) {
         : "Model provider request failed.";
     return jsonError(message, upstream.status >= 500 ? 502 : upstream.status);
   }
-  return Response.json(
-    provider === "anthropic" ? fromAnthropic(payload, model) : payload,
-  );
+  const normalized = provider === "anthropic" ? fromAnthropic(payload, model) : payload;
+  const usage = (normalized.usage || {}) as Json;
+  await recordUsage({
+    userId: user.id,
+    action: "ai_chat",
+    provider,
+    model,
+    promptTokens: Number(usage.prompt_tokens || 0),
+    completionTokens: Number(usage.completion_tokens || 0),
+    credits: chargedCredits,
+    reference: `ai:${user.id}:${requestId}`,
+  }).catch(() => undefined);
+  return Response.json(normalized);
 }

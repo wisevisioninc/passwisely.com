@@ -1,52 +1,26 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { checkAdminStatistics, configFromEnvironment } from "../scripts/supabase-healthcheck.mjs";
 
-import {
-  checkSupabase,
-  configFromEnvironment,
-} from "../scripts/supabase-healthcheck.mjs";
-
-test("health check performs three authenticated read-only database queries", async () => {
+test("health check logs into the admin dashboard and fetches statistics", async () => {
   const requests = [];
-  const result = await checkSupabase(
-    {
-      url: "https://example.supabase.co",
-      key: "test-service-key",
-    },
+  const result = await checkAdminStatistics(
+    { baseUrl: "https://admin.passwisely.com", username: "admin", password: "admin" },
     async (url, init) => {
       requests.push({ url, init });
-      return new Response("[]", {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+      if (url.endsWith("/login")) return new Response('{"success":true}', { status: 200, headers: { "set-cookie": "pw_admin=session; Path=/; HttpOnly" } });
+      return Response.json({ totalUsers: 12, activeUsers: 5, dau: 2, requests7d: 18, tokens7d: 4000, totalTokens: 9000, daily: [], services: [{ state: "healthy" }] });
     },
   );
-
-  assert.deepEqual(result.checks, [
-    "profiles",
-    "credit_transactions",
-    "purchases",
-  ]);
-  assert.equal(requests.length, 3);
-
-  for (const request of requests) {
-    assert.equal(request.init.method, "GET");
-    assert.equal(request.init.headers.apikey, "test-service-key");
-    assert.equal(
-      request.init.headers.authorization,
-      "Bearer test-service-key",
-    );
-    assert.match(request.url, /\?select=id&limit=1$/);
-  }
+  assert.deepEqual(result.checks, ["admin-login", "admin-statistics", "service-health"]);
+  assert.equal(requests.length, 2);
+  assert.equal(JSON.parse(requests[0].init.body).username, "admin");
+  assert.match(requests[1].init.headers.cookie, /^pw_admin=/);
+  assert.equal(result.summary.totalUsers, 12);
+  assert.equal(result.summary.servicesHealthy, 1);
 });
 
-test("health check requires server-side Supabase configuration", () => {
-  assert.throws(
-    () => configFromEnvironment({}),
-    /SUPABASE_URL is not configured/,
-  );
-  assert.throws(
-    () => configFromEnvironment({ SUPABASE_URL: "https://example.test" }),
-    /SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is not configured/,
-  );
+test("health check requires explicit admin credentials", () => {
+  assert.throws(() => configFromEnvironment({}), /must be configured/);
+  assert.deepEqual(configFromEnvironment({ ADMIN_USERNAME: "ops", ADMIN_PASSWORD: "secret" }), { baseUrl: "https://admin.passwisely.com", username: "ops", password: "secret" });
 });

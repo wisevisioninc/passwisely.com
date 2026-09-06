@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { getApiUser, jsonError } from "@/lib/auth";
 import { adminRest, adminRpc } from "@/lib/supabase";
+import { recordUsage } from "@/lib/admin-data";
 
 type Agent =
   | "resume_opt_agent"
@@ -310,6 +311,16 @@ export async function POST(request: Request) {
       credits_charged: actualCredits,
     }),
   });
+  await recordUsage({
+    userId: user.id,
+    action: agent,
+    provider: "kimi",
+    model: MODEL,
+    promptTokens: generated.promptTokens,
+    completionTokens: generated.completionTokens,
+    credits: actualCredits,
+    reference,
+  }).catch(() => undefined);
   return Response.json({
     success: true,
     run: rows[0],

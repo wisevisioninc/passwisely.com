@@ -11,6 +11,7 @@ WorkingDirectory=/home/jerry/codebase/passwisely
 Environment=NODE_ENV=production
 Environment=PATH=/home/jerry/.nvm/versions/node/v22.15.0/bin:/usr/local/bin:/usr/bin:/bin
 Environment=PASSWISELY_GRPC_LISTEN=127.0.0.1:3012
+Environment=PASSWISELY_HEALTH_LISTEN=127.0.0.1:3013
 Environment=PASSWISELY_RELAY_URL=http://127.0.0.1:3011/api/ai/chat/completions
 ExecStart=/home/jerry/.nvm/versions/node/v22.15.0/bin/node desktop-api/server.mjs
 ExecStartPost=/home/jerry/.nvm/versions/node/v22.15.0/bin/node desktop-api/healthcheck.mjs

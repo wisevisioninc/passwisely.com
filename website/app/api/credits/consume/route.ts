@@ -1,5 +1,6 @@
 import { getApiUser, jsonError } from "@/lib/auth";
 import { adminRpc } from "@/lib/supabase";
+import { recordUsage } from "@/lib/admin-data";
 
 const ALLOWED_ACTIONS: Record<string, number> = {
   solve: 1,
@@ -33,6 +34,14 @@ export async function POST(request: Request) {
   const outcome = result[0];
   if (!outcome?.success) {
     return jsonError("Not enough credits.", 402);
+  }
+  if (!outcome.duplicate) {
+    await recordUsage({
+      userId: user.id,
+      action,
+      credits: cost,
+      reference: `usage:${user.id}:${requestId}`,
+    }).catch(() => undefined);
   }
   return Response.json({
     success: true,

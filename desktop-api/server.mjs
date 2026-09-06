@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { startHostHealthServer } from "./host-health.mjs";
 
 const require = createRequire(import.meta.url);
 const grpc = require("@grpc/grpc-js");
@@ -12,6 +13,8 @@ const relayUrl =
   process.env.PASSWISELY_RELAY_URL ||
   "http://127.0.0.1:3011/api/ai/chat/completions";
 const listenAddress = process.env.PASSWISELY_GRPC_LISTEN || "127.0.0.1:3012";
+const healthListenAddress =
+  process.env.PASSWISELY_HEALTH_LISTEN || "127.0.0.1:3013";
 
 const definition = protoLoader.loadSync(protoPath, {
   longs: String,
@@ -151,6 +154,7 @@ const server = new grpc.Server({
   "grpc.max_send_message_length": 16 * 1024 * 1024,
 });
 server.addService(service, { Chat: chat, Health: health });
+let hostHealthServer;
 
 server.bindAsync(
   listenAddress,
@@ -162,10 +166,12 @@ server.bindAsync(
       return;
     }
     console.log(`PassWisely desktop gRPC API listening on ${listenAddress}`);
+    hostHealthServer = startHostHealthServer(healthListenAddress);
   },
 );
 
 function shutdown() {
+  hostHealthServer?.close();
   server.tryShutdown(() => process.exit(0));
   setTimeout(() => server.forceShutdown(), 5_000).unref();
 }

@@ -1,86 +1,72 @@
 import { pathToFileURL } from "node:url";
 
-const TABLES = ["profiles", "credit_transactions", "purchases"];
-
 export function configFromEnvironment(environment = process.env) {
-  const url = environment.SUPABASE_URL?.trim().replace(/\/+$/, "");
-  const key =
-    environment.SUPABASE_SECRET_KEY?.trim() ||
-    environment.SUPABASE_SERVICE_ROLE_KEY?.trim();
-
-  if (!url) {
-    throw new Error("SUPABASE_URL is not configured.");
+  const username = environment.ADMIN_USERNAME?.trim();
+  const password = environment.ADMIN_PASSWORD?.trim();
+  if (!username || !password) {
+    throw new Error("ADMIN_USERNAME and ADMIN_PASSWORD must be configured.");
   }
-  if (!key) {
-    throw new Error(
-      "SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is not configured.",
-    );
-  }
-
-  return { url, key };
+  return {
+    baseUrl: (environment.ADMIN_BASE_URL?.trim() || "https://admin.passwisely.com").replace(/\/+$/, ""),
+    username,
+    password,
+  };
 }
 
-export async function checkSupabase(
-  { url, key },
-  fetchImplementation = globalThis.fetch,
-) {
+export async function checkAdminStatistics(config, fetchImplementation = globalThis.fetch) {
   const startedAt = Date.now();
-  const checks = [];
-
-  for (const table of TABLES) {
-    const response = await fetchImplementation(
-      `${url}/rest/v1/${table}?select=id&limit=1`,
-      {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          apikey: key,
-          authorization: `Bearer ${key}`,
-          "x-client-info": "passwisely-wise-healthcheck/1.0",
-        },
-        signal: AbortSignal.timeout(15_000),
-      },
-    );
-
-    if (!response.ok) {
-      const details = (await response.text()).slice(0, 300);
-      throw new Error(
-        `Supabase ${table} check failed (${response.status}): ${details}`,
-      );
-    }
-
-    await response.arrayBuffer();
-    checks.push(table);
+  const login = await fetchImplementation(`${config.baseUrl}/api/admin/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-client-info": "passwisely-wise-healthcheck/2.0" },
+    body: JSON.stringify({ username: config.username, password: config.password }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!login.ok) {
+    throw new Error(`Admin login failed (${login.status}): ${(await login.text()).slice(0, 300)}`);
   }
+  const cookie = login.headers.getSetCookie?.().map((value) => value.split(";", 1)[0]).join("; ") || login.headers.get("set-cookie")?.split(";", 1)[0] || "";
+  if (!cookie) throw new Error("Admin login did not create a session cookie.");
 
+  const response = await fetchImplementation(`${config.baseUrl}/api/admin/stats`, {
+    method: "GET",
+    headers: { accept: "application/json", cookie, "x-client-info": "passwisely-wise-healthcheck/2.0" },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) {
+    throw new Error(`Admin statistics check failed (${response.status}): ${(await response.text()).slice(0, 300)}`);
+  }
+  const statistics = await response.json();
+  for (const key of ["totalUsers", "activeUsers", "dau", "requests7d", "tokens7d", "totalTokens"]) {
+    if (!Number.isFinite(statistics[key])) throw new Error(`Admin statistics is missing ${key}.`);
+  }
+  if (!Array.isArray(statistics.daily)) throw new Error("Admin statistics is missing daily usage.");
   return {
     success: true,
-    checks,
+    checks: ["admin-login", "admin-statistics", "service-health"],
+    summary: {
+      totalUsers: statistics.totalUsers,
+      dau: statistics.dau,
+      servicesHealthy: Array.isArray(statistics.services)
+        ? statistics.services.filter((service) => service.state === "healthy").length
+        : 0,
+      servicesTotal: Array.isArray(statistics.services) ? statistics.services.length : 0,
+    },
     latencyMs: Date.now() - startedAt,
   };
 }
 
+// Backwards-compatible export for the existing systemd task/imports.
+export const checkSupabase = checkAdminStatistics;
+
 async function main() {
-  const result = await checkSupabase(configFromEnvironment());
-  console.log(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      ...result,
-    }),
-  );
+  const result = await checkAdminStatistics(configFromEnvironment());
+  console.log(JSON.stringify({ timestamp: new Date().toISOString(), ...result }));
 }
 
 const entryPoint = process.argv[1] ? pathToFileURL(process.argv[1]).href : "";
-
 if (entryPoint === import.meta.url) {
   main().catch((error) => {
-    console.error(
-      JSON.stringify({
-        timestamp: new Date().toISOString(),
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      }),
-    );
+    console.error(JSON.stringify({ timestamp: new Date().toISOString(), success: false, error: error instanceof Error ? error.message : String(error) }));
     process.exitCode = 1;
   });
 }

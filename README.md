@@ -132,6 +132,20 @@ failed runs are sent to syslog with the tag `passwisely-supabase-health`.
 Supabase only guarantees that paid projects will not be paused for inactivity,
 so production should move to Pro when continuous availability is required.
 
+## Operations dashboard
+
+The private operations console is served from
+`https://admin.passwisely.com/admin`. Production requires explicit
+`ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET` values. The
+dashboard combines Beijing-time growth, engagement, AI usage, credit, resume,
+revenue, and payment-conversion metrics with live checks for Supabase, the
+website, desktop gRPC API, payment configuration, and all three installer
+downloads.
+
+The desktop API exposes host resource data only on the loopback-only
+`127.0.0.1:3013/health` endpoint. It must not be proxied publicly. Dashboard
+data refreshes every 60 seconds while the page is visible.
+
 ## Security notes
 
 - Renderer isolation is enabled and Node integration is disabled.

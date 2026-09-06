@@ -11,8 +11,13 @@ import {
   signInWithPassword,
   SupabaseRequestError,
 } from "@/lib/supabase";
+import { getAdminSettings } from "@/lib/admin-data";
 
 export async function POST(request: Request) {
+  const settings: Record<string, string> = await getAdminSettings().catch(() => ({}));
+  if (settings.registration_enabled === "false") {
+    return jsonError("Registration is temporarily closed.", 403, "registration_closed");
+  }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const email = normalizeEmail(body.email);
   const password = typeof body.password === "string" ? body.password : "";

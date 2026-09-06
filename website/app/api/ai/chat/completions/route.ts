@@ -8,6 +8,7 @@ import {
   isSafeModelName,
 } from "@/lib/ai-catalog";
 import { getDefaultAiConfig } from "@/lib/ai-config";
+import { fetchModelProvider } from "@/lib/model-fetch";
 
 type Json = Record<string, unknown>;
 
@@ -197,14 +198,13 @@ export async function POST(request: Request) {
       : provider === "qwen"
         ? { ...effectiveBody, enable_thinking: true, stream: false }
       : effectiveBody;
-  const upstream = await fetch(definition.origin, {
+  const upstream = await fetchModelProvider(provider, definition.origin, {
     method: "POST",
     headers,
     body: JSON.stringify(
       provider === "anthropic" ? toAnthropic(effectiveBody) : upstreamBody,
     ),
-    signal: AbortSignal.timeout(90_000),
-  }).catch(() => null);
+  }, 90_000);
   if (!upstream) return jsonError("Model provider is unavailable.", 502);
 
   const payload = (await upstream.json().catch(() => ({}))) as Json;

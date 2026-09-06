@@ -4,6 +4,7 @@ import { adminRest, adminRpc } from "@/lib/supabase";
 import { recordUsage } from "@/lib/admin-data";
 import { AI_PROVIDER_CATALOG } from "@/lib/ai-catalog";
 import { getDefaultAiConfig } from "@/lib/ai-config";
+import { fetchModelProvider } from "@/lib/model-fetch";
 
 type Agent =
   | "resume_opt_agent"
@@ -164,12 +165,12 @@ async function callDefaultModel(
         : config.provider === "qwen"
           ? { ...openAiBody, enable_thinking: true, stream: false }
         : openAiBody;
-  const response = await fetch(definition.origin, {
+  const response = await fetchModelProvider(config.provider, definition.origin, {
     method: "POST",
     headers,
     body: JSON.stringify(requestBody),
-    signal: AbortSignal.timeout(120_000),
-  });
+  }, 120_000);
+  if (!response) throw new Error("The default model provider is unavailable.");
   const payload = (await response.json().catch(() => ({}))) as Json;
   if (!response.ok) {
     const message = (payload.error as Json)?.message;

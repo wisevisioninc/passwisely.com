@@ -37,12 +37,13 @@ test("default model configuration is stored privately in Supabase", async () => 
 });
 
 test("Qwen uses the DashScope OpenAI-compatible endpoint and thinking mode", async () => {
-  const [catalog, chat, resume, dashboard, migration] = await Promise.all([
+  const [catalog, chat, resume, dashboard, migration, modelFetch] = await Promise.all([
     read("../lib/ai-catalog.ts"),
     read("../app/api/ai/chat/completions/route.ts"),
     read("../app/api/resume/agents/route.ts"),
     read("../app/admin/AdminDashboard.tsx"),
     read("../supabase/migrations/0009_provider_scoped_ai_keys.sql"),
+    read("../lib/model-fetch.ts"),
   ]);
   assert.match(catalog, /qwen:/);
   assert.match(catalog, /dashscope\.aliyuncs\.com\/compatible-mode\/v1\/chat\/completions/);
@@ -55,6 +56,8 @@ test("Qwen uses the DashScope OpenAI-compatible endpoint and thinking mode", asy
   assert.match(dashboard, /请先填写.*API Key/);
   assert.match(migration, /'ai_api_key_kimi'/);
   assert.match(migration, /'ai_default_api_key'/);
+  assert.match(modelFetch, /provider === "qwen" \? 3 : 1/);
+  assert.match(modelFetch, /Math\.min\(20_000, timeoutMs\)/);
 });
 
 test("shared desktop and resume requests use the admin default model", async () => {

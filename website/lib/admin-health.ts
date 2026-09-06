@@ -1,4 +1,6 @@
 import { env } from "cloudflare:workers";
+import { AI_PROVIDER_CATALOG } from "@/lib/ai-catalog";
+import { getDefaultAiConfig } from "@/lib/ai-config";
 
 export type HealthState = "healthy" | "degraded" | "down";
 
@@ -115,16 +117,15 @@ export async function getAdminHealth(databaseLatencyMs: number): Promise<{
   const origins = {
     website: values.PUBLIC_SITE_URL?.trim() || "https://passwisely.com",
   };
-  const [website, macArm, macIntel, windows, runtime] = await Promise.all([
+  const [website, macArm, macIntel, windows, runtime, defaultAi] = await Promise.all([
     timedFetch("website", "官方网站", "runtime", `${origins.website}/`),
     timedFetch("mac-arm64", "macOS Apple 芯片安装包", "delivery", `${origins.website}/api/download/mac-arm64`),
     timedFetch("mac-x64", "macOS Intel 安装包", "delivery", `${origins.website}/api/download/mac-x64`),
     timedFetch("windows-x64", "Windows x64 安装包", "delivery", `${origins.website}/api/download/windows-x64`),
     hostHealth(),
+    getDefaultAiConfig().catch(() => null),
   ]);
 
-  const aiProviders = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "KIMI_API_KEY"]
-    .filter((name) => Boolean(values[name]?.trim())).length;
   const alipayReady = configured(values, ["ALIPAY_APP_ID", "ALIPAY_PRIVATE_KEY", "ALIPAY_PUBLIC_KEY"]);
   const wechatReady =
     configuredOneOf(values, ["WECHAT_PAY_APP_ID", "WECHAT_APP_ID"]) &&
@@ -155,8 +156,10 @@ export async function getAdminHealth(databaseLatencyMs: number): Promise<{
         id: "ai-relay",
         name: "AI 模型中继",
         group: "configuration",
-        state: aiProviders > 0 ? "healthy" : "down",
-        detail: `${aiProviders}/4 个模型渠道已配置`,
+        state: defaultAi?.apiKey ? "healthy" : "down",
+        detail: defaultAi
+          ? `${AI_PROVIDER_CATALOG[defaultAi.provider].label} · ${defaultAi.model} · ${defaultAi.source === "supabase" ? "Supabase 配置" : "环境回退"}`
+          : "默认模型配置不可用",
       },
       {
         id: "alipay",

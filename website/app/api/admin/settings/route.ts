@@ -13,6 +13,13 @@ export async function PUT(request: Request) {
     return Response.json({ error: "Authentication required." }, { status: 401 });
   }
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  await saveAdminSettings(body);
-  return Response.json({ success: true });
+  try {
+    await saveAdminSettings(body);
+    return Response.json({ success: true });
+  } catch (error) {
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Could not save settings." },
+      { status: 400 },
+    );
+  }
 }

@@ -2,6 +2,8 @@ import { env } from "cloudflare:workers";
 import { getApiUser, jsonError } from "@/lib/auth";
 import { adminRest, adminRpc } from "@/lib/supabase";
 import { recordUsage } from "@/lib/admin-data";
+import { AI_PROVIDER_CATALOG } from "@/lib/ai-catalog";
+import { getDefaultAiConfig } from "@/lib/ai-config";
 
 type Agent =
   | "resume_opt_agent"
@@ -14,7 +16,6 @@ const AGENTS = new Set<Agent>([
   "interview_question_agent",
   "history_interview_agent",
 ]);
-const MODEL = "kimi-k3";
 const MAX_OUTPUT: Record<Agent, number> = {
   resume_opt_agent: 7000,
   interview_question_agent: 6500,
@@ -119,43 +120,80 @@ function prompts(
   };
 }
 
-async function callKimi(
+async function callDefaultModel(
   system: string,
   user: string,
   maxTokens: number,
-): Promise<{ content: string; promptTokens: number; completionTokens: number }> {
-  const key = runtimeEnv().KIMI_API_KEY?.trim();
-  if (!key) throw new Error("KIMI_API_KEY is not configured.");
-  const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
+): Promise<{
+  content: string;
+  promptTokens: number;
+  completionTokens: number;
+  provider: keyof typeof AI_PROVIDER_CATALOG;
+  model: string;
+}> {
+  const config = await getDefaultAiConfig();
+  if (!config.apiKey) throw new Error("The default model API key is not configured.");
+  const definition = AI_PROVIDER_CATALOG[config.provider];
+  const headers = new Headers({ "content-type": "application/json" });
+  if (config.provider === "anthropic") {
+    headers.set("x-api-key", config.apiKey);
+    headers.set("anthropic-version", "2023-06-01");
+  } else {
+    headers.set("authorization", `Bearer ${config.apiKey}`);
+  }
+  const openAiBody: Json = {
+    model: config.model,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    temperature: 0.2,
+    max_tokens: maxTokens,
+  };
+  const requestBody =
+    config.provider === "anthropic"
+      ? {
+          model: config.model,
+          system,
+          messages: [{ role: "user", content: user }],
+          temperature: 0.2,
+          max_tokens: maxTokens,
+        }
+      : config.provider === "kimi" && config.model === "kimi-k3"
+        ? { ...openAiBody, temperature: 0.6, thinking: { type: "disabled" } }
+        : openAiBody;
+  const response = await fetch(definition.origin, {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${key}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      temperature: 0.2,
-      max_tokens: maxTokens,
-    }),
+    headers,
+    body: JSON.stringify(requestBody),
     signal: AbortSignal.timeout(120_000),
   });
   const payload = (await response.json().catch(() => ({}))) as Json;
   if (!response.ok) {
     const message = (payload.error as Json)?.message;
-    throw new Error(typeof message === "string" ? message : "Kimi request failed.");
+    throw new Error(
+      typeof message === "string" ? message : "Default model request failed.",
+    );
   }
-  const choices = payload.choices as Array<Json> | undefined;
-  const content = ((choices?.[0]?.message as Json)?.content as string)?.trim();
-  if (!content) throw new Error("Kimi returned an empty result.");
+  const content =
+    config.provider === "anthropic"
+      ? ((payload.content as Array<Json> | undefined) || [])
+          .filter((part) => part.type === "text")
+          .map((part) => String(part.text || ""))
+          .join("")
+          .trim()
+      : String(
+          (((payload.choices as Array<Json> | undefined)?.[0]?.message as Json)
+            ?.content as string) || "",
+        ).trim();
+  if (!content) throw new Error("The default model returned an empty result.");
   const usage = (payload.usage || {}) as Json;
   return {
     content,
-    promptTokens: Number(usage.prompt_tokens || 0),
-    completionTokens: Number(usage.completion_tokens || 0),
+    promptTokens: Number(usage.prompt_tokens || usage.input_tokens || 0),
+    completionTokens: Number(usage.completion_tokens || usage.output_tokens || 0),
+    provider: config.provider,
+    model: config.model,
   };
 }
 
@@ -239,7 +277,7 @@ export async function POST(request: Request) {
 
   let generated;
   try {
-    generated = await callKimi(prompt.system, prompt.user, MAX_OUTPUT[agent]);
+    generated = await callDefaultModel(prompt.system, prompt.user, MAX_OUTPUT[agent]);
   } catch (error) {
     await adminRpc("refund_credits", {
       p_user_id: user.id,
@@ -305,7 +343,7 @@ export async function POST(request: Request) {
       input_snapshot: { resumeText: resume, jobDescription, company, role },
       result_content: generated.content,
       sources,
-      model: MODEL,
+      model: generated.model,
       prompt_tokens: generated.promptTokens,
       completion_tokens: generated.completionTokens,
       credits_charged: actualCredits,
@@ -314,8 +352,8 @@ export async function POST(request: Request) {
   await recordUsage({
     userId: user.id,
     action: agent,
-    provider: "kimi",
-    model: MODEL,
+    provider: generated.provider,
+    model: generated.model,
     promptTokens: generated.promptTokens,
     completionTokens: generated.completionTokens,
     credits: actualCredits,

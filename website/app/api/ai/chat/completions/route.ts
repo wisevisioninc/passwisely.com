@@ -1,41 +1,15 @@
-import { env } from "cloudflare:workers";
 import { getApiUser, jsonError } from "@/lib/auth";
 import { adminRpc } from "@/lib/supabase";
 import { recordUsage } from "@/lib/admin-data";
+import {
+  AI_PROVIDER_CATALOG,
+  AiProvider,
+  isAiProvider,
+  isSafeModelName,
+} from "@/lib/ai-catalog";
+import { getDefaultAiConfig } from "@/lib/ai-config";
 
-type Provider = "openai" | "anthropic" | "gemini" | "kimi";
 type Json = Record<string, unknown>;
-
-const PROVIDERS: Record<
-  Provider,
-  { origin: string; keyEnv: string; models: Set<string> }
-> = {
-  openai: {
-    origin: "https://api.openai.com/v1/chat/completions",
-    keyEnv: "OPENAI_API_KEY",
-    models: new Set(["gpt-4o-mini", "gpt-4o"]),
-  },
-  anthropic: {
-    origin: "https://api.anthropic.com/v1/messages",
-    keyEnv: "ANTHROPIC_API_KEY",
-    models: new Set([
-      "claude-opus-5",
-      "claude-sonnet-4-20250514",
-      "claude-3-7-sonnet-20250219",
-    ]),
-  },
-  gemini: {
-    origin:
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-    keyEnv: "GEMINI_API_KEY",
-    models: new Set(["gemini-2.5-flash", "gemini-2.5-pro"]),
-  },
-  kimi: {
-    origin: "https://api.moonshot.cn/v1/chat/completions",
-    keyEnv: "KIMI_API_KEY",
-    models: new Set(["kimi-k3"]),
-  },
-};
 
 // The cheapest pack sells one credit for ¥0.059. Valuing a credit at only
 // ¥0.05 leaves margin for payment fees. K3 is priced conservatively at its
@@ -73,10 +47,6 @@ function kimiK3MaximumCredits(body: Json): number {
       (inputTokensUpperBound * 20 + outputTokensUpperBound * 100) / 50_000,
     ),
   );
-}
-
-function environment(): Record<string, string | undefined> {
-  return env as unknown as Record<string, string | undefined>;
 }
 
 function toAnthropic(body: Json): Json {
@@ -159,19 +129,35 @@ export async function POST(request: Request) {
   if (contentLength > 12 * 1024 * 1024) {
     return jsonError("AI request is too large.", 413);
   }
-  const provider = request.headers.get("x-wise-provider") as Provider | null;
-  const definition = provider ? PROVIDERS[provider] : undefined;
-  if (!provider || !definition) return jsonError("Unsupported AI provider.", 400);
-
   const body = (await request.json().catch(() => null)) as Json | null;
-  const model = typeof body?.model === "string" ? body.model : "";
-  if (!body || !definition.models.has(model)) {
-    return jsonError("Unsupported model.", 400);
-  }
-
+  if (!body) return jsonError("Invalid AI request.", 400);
   const suppliedKey = request.headers.get("x-wise-provider-key")?.trim() || "";
-  const apiKey = suppliedKey || environment()[definition.keyEnv]?.trim() || "";
+  const requestedProvider = request.headers.get("x-wise-provider");
+  const requestedModel = typeof body.model === "string" ? body.model : "";
+  let provider: AiProvider;
+  let model: string;
+  let apiKey: string;
+  if (suppliedKey) {
+    if (!isAiProvider(requestedProvider)) {
+      return jsonError("Unsupported AI provider.", 400);
+    }
+    const allowedModels = AI_PROVIDER_CATALOG[requestedProvider].models as readonly string[];
+    if (!allowedModels.includes(requestedModel)) {
+      return jsonError("Unsupported model.", 400);
+    }
+    provider = requestedProvider;
+    model = requestedModel;
+    apiKey = suppliedKey;
+  } else {
+    const configured = await getDefaultAiConfig();
+    provider = configured.provider;
+    model = configured.model;
+    apiKey = configured.apiKey;
+  }
+  if (!isSafeModelName(model)) return jsonError("Unsupported model.", 400);
   if (!apiKey) return jsonError("The Wise model key is not configured.", 503);
+  const definition = AI_PROVIDER_CATALOG[provider];
+  const effectiveBody: Json = { ...body, model };
 
   let chargedCredits = 0;
   const suppliedRequestId = request.headers.get("x-wise-request-id") || "";
@@ -181,7 +167,7 @@ export async function POST(request: Request) {
   if (!suppliedKey) {
     const cost =
       provider === "kimi" && model === "kimi-k3"
-        ? kimiK3MaximumCredits(body)
+        ? kimiK3MaximumCredits(effectiveBody)
         : 1;
     const result = await adminRpc<
       Array<{ success: boolean; balance: number; duplicate: boolean }>
@@ -207,13 +193,13 @@ export async function POST(request: Request) {
   // The current API requires temperature=0.6 when thinking is disabled.
   const upstreamBody =
     provider === "kimi" && model === "kimi-k3"
-      ? { ...body, temperature: 0.6, thinking: { type: "disabled" } }
-      : body;
+      ? { ...effectiveBody, temperature: 0.6, thinking: { type: "disabled" } }
+      : effectiveBody;
   const upstream = await fetch(definition.origin, {
     method: "POST",
     headers,
     body: JSON.stringify(
-      provider === "anthropic" ? toAnthropic(body) : upstreamBody,
+      provider === "anthropic" ? toAnthropic(effectiveBody) : upstreamBody,
     ),
     signal: AbortSignal.timeout(90_000),
   }).catch(() => null);

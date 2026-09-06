@@ -8,6 +8,7 @@ import type {
   CountBreakdown,
   DailyUsage,
 } from "@/lib/admin-data";
+import { AI_PROVIDER_CATALOG, isAiProvider } from "@/lib/ai-catalog";
 
 type View = "overview" | "services" | "settings";
 type IconName = "overview" | "services" | "settings" | "users" | "activity" | "coins" | "revenue" | "refresh" | "logout";
@@ -190,6 +191,8 @@ export default function AdminDashboard() {
   const [view, setView] = useState<View>("overview");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (silent = false) => {
@@ -253,13 +256,23 @@ export default function AdminDashboard() {
     event.preventDefault();
     setSaving(true);
     setError("");
+    setSaveMessage("");
     const response = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(settings),
+      body: JSON.stringify({ ...settings, ai_default_api_key: apiKeyInput }),
     });
     setSaving(false);
-    if (!response.ok) setError("配置保存失败，请检查服务状态后重试。");
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      setError(payload.error || "配置保存失败，请检查服务状态后重试。");
+      return;
+    }
+    if (apiKeyInput) {
+      setSettings((value) => ({ ...value, ai_default_api_key_configured: "true" }));
+      setApiKeyInput("");
+    }
+    setSaveMessage("配置已保存，新的默认模型将在数秒内用于后续请求。");
   }
 
   async function logout() {
@@ -292,6 +305,10 @@ export default function AdminDashboard() {
   ];
   const activeRate = stats.totalUsers ? Math.round(stats.mau / stats.totalUsers * 1000) / 10 : 0;
   const payingRate = stats.newUsers30d ? Math.round(stats.payingUsers30d / stats.newUsers30d * 1000) / 10 : 0;
+  const selectedAiProvider = isAiProvider(settings.ai_default_provider)
+    ? settings.ai_default_provider
+    : "kimi";
+  const selectedAiDefinition = AI_PROVIDER_CATALOG[selectedAiProvider];
 
   return <main className="admin-app">
     <aside className="admin-sidebar">
@@ -350,7 +367,23 @@ export default function AdminDashboard() {
         <section className="admin-card admin-host-card"><div className="admin-card-heading"><div><span className="admin-card-kicker">WISE HOST</span><h2>服务器资源</h2></div><small>{stats.host ? `已运行 ${formatUptime(stats.host.uptimeSeconds)}` : "暂时无法读取"}</small></div>{stats.host ? <div className="admin-host-grid"><div><div><span>内存使用</span><strong>{stats.host.memoryUsedPercent}%</strong></div><i><b style={{ width: `${stats.host.memoryUsedPercent}%` }}/></i></div><div><div><span>磁盘使用</span><strong>{stats.host.diskUsedPercent}%</strong></div><i><b style={{ width: `${stats.host.diskUsedPercent}%` }}/></i></div><div><span>1 分钟负载</span><strong>{stats.host.loadAverage1m}</strong><small>{stats.host.cpuCount} 核 CPU</small></div><div><span>gRPC 进程</span><strong>{formatNumber(stats.host.processRssBytes / 1024 / 1024)} MB</strong><small>运行 {formatUptime(stats.host.processUptimeSeconds)}</small></div></div> : <div className="admin-empty">服务器健康端点尚未连接</div>}</section>
       </>}
 
-      {view === "settings" && <section className="admin-settings-layout"><form className="admin-card admin-settings-card" onSubmit={saveSettings}><div className="admin-card-heading"><div><span className="admin-card-kicker">SITE CONTROL</span><h2>站点配置</h2></div></div><label><div><strong>开放新用户注册</strong><span>关闭后现有用户仍可正常登录和使用</span></div><select value={settings.registration_enabled || "true"} onChange={(event) => setSettings((value) => ({ ...value, registration_enabled: event.target.value }))}><option value="true">已开启</option><option value="false">已关闭</option></select></label><label><div><strong>客服邮箱</strong><span>用于网站和客户端的用户支持入口</span></div><input type="email" value={settings.support_email || ""} placeholder="support@passwisely.com" onChange={(event) => setSettings((value) => ({ ...value, support_email: event.target.value }))}/></label><label className="admin-settings-message"><div><strong>维护公告</strong><span>为空时不展示公告，最多 500 字</span></div><textarea value={settings.maintenance_message || ""} rows={6} maxLength={500} placeholder="输入维护时间或重要通知…" onChange={(event) => setSettings((value) => ({ ...value, maintenance_message: event.target.value }))}/><small>{(settings.maintenance_message || "").length}/500</small></label><button className="admin-primary-button" disabled={saving}>{saving ? "正在保存…" : "保存站点配置"}</button></form><aside className="admin-card admin-settings-note"><span className="admin-card-kicker">SECURITY</span><h2>安全说明</h2><p>管理会话使用 HttpOnly、SameSite Cookie 和 HMAC 签名保护，12 小时后自动失效。</p><ul><li>不要与客户端账号共用管理员密码</li><li>建议每 90 天轮换管理员密码</li><li>配置修改会直接影响生产环境</li></ul></aside></section>}
+      {view === "settings" && <section className="admin-settings-layout">
+        <form className="admin-card admin-settings-card" onSubmit={saveSettings}>
+          <div className="admin-card-heading"><div><span className="admin-card-kicker">AI RUNTIME</span><h2>默认大模型配置</h2></div><span className={`admin-secret-state ${settings.ai_default_api_key_configured === "true" ? "configured" : "missing"}`}>{settings.ai_default_api_key_configured === "true" ? "API Key 已配置" : "API Key 未配置"}</span></div>
+          <label><div><strong>默认模型渠道</strong><span>未填写个人 API Key 的客户端统一使用该渠道</span></div><select value={selectedAiProvider} onChange={(event) => { const provider = isAiProvider(event.target.value) ? event.target.value : "kimi"; setSettings((value) => ({ ...value, ai_default_provider: provider, ai_default_model: AI_PROVIDER_CATALOG[provider].defaultModel })); }}>
+            {Object.entries(AI_PROVIDER_CATALOG).map(([id, definition]) => <option key={id} value={id}>{definition.label}</option>)}
+          </select></label>
+          <label><div><strong>模型型号</strong><span>可选择推荐型号，也可以填写服务商支持的自定义型号</span></div><div className="admin-model-field"><input value={settings.ai_default_model || selectedAiDefinition.defaultModel} list="admin-model-options" maxLength={100} spellCheck={false} onChange={(event) => setSettings((value) => ({ ...value, ai_default_model: event.target.value }))}/><datalist id="admin-model-options">{selectedAiDefinition.models.map((model) => <option key={model} value={model}/>)}</datalist><small>当前渠道：{selectedAiDefinition.label}</small></div></label>
+          <label><div><strong>默认 API Key</strong><span>留空表示保留当前 Key；输入新值后会加密写入 Supabase</span></div><div className="admin-model-field"><input type="password" autoComplete="new-password" value={apiKeyInput} maxLength={4096} placeholder={settings.ai_default_api_key_configured === "true" ? "已安全配置 · 输入新 Key 可替换" : "请输入默认 API Key"} onChange={(event) => setApiKeyInput(event.target.value)}/><small>密钥不会通过管理接口回显，也不会写入日志</small></div></label>
+          <div className="admin-settings-section"><span className="admin-card-kicker">SITE CONTROL</span><h2>站点配置</h2></div>
+          <label><div><strong>开放新用户注册</strong><span>关闭后现有用户仍可正常登录和使用</span></div><select value={settings.registration_enabled || "true"} onChange={(event) => setSettings((value) => ({ ...value, registration_enabled: event.target.value }))}><option value="true">已开启</option><option value="false">已关闭</option></select></label>
+          <label><div><strong>客服邮箱</strong><span>用于网站和客户端的用户支持入口</span></div><input type="email" value={settings.support_email || ""} placeholder="support@passwisely.com" onChange={(event) => setSettings((value) => ({ ...value, support_email: event.target.value }))}/></label>
+          <label className="admin-settings-message"><div><strong>维护公告</strong><span>为空时不展示公告，最多 500 字</span></div><textarea value={settings.maintenance_message || ""} rows={6} maxLength={500} placeholder="输入维护时间或重要通知…" onChange={(event) => setSettings((value) => ({ ...value, maintenance_message: event.target.value }))}/><small>{(settings.maintenance_message || "").length}/500</small></label>
+          {saveMessage && <div className="admin-settings-success" role="status">{saveMessage}</div>}
+          <button className="admin-primary-button" disabled={saving}>{saving ? "正在保存…" : "保存全部配置"}</button>
+        </form>
+        <aside className="admin-card admin-settings-note"><span className="admin-card-kicker">SECURITY</span><h2>安全说明</h2><p>默认 API Key 使用管理员会话密钥派生的 AES-GCM 密钥加密后存入 Supabase；管理接口只返回“是否已配置”，不会返回密钥内容。</p><ul><li>修改渠道时请同时更新对应 API Key</li><li>配置将在 10 秒内作用于新的模型请求</li><li>服务器环境变量仅作为数据库不可用时的回退</li><li>建议每 90 天轮换管理员密码和模型密钥</li></ul></aside>
+      </section>}
 
       <footer className="admin-footer"><span>数据时间：{stats.generatedAt ? new Date(stats.generatedAt).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false }) : "—"}</span><span>自动刷新间隔 60 秒 · Asia/Shanghai</span></footer>
     </section>

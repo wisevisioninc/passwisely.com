@@ -1,4 +1,7 @@
 import type { HostHealth, ServiceHealth } from "@/lib/admin-health";
+import { isAiProvider, isSafeModelName } from "@/lib/ai-catalog";
+import { invalidateDefaultAiConfig } from "@/lib/ai-config";
+import { encryptAdminSecret } from "@/lib/admin-secrets";
 import { adminRest, adminRpc } from "@/lib/supabase";
 
 export interface DailyUsage {
@@ -270,19 +273,37 @@ export async function getAdminSettings(): Promise<Record<string, string>> {
   const rows = await adminRest<Array<{ key: string; value: string }>>(
     "admin_settings?select=key,value&order=key.asc",
   );
-  return Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const settings = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const apiKeyConfigured = Boolean(settings.ai_default_api_key?.trim());
+  delete settings.ai_default_api_key;
+  return {
+    ...settings,
+    ai_default_api_key: "",
+    ai_default_api_key_configured: apiKeyConfigured ? "true" : "false",
+  };
 }
 
 const ALLOWED_SETTINGS = new Set([
   "maintenance_message",
   "support_email",
   "registration_enabled",
+  "ai_default_provider",
+  "ai_default_model",
 ]);
 
 export async function saveAdminSettings(
   values: Record<string, unknown>,
 ): Promise<void> {
-  const rows = Object.entries(values)
+  const provider = values.ai_default_provider;
+  const model = values.ai_default_model;
+  if (provider !== undefined && !isAiProvider(provider)) {
+    throw new Error("Unsupported default AI provider.");
+  }
+  if (model !== undefined && !isSafeModelName(model)) {
+    throw new Error("The default AI model name is invalid.");
+  }
+
+  const rows: Array<{ key: string; value: string; updated_at: string }> = Object.entries(values)
     .filter(
       ([key, value]) => ALLOWED_SETTINGS.has(key) && typeof value === "string",
     )
@@ -291,12 +312,25 @@ export async function saveAdminSettings(
       value: String(value).slice(0, 500),
       updated_at: new Date().toISOString(),
     }));
+  const apiKey =
+    typeof values.ai_default_api_key === "string"
+      ? values.ai_default_api_key.trim()
+      : "";
+  if (apiKey) {
+    if (apiKey.length > 4096) throw new Error("The default API key is too long.");
+    rows.push({
+      key: "ai_default_api_key",
+      value: await encryptAdminSecret(apiKey),
+      updated_at: new Date().toISOString(),
+    });
+  }
   if (!rows.length) return;
   await adminRest("admin_settings?on_conflict=key", {
     method: "POST",
     headers: { prefer: "resolution=merge-duplicates,return=minimal" },
     body: JSON.stringify(rows),
   });
+  invalidateDefaultAiConfig();
 }
 
 export async function recordUsage(input: {

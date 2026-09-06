@@ -12,6 +12,7 @@
     "test": "pnpm run build && node --test tests/*.test.mjs",
     "test:live-account": "node tests/live-account.mjs",
     "test:live-ai": "node tests/live-ai.mjs",
+    "test:live-ai-vision": "node tests/live-ai-vision.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },

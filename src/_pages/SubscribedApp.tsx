@@ -4,6 +4,31 @@ import Queue from "../_pages/Queue";
 import Solutions from "../_pages/Solutions";
 import { useToast } from "../contexts/toast";
 
+type SolutionPayload = {
+  code: string;
+  thoughts: string[];
+  time_complexity: string;
+  space_complexity: string;
+};
+
+function normalizeSolutionPayload(data: any): SolutionPayload | null {
+  if (!data || typeof data.code !== "string" || !data.code.trim()) return null;
+  return {
+    code: data.code.replace(/\\n/g, "\n").trim(),
+    thoughts: Array.isArray(data.thoughts)
+      ? data.thoughts.filter((item: unknown) => typeof item === "string")
+      : [],
+    time_complexity:
+      typeof data.time_complexity === "string"
+        ? data.time_complexity
+        : "Not specified",
+    space_complexity:
+      typeof data.space_complexity === "string"
+        ? data.space_complexity
+        : "Not specified",
+  };
+}
+
 interface SubscribedAppProps {
   credits: number;
   currentLanguage: string;
@@ -22,6 +47,9 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
   const queryClient = useQueryClient();
   const [view, setView] = useState<"queue" | "solutions" | "debug">("queue");
   const containerRef = useRef<HTMLDivElement>(null);
+  const processingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const { showToast } = useToast();
 
   // Removed the dynamic window dimension update effect that was causing the overlay.
@@ -56,39 +84,79 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
   }, [view])
   */
 
-  // Listen for events that might switch views or show errors
+  // Keep all initial-processing listeners on this component because it never
+  // unmounts during queue -> solutions transitions. This prevents fast success
+  // or error events from falling into the listener gap between both pages.
   useEffect(() => {
+    const clearProcessingTimeout = () => {
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+        processingTimeoutRef.current = null;
+      }
+    };
     const cleanupFunctions = [
       window.electronAPI.onSolutionStart(() => {
+        clearProcessingTimeout();
+        queryClient.setQueryData(["problem_statement"], null);
+        queryClient.setQueryData(["solution"], null);
         setView("solutions");
+        processingTimeoutRef.current = setTimeout(() => {
+          queryClient.setQueryData(["solution"], null);
+          setView("queue");
+          showToast(
+            "Processing timed out",
+            "The AI service did not finish in time. Please try again.",
+            "error",
+          );
+        }, 100_000);
       }),
       window.electronAPI.onUnauthorized(() => {
+        clearProcessingTimeout();
         queryClient.removeQueries({ queryKey: ["screenshots"] });
         queryClient.removeQueries({ queryKey: ["solution"] });
         queryClient.removeQueries({ queryKey: ["problem_statement"] });
         setView("queue");
       }),
       window.electronAPI.onResetView(() => {
+        clearProcessingTimeout();
         queryClient.removeQueries({ queryKey: ["screenshots"] });
         queryClient.removeQueries({ queryKey: ["solution"] });
         queryClient.removeQueries({ queryKey: ["problem_statement"] });
         setView("queue");
-      }),
-      window.electronAPI.onResetView(() => {
-        queryClient.setQueryData(["problem_statement"], null);
       }),
       window.electronAPI.onProblemExtracted((data: any) => {
-        if (view === "queue") {
-          queryClient.invalidateQueries({ queryKey: ["problem_statement"] });
+        if (typeof data?.problem_statement === "string") {
           queryClient.setQueryData(["problem_statement"], data);
         }
       }),
+      window.electronAPI.onSolutionSuccess((data: any) => {
+        clearProcessingTimeout();
+        const solution = normalizeSolutionPayload(data);
+        if (!solution) {
+          queryClient.setQueryData(["solution"], null);
+          setView("queue");
+          showToast(
+            "Processing Failed",
+            "The AI service returned an incomplete solution. Please try again.",
+            "error",
+          );
+          return;
+        }
+        queryClient.setQueryData(["solution"], solution);
+        setView("solutions");
+      }),
       window.electronAPI.onSolutionError((error: string) => {
+        clearProcessingTimeout();
+        queryClient.setQueryData(["solution"], null);
+        setView("queue");
         showToast("Error", error, "error");
       }),
     ];
-    return () => cleanupFunctions.forEach((fn) => fn());
-  }, [view, queryClient, showToast]);
+    return () => {
+      clearProcessingTimeout();
+      cleanupFunctions.forEach((fn) => fn());
+    };
+  }, [queryClient, showToast]);
 
   return (
     <div ref={containerRef} className="min-h-0">

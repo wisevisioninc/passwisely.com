@@ -29,3 +29,10 @@ test("Kimi K3 relay normalizes the provider-specific temperature", async () => {
   assert.match(route, /\{ \.\.\.body, temperature: 1 \}/);
   assert.match(route, /JSON\.stringify\([\s\S]*upstreamBody/);
 });
+
+test("Kimi screenshot billing ignores base64 transport bytes", async () => {
+  const route = await read("../app/api/ai/chat/completions/route.ts");
+  assert.match(route, /imageCount \+= 1/);
+  assert.match(route, /textBytes \+ imageCount \* 4096/);
+  assert.doesNotMatch(route, /JSON\.stringify\(body\.messages/);
+});

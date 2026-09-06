@@ -251,78 +251,6 @@ const Solutions: React.FC<SolutionsProps> = ({
           setIsResetting(false);
         }, 0);
       }),
-      window.electronAPI.onSolutionStart(() => {
-        // Every time processing starts, reset relevant states
-        setSolutionData(null);
-        setThoughtsData(null);
-        setTimeComplexityData(null);
-        setSpaceComplexityData(null);
-      }),
-      window.electronAPI.onProblemExtracted((data) => {
-        queryClient.setQueryData(["problem_statement"], data);
-      }),
-      //if there was an error processing the initial solution
-      window.electronAPI.onSolutionError((error: string) => {
-        showToast("Processing Failed", error, "error");
-        // Reset solutions in the cache (even though this shouldn't ever happen) and complexities to previous states
-        const solution = queryClient.getQueryData(["solution"]) as {
-          code: string;
-          thoughts: string[];
-          time_complexity: string;
-          space_complexity: string;
-        } | null;
-        if (!solution) {
-          setView("queue");
-        }
-        setSolutionData(solution?.code || null);
-        setThoughtsData(solution?.thoughts || null);
-        setTimeComplexityData(solution?.time_complexity || null);
-        setSpaceComplexityData(solution?.space_complexity || null);
-        console.error("Processing error:", error);
-      }),
-      //when the initial solution is generated, we'll set the solution data to that
-      window.electronAPI.onSolutionSuccess((data) => {
-        console.log("here");
-        if (!data) {
-          console.warn("Received empty or invalid solution data");
-          return;
-        }
-
-        // Fix the code formatting by replacing escaped newlines with actual newlines
-        const formattedCode = data.code.replace(/\\n/g, "\n");
-
-        const solutionData = {
-          code: formattedCode, // Use the properly formatted code
-          thoughts: data.thoughts,
-          time_complexity: data.time_complexity,
-          space_complexity: data.space_complexity,
-        };
-
-        queryClient.setQueryData(["solution"], solutionData);
-        setSolutionData(solutionData.code || null);
-        setThoughtsData(solutionData.thoughts || null);
-        setTimeComplexityData(solutionData.time_complexity || null);
-        setSpaceComplexityData(solutionData.space_complexity || null);
-
-        // Fetch latest screenshots when solution is successful
-        const fetchScreenshots = async () => {
-          try {
-            const existing = await window.electronAPI.getScreenshots();
-            const screenshots = existing.map((p) => ({
-                id: p.path,
-                path: p.path,
-                preview: p.preview,
-                timestamp: Date.now(),
-              }));
-            setExtraScreenshots(screenshots);
-          } catch (error) {
-            console.error("Error loading extra screenshots:", error);
-            setExtraScreenshots([]);
-          }
-        };
-        fetchScreenshots();
-      }),
-
       //########################################################
       //DEBUG EVENTS
       //########################################################
@@ -364,7 +292,16 @@ const Solutions: React.FC<SolutionsProps> = ({
     setProblemStatementData(
       queryClient.getQueryData(["problem_statement"]) || null,
     );
-    setSolutionData(queryClient.getQueryData(["solution"]) || null);
+    const initialSolution = queryClient.getQueryData(["solution"]) as {
+      code?: string;
+      thoughts?: string[];
+      time_complexity?: string;
+      space_complexity?: string;
+    } | null;
+    setSolutionData(initialSolution?.code ?? null);
+    setThoughtsData(initialSolution?.thoughts ?? null);
+    setTimeComplexityData(initialSolution?.time_complexity ?? null);
+    setSpaceComplexityData(initialSolution?.space_complexity ?? null);
 
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
       if (event?.query.queryKey[0] === "problem_statement") {

@@ -102,6 +102,7 @@ export class WiseGrpcClient {
   public static isUnavailable(error: unknown): boolean {
     return (
       error instanceof WiseGrpcError &&
+      !error.httpStatus &&
       [grpc.status.UNAVAILABLE, grpc.status.UNIMPLEMENTED].includes(error.code)
     );
   }

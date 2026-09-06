@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 
 const RELEASE_BASE =
-  "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.2";
+  "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.3";
 const ARTIFACTS = {
   "mac-arm64": "PassWisely-macOS-arm64.dmg",
   "mac-x64": "PassWisely-macOS-x64.dmg",

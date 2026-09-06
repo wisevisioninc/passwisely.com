@@ -2,6 +2,7 @@ node_modules/
 dist/
 dist-electron/
 release/
+${CUA_CACHE_DIR}/
 .env
 *.log
 *.logs

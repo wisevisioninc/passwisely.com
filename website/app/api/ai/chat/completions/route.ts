@@ -41,8 +41,28 @@ const PROVIDERS: Record<
 // ¥0.05 leaves margin for payment fees. K3 is priced conservatively at its
 // non-cached input rate (¥20/M) and output rate (¥100/M).
 function kimiK3MaximumCredits(body: Json): number {
-  const serializedInput = JSON.stringify(body.messages || []);
-  const inputTokensUpperBound = new TextEncoder().encode(serializedInput).length;
+  let textBytes = 0;
+  let imageCount = 0;
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+  for (const rawMessage of messages) {
+    const content = (rawMessage as Json)?.content;
+    if (typeof content === "string") {
+      textBytes += new TextEncoder().encode(content).length;
+      continue;
+    }
+    if (!Array.isArray(content)) continue;
+    for (const rawPart of content) {
+      const part = rawPart as Json;
+      if (part.type === "text" && typeof part.text === "string") {
+        textBytes += new TextEncoder().encode(part.text).length;
+      } else if (part.type === "image_url") {
+        imageCount += 1;
+      }
+    }
+  }
+  // Base64 bytes are transport encoding, not prompt tokens. Count text
+  // conservatively and budget 4K tokens for each high-detail screenshot.
+  const inputTokensUpperBound = textBytes + imageCount * 4096;
   const outputTokensUpperBound = Math.max(
     1,
     Math.min(100_000, Number(body.max_tokens) || 4096),

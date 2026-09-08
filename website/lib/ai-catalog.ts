@@ -10,8 +10,8 @@ export const AI_PROVIDER_CATALOG = {
     label: "OpenAI",
     origin: "https://api.openai.com/v1/chat/completions",
     keyEnvs: ["OPENAI_API_KEY"],
-    defaultModel: "gpt-4o-mini",
-    models: ["gpt-4o-mini", "gpt-4o"],
+    defaultModel: "gpt-5.6-sol",
+    models: ["gpt-5.6-sol", "gpt-4o-mini", "gpt-4o"],
   },
   anthropic: {
     label: "Anthropic Claude",

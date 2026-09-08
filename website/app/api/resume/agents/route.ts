@@ -5,6 +5,7 @@ import { recordUsage } from "@/lib/admin-data";
 import { AI_PROVIDER_CATALOG } from "@/lib/ai-catalog";
 import { getDefaultAiConfig } from "@/lib/ai-config";
 import { fetchModelProvider } from "@/lib/model-fetch";
+import { prepareOpenAiChatBody } from "@/lib/openai-gateway";
 
 type Agent =
   | "resume_opt_agent"
@@ -134,7 +135,6 @@ async function callDefaultModel(
 }> {
   const config = await getDefaultAiConfig();
   if (!config.apiKey) throw new Error("The default model API key is not configured.");
-  const definition = AI_PROVIDER_CATALOG[config.provider];
   const headers = new Headers({ "content-type": "application/json" });
   if (config.provider === "anthropic") {
     headers.set("x-api-key", config.apiKey);
@@ -164,8 +164,10 @@ async function callDefaultModel(
         ? { ...openAiBody, temperature: 0.6, thinking: { type: "disabled" } }
         : config.provider === "qwen"
           ? { ...openAiBody, enable_thinking: true, stream: false }
-        : openAiBody;
-  const response = await fetchModelProvider(config.provider, definition.origin, {
+        : config.provider === "openai"
+          ? prepareOpenAiChatBody(openAiBody)
+          : openAiBody;
+  const response = await fetchModelProvider(config.provider, config.origin, {
     method: "POST",
     headers,
     body: JSON.stringify(requestBody),

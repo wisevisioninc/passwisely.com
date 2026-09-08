@@ -9,6 +9,7 @@ import {
 } from "@/lib/ai-catalog";
 import { getDefaultAiConfig } from "@/lib/ai-config";
 import { fetchModelProvider } from "@/lib/model-fetch";
+import { prepareOpenAiChatBody } from "@/lib/openai-gateway";
 
 type Json = Record<string, unknown>;
 
@@ -138,6 +139,7 @@ export async function POST(request: Request) {
   let provider: AiProvider;
   let model: string;
   let apiKey: string;
+  let origin: string;
   if (suppliedKey) {
     if (!isAiProvider(requestedProvider)) {
       return jsonError("Unsupported AI provider.", 400);
@@ -149,15 +151,16 @@ export async function POST(request: Request) {
     provider = requestedProvider;
     model = requestedModel;
     apiKey = suppliedKey;
+    origin = AI_PROVIDER_CATALOG[provider].origin;
   } else {
     const configured = await getDefaultAiConfig();
     provider = configured.provider;
     model = configured.model;
     apiKey = configured.apiKey;
+    origin = configured.origin;
   }
   if (!isSafeModelName(model)) return jsonError("Unsupported model.", 400);
   if (!apiKey) return jsonError("The Wise model key is not configured.", 503);
-  const definition = AI_PROVIDER_CATALOG[provider];
   const effectiveBody: Json = { ...body, model };
 
   let chargedCredits = 0;
@@ -197,8 +200,10 @@ export async function POST(request: Request) {
       ? { ...effectiveBody, temperature: 0.6, thinking: { type: "disabled" } }
       : provider === "qwen"
         ? { ...effectiveBody, enable_thinking: true, stream: false }
-      : effectiveBody;
-  const upstream = await fetchModelProvider(provider, definition.origin, {
+      : provider === "openai"
+        ? prepareOpenAiChatBody(effectiveBody)
+        : effectiveBody;
+  const upstream = await fetchModelProvider(provider, origin, {
     method: "POST",
     headers,
     body: JSON.stringify(

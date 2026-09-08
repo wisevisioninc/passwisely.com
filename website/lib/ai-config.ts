@@ -7,11 +7,13 @@ import {
 } from "@/lib/ai-catalog";
 import { decryptAdminSecret } from "@/lib/admin-secrets";
 import { adminRest } from "@/lib/supabase";
+import { openAiChatOrigin } from "@/lib/openai-gateway";
 
 export interface DefaultAiConfig {
   provider: AiProvider;
   model: string;
   apiKey: string;
+  origin: string;
   source: "supabase" | "environment";
 }
 
@@ -46,6 +48,9 @@ function environmentFallback(): DefaultAiConfig {
     provider,
     model,
     apiKey: environmentApiKey(provider),
+    origin: provider === "openai"
+      ? openAiChatOrigin(values.OPENAI_BASE_URL)
+      : definition.origin,
     source: "environment",
   };
 }
@@ -84,6 +89,9 @@ export async function getDefaultAiConfig(): Promise<DefaultAiConfig> {
       provider,
       model,
       apiKey,
+      origin: provider === "openai"
+        ? openAiChatOrigin(settings.ai_base_url_openai || runtimeEnv().OPENAI_BASE_URL)
+        : definition.origin,
       source: rows.length ? "supabase" : "environment",
     };
     cachedConfig = { expiresAt: Date.now() + 10_000, value };

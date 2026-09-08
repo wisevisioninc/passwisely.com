@@ -6,6 +6,7 @@ import {
 } from "@/lib/ai-catalog";
 import { invalidateDefaultAiConfig } from "@/lib/ai-config";
 import { encryptAdminSecret } from "@/lib/admin-secrets";
+import { openAiBaseUrl } from "@/lib/openai-gateway";
 import { adminRest, adminRpc } from "@/lib/supabase";
 
 export interface DailyUsage {
@@ -305,6 +306,7 @@ const ALLOWED_SETTINGS = new Set([
   "registration_enabled",
   "ai_default_provider",
   "ai_default_model",
+  "ai_base_url_openai",
 ]);
 
 export async function saveAdminSettings(
@@ -317,6 +319,10 @@ export async function saveAdminSettings(
   }
   if (model !== undefined && !isSafeModelName(model)) {
     throw new Error("The default AI model name is invalid.");
+  }
+  if (values.ai_base_url_openai !== undefined) {
+    if (typeof values.ai_base_url_openai !== "string") throw new Error("Invalid OpenAI API base URL.");
+    values = { ...values, ai_base_url_openai: openAiBaseUrl(values.ai_base_url_openai) };
   }
 
   const rows: Array<{ key: string; value: string; updated_at: string }> = Object.entries(values)

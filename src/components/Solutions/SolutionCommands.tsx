@@ -5,6 +5,7 @@ import { COMMAND_KEY } from "../../utils/platform";
 import { LanguageSelector } from "../shared/LanguageSelector";
 import { QuerySelector } from "../shared/QueryText";
 import { AISettings } from "../shared/AISettings";
+import { QuitButton } from "../shared/QuitButton";
 
 export interface SolutionCommandsProps {
   onTooltipVisibilityChange: (visible: boolean, height: number) => void;
@@ -234,7 +235,7 @@ const SolutionCommands: React.FC<SolutionCommandsProps> = ({
               >
                 {/* Add transparent bridge */}
                 <div className="absolute -top-2 right-0 w-full h-2" />
-                <div className="p-3 text-xs bg-black/80 backdrop-blur-md rounded-lg border border-white/10 text-white/90 shadow-lg">
+                <div style={{ maxHeight: Math.max(240, window.screen.availHeight - 130) }} className="overflow-y-auto p-3 text-xs bg-black/80 backdrop-blur-md rounded-lg border border-white/10 text-white/90 shadow-lg">
                   <div className="space-y-4">
                     <h3 className="font-medium whitespace-nowrap">
                       Keyboard Shortcuts
@@ -443,6 +444,7 @@ const SolutionCommands: React.FC<SolutionCommandsProps> = ({
                       >
                         Sign out
                       </button>
+                      <QuitButton />
 
                       {/* Credits Display */}
                       {/* <div className="mb-3 px-2 space-y-1">

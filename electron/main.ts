@@ -13,6 +13,7 @@ import {
 import { AI_PROVIDERS, AiProviderId } from "./aiProviders";
 import { ShortcutsHelper } from "./shortcuts";
 import { AccountService } from "./account";
+import { initializeWindowControls, isAuthWindow } from "./windowControls";
 
 // Constants
 const isDev = !app.isPackaged;
@@ -273,7 +274,7 @@ async function createWindow(): Promise<void> {
     simpleFullscreen: false,
     kiosk: false,
     // Add these new settings
-    minimizable: false,
+    minimizable: true,
     maximizable: false,
     opacity: 1,
     // Better visual state handling
@@ -337,7 +338,7 @@ async function createWindow(): Promise<void> {
 
   // Add a periodic check to ensure window stays on top
   const ensureTopMost = () => {
-    if (state.mainWindow && !state.mainWindow.isDestroyed()) {
+    if (state.mainWindow && !state.mainWindow.isDestroyed() && !state.mainWindow.isMinimized() && state.mainWindow.isVisible()) {
       state.mainWindow.moveTop();
       state.mainWindow.setAlwaysOnTop(true, "screen-saver");
     }
@@ -505,6 +506,11 @@ function showMainWindow(): void {
 }
 
 function toggleMainWindow(): void {
+  if (state.mainWindow?.isMinimized()) {
+    state.mainWindow.restore();
+    state.mainWindow.focus();
+    return;
+  }
   state.isWindowVisible ? hideMainWindow() : showMainWindow();
 }
 
@@ -549,6 +555,7 @@ function moveWindowVertical(updateFn: (y: number) => number): void {
 
 // Window dimension functions
 function setWindowDimensions(width: number, height: number): void {
+  if (isAuthWindow()) return;
   const mainWindow = state.mainWindow;
   if (mainWindow && !mainWindow.isDestroyed()) {
     const currentBounds = mainWindow.getBounds();
@@ -587,6 +594,7 @@ async function initializeApp() {
   try {
     loadEnvVariables();
     initializeHelpers();
+    initializeWindowControls(getMainWindow);
     initializeIpcHandlers({
       getMainWindow,
       setWindowDimensions,
@@ -671,6 +679,9 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  } else if (state.mainWindow?.isMinimized()) {
+    state.mainWindow.restore();
+    state.mainWindow.focus();
   }
 });
 

@@ -63,6 +63,9 @@ export interface ElectronAPI {
   }>
   accountLogout: () => Promise<{ success: boolean }>
   quitApp: () => Promise<{ success: boolean }>
+  setAuthWindow: (enabled: boolean) => Promise<void>
+  minimizeWindow: () => Promise<{ success: boolean }>
+  toggleMaximizeWindow: () => Promise<{ success: boolean; maximized?: boolean }>
   accountOpenPortal: () => Promise<void>
   openSubscriptionPortal: (authData: {
     id: string

@@ -1,6 +1,6 @@
 {
   "name": "passwisely",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "main": "dist-electron/main.js",
   "scripts": {
     "clean": "rimraf dist dist-electron release",

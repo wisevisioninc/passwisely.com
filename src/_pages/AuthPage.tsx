@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { WindowControls } from "../components/shared/WindowControls";
 
 export interface DesktopAccountUser {
   id: string;
@@ -79,7 +80,8 @@ export default function AuthPage({
   }
 
   return (
-    <div className="min-h-[520px] w-full bg-[#111018] text-white rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+    <div className="h-screen overflow-y-auto w-full bg-[#111018] text-white rounded-2xl shadow-2xl border border-white/10">
+      <WindowControls isZh={isZh} />
       <div className="px-7 py-6 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-2.5 font-semibold tracking-tight">
           <img

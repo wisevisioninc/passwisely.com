@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+.auth-titlebar { display:flex; align-items:center; min-height:40px; padding:0 14px; position:sticky; top:0; z-index:10; background:#111018; -webkit-app-region:drag; }
+.auth-titlebar.windows { justify-content:flex-end; padding:0; }
+.window-controls { display:flex; align-items:center; gap:8px; -webkit-app-region:no-drag; }
+.window-control { display:grid; place-items:center; cursor:default; }
+.mac .window-control { width:14px; height:14px; border-radius:50%; color:rgba(0,0,0,.65); }
+.mac .close { background:#ff5f57; }
+.mac .minimize { background:#febc2e; }
+.mac .maximize { background:#28c840; }
+.mac .window-control svg { opacity:0; }
+.mac .window-controls:hover svg, .mac .window-control:focus-visible svg { opacity:1; }
+.window-control:focus-visible { outline:2px solid white; outline-offset:3px; }
+.windows .window-controls { gap:0; }
+.windows .window-control { width:46px; height:40px; color:#eee; }
+.windows .window-control:hover { background:rgba(255,255,255,.1); }
+.windows .close:hover { background:#c42b1c; }
+
 .frosted-glass {
   background: rgba(26, 26, 26, 0.8);
   backdrop-filter: blur(8px);

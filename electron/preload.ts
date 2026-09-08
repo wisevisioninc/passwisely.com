@@ -33,6 +33,9 @@ interface ElectronAPI {
   }) => Promise<{ success: boolean; error?: string }>;
   accountLogout: () => Promise<{ success: boolean }>;
   quitApp: () => Promise<{ success: boolean }>;
+  setAuthWindow: (enabled: boolean) => Promise<void>;
+  minimizeWindow: () => Promise<{ success: boolean }>;
+  toggleMaximizeWindow: () => Promise<{ success: boolean; maximized?: boolean }>;
   accountOpenPortal: () => Promise<void>;
   openSubscriptionPortal: (authData: {
     id: string;
@@ -152,6 +155,9 @@ const electronAPI = {
   }) => ipcRenderer.invoke("account-change-password", input),
   accountLogout: () => ipcRenderer.invoke("account-logout"),
   quitApp: () => ipcRenderer.invoke("quit-app"),
+  setAuthWindow: (enabled: boolean) => ipcRenderer.invoke("set-auth-window", enabled),
+  minimizeWindow: () => ipcRenderer.invoke("minimize-window"),
+  toggleMaximizeWindow: () => ipcRenderer.invoke("toggle-maximize-window"),
   accountOpenPortal: () => ipcRenderer.invoke("account-open-portal"),
   openSubscriptionPortal: async (authData: { id: string; email: string }) => {
     return ipcRenderer.invoke("open-subscription-portal", authData);

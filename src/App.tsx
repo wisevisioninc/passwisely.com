@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import SubscribedApp from "./_pages/SubscribedApp";
 import AuthPage, { DesktopAccountUser } from "./_pages/AuthPage";
 import {
@@ -11,6 +11,7 @@ import {
 } from "./components/ui/toast";
 import { UpdateNotification } from "./components/UpdateNotification";
 import { ToastContext } from "./contexts/toast";
+import { WindowControls } from "./components/shared/WindowControls";
 
 // Create a React Query client
 const queryClient = new QueryClient({
@@ -52,6 +53,10 @@ function App() {
   const [credits, setCredits] = useState(0);
   const [accountLoading, setAccountLoading] = useState(true);
   const [accountError, setAccountError] = useState("");
+
+  useLayoutEffect(() => {
+    void window.electronAPI.setAuthWindow(!account).catch(console.error);
+  }, [Boolean(account)]);
 
   useEffect(() => {
     let active = true;
@@ -109,7 +114,8 @@ function App() {
 
   if (accountLoading) {
     return (
-      <div className="min-h-[320px] grid place-items-center bg-[#111018] text-white rounded-2xl border border-white/10">
+      <div className="h-screen relative grid place-items-center bg-[#111018] text-white rounded-2xl border border-white/10">
+        <div className="absolute inset-x-0 top-0"><WindowControls /></div>
         <div className="text-center">
           <img
             src="./logo512.png"

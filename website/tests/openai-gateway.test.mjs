@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { openAiBaseUrl, openAiChatOrigin, prepareOpenAiChatBody } from "../lib/openai-gateway.ts";
+import ts from "typescript";
+// Node 22 production does not enable native TypeScript imports by default.
+const source = await readFile(new URL("../lib/openai-gateway.ts", import.meta.url), "utf8");
+const javascript = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const { openAiBaseUrl, openAiChatOrigin, prepareOpenAiChatBody } = await import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`);
 
 test("server gateway URL accepts only explicit HTTPS destinations", () => {
   assert.equal(openAiChatOrigin(), "https://api.openai.com/v1/chat/completions");

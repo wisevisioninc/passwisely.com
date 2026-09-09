@@ -77,6 +77,7 @@ test("transports screenshot bytes and preserves relay metadata", async (t) => {
     env: {
       ...process.env,
       PASSWISELY_GRPC_LISTEN: `127.0.0.1:${grpcPort}`,
+      PASSWISELY_HEALTH_LISTEN: "127.0.0.1:0",
       PASSWISELY_RELAY_URL: `http://127.0.0.1:${relayPort}/api/ai/chat/completions`,
     },
     stdio: ["ignore", "pipe", "pipe"],

@@ -163,7 +163,7 @@ async function callDefaultModel(
       : config.provider === "kimi" && config.model === "kimi-k3"
         ? { ...openAiBody, temperature: 0.6, thinking: { type: "disabled" } }
         : config.provider === "qwen"
-          ? { ...openAiBody, enable_thinking: true, stream: false }
+          ? { ...openAiBody, enable_thinking: false, stream: false }
         : config.provider === "openai"
           ? prepareOpenAiChatBody(openAiBody)
           : openAiBody;

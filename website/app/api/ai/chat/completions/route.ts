@@ -199,7 +199,7 @@ export async function POST(request: Request) {
     provider === "kimi" && model === "kimi-k3"
       ? { ...effectiveBody, temperature: 0.6, thinking: { type: "disabled" } }
       : provider === "qwen"
-        ? { ...effectiveBody, enable_thinking: true, stream: false }
+        ? { ...effectiveBody, enable_thinking: false, stream: false }
       : provider === "openai"
         ? prepareOpenAiChatBody(effectiveBody)
         : effectiveBody;
@@ -218,7 +218,7 @@ export async function POST(request: Request) {
       typeof (payload.error as Json)?.message === "string"
         ? String((payload.error as Json).message)
         : "Model provider request failed.";
-    return jsonError(message, upstream.status >= 500 ? 502 : upstream.status);
+    return jsonError(message, upstream.status === 504 ? 504 : upstream.status >= 500 ? 502 : upstream.status);
   }
   const normalized = provider === "anthropic" ? fromAnthropic(payload, model) : payload;
   const usage = (normalized.usage || {}) as Json;

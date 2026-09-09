@@ -6,20 +6,22 @@ export async function fetchModelProvider(
   init: RequestInit,
   timeoutMs: number,
 ): Promise<Response | null> {
-  // The DashScope China endpoint can occasionally resolve to an edge that
-  // fails its TLS handshake from the Singapore host. Retry network failures
-  // against a fresh DNS result while keeping the overall request bounded.
-  const attempts = provider === "qwen" ? 3 : 1;
-  const attemptTimeout = provider === "qwen" ? Math.min(20_000, timeoutMs) : timeoutMs;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      return await fetch(origin, {
-        ...init,
-        signal: AbortSignal.timeout(attemptTimeout),
-      });
-    } catch {
-      if (attempt === attempts - 1) return null;
-    }
+  const qwen = provider === "qwen";
+  const totalTimeout = qwen ? Math.min(90_000, timeoutMs) : timeoutMs;
+  const headers = new Headers(init.headers);
+  if (qwen) headers.set("x-qwen-total-timeout-ms", String(totalTimeout));
+  // Workerd fetch has no socket/connect timeout hook. The loopback Node
+  // transport ends its 20s timer on secureConnect, not on response headers.
+  // It owns connection-only retries within ONE shared 90s total budget.
+  try {
+    return await fetch(qwen ? "http://127.0.0.1:3013/internal/qwen/chat/completions" : origin, {
+      ...init,
+      headers,
+      signal: init.signal
+        ? AbortSignal.any([init.signal, AbortSignal.timeout(totalTimeout)])
+        : AbortSignal.timeout(totalTimeout),
+    });
+  } catch {
+    return null;
   }
-  return null;
 }

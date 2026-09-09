@@ -36,7 +36,7 @@ test("default model configuration is stored privately in Supabase", async () => 
   assert.match(config, /Date\.now\(\) \+ 10_000/);
 });
 
-test("Qwen uses the DashScope OpenAI-compatible endpoint and thinking mode", async () => {
+test("Qwen uses the DashScope endpoint without thinking and a connection-aware transport", async () => {
   const [catalog, chat, resume, dashboard, migration, modelFetch] = await Promise.all([
     read("../lib/ai-catalog.ts"),
     read("../app/api/ai/chat/completions/route.ts"),
@@ -49,15 +49,16 @@ test("Qwen uses the DashScope OpenAI-compatible endpoint and thinking mode", asy
   assert.match(catalog, /dashscope\.aliyuncs\.com\/compatible-mode\/v1\/chat\/completions/);
   assert.match(catalog, /DASHSCOPE_API_KEY/);
   assert.match(catalog, /qwen3\.8-flash/);
-  assert.match(chat, /provider === "qwen"[\s\S]*enable_thinking: true[\s\S]*stream: false/);
-  assert.match(resume, /config\.provider === "qwen"[\s\S]*enable_thinking: true[\s\S]*stream: false/);
+  assert.match(chat, /provider === "qwen"[\s\S]*enable_thinking: false[\s\S]*stream: false/);
+  assert.match(resume, /config\.provider === "qwen"[\s\S]*enable_thinking: false[\s\S]*stream: false/);
   assert.match(dashboard, /ai_api_key_/);
   assert.match(dashboard, /每个模型渠道独立保存/);
   assert.match(dashboard, /请先填写.*API Key/);
   assert.match(migration, /'ai_api_key_kimi'/);
   assert.match(migration, /'ai_default_api_key'/);
-  assert.match(modelFetch, /provider === "qwen" \? 3 : 1/);
-  assert.match(modelFetch, /Math\.min\(20_000, timeoutMs\)/);
+  assert.match(modelFetch, /127\.0\.0\.1:3013\/internal\/qwen\/chat\/completions/);
+  assert.match(modelFetch, /Math\.min\(90_000, timeoutMs\)/);
+  assert.doesNotMatch(modelFetch, /Math\.min\(20_000/);
 });
 
 test("shared desktop and resume requests use the admin default model", async () => {

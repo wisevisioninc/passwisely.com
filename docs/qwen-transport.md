@@ -52,3 +52,42 @@ input validation and forcing thinking off.
 
 References: [Node TLS secureConnect](https://nodejs.org/docs/latest-v22.x/api/tls.html#event-secureconnect)
 and [Workerd Fetch API](https://developers.cloudflare.com/workers/runtime-apis/fetch/).
+
+## Verification: 2026-09-10 (Asia/Shanghai)
+
+- Local Node 24 and wise Node 22 each passed 16 desktop API tests and 32 website
+  tests. Website TypeScript check and production build passed.
+- The real TLS regression returned after 21 seconds using the production
+  connection deadline, with one attempt, on both hosts.
+- Production loopback Qwen probe: HTTP 200, `qwen3.8-flash`, response `OK`, no
+  reasoning content, one attempt; 230 ms connection and 759 ms upstream total.
+- Public gRPC default-provider probe: `gpt-5.6-sol` returned `OK` in 4.173 seconds.
+  Database defaults remained OpenAI through `https://wisepa.cn/v1`.
+- Real local Electron screenshot processing repeated three previously failed
+  questions from the September 9 benchmark, with the same screenshots, Python
+  signatures and prompts. Each completed in one model call, with a rendered
+  solution and no processing errors. The combined timeout/thinking change and
+  different sampling time mean this is not an isolated thinking-only experiment.
+
+| LeetCode CN | Before (failed) | After (returned) | Generated Python tests |
+| --- | ---: | ---: | ---: |
+| 2786 | 60.915 s | 11.614 s | 124 / 124 |
+| 1857 | 60.810 s | 11.305 s | 111 / 124 |
+| 3519 | 60.866 s | 19.057 s | 149 / 149 |
+
+The average successful end-to-end time in this three-question sample was 13.992 s.
+These are individual runs, not a latency guarantee or the full 10-question retest.
+Generated code was executed in a network-disabled, read-only, resource-limited
+container, with the existing benchmark test vectors.
+
+**Known model accuracy issue, separate from transport:** question 1857 adds the
+destination node's color count repeatedly for different incoming edges. A sample
+with colors `acacbcb` and edges `[[0,2],[1,2],[1,5],[2,4],[3,2],[3,5],[4,5],[4,6]]`
+returned 4 instead of 2. No application workaround, prompt change or hidden
+switch back to thinking was made. Overall generated-code cases passed 384/397;
+only two of three questions passed every case.
+
+The temporary test account was deleted successfully; its balance was 99 after
+one default-provider call. The Qwen calls used the supplied provider key without
+charging test credits. Website and admin routes returned HTTP 200. No production
+user account, other service, installer, OSS object or download URL was changed.

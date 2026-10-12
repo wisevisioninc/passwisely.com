@@ -1,7 +1,7 @@
 {
   "version": "1.2.6",
   "date": "2026-10-12",
-  "network": "Local Mac -> existing Astrill route -> SSH tunnel -> isolated wise gRPC + web + Qwen transport -> real provider. This is not a production HTTP/2/TLS latency baseline.",
+  "network": "Local Mac -> SSH tunnel -> isolated wise gRPC + web + Qwen transport -> real provider. macOS route for wise (8.219.140.215) currently reports en0 via 192.168.101.1. These results exclude the public HTTP/2/TLS entry and are not a VPN on/off A/B comparison.",
   "firstContentMetric": "First solution-progress IPC carrying visible decoded answer text, measured from desktop helper generation start; excludes typing/screenshot capture.",
   "providers": {
     "kimi": {
@@ -320,7 +320,9 @@
     "desktopTypecheck": true,
     "desktopBuild": true,
     "websiteBuild": true,
-    "liveAccountRegression": true
+    "liveAccountRegression": true,
+    "websiteTypecheck": true,
+    "generatedCodeAssertions": 1528
   },
   "ui": {
     "firstContentSeconds": 2.918,

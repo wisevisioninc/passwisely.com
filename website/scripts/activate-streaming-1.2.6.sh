@@ -22,6 +22,7 @@ cp -a "$nginx_config" "$backup/nginx.conf"
 cp -a "$repo/website/dist" "$backup/dist"
 sudo -u jerry git -C "$repo" rev-parse HEAD > "$backup/previous-commit"
 rollback() {
+  echo "Activation failed at line $1 (exit $2); restoring the previous web build and redirects." >&2
   trap - ERR
   cp -a "$backup/nginx.conf" "$nginx_config"
   # The new desktop API retains the old unary interface. Restore the previous
@@ -33,7 +34,7 @@ rollback() {
   echo "Activation failed; previous web build/download redirects restored. Backup: $backup" >&2
   exit 1
 }
-trap rollback ERR
+trap 'rollback "$LINENO" "$?"' ERR
 sudo -u jerry git -C "$repo" merge --ff-only "$revision"
 cp -a "$staged" "$repo/website/dist-1.2.6-staged"
 chown -R jerry:jerry "$repo/website/dist-1.2.6-staged"
@@ -52,7 +53,8 @@ done
 [[ "$ready" == 1 ]]
 systemctl reload nginx
 for platform in mac-arm64 mac-x64 windows-x64; do
-  curl -fsSI --max-time 15 "https://passwisely.com/api/download/$platform" | grep -qi '/releases/v1.2.6/'
+  headers=$(curl -fsSI --max-time 15 "https://passwisely.com/api/download/$platform")
+  grep -qi '/releases/v1.2.6/' <<< "$headers"
 done
 trap - ERR
 echo "PassWisely 1.2.6 activated. Backup: $backup"

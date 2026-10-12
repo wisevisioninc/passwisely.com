@@ -20,11 +20,18 @@ const credentials =
     : grpc.credentials.createInsecure();
 const client = new Client(address, credentials);
 
-client.Health({}, { deadline: Date.now() + 5_000 }, (error, response) => {
+function finish(error, response) {
   client.close();
   if (error || response?.status !== "SERVING") {
-    console.error(error?.details || "Desktop API is not serving.");
+    console.error(error?.details || error?.message || "Desktop API is not serving.");
     process.exit(1);
   }
   console.log(`${response.status} ${response.transport}`);
+}
+
+const deadline = Date.now() + 5_000;
+// systemd starts ExecStartPost before a Type=simple service finishes binding.
+client.waitForReady(deadline, (error) => {
+  if (error) return finish(error);
+  client.Health({}, { deadline }, finish);
 });

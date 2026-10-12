@@ -315,7 +315,7 @@
     }
   ],
   "tests": {
-    "desktop": 25,
+    "desktop": 27,
     "website": 36,
     "desktopTypecheck": true,
     "desktopBuild": true,
@@ -396,10 +396,18 @@
       "launchedToLoginScreen": true,
       "previousVersionBackedUp": true
     },
-    "production": "not activated; download redirects remain v1.2.5",
+    "production": "first activation rolled back to old web build and v1.2.5 downloads; retry pending",
     "blockers": [
       "wise requires interactive sudo authentication for Nginx and systemd activation."
     ],
-    "publicStreamingSmoke": "prepared; waiting for production activation"
+    "publicStreamingSmoke": "prepared; waiting for production activation",
+    "activationIssue": {
+      "cause": "systemd Type=simple ExecStartPost ran the fail-fast gRPC health RPC before the listener was ready, causing service restart failure and rollback",
+      "fix": "health check waits for channel readiness within the same five-second deadline",
+      "regressionTests": [
+        "delayed listener becomes healthy",
+        "unavailable listener fails within bounded deadline"
+      ]
+    }
   }
 }

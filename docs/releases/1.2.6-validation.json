@@ -340,5 +340,17 @@
       "nonStreamingStatus": 503
     },
     "limitation": "Existing upstream Service temporarily unavailable; never counted as a fast successful answer."
+  },
+  "releaseStatus": {
+    "implementation": "complete",
+    "windowsInstaller": "built",
+    "macOSArm64": "Developer ID signature verified; notarization pending",
+    "macOSX64": "Developer ID signature verified; notarization pending",
+    "production": "not activated",
+    "blockers": [
+      "Mac locked during notarization; passwisely-notary is inaccessible. The same profile successfully read submission history while the Mac was unlocked.",
+      "wise requires interactive sudo authentication for Nginx and systemd activation."
+    ],
+    "windowsInstallerSha256": "e69b41497ce3785e79041eefc71928506ebc6dbdc7a4956a4f96b6a30e7ecc04"
   }
 }

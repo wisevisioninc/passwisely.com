@@ -396,6 +396,11 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
   });
 
   // Reset handlers
+  ipcMain.handle("cancel-processing", () => {
+    deps.processingHelper?.cancelOngoingRequests();
+    return { success: true };
+  });
+
   ipcMain.handle("trigger-reset", () => {
     try {
       // First cancel any ongoing requests

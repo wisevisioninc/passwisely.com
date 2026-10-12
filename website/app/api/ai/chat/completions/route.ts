@@ -11,6 +11,8 @@ import { getDefaultAiConfig } from "@/lib/ai-config";
 import { fetchModelProvider } from "@/lib/model-fetch";
 import { prepareOpenAiChatBody } from "@/lib/openai-gateway";
 
+import { chatStreamResponse } from "@/lib/chat-stream";
+
 type Json = Record<string, unknown>;
 
 // The cheapest pack sells one credit for ¥0.059. Valuing a credit at only
@@ -90,7 +92,7 @@ function toAnthropic(body: Json): Json {
       }),
     max_tokens: body.max_tokens || 4096,
     temperature: body.temperature,
-    stream: false,
+    stream: body.stream === true,
   };
 }
 
@@ -161,7 +163,8 @@ export async function POST(request: Request) {
   }
   if (!isSafeModelName(model)) return jsonError("Unsupported model.", 400);
   if (!apiKey) return jsonError("The Wise model key is not configured.", 503);
-  const effectiveBody: Json = { ...body, model };
+  const streaming = body.stream === true;
+  const effectiveBody: Json = { ...body, model, stream: streaming, ...(streaming ? { stream_options: { include_usage: true } } : {}) };
 
   let chargedCredits = 0;
   const suppliedRequestId = request.headers.get("x-wise-request-id") || "";
@@ -199,19 +202,39 @@ export async function POST(request: Request) {
     provider === "kimi" && model === "kimi-k3"
       ? { ...effectiveBody, temperature: 0.6, thinking: { type: "disabled" } }
       : provider === "qwen"
-        ? { ...effectiveBody, enable_thinking: false, stream: false }
+        ? { ...effectiveBody, enable_thinking: false, stream: streaming }
       : provider === "openai"
         ? prepareOpenAiChatBody(effectiveBody)
         : effectiveBody;
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  request.signal.addEventListener("abort", cancel, { once: true });
+  if (request.signal.aborted) controller.abort();
+  const cleanup = () => request.signal.removeEventListener("abort", cancel);
+  let streamingResponse = false;
+  try {
   const upstream = await fetchModelProvider(provider, origin, {
     method: "POST",
     headers,
+    signal: controller.signal,
     body: JSON.stringify(
       provider === "anthropic" ? toAnthropic(effectiveBody) : upstreamBody,
     ),
   }, 90_000);
   if (!upstream) return jsonError("Model provider is unavailable.", 502);
 
+  if (streaming && upstream.ok) {
+    if (!upstream.headers.get("content-type")?.includes("text/event-stream")) {
+      await upstream.body?.cancel();
+      return jsonError("该模型未返回流式响应。", 502);
+    }
+    streamingResponse = true;
+    return chatStreamResponse(upstream, provider, model, controller, async (usage) => {
+      await recordUsage({ userId: user.id, action: "ai_chat", provider, model,
+        promptTokens: usage.prompt_tokens, completionTokens: usage.completion_tokens,
+        credits: chargedCredits, reference: `ai:${user.id}:${requestId}` });
+    }, cleanup);
+  }
   const payload = (await upstream.json().catch(() => ({}))) as Json;
   if (!upstream.ok) {
     const message =
@@ -233,4 +256,5 @@ export async function POST(request: Request) {
     reference: `ai:${user.id}:${requestId}`,
   }).catch(() => undefined);
   return Response.json(normalized);
+  } finally { if (!streamingResponse) cleanup(); }
 }

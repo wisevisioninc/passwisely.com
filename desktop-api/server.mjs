@@ -1,4 +1,5 @@
 import path from "node:path";
+import { readSSE } from "../shared/sse.mjs";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { startHostHealthServer } from "./host-health.mjs";
@@ -77,17 +78,15 @@ function toOpenAIMessage(message) {
   };
 }
 
-async function chat(call, callback) {
+function relayRequest(call) {
   const authorization = metadataString(call.metadata, "authorization");
   if (!authorization) {
-    callback(serviceError(401, "Authentication required."));
-    return;
+    throw serviceError(401, "Authentication required.");
   }
 
   const request = call.request || {};
   if (!request.requestId || !request.provider || !request.model) {
-    callback(serviceError(400, "Missing request metadata."));
-    return;
+    throw serviceError(400, "Missing request metadata.");
   }
 
   const body = {
@@ -109,6 +108,13 @@ async function chat(call, callback) {
     headers.set("x-wise-provider-key", request.providerApiKey);
   }
 
+  return { body, headers };
+}
+
+async function chat(call, callback) {
+  let body, headers;
+  try { ({ body, headers } = relayRequest(call)); }
+  catch (error) { callback(error); return; }
   const upstream = await fetch(relayUrl, {
     method: "POST",
     headers,
@@ -135,14 +141,62 @@ async function chat(call, callback) {
 
   const choice = payload.choices?.[0] || {};
   callback(null, {
-    id: payload.id || request.requestId,
-    model: payload.model || request.model,
+    id: payload.id || call.request.requestId,
+    model: payload.model || call.request.model,
     content: choice.message?.content || "",
     finishReason: choice.finish_reason || "stop",
     promptTokens: Number(payload.usage?.prompt_tokens) || 0,
     completionTokens: Number(payload.usage?.completion_tokens) || 0,
     totalTokens: Number(payload.usage?.total_tokens) || 0,
   });
+}
+
+async function chatStream(call) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error("模型请求超时。")), 90_000);
+  const cancel = () => controller.abort(new Error("请求已取消。"));
+  call.once("cancelled", cancel);
+  const write = async (chunk) => {
+    controller.signal.throwIfAborted();
+    if (call.write(chunk)) return;
+    await new Promise((resolve, reject) => {
+      const clean = () => { call.off("drain", drain); controller.signal.removeEventListener("abort", stop); };
+      const drain = () => { clean(); resolve(); };
+      const stop = () => { clean(); reject(controller.signal.reason); };
+      call.once("drain", drain); controller.signal.addEventListener("abort", stop, { once: true });
+      if (controller.signal.aborted) stop();
+    });
+  };
+  try {
+    const { body, headers } = relayRequest(call);
+    body.stream = true;
+    const response = await fetch(relayUrl, { method: "POST", headers, body: JSON.stringify(body), signal: controller.signal });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw serviceError(response.status, typeof payload.error === "string" ? payload.error : "模型请求失败。");
+    }
+    if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+      throw serviceError(502, "服务器尚未启用流式响应。");
+    }
+    let finished = false, done = false;
+    for await (const event of readSSE(response.body, controller.signal)) {
+      if (event.data === "[DONE]") { done = true; break; }
+      const payload = JSON.parse(event.data);
+      if (payload.error || event.event === "error") throw serviceError(502, payload.error?.message || "模型数据流中断。");
+      const choice = payload.choices?.[0];
+      if (choice?.finish_reason) finished = true;
+      await write({ id: payload.id || call.request.requestId, model: payload.model || call.request.model,
+        delta: choice?.delta?.content || "", finishReason: choice?.finish_reason || "",
+        promptTokens: payload.usage?.prompt_tokens || 0, completionTokens: payload.usage?.completion_tokens || 0, totalTokens: payload.usage?.total_tokens || 0 });
+    }
+    if (!done || !finished) throw serviceError(502, "模型数据流提前结束，请重试。未完成的代码不可直接使用。");
+    await write({ done: true });
+    call.end();
+  } catch (error) {
+    if (!call.cancelled) call.emit("error", error.code !== undefined ? error : serviceError(controller.signal.aborted ? 504 : 502, error.message));
+  } finally {
+    clearTimeout(timer); call.off("cancelled", cancel);
+  }
 }
 
 function health(_call, callback) {
@@ -153,7 +207,7 @@ const server = new grpc.Server({
   "grpc.max_receive_message_length": 16 * 1024 * 1024,
   "grpc.max_send_message_length": 16 * 1024 * 1024,
 });
-server.addService(service, { Chat: chat, Health: health });
+server.addService(service, { Chat: chat, ChatStream: chatStream, Health: health });
 let hostHealthServer;
 
 server.bindAsync(

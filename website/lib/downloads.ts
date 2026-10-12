@@ -1,5 +1,5 @@
 export const OSS_RELEASE_BASE =
-  "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.5";
+  "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.6";
 
 export const DOWNLOADS: Record<string, string> = {
   "mac-arm64": "PassWisely-macOS-arm64.dmg",

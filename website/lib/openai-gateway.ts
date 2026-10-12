@@ -16,7 +16,7 @@ export function openAiChatOrigin(value: string = ""): string {
 }
 
 export function prepareOpenAiChatBody(body: Record<string, unknown>): Record<string, unknown> {
-  const prepared: Record<string, unknown> = { ...body, stream: false };
+  const prepared: Record<string, unknown> = { ...body, stream: body.stream === true };
   if (typeof body.model === "string" && /^gpt-5(?:[.-]|$)/.test(body.model)) {
     // GPT-5 reasoning models use completion-token budgets, and do not accept
     // sampling controls with all reasoning modes. Keep legacy desktop clients compatible.

@@ -4,6 +4,7 @@ package passwisely.desktop.v1;
 
 service DesktopAI {
   rpc Chat(ChatRequest) returns (ChatResponse);
+  rpc ChatStream(ChatRequest) returns (stream ChatChunk);
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 
@@ -51,4 +52,15 @@ message HealthRequest {}
 message HealthResponse {
   string status = 1;
   string transport = 2;
+}
+
+message ChatChunk {
+  string id = 1;
+  string model = 2;
+  string delta = 3;
+  string finish_reason = 4;
+  uint32 prompt_tokens = 5;
+  uint32 completion_tokens = 6;
+  uint32 total_tokens = 7;
+  bool done = 8;
 }

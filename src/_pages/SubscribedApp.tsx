@@ -9,23 +9,25 @@ type SolutionPayload = {
   thoughts: string[];
   time_complexity: string;
   space_complexity: string;
+  alternatives: string[];
 };
 
 function normalizeSolutionPayload(data: any): SolutionPayload | null {
   if (!data || typeof data.code !== "string" || !data.code.trim()) return null;
   return {
-    code: data.code.replace(/\\n/g, "\n").trim(),
+    code: data.code.trim(),
+    alternatives: Array.isArray(data.alternatives) ? data.alternatives.filter((item: unknown) => typeof item === "string") : [],
     thoughts: Array.isArray(data.thoughts)
       ? data.thoughts.filter((item: unknown) => typeof item === "string")
       : [],
     time_complexity:
       typeof data.time_complexity === "string"
         ? data.time_complexity
-        : "Not specified",
+        : "未提供",
     space_complexity:
       typeof data.space_complexity === "string"
         ? data.space_complexity
-        : "Not specified",
+        : "未提供",
   };
 }
 
@@ -95,38 +97,45 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
         processingTimeoutRef.current = null;
       }
     };
+    let activeInitial = false, activeDebug = false;
+    const markIncomplete = (message: string) => {
+      clearProcessingTimeout();
+      const key = activeDebug ? "new_solution" : "solution";
+      activeInitial = false; activeDebug = false;
+      const previous = queryClient.getQueryData([key]) as any;
+      queryClient.setQueryData([key], { ...previous, isStreaming: false, error: message });
+      setView("solutions");
+    };
     const cleanupFunctions = [
       window.electronAPI.onSolutionStart(() => {
+        activeInitial = true; activeDebug = false;
+        queryClient.setQueryData(["new_solution"], null);
         clearProcessingTimeout();
         setProcessingError("");
         queryClient.setQueryData(["problem_statement"], null);
         queryClient.setQueryData(["solution"], null);
         setView("solutions");
         processingTimeoutRef.current = setTimeout(() => {
-          queryClient.setQueryData(["solution"], null);
-          setView("queue");
-          setProcessingError(
-            "AI 服务未在规定时间内返回结果，请检查网络后重试。",
-          );
-          showToast(
-            "Processing timed out",
-            "The AI service did not finish in time. Please try again.",
-            "error",
-          );
+          markIncomplete("AI 服务未在规定时间内完成，请重试。");
+          void window.electronAPI.cancelProcessing();
         }, 100_000);
       }),
       window.electronAPI.onUnauthorized(() => {
+        activeInitial = false; activeDebug = false;
         clearProcessingTimeout();
         queryClient.removeQueries({ queryKey: ["screenshots"] });
         queryClient.removeQueries({ queryKey: ["solution"] });
+        queryClient.removeQueries({ queryKey: ["new_solution"] });
         queryClient.removeQueries({ queryKey: ["problem_statement"] });
         setView("queue");
       }),
       window.electronAPI.onResetView(() => {
+        activeInitial = false; activeDebug = false;
         clearProcessingTimeout();
         setProcessingError("");
         queryClient.removeQueries({ queryKey: ["screenshots"] });
         queryClient.removeQueries({ queryKey: ["solution"] });
+        queryClient.removeQueries({ queryKey: ["new_solution"] });
         queryClient.removeQueries({ queryKey: ["problem_statement"] });
         setView("queue");
       }),
@@ -136,29 +145,47 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
         }
       }),
       window.electronAPI.onSolutionSuccess((data: any) => {
+        if (!activeInitial) return;
         clearProcessingTimeout();
         const solution = normalizeSolutionPayload(data);
         if (!solution) {
-          queryClient.setQueryData(["solution"], null);
-          setView("queue");
-          setProcessingError("AI 返回的解答不完整，请重新尝试。不会丢失当前截图。");
-          showToast(
-            "Processing Failed",
-            "The AI service returned an incomplete solution. Please try again.",
-            "error",
-          );
+          markIncomplete("AI 返回的解答不完整，请重试。");
           return;
         }
-        queryClient.setQueryData(["solution"], solution);
+        activeInitial = false;
+        queryClient.setQueryData(["solution"], { ...solution, isStreaming: false, model: (queryClient.getQueryData(["solution"]) as any)?.model });
         setView("solutions");
       }),
+      window.electronAPI.onSolutionProgress((update) => {
+        if (update.phase === "initial" ? !activeInitial : !activeDebug) return;
+        queryClient.setQueryData([update.phase === "debug" ? "new_solution" : "solution"], { ...update.data, isStreaming: true, model: update.model });
+      }),
+      window.electronAPI.onProcessingCancelled(() => {
+        if (activeInitial || activeDebug) markIncomplete("已停止生成。");
+      }),
       window.electronAPI.onSolutionError((error: string) => {
+        if (!activeInitial) return;
+        markIncomplete(error?.trim() || "处理失败，请重试。");
+      }),
+      window.electronAPI.onDebugStart(() => {
         clearProcessingTimeout();
-        queryClient.setQueryData(["solution"], null);
-        setView("queue");
-        const message = error?.trim() || "处理失败，请重试。";
-        setProcessingError(message);
-        showToast("处理失败", message, "error");
+        activeDebug = true; activeInitial = false;
+        processingTimeoutRef.current = setTimeout(() => {
+          markIncomplete("AI 服务未在规定时间内完成，请重试。");
+          void window.electronAPI.cancelProcessing();
+        }, 100_000);
+        queryClient.setQueryData(["new_solution"], { isStreaming: true });
+      }),
+      window.electronAPI.onDebugSuccess((data: any) => {
+        if (!activeDebug) return;
+        const solution = normalizeSolutionPayload(data);
+        if (!solution) { markIncomplete("AI 返回的解答不完整，请重试。"); return; }
+        activeDebug = false;
+        clearProcessingTimeout();
+        queryClient.setQueryData(["new_solution"], { ...solution, isStreaming: false, model: (queryClient.getQueryData(["new_solution"]) as any)?.model });
+      }),
+      window.electronAPI.onDebugError((error: string) => {
+        if (activeDebug) markIncomplete(error || "处理失败，请重试。");
       }),
     ];
     return () => {

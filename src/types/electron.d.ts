@@ -84,6 +84,9 @@ export interface ElectronAPI {
     callback: (data: { path: string; preview: string }) => void
   ) => () => void
   onResetView: (callback: () => void) => () => void
+  onSolutionProgress: (callback: (update: { requestId: string; phase: "initial" | "debug"; data: any; model: string }) => void) => () => void;
+  onProcessingCancelled: (callback: () => void) => () => void;
+  cancelProcessing: () => Promise<{ success: boolean }>;
   onSolutionStart: (callback: () => void) => () => void
   onDebugStart: (callback: () => void) => () => void
   onDebugSuccess: (callback: (data: any) => void) => () => void

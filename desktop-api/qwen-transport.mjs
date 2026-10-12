@@ -22,6 +22,8 @@ export async function requestQwen(body, authorization, {
   connectTimeoutMs = CONNECT_TIMEOUT_MS,
   maxAttempts = 3,
   requestImpl = httpsRequest,
+  onHeaders,
+  onChunk,
 } = {}) {
   const startedAt = performance.now();
   const controller = new AbortController();
@@ -75,19 +77,20 @@ export async function requestQwen(body, authorization, {
               method: "POST",
               headers: { authorization, "content-type": "application/json", "accept-encoding": "identity", "content-length": Buffer.byteLength(body) },
             }, response => {
+              // The same connection/total budgets cover headers AND every body chunk.
               const chunks = [];
               let size = 0;
-              response.on("data", chunk => {
-                size += chunk.length;
-                if (size > MAX_BYTES) {
-                  const error = new TransportError("QWEN_RESPONSE_TOO_LARGE", "Qwen response is too large.");
-                  req.destroy(error);
-                  finish(error);
-                } else chunks.push(chunk);
-              });
-              response.once("error", error => finish(error));
-              response.once("aborted", () => finish(new TransportError("QWEN_RESPONSE_ABORTED", "Qwen closed an incomplete response.")));
-              response.once("end", () => finish(null, { status: response.statusCode, body: Buffer.concat(chunks) }));
+              void (async () => {
+                try {
+                  onHeaders?.(response.statusCode, response.headers);
+                  for await (const chunk of response) {
+                    size += chunk.length;
+                    if (size > MAX_BYTES) throw new TransportError("QWEN_RESPONSE_TOO_LARGE", "Qwen response is too large.");
+                    if (onChunk) await onChunk(chunk); else chunks.push(chunk);
+                  }
+                  finish(null, { status: response.statusCode, body: Buffer.concat(chunks) });
+                } catch (error) { req.destroy(); finish(error); }
+              })();
             });
             req.once("error", error => finish(error));
             req.once("socket", assigned => {
@@ -147,14 +150,33 @@ export async function handleQwenTransport(request, response, transport = request
     }
     const requestedBudget = Number(request.headers["x-qwen-total-timeout-ms"]);
     const budget = Number.isFinite(requestedBudget) && requestedBudget > 0 ? Math.min(requestedBudget, TOTAL_TIMEOUT_MS) : TOTAL_TIMEOUT_MS;
-    const result = await transport(JSON.stringify({ ...body, enable_thinking: false, stream: false }), request.headers.authorization, {
+    const streaming = body.stream === true;
+    const result = await transport(JSON.stringify({ ...body, enable_thinking: false, stream: streaming }), request.headers.authorization, {
       signal: controller.signal, totalTimeoutMs: budget,
+      ...(streaming ? {
+        onHeaders(status, headers) {
+          response.writeHead(status, { "content-type": headers["content-type"] || "text/event-stream", "cache-control": "no-cache, no-transform", "x-accel-buffering": "no" });
+        },
+        async onChunk(chunk) {
+          if (controller.signal.aborted) throw controller.signal.reason;
+          if (response.write(chunk)) return;
+          await new Promise((resolve, reject) => {
+            const clean = () => { response.off("drain", drain); response.off("close", close); };
+            const drain = () => { clean(); resolve(); };
+            const close = () => { clean(); reject(new Error("Client disconnected.")); };
+            response.once("drain", drain); response.once("close", close);
+            if (response.destroyed) close();
+          });
+        },
+      } : {}),
     });
+    if (streaming) { response.end(); return; }
     send(result.status, result.body, {
       "x-qwen-attempts": String(result.attempts.length),
       "server-timing": `qwen;dur=${result.elapsedMs},connect;dur=${result.attempts.at(-1).connectMs || 0}`,
     });
   } catch (error) {
+    if (response.headersSent) { response.destroy(); return; }
     send(error.status || 502, JSON.stringify({ error: { message: error.message, code: error.code || "QWEN_TRANSPORT_ERROR" } }));
   } finally {
     clearTimeout(uploadTimer);

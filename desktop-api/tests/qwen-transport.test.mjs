@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { PassThrough } from "node:stream";
 import { EventEmitter } from "node:events";
 import { createServer as httpServer } from "node:http";
 import { createServer as tlsServer, request as tlsRequest } from "node:https";
@@ -35,11 +36,10 @@ function connected(req, socket) {
   socket.emit("secureConnect");
 }
 function answer(callback, body = "{}", status = 200) {
-  const res = new EventEmitter();
+  const res = new PassThrough(); res.headers = { "content-type": "application/json" };
   res.statusCode = status;
   callback(res);
-  res.emit("data", Buffer.from(body));
-  res.emit("end");
+  res.end(Buffer.from(body));
   return res;
 }
 
@@ -81,8 +81,8 @@ test("all connection attempts share one absolute total deadline", async () => {
 test("total timeout also covers a stalled response body and does not retry", async () => {
   const m = mock(({ req, socket, callback }) => {
     connected(req, socket);
-    const res = new EventEmitter(); res.statusCode = 200; callback(res);
-    res.emit("data", Buffer.from('{"partial":'));
+    const res = new PassThrough(); res.headers = { "content-type": "application/json" }; res.statusCode = 200; callback(res);
+    res.write(Buffer.from('{"partial":'));
   });
   await assert.rejects(requestQwen("{}", "Bearer fixture", { ...m, connectTimeoutMs: 20, totalTimeoutMs: 70 }), { code: "QWEN_TOTAL_TIMEOUT" });
   assert.equal(m.requests.length, 1);
@@ -127,7 +127,7 @@ test("loopback handler validates input, clamps budget, forces thinking off", asy
   assert.equal((await fetch(url, { method: "POST" })).status, 401);
   const headers = { authorization: "Bearer fixture", "x-qwen-total-timeout-ms": "999999" };
   assert.equal((await fetch(url, { method: "POST", headers, body: '{"model":"openai"}' })).status, 400);
-  const response = await fetch(url, { method: "POST", headers, body: JSON.stringify({ model: "qwen3.8-flash", messages: [], stream: true, enable_thinking: true }) });
+  const response = await fetch(url, { method: "POST", headers, body: JSON.stringify({ model: "qwen3.8-flash", messages: [], stream: false, enable_thinking: true }) });
   assert.equal(response.status, 200);
   assert.equal(captured.options.totalTimeoutMs, 90_000);
   assert.equal(captured.body.enable_thinking, false);
@@ -153,4 +153,25 @@ test("real TLS: default 20s connect limit permits a response after 21s", { timeo
   assert.equal(result.attempts.length, 1);
   assert.ok(result.elapsedMs >= 21_000);
   assert.ok(result.attempts[0].connectMs < 20_000);
+});
+
+test("Qwen loopback forwards chunks immediately and aborts on client disconnect", { timeout: 4000 }, async t => {
+  let captured, finish;
+  const disconnected = new Promise(r => { finish = r; });
+  const server = httpServer((req, res) => handleQwenTransport(req, res, async (body, _auth, options) => {
+    captured = JSON.parse(body);
+    options.onHeaders(200, { "content-type": "text/event-stream" });
+    await options.onChunk(Buffer.from('data: first\n\n'));
+    await new Promise(r => options.signal.addEventListener("abort", r, { once: true }));
+    finish(); throw new Error("cancelled");
+  }));
+  await new Promise(r => server.listen(0, "127.0.0.1", r));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const controller = new AbortController();
+  const response = await fetch(`http://127.0.0.1:${server.address().port}`, { method: "POST", signal: controller.signal, headers: { authorization: "Bearer fixture" }, body: JSON.stringify({ model: "qwen3.8-flash", messages: [], stream: true }) });
+  const reader = response.body.getReader();
+  assert.equal(new TextDecoder().decode((await reader.read()).value), 'data: first\n\n');
+  assert.equal(captured.stream, true);
+  assert.equal(captured.enable_thinking, false);
+  controller.abort(); await disconnected;
 });

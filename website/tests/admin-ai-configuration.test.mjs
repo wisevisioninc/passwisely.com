@@ -49,7 +49,7 @@ test("Qwen uses the DashScope endpoint without thinking and a connection-aware t
   assert.match(catalog, /dashscope\.aliyuncs\.com\/compatible-mode\/v1\/chat\/completions/);
   assert.match(catalog, /DASHSCOPE_API_KEY/);
   assert.match(catalog, /qwen3\.8-flash/);
-  assert.match(chat, /provider === "qwen"[\s\S]*enable_thinking: false[\s\S]*stream: false/);
+  assert.match(chat, /provider === "qwen"[\s\S]*enable_thinking: false[\s\S]*stream: streaming/);
   assert.match(resume, /config\.provider === "qwen"[\s\S]*enable_thinking: false[\s\S]*stream: false/);
   assert.match(dashboard, /ai_api_key_/);
   assert.match(dashboard, /每个模型渠道独立保存/);
@@ -67,7 +67,7 @@ test("shared desktop and resume requests use the admin default model", async () 
     read("../app/api/resume/agents/route.ts"),
   ]);
   assert.match(chat, /await getDefaultAiConfig\(\)/);
-  assert.match(chat, /effectiveBody: Json = \{ \.\.\.body, model \}/);
+  assert.match(chat, /effectiveBody: Json = \{ \.\.\.body, model, stream: streaming/);
   assert.match(chat, /if \(suppliedKey\)/);
   assert.match(resume, /await getDefaultAiConfig\(\)/);
   assert.match(resume, /provider: generated\.provider/);

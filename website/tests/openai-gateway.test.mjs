@@ -20,7 +20,8 @@ test("GPT-5.6 accepts legacy desktop token budgets without incompatible sampling
   const result = prepareOpenAiChatBody(source);
   assert.equal(result.max_completion_tokens,2048);
   assert.equal(result.reasoning_effort,"low");
-  assert.equal(result.stream,false);
+  assert.equal(result.stream,true);
+  assert.equal(prepareOpenAiChatBody({...source, stream:false}).stream,false);
   assert.ok(!("max_tokens" in result));
   assert.ok(!("temperature" in result));
   assert.ok(!("top_p" in result));

@@ -10,7 +10,7 @@ test("screenshot solve extracts only the programming problem in one model call",
   assert.match(processing, /solveScreenshotProblemHelper/);
   assert.match(processing, /Extract ONLY the programming problem itself/);
   assert.match(processing, /Exclude browser menus, tabs, URLs/);
-  assert.match(processing, /"problem_statement"/);
+  assert.match(processing, /parsed.problem_statement/);
   assert.match(processing, /thinking: \{ type: "disabled" \}/);
   assert.match(processing, /extractJsonStringField/);
   assert.match(processing, /Completing the solution/);
@@ -29,7 +29,7 @@ test("initial processing events are owned by the stable parent view", async () =
   assert.match(parent, /onProblemExtracted/);
   assert.match(parent, /onSolutionSuccess/);
   assert.match(parent, /onSolutionError/);
-  assert.match(parent, /Processing timed out/);
+  assert.match(parent, /AI 服务未在规定时间内完成/);
   assert.match(parent, /role="alert"/);
   assert.doesNotMatch(solutions, /onSolutionSuccess/);
   assert.doesNotMatch(solutions, /data\.code\.replace/);

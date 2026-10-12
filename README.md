@@ -20,7 +20,11 @@ The app opens as a transparent always-on-top window. Open the gear menu, select 
 
 On macOS and Windows, API keys are encrypted using the operating system credential protection API and stored in the app data directory. Existing OpenAI-only settings are migrated automatically. Preset model IDs and endpoints are editable so new models, private gateways, and deployment-specific IDs can be used without an application update.
 
-The answer language defaults to Simplified Chinese and can be changed to English in AI Settings. In Chinese mode, explanatory prose and answers are requested in Chinese while code, identifiers, commands, API names, and necessary technical terms may remain in English.
+Programming answers use concise Simplified Chinese in this order: a short approach, time and space complexity, complete runnable code with only key comments, and at most two brief alternative approaches. The model is instructed to check examples, imports, boundaries, and the complexity of its final implementation. Code syntax, identifiers, and necessary technical terms remain in their original language. Other assistant workflows retain the language preference in AI Settings.
+
+Solutions stream from the model through the website SSE relay, desktop gRPC `ChatStream`, and Electron IPC into the answer view. Personal provider connections also stream. The old unary `Chat` RPC remains available for older clients. A newer client only falls back to HTTPS streaming when the server explicitly reports an unsupported RPC before any content; it never restarts a partially received request. Stop, timeout, truncation, and connection errors preserve the preview and mark the code as incomplete.
+
+The 1.2.6 validation measurements and code regression results are recorded in `docs/releases/1.2.6-validation.json`. Public activation uses `website/scripts/activate-streaming-1.2.6.sh` after the signed installers have been uploaded. The script preserves TLS configuration, stages the web bundle, restarts both services, checks health, and retains a rollback copy.
 
 `AI_PROVIDER`, `AI_MODEL`, `AI_BASE_URL`, `AI_SUPPORTS_VISION`, and `AI_RESPONSE_LANGUAGE` can override the desktop settings for development or managed deployments. Provider-specific environment variables are also supported, including `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `KIMI_API_KEY`, `DOUBAO_API_KEY`, `QWEN_API_KEY`, `GLM_API_KEY`, `GEMINI_API_KEY`, and `ANTHROPIC_API_KEY`. See `.env.example` for a template.
 

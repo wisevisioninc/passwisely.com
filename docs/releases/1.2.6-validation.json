@@ -322,7 +322,8 @@
     "websiteBuild": true,
     "liveAccountRegression": true,
     "websiteTypecheck": true,
-    "generatedCodeAssertions": 1528
+    "generatedCodeAssertions": 1528,
+    "releaseScriptTests": 3
   },
   "ui": {
     "firstContentSeconds": 2.918,
@@ -396,7 +397,7 @@
       "launchedToLoginScreen": true,
       "previousVersionBackedUp": true
     },
-    "production": "first activation rolled back to old web build and v1.2.5 downloads; retry pending",
+    "production": "activation rolled back at one-shot download redirect check; retry pending",
     "blockers": [
       "wise requires interactive sudo authentication for Nginx and systemd activation."
     ],
@@ -407,7 +408,20 @@
       "regressionTests": [
         "delayed listener becomes healthy",
         "unavailable listener fails within bounded deadline"
-      ]
+      ],
+      "downloadCheck": {
+        "observedFailure": "activation line 57: a single redirect check immediately after Nginx reload returned the old version",
+        "fix": "retry bounded redirect checks and require the exact installer URL for each platform; stop services before swapping dist directories",
+        "regressionTests": [
+          "old redirects become new after reload",
+          "permanently wrong installer is rejected",
+          "transient HTTP failure is retried"
+        ],
+        "verifiedOn": [
+          "local Mac",
+          "wise"
+        ]
+      }
     }
   }
 }

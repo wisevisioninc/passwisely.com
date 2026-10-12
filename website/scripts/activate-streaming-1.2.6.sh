@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Run after the signed installers and staged production build have been verified.
 set -Eeuo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/release-download-health.sh"
 [[ "$EUID" -eq 0 ]] || { echo "Run with sudo."; exit 1; }
 revision="${1:?Pass the verified Git commit SHA}"
 staged="${2:?Pass the staged website dist directory}"
@@ -27,6 +28,7 @@ rollback() {
   cp -a "$backup/nginx.conf" "$nginx_config"
   # The new desktop API retains the old unary interface. Restore the previous
   # web build while retaining Git history and the backup for diagnosis.
+  systemctl stop passwisely-web.service passwisely-desktop-api.service || true
   rm -rf "$repo/website/dist"
   cp -a "$backup/dist" "$repo/website/dist"
   systemctl restart passwisely-web.service passwisely-desktop-api.service || true
@@ -38,6 +40,7 @@ trap 'rollback "$LINENO" "$?"' ERR
 sudo -u jerry git -C "$repo" merge --ff-only "$revision"
 cp -a "$staged" "$repo/website/dist-1.2.6-staged"
 chown -R jerry:jerry "$repo/website/dist-1.2.6-staged"
+systemctl stop passwisely-web.service passwisely-desktop-api.service
 mv "$repo/website/dist" "$backup/dist-replaced"
 mv "$repo/website/dist-1.2.6-staged" "$repo/website/dist"
 sed -i 's@passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.5/@passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.6/@g' "$nginx_config"
@@ -52,9 +55,9 @@ for attempt in {1..20}; do
 done
 [[ "$ready" == 1 ]]
 systemctl reload nginx
-for platform in mac-arm64 mac-x64 windows-x64; do
-  headers=$(curl -fsSI --max-time 15 "https://passwisely.com/api/download/$platform")
-  grep -qi '/releases/v1.2.6/' <<< "$headers"
-done
+release_url=https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.6
+wait_for_redirect https://passwisely.com/api/download/mac-arm64 "$release_url/PassWisely-macOS-arm64.dmg"
+wait_for_redirect https://passwisely.com/api/download/mac-x64 "$release_url/PassWisely-macOS-x64.dmg"
+wait_for_redirect https://passwisely.com/api/download/windows-x64 "$release_url/PassWisely-Windows-x64.exe"
 trap - ERR
 echo "PassWisely 1.2.6 activated. Backup: $backup"

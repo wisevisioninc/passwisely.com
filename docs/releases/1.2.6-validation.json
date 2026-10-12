@@ -345,7 +345,6 @@
   "releaseStatus": {
     "date": "2026-10-13",
     "implementation": "complete",
-    "sourceRuntimeCommit": "c962541c2c314b833ca55242bf98782be9818e7a",
     "windowsInstaller": "uploaded; public download SHA-256 verified",
     "macOSArm64": "Developer ID signed; app and DMG notarized and stapled; Gatekeeper accepted; uploaded and public download SHA-256 verified",
     "macOSX64": "Developer ID signed; app and DMG notarized and stapled; Gatekeeper accepted; uploaded and public download SHA-256 verified",
@@ -397,11 +396,9 @@
       "launchedToLoginScreen": true,
       "previousVersionBackedUp": true
     },
-    "production": "activation rolled back at one-shot download redirect check; retry pending",
-    "blockers": [
-      "wise requires interactive sudo authentication for Nginx and systemd activation."
-    ],
-    "publicStreamingSmoke": "prepared; waiting for production activation",
+    "production": "active: web, gRPC, and all download redirects are 1.2.6",
+    "blockers": [],
+    "publicStreamingSmoke": "passed",
     "activationIssue": {
       "cause": "systemd Type=simple ExecStartPost ran the fail-fast gRPC health RPC before the listener was ready, causing service restart failure and rollback",
       "fix": "health check waits for channel readiness within the same five-second deadline",
@@ -421,7 +418,108 @@
           "local Mac",
           "wise"
         ]
+      },
+      "status": "resolved"
+    },
+    "installerSourceCommit": "c962541c2c314b833ca55242bf98782be9818e7a",
+    "deployedSourceCommit": "95ba941f5067c29acef8cc97942a7716665db260",
+    "activatedAt": "2026-10-13T00:59:46+08:00",
+    "backupPath": "/home/jerry/passwisely-backups/1.2.6-20261013005946",
+    "publicDownloadChecks": [
+      {
+        "platform": "mac-arm64",
+        "downloadUrl": "https://passwisely.com/api/download/mac-arm64",
+        "resolvedUrl": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.6/PassWisely-macOS-arm64.dmg",
+        "bytes": 137245090,
+        "status": 200
+      },
+      {
+        "platform": "mac-x64",
+        "downloadUrl": "https://passwisely.com/api/download/mac-x64",
+        "resolvedUrl": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.6/PassWisely-macOS-x64.dmg",
+        "bytes": 144022201,
+        "status": 200
+      },
+      {
+        "platform": "windows-x64",
+        "downloadUrl": "https://passwisely.com/api/download/windows-x64",
+        "resolvedUrl": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.6/PassWisely-Windows-x64.exe",
+        "bytes": 117184768,
+        "status": 200
       }
+    ],
+    "postDeployment": {
+      "verifiedAt": "2026-10-13T01:02:42+08:00",
+      "scenario": "LeetCode.cn 67, one fresh request per provider, actual desktop helper through public TLS gRPC; excludes typing and screenshot capture.",
+      "smokeResults": [
+        {
+          "transport": "public TLS gRPC ChatStream",
+          "provider": "kimi",
+          "model": "kimi-k3",
+          "problem": "67",
+          "firstVisibleMs": 3011.397791,
+          "progressEvents": 30,
+          "totalMs": 8685.291166,
+          "success": true
+        },
+        {
+          "transport": "public TLS gRPC ChatStream",
+          "provider": "qwen",
+          "model": "qwen3.8-flash",
+          "problem": "67",
+          "firstVisibleMs": 1311.8580000000002,
+          "progressEvents": 53,
+          "totalMs": 5618.286166,
+          "success": true
+        },
+        {
+          "transport": "public TLS gRPC legacy Chat",
+          "success": true,
+          "totalMs": 1126.8755419999998,
+          "finishReason": "stop"
+        }
+      ],
+      "codeJudging": [
+        {
+          "provider": "kimi",
+          "problem": "67",
+          "assertions": 152,
+          "passed": true
+        },
+        {
+          "provider": "qwen",
+          "problem": "67",
+          "assertions": 152,
+          "passed": true
+        }
+      ],
+      "services": {
+        "web": "active",
+        "desktopApi": "active",
+        "restartCounts": {
+          "web": 0,
+          "desktopApi": 0
+        },
+        "grpcHealth": "SERVING grpc+protobuf"
+      },
+      "chatgptUpstreamControl": [
+        {
+          "origin": "wisepa.cn",
+          "model": "gpt-5.6-sol",
+          "stream": false,
+          "status": 503,
+          "elapsedMs": 135
+        },
+        {
+          "origin": "wisepa.cn",
+          "model": "gpt-5.6-sol",
+          "stream": true,
+          "status": 503,
+          "elapsedMs": 72
+        }
+      ],
+      "temporaryTestAccountRemoved": true,
+      "localTestCredentialsRemoved": true
     }
   }
 }

@@ -342,15 +342,64 @@
     "limitation": "Existing upstream Service temporarily unavailable; never counted as a fast successful answer."
   },
   "releaseStatus": {
+    "date": "2026-10-13",
     "implementation": "complete",
-    "windowsInstaller": "built",
-    "macOSArm64": "Developer ID signature verified; notarization pending",
-    "macOSX64": "Developer ID signature verified; notarization pending",
-    "production": "not activated",
+    "sourceRuntimeCommit": "c962541c2c314b833ca55242bf98782be9818e7a",
+    "windowsInstaller": "uploaded; public download SHA-256 verified",
+    "macOSArm64": "Developer ID signed; app and DMG notarized and stapled; Gatekeeper accepted; uploaded and public download SHA-256 verified",
+    "macOSX64": "Developer ID signed; app and DMG notarized and stapled; Gatekeeper accepted; uploaded and public download SHA-256 verified",
+    "artifacts": [
+      {
+        "filename": "PassWisely-macOS-arm64.dmg",
+        "bytes": 137245090,
+        "sha256": "4e4ec815b54d793a41af877c645bb6706ba507d1500f1fad78ca5c6b29896d6c",
+        "publicDownloadVerified": true,
+        "gatekeeperAccepted": true,
+        "notarizationId": "884b80a7-034b-4dbb-b288-54b917364109"
+      },
+      {
+        "filename": "PassWisely-macOS-x64.dmg",
+        "bytes": 144022201,
+        "sha256": "511bfd021c53e123fd724a7e64ea471c8a91781b751feddfd83fc19f0885fea1",
+        "publicDownloadVerified": true,
+        "gatekeeperAccepted": true,
+        "notarizationId": "07da8cfe-848c-46bd-a764-fd43abae1f08"
+      },
+      {
+        "filename": "PassWisely-Windows-x64.exe",
+        "bytes": 117184768,
+        "sha256": "e69b41497ce3785e79041eefc71928506ebc6dbdc7a4956a4f96b6a30e7ecc04",
+        "publicDownloadVerified": true
+      }
+    ],
+    "embeddedApps": [
+      {
+        "arch": "x64",
+        "version": "1.2.6",
+        "appAsarSha256": "bd55ed4fe73b6a014938a49ce8cb785438db723d1a6a3510350f7008a3b620f5",
+        "embeddedAppSignature": true,
+        "embeddedAppNotarized": true
+      },
+      {
+        "arch": "arm64",
+        "version": "1.2.6",
+        "appAsarSha256": "bd55ed4fe73b6a014938a49ce8cb785438db723d1a6a3510350f7008a3b620f5",
+        "embeddedAppSignature": true,
+        "embeddedAppNotarized": true
+      }
+    ],
+    "localMac": {
+      "version": "1.2.6",
+      "installed": true,
+      "signatureVerified": true,
+      "notarizationTicketValidated": true,
+      "launchedToLoginScreen": true,
+      "previousVersionBackedUp": true
+    },
+    "production": "not activated; download redirects remain v1.2.5",
     "blockers": [
-      "Mac locked during notarization; passwisely-notary is inaccessible. The same profile successfully read submission history while the Mac was unlocked.",
       "wise requires interactive sudo authentication for Nginx and systemd activation."
     ],
-    "windowsInstallerSha256": "e69b41497ce3785e79041eefc71928506ebc6dbdc7a4956a4f96b6a30e7ecc04"
+    "publicStreamingSmoke": "prepared; waiting for production activation"
   }
 }

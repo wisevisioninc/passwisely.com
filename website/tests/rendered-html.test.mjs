@@ -10,10 +10,11 @@ test("builds a bilingual PassWisely landing page", async () => {
       "utf8",
     ),
     await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    await readFile(new URL("../app/LandingPage.tsx", import.meta.url), "utf8"),
   ].join("\n");
   assert.match(source, /PassWisely/);
   assert.match(source, /AI Interview Copilot/);
-  assert.match(source, /Download for macOS/);
+  assert.match(source, /Get for Mac/);
   assert.match(source, /下载 Windows/);
   assert.match(source, /购买积分/);
   assert.match(source, /Buy credits/);

@@ -31,7 +31,7 @@ test("performance monitoring stores minute aggregates and download samples", asy
   const [migration, worker, site] = await Promise.all([
     readFile(new URL("../supabase/migrations/0007_performance_download_metrics.sql", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/PassWiselySite.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/LandingPage.tsx", import.meta.url), "utf8"),
   ]);
   for (const metric of ["qps_current", "qps_peak_1h", "avg_latency_ms_5m", "downloads_total", "download_performance"]) {
     assert.match(migration, new RegExp(`'${metric}'`));

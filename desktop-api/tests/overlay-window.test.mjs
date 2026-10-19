@@ -99,6 +99,52 @@ test('actual main resize and move entrypoints cannot shrink or displace the live
   assert.deepEqual(actions, ['move-left', 'move-down']);
 });
 
+test('actual activate and second-instance entrypoints reveal hidden windows and focus only Auth', () => {
+  const source = fs.readFileSync(new URL('../../electron/main.ts', import.meta.url), 'utf8');
+  const ast = ts.createSourceFile('main.ts', source, ts.ScriptTarget.Latest, true);
+  const selected = ast.statements.filter(node => {
+    if (ts.isFunctionDeclaration(node)) return ['showMainWindow', 'revealMainWindow'].includes(node.name?.text);
+    if (!ts.isExpressionStatement(node) || !ts.isCallExpression(node.expression)) return false;
+    const call = node.expression;
+    return call.expression.getText(ast) === 'app.on' && ts.isStringLiteral(call.arguments[0]) && ['activate', 'second-instance'].includes(call.arguments[0].text);
+  }).map(node => node.getText(ast)).join('\n');
+  const code = ts.transpileModule(selected, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  for (const name of ['activate', 'second-instance']) {
+    for (const auth of [false, true]) {
+      for (const initiallyMinimized of [false, true]) {
+        const handlers = new Map(), calls = [];
+        let minimized = initiallyMinimized, visible = false, destroyed = false;
+        const win = { isDestroyed: () => destroyed, isMinimized: () => minimized,
+          restore: () => { minimized = false; calls.push('restore'); },
+          showInactive: () => { visible = true; calls.push('showInactive'); }, focus: () => calls.push('focus'),
+          setVisibleOnAllWorkspaces() {}, setContentProtection() {},
+          webContents: { send: (...args) => calls.push(args) },
+        };
+        const state = { mainWindow: win, isWindowVisible: false, shortcutsHelper: { refreshGlobalShortcuts: () => calls.push('shortcuts') } };
+        vm.runInNewContext(code, { state, console: { log() {} }, PROTOCOL: 'passwisely', handleAuthCallback() {},
+          app: { on: (event, callback) => handlers.set(event, callback) }, isAuthWindow: () => auth,
+          overlayWindow: { isLive: () => !auth, restoreMousePolicy: () => calls.push('mouse-policy') },
+          createWindow: () => calls.push('create'), handleWindowClosed: () => { state.mainWindow = null; calls.push('release-destroyed-window'); },
+        });
+        const activate = () => name === 'second-instance' ? handlers.get(name)({}, []) : handlers.get(name)();
+        activate();
+        assert.equal(visible, true, `${name} must reveal a hidden ${auth ? 'Auth' : 'Live'} window`);
+        assert.equal(state.isWindowVisible, true);
+        assert.equal(minimized, false);
+        assert.equal(calls.includes('restore'), initiallyMinimized);
+        assert.equal(calls.includes('focus'), auth);
+        assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'overlay-visibility' && call[1] === true));
+        assert.ok(calls.includes('mouse-policy') && calls.includes('shortcuts'));
+        state.mainWindow = null; activate();
+        assert.equal(calls.filter(call => call === 'create').length, 1);
+        state.mainWindow = win; destroyed = true; activate();
+        assert.equal(calls.filter(call => call === 'create').length, 2);
+        assert.ok(calls.includes('release-destroyed-window'));
+      }
+    }
+  }
+});
+
 test('preload overlay and screenshot subscriptions release exactly their own listeners', () => {
   const listeners = new Map(), invocations = [], exposed = {};
   const ipcRenderer = {

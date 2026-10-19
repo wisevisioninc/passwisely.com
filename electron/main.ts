@@ -577,6 +577,18 @@ function showMainWindow(): void {
   state.shortcutsHelper?.refreshGlobalShortcuts();
 }
 
+function revealMainWindow(): void {
+  const window = state.mainWindow;
+  if (!window || window.isDestroyed()) {
+    if (window) handleWindowClosed();
+    void createWindow();
+    return;
+  }
+  if (window.isMinimized()) window.restore();
+  showMainWindow();
+  if (isAuthWindow()) window.focus();
+}
+
 function toggleMainWindow(): void {
   if (state.mainWindow?.isMinimized()) {
     state.mainWindow.restore();
@@ -745,13 +757,7 @@ app.on("second-instance", (_event, commandLine) => {
     handleAuthCallback(url, state.mainWindow);
   }
 
-  // Focus or create the main window
-  if (!state.mainWindow) {
-    createWindow();
-  } else {
-    if (state.mainWindow.isMinimized()) state.mainWindow.restore();
-    state.mainWindow.focus();
-  }
+  revealMainWindow();
 });
 
 app.on("window-all-closed", () => {
@@ -779,12 +785,7 @@ app.on("before-quit", event => {
 });
 
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  } else if (state.mainWindow?.isMinimized()) {
-    state.mainWindow.restore();
-    state.mainWindow.focus();
-  }
+  revealMainWindow();
 });
 
 // State getter/setter functions

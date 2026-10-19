@@ -142,6 +142,7 @@
     "pdfjs-dist": "4.10.38",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "10.1.0",
     "react-syntax-highlighter": "^16.1.1",
     "tailwind-merge": "^2.5.5",
     "word-extractor": "1.0.4"

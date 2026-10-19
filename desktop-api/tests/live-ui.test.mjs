@@ -8,6 +8,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { load as parseHtml } from "cheerio";
 import ts from "typescript";
+import Markdown from "react-markdown";
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -23,9 +24,9 @@ const javascript = ts.transpileModule(readFileSync(filename, "utf8"), {
 
 // Run the shipped component and its exported control/ordering logic, not a
 // second implementation. Only IPC, CSS and unrelated settings panels are mocked.
-function production(initialSnapshot) {
+function production(initialSnapshot, reactOverride) {
   let snapshotInjected = false;
-  const react = initialSnapshot === undefined ? React : {
+  const react = reactOverride ?? (initialSnapshot === undefined ? React : {
     ...React,
     useState(initial) {
       // The first nullable state is the main-process snapshot. Other state and
@@ -36,15 +37,26 @@ function production(initialSnapshot) {
       }
       return React.useState(initial);
     },
-  };
+  });
   const module = { exports: {} };
   new Function("require", "module", "exports", javascript)((id) => {
     if (id === "react") return react;
     if (id.endsWith(".css")) return {};
     if (id === "../shared/AISettings") return { AISettings: () => null };
     if (id === "../shared/ResumePanel") return { ResumePanel: () => null };
+    if (id === "./AnswerMarkdown") return markdownProduction();
     return require(id);
   }, module, module.exports);
+  return module.exports;
+}
+
+function markdownProduction() {
+  const filename = path.join(root, "src/components/Live/AnswerMarkdown.tsx");
+  const js = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+  }).outputText;
+  const module = { exports: {} };
+  new Function("require", "module", "exports", js)(id => id === "react-markdown" ? { __esModule: true, default: Markdown } : require(id), module, module.exports);
   return module.exports;
 }
 
@@ -169,4 +181,137 @@ test("ending keeps session text visible and a new session discloses its clearing
   assert.equal($("button[title='开始新会话将清空当前转录和回答']").length, 1);
   assert.ok($(".pw-live-audio-notice").text().includes("开始新会话会清空"));
   assert.equal($("button[aria-label='发送问题']").prop("disabled"), false);
+});
+
+function elements(node) {
+  if (!React.isValidElement(node)) return [];
+  return [node, ...React.Children.toArray(node.props.children).flatMap(elements)];
+}
+const elementText = node => typeof node === "string" ? node : React.isValidElement(node) ? React.Children.toArray(node.props.children).map(elementText).join("") : "";
+
+test("only starting a session changes the current answer tab; pause, resume and end preserve it", async () => {
+  const previousWindow = globalThis.window;
+  try {
+    for (const [captureStatus, label, method] of [["ended", "新会话", "liveStart"], ["recording", "暂停", "livePause"], ["paused", "继续", "liveResume"], ["recording", "结束", "liveStop"]]) {
+      const tabs = [], panels = [];
+      let nullable = 0, calls = 0;
+      const react = {
+        ...React, useState(initial) {
+          if (initial === null) return [nullable++ === 0 ? snapshot({ captureStatus, captureNeedsCleanup: captureStatus !== "ended" }) : null, value => panels.push(value)];
+          if (initial === "transcript") return ["answers", value => tabs.push(value)];
+          return [initial, () => {}];
+        }, useRef: initial => ({ current: initial }), useEffect() {}, useLayoutEffect() {}, useCallback: fn => fn,
+      };
+      globalThis.window = { electronAPI: { [method]: async () => { calls++; return { success: true }; } } };
+      const Component = production(undefined, react).default;
+      const tree = Component({ visible: true });
+      const button = elements(tree).find(node => node.type === "button" && elementText(node) === label);
+      assert.ok(button, `production ${label} button exists`);
+      button.props.onClick(); await new Promise(resolve => setImmediate(resolve));
+      assert.equal(calls, 1);
+      assert.deepEqual(tabs, method === "liveStart" ? ["transcript"] : []);
+      assert.deepEqual(panels, method === "liveStart" ? [null] : []);
+    }
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
+test("the mounted workspace forwards ordered real snapshots to navigation even while hidden", async () => {
+  const previousWindow = globalThis.window;
+  try {
+    for (const visible of [false, true]) {
+      const effects = [], forwarded = [];
+      let receive;
+      const react = { ...React,
+        useState: initial => [initial, () => {}], useRef: initial => ({ current: initial }),
+        useEffect: effect => effects.push(effect), useLayoutEffect() {}, useCallback: fn => fn,
+      };
+      globalThis.window = { electronAPI: {
+        onLiveSnapshot(listener) { receive = listener; return () => {}; },
+        async liveGetSnapshot() { return snapshot({ revision: 1, captureStatus: "recording" }); },
+      } };
+      const Component = production(undefined, react).default;
+      Component({ visible, onSnapshot: next => forwarded.push(next) });
+      const cleanup = effects[0]();
+      await new Promise(resolve => setImmediate(resolve));
+      receive(snapshot({ revision: 2, captureStatus: "paused" }));
+      receive(snapshot({ revision: 1, captureStatus: "recording" }));
+      assert.deepEqual(forwarded.map(next => next.captureStatus), ["recording", "paused"]);
+      cleanup();
+      receive(snapshot({ revision: 3, captureStatus: "ended" }));
+      assert.equal(forwarded.length, 2);
+    }
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
+test("the actual answer renderer parses headings, emphasis, lists and code while streaming unfinished Markdown", () => {
+  const text = "## 建议\n\n**先确认边界**\n\n- 第一项\n- 第二项\n\n1. 步骤一\n2. 步骤二\n\n```python\nprint('<safe>')\n```";
+  const answer = { id: "markdown", question: "怎么做？", text, model: "fixture", status: "streaming", createdAt: 1, screenshotCount: 0 };
+  const { dom: $ } = renderWorkspace(snapshot({ answers: [answer] }));
+  assert.equal($(".pw-live-answer-text h2").text(), "建议");
+  assert.equal($(".pw-live-answer-text strong").text(), "先确认边界");
+  assert.equal($(".pw-live-answer-text ul li").length, 2);
+  assert.equal($(".pw-live-answer-text ol li").length, 2);
+  assert.equal($("pre code.language-python").text(), "print('<safe>')\n");
+  assert.equal($("safe").length, 0);
+  assert.equal($(".pw-live-answer-text .pw-live-caret").length, 1);
+  for (const partial of ["**正在生成", "```python\nprint('unfinished')"]) {
+    const { dom: partialDom } = renderWorkspace(snapshot({ answers: [{ ...answer, text: partial }] }));
+    assert.ok(partialDom(".pw-live-answer-text").text().includes(partial.includes("python") ? "unfinished" : "正在生成"));
+  }
+});
+
+test("Markdown cannot enable HTML, load images or open local/script/data URLs", () => {
+  const { AnswerMarkdown, answerExternalUrl } = markdownProduction();
+  const text = [
+    '<script>alert(1)</script>', '<img src="https://example.test/tracking" onerror="alert(1)">', '<iframe src="file:///tmp/private"></iframe>',
+    '![tracking](https://example.test/tracking.png)', '![local](file:///tmp/private)',
+    '[script](javascript:alert%281%29)', '[file](file:///tmp/private)', '[data](data:text/html,evil)',
+    '[mail](mailto:fixture@example.test)', '[relative](/secret)', '[safe](https://example.test/guide)',
+  ].join("\n\n");
+  const $ = parseHtml(renderToStaticMarkup(React.createElement(AnswerMarkdown, { text })));
+  assert.equal($("script,img,iframe,svg,style,[onerror]").length, 0);
+  assert.equal($("a").length, 1);
+  assert.equal($("a").attr("href"), "https://example.test/guide");
+  assert.equal($("a").attr("rel"), "noopener noreferrer");
+  for (const url of ["javascript:alert(1)", "file:///tmp/private", "data:text/html,evil", "mailto:x@y.test", "/relative", "#fragment", "not a url"]) assert.equal(answerExternalUrl(url), undefined);
+});
+
+test("safe Markdown links use Electron's existing external handler and Copy keeps the unmodified raw response", async () => {
+  const previousWindow = globalThis.window;
+  const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  const opened = [], copied = [];
+  const raw = "## 原文\n\n**加粗**\n\n```js\nconst value = 1;\n```";
+  let nullable = 0;
+  const answer = { id: "copy", question: "问题", text: raw, model: "fixture", status: "completed", createdAt: 1, screenshotCount: 0 };
+  const react = { ...React,
+    useState(initial) { return [initial === null && nullable++ === 0 ? snapshot({ answers: [answer] }) : initial, () => {}]; },
+    useRef: initial => ({ current: initial }), useEffect() {}, useLayoutEffect() {}, useCallback: fn => fn,
+  };
+  globalThis.window = { electronAPI: { openExternal(url) { opened.push(url); } } };
+  Object.defineProperty(globalThis, "navigator", { configurable: true, value: { clipboard: { async writeText(text) { copied.push(text); } } } });
+  try {
+    const { AnswerMarkdown } = markdownProduction();
+    const markdown = AnswerMarkdown({ text: "[safe](https://example.test/)" });
+    const link = markdown.props.components.a({ href: "https://example.test/", children: "safe" });
+    let prevented = false;
+    link.props.onClick({ preventDefault() { prevented = true; } });
+    assert.equal(prevented, true); assert.deepEqual(opened, ["https://example.test/"]);
+    const Component = production(undefined, react).default;
+    const copy = elements(Component({ visible: true })).find(node => typeof node.type === "function" && node.type.name === "CopyText");
+    assert.equal(copy.props.text, raw);
+    const copyButton = copy.type(copy.props);
+    copyButton.props.onClick(); await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(copied, [raw]);
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+    if (navigatorDescriptor) Object.defineProperty(globalThis, "navigator", navigatorDescriptor);
+    else delete globalThis.navigator;
+  }
 });

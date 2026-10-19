@@ -4,6 +4,7 @@ import type { CaptureStatus, LiveResult, LiveSessionAPI, LiveSnapshot } from "..
 import type { Screenshot } from "../../types/screenshots";
 import { AISettings } from "../shared/AISettings";
 import { ResumePanel } from "../shared/ResumePanel";
+import { AnswerMarkdown } from "./AnswerMarkdown";
 import "./live.css";
 
 const CAPTURE_LABELS: Record<CaptureStatus, string> = {
@@ -84,7 +85,7 @@ export default function LiveWorkspace({ visible, onSnapshot }: { visible: boolea
   const askLocked = useRef(false);
   const captureLocked = useRef(false);
   const captureOperation = useRef(0);
-  const captureAction = useRef<"normal" | "stop" | null>(null);
+  const captureAction = useRef<"start" | "normal" | "stop" | null>(null);
   const shortcutAction = useRef<() => void>(() => {});
   const publishSnapshot = useRef(onSnapshot);
   publishSnapshot.current = onSnapshot;
@@ -168,7 +169,7 @@ export default function LiveWorkspace({ visible, onSnapshot }: { visible: boolea
     if (followAnswers && visible && answerScroll.current) answerScroll.current.scrollTop = answerScroll.current.scrollHeight;
   }, [snapshot?.answers, followAnswers, tab, panel, visible]);
 
-  const runCapture = async (operation: () => Promise<LiveResult>, action: "normal" | "stop" = "normal") => {
+  const runCapture = async (operation: () => Promise<LiveResult>, action: "start" | "normal" | "stop" = "normal") => {
     const current = snapshotRef.current;
     const releasingPending = action === "stop" && captureAction.current !== "stop" &&
       (current?.captureStatus === "starting" || (current?.captureNeedsCleanup && ["ended", "error"].includes(current.captureStatus)));
@@ -181,7 +182,7 @@ export default function LiveWorkspace({ visible, onSnapshot }: { visible: boolea
       const result = await operation();
       if (operationId !== captureOperation.current) return;
       if (!result.success) throw new Error(result.error || "采集操作失败。");
-      setTab("transcript"); setPanel(null);
+      if (action === "start") { setTab("transcript"); setPanel(null); }
     } catch (reason) { if (alive.current && operationId === captureOperation.current) setError(errorText(reason)); }
     finally {
       if (operationId === captureOperation.current) {
@@ -245,7 +246,7 @@ export default function LiveWorkspace({ visible, onSnapshot }: { visible: boolea
       <div className="pw-live-controls">
         {captureControls.showStart ? <button type="button" className="pw-live-button primary" disabled={loading || captureControls.startDisabled}
           title={hasSessionText ? "开始新会话将清空当前转录和回答" : "开始音频采集"}
-          onClick={() => void runCapture(api.liveStart)}><Play size={13} />{hasSessionText || captureStatus === "ended" ? "新会话" : "开始会话"}</button>
+          onClick={() => void runCapture(api.liveStart, "start")}><Play size={13} />{hasSessionText || captureStatus === "ended" ? "新会话" : "开始会话"}</button>
           : <button type="button" className="pw-live-button" disabled={transitional || captureBusy || !["recording", "paused"].includes(captureStatus)}
             onClick={() => void runCapture(captureStatus === "paused" ? api.liveResume : api.livePause)}>
             {transitional || captureBusy ? <Loader2 className="pw-live-spinning" size={13} /> : captureStatus === "paused" ? <Play size={13} /> : <Pause size={13} />}
@@ -297,7 +298,7 @@ export default function LiveWorkspace({ visible, onSnapshot }: { visible: boolea
                 <div className="pw-live-answer-meta"><span>{answer.status === "preparing" || answer.status === "streaming" ? <Loader2 className="pw-live-spinning" size={12} /> : <Radio size={12} />}
                   {answer.status === "preparing" ? "正在准备上下文" : answer.status === "streaming" ? "正在回答" : answer.status === "cancelled" ? "已停止 · 保留已生成内容" : answer.status === "error" ? "回答未完成" : "回答完成"}
                   {answer.model && <small>{answer.model}</small>}</span>{answer.text && <CopyText text={answer.text} />}</div>
-                <div className="pw-live-answer-text">{answer.text || (answer.status === "preparing" || answer.status === "streaming" ? "等待首段内容…" : "尚未生成正文。")}{answer.status === "streaming" && answer.text && <span className="pw-live-caret" aria-hidden="true" />}</div>
+                <div className="pw-live-answer-text">{answer.text ? <AnswerMarkdown text={answer.text} /> : answer.status === "preparing" || answer.status === "streaming" ? "等待首段内容…" : "尚未生成正文。"}{answer.status === "streaming" && answer.text && <span className="pw-live-caret" aria-hidden="true" />}</div>
                 {answer.contextTruncated && <p className="pw-live-context-note">上下文超出预算，已使用最近内容。</p>}
                 {answer.error && <p className="pw-live-answer-error" role="alert">{answer.error}</p>}
               </article>)}

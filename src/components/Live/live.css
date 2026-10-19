@@ -66,7 +66,24 @@
 .pw-live-answer-meta { display:flex; align-items:center; justify-content:space-between; min-height:29px; margin:12px 0 6px; color:var(--live-system); font-size:10px; }
 .pw-live-answer-meta>span { display:flex; align-items:center; flex-wrap:wrap; gap:5px; }
 .pw-live-answer-meta small { font-size:9px; color:#768291; margin-left:3px; }
-.pw-live-answer-text { margin:0; color:#e0e6ee; font-size:12px; line-height:1.9; white-space:pre-wrap; tab-size:2; }
+.pw-live-answer-text { margin:0; color:#e0e6ee; font-size:12px; line-height:1.9; overflow-wrap:anywhere; tab-size:2; }
+.pw-live-answer-text p { margin:0 0 10px; white-space:pre-wrap; }
+.pw-live-answer-text p:last-child { margin-bottom:0; }
+.pw-live-answer-text h1,.pw-live-answer-text h2,.pw-live-answer-text h3,.pw-live-answer-text h4,.pw-live-answer-text h5,.pw-live-answer-text h6 { margin:16px 0 8px; color:#eceff3; font-size:13px; font-weight:600; line-height:1.6; }
+.pw-live-answer-text>h1:first-child,.pw-live-answer-text>h2:first-child,.pw-live-answer-text>h3:first-child { margin-top:0; }
+.pw-live-answer-text strong { color:#eceff3; font-weight:600; }
+.pw-live-answer-text ul,.pw-live-answer-text ol { margin:8px 0 12px; padding-left:21px; }
+.pw-live-answer-text ul { list-style:disc; }
+.pw-live-answer-text ol { list-style:decimal; }
+.pw-live-answer-text li { margin:3px 0; }
+.pw-live-answer-text li>p { margin-bottom:5px; }
+.pw-live-answer-text blockquote { margin:10px 0; padding:2px 0 2px 12px; border-left:2px solid #75b9d666; color:#a6b4c5; }
+.pw-live-answer-text code { font:11px/1.7 "Menlo",monospace; background:#ffffff0b; padding:2px 4px; border-radius:4px; }
+.pw-live-answer-text pre { max-width:100%; overflow-x:auto; margin:10px 0 14px; padding:12px; border:1px solid #ffffff15; border-radius:8px; background:#0b0d10; white-space:pre; }
+.pw-live-answer-text pre code { padding:0; border-radius:0; background:none; }
+.pw-live-answer-text a { color:#75b9d6; text-decoration:underline; text-underline-offset:3px; }
+.pw-live-answer-text hr { margin:14px 0; border:0; border-top:1px solid #ffffff20; }
+.pw-live-image-description { color:#939dab; font-size:11px; }
 .pw-live-answer-error { margin:10px 0 0; padding:8px 10px; color:#edc08b; border-left:2px solid #e6b56688; background:#e6b56609; font-size:11px; line-height:1.7; }
 .pw-live-context-note { margin:12px 0 0; color:#9ba5b3; font-size:10px; line-height:1.6; }
 .pw-live-composer { flex-shrink:0; padding:11px 15px 9px; border-top:1px solid #ffffff16; background:#16191d; }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowDown, Camera, Check, ChevronDown, ChevronLeft, Copy, GripVertical, Loader2, MessageSquare, Pause, Play, Radio, Settings, Square, X } from "lucide-react";
 import type { CaptureStatus, LiveResult, LiveSnapshot } from "../../../electron/live/types";
+import type { OverlayGeometry } from "../../../electron/live/overlayTypes";
 import type { Screenshot } from "../../types/screenshots";
 import { AISettings } from "../shared/AISettings";
 import { ResumePanel } from "../shared/ResumePanel";
@@ -56,11 +57,14 @@ function CopyText({ text }: { text: string }) {
 }
 
 export interface OverlayPosition { x: number; y: number }
+function Keycaps({ keys }: { keys: string[] }) {
+  return <span className="pw-live-keycaps" aria-hidden="true">{keys.map(key => <kbd key={key}>{key}</kbd>)}</span>;
+}
 export function isOverlayInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof Element && !!target.closest('[data-overlay-interactive],[role="dialog"],[role="alertdialog"],[data-radix-popper-content-wrapper],[data-overlay-global]');
 }
-export function clampOverlayPosition(position: OverlayPosition, viewport: { width: number; height: number }): OverlayPosition {
-  const half = Math.min(310, Math.max(0, (viewport.width - 40) / 2));
+export function clampOverlayPosition(position: OverlayPosition, viewport: { width: number; height: number }, regionWidth = 620): OverlayPosition {
+  const half = Math.min(regionWidth / 2, Math.max(0, (viewport.width - 40) / 2));
   return { x: Math.max(20 + half, Math.min(position.x, viewport.width - 20 - half)), y: Math.max(20, Math.min(position.y, viewport.height - 60)) };
 }
 
@@ -85,12 +89,17 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [panel, setPanel] = useState<"settings" | "resume" | "shortcuts" | null>(null);
-  const [viewport, setViewport] = useState({ width: window.innerWidth || 1200, height: window.innerHeight || 800 });
-  const [position, setPosition] = useState<OverlayPosition>({ x: (window.innerWidth || 1200) / 2, y: (window.innerHeight || 800) - 60 });
-  const [contentWidth, setContentWidth] = useState((window.innerWidth || 1200) / 2);
+  const [geometry, setViewport] = useState<OverlayGeometry | null>(null);
+  const viewport = geometry ?? { width: 0, height: 0 };
+  const [position, setPosition] = useState<OverlayPosition>({ x: 0, y: 20 });
+  const [contentWidth, setContentWidth] = useState(0);
   const [pinned, setPinned] = useState(true);
   const scroll = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
+  const toolbar = useRef<HTMLDivElement>(null);
+  const nativeGeometry = useRef<OverlayGeometry | null>(null);
+  const userWidth = useRef(false);
+  const userPosition = useRef(false);
   const scrollOffsets = useRef({ transcript: 0, answers: 0 });
   const pendingScroll = useRef<number | null>(null);
   const screenshotRead = useRef(0);
@@ -159,24 +168,41 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
       // Let an in-overlay button receive its click before changing native focus.
       if (isField(event.target) && !isField(event.relatedTarget) && !isOverlayInteractiveTarget(event.relatedTarget)) void api.setOverlayFocus(false).catch(() => {});
     };
-    const resize = () => {
-      const next = { width: window.innerWidth, height: window.innerHeight };
-      setViewport(next); setPosition(current => clampOverlayPosition(current, next));
-      setContentWidth(current => Math.min(current, next.width - 40));
+    let geometryRead = 0;
+    let mounted = true;
+    const acceptGeometry = (next: OverlayGeometry) => {
+      if (!mounted || !Number.isFinite(next.width) || !Number.isFinite(next.height) || next.width <= 0 || next.height <= 0) return;
+      geometryRead++;
+      if (!visibleRef.current) return;
+      if (nativeGeometry.current && nativeGeometry.current.displayId !== next.displayId) { userWidth.current = false; userPosition.current = false; }
+      nativeGeometry.current = next; setViewport(next);
+      setContentWidth(current => userWidth.current ? Math.min(current, next.width - 40) : next.width / 2);
+      setPosition(current => userPosition.current ? clampOverlayPosition(current, next, toolbar.current?.offsetWidth) : { x: next.width / 2, y: 20 });
     };
-    const recenter = () => { setPosition({ x: window.innerWidth / 2, y: window.innerHeight - 60 }); setContentWidth(window.innerWidth / 2); };
+    const resize = () => {
+      const read = ++geometryRead;
+      void api.getOverlayGeometry().then(next => { if (mounted && read === geometryRead && next) acceptGeometry(next); }).catch(reason => { if (mounted) setError(errorText(reason)); });
+    };
+    const recenter = () => { userPosition.current = false; if (nativeGeometry.current) setPosition({ x: nativeGeometry.current.width / 2, y: 20 }); resize(); };
     document.addEventListener("pointermove", move); document.addEventListener("pointerleave", leave);
     document.addEventListener("focusin", focus); document.addEventListener("focusout", blur);
     window.addEventListener("resize", resize);
+    // Native geometry is authoritative. Auth's 600px viewport is never a
+    // candidate for the live panel's initial width. Subscribe before reading.
+    const offGeometry = api.onOverlayGeometryChanged(acceptGeometry);
+    resize();
     const off = api.onOverlayRecenter(recenter);
     const offVisibility = api.onOverlayVisibilityChanged(shown => {
       hit.current = null;
       if (!shown) { drag.current = null; setInteractive(false); }
-      else if (visibleRef.current && pointer.current) setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(pointer.current.x, pointer.current.y)));
+      else {
+        resize();
+        if (visibleRef.current && pointer.current) setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(pointer.current.x, pointer.current.y)));
+      }
     });
-    return () => { document.removeEventListener("pointermove", move); document.removeEventListener("pointerleave", leave); document.removeEventListener("focusin", focus); document.removeEventListener("focusout", blur); window.removeEventListener("resize", resize); off(); offVisibility(); setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); };
+    return () => { mounted = false; document.removeEventListener("pointermove", move); document.removeEventListener("pointerleave", leave); document.removeEventListener("focusin", focus); document.removeEventListener("focusout", blur); window.removeEventListener("resize", resize); off(); offGeometry(); offVisibility(); setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); };
   }, [setInteractive]);
-  useEffect(() => { if (!visible) { setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); } }, [visible, setInteractive]);
+  useEffect(() => { if (!visible) { nativeGeometry.current = null; userWidth.current = false; userPosition.current = false; setViewport(null); setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); } }, [visible, setInteractive]);
 
   const transcripts = snapshot?.transcripts ?? [];
   const answers = snapshot?.answers ?? [];
@@ -187,8 +213,10 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   const captureStatus = snapshot?.captureStatus ?? "idle";
   const active = ["starting", "recording", "pausing", "paused", "resuming", "stopping"].includes(captureStatus);
   const controls = liveCaptureControls(snapshot, captureBusy);
-  const top = position.y < viewport.height / 2;
-  const cardWidth = Math.min(Math.max(Math.min(320, viewport.width - 40), contentWidth), viewport.width - 40);
+  const geometryReady = geometry !== null;
+  const top = !geometryReady || position.y < viewport.height / 2;
+  const availableWidth = Math.max(0, viewport.width - 40);
+  const cardWidth = Math.min(Math.max(Math.min(320, availableWidth), contentWidth), availableWidth);
   const cardLeft = Math.max(20, Math.min(position.x - cardWidth / 2, viewport.width - cardWidth - 20));
   const title = generating ? answers.at(-1)?.status === "preparing" ? "Thinking…" : "AI Response" : tab === "transcript" ? CAPTURE_LABELS[captureStatus] : "AI Response";
   const hasSessionText = transcripts.length > 0 || answers.length > 0;
@@ -253,7 +281,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     else if (action === "response") { switchTab("answers"); setPanel(null); setCollapsed(false); setRetainedSession(true); }
     else if (action === "transcripts") { switchTab("transcript"); setPanel(null); setCollapsed(false); setRetainedSession(true); }
     else if (action === "scroll-up" || action === "scroll-down") scroll.current?.scrollBy({ top: action === "scroll-up" ? -300 : 300, behavior: "smooth" });
-    else if (action.startsWith("move-")) setPosition(current => clampOverlayPosition({ x: current.x + (action === "move-left" ? -60 : action === "move-right" ? 60 : 0), y: current.y + (action === "move-up" ? -60 : action === "move-down" ? 60 : 0) }, viewport));
+    else if (action.startsWith("move-")) { userPosition.current = true; setPosition(current => clampOverlayPosition({ x: current.x + (action === "move-left" ? -60 : action === "move-right" ? 60 : 0), y: current.y + (action === "move-up" ? -60 : action === "move-down" ? 60 : 0) }, viewport, Math.max(cardWidth, toolbar.current?.offsetWidth ?? 620))); }
   };
   const answerAction = async (operation: () => Promise<LiveResult>) => {
     setError(""); try { const result = await operation(); if (!result.success) throw new Error(result.error || "Operation failed."); }
@@ -278,8 +306,8 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   };
   const moveDrag = (event: React.PointerEvent<HTMLElement>) => {
     const current = drag.current; if (!current || current.pointerId !== event.pointerId) return;
-    if (current.kind === "move") setPosition(clampOverlayPosition({ x: current.position.x + event.clientX - current.x, y: current.position.y + event.clientY - current.y }, viewport));
-    else setContentWidth(Math.max(Math.min(320, viewport.width - 40), Math.min(viewport.width - 40, current.width + (event.clientX - current.x) * 2)));
+    if (current.kind === "move") { userPosition.current = true; setPosition(clampOverlayPosition({ x: current.position.x + event.clientX - current.x, y: current.position.y + event.clientY - current.y }, viewport, Math.max(cardWidth, toolbar.current?.offsetWidth ?? 620))); }
+    else { userWidth.current = true; const width = Math.max(Math.min(320, viewport.width - 40), Math.min(viewport.width - 40, current.width + (event.clientX - current.x) * 2)); setContentWidth(width); setPosition(position => clampOverlayPosition(position, viewport, Math.max(width, toolbar.current?.offsetWidth ?? 620))); }
   };
   const endDrag = (event: React.PointerEvent<HTMLElement>) => {
     if (drag.current?.pointerId !== event.pointerId) return;
@@ -290,7 +318,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   const dragEvents = { onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag, onLostPointerCapture: (event: React.PointerEvent<HTMLElement>) => { drag.current = null; setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(event.clientX, event.clientY))); } };
   const showContent = !!panel || manualInput || active || retainedSession || hasSessionText || answerBusy || screenshotBusy || !!error || !!snapshot?.error || !!snapshot?.screenshotError;
 
-  return <section className="pw-live pw-overlay" aria-label="会话浮层" hidden={!visible} data-edge={top ? "top" : "bottom"} onClickCapture={event => {
+  return <section className="pw-live pw-overlay" aria-label="会话浮层" hidden={!visible || !geometryReady} data-edge={top ? "top" : "bottom"} onClickCapture={event => {
     if ((event.target as Element).closest("button")) setTimeout(() => {
       if (!document.activeElement?.matches('input,textarea,select,[contenteditable="true"]')) void api.setOverlayFocus(false).catch(() => {});
     }, 0);
@@ -298,10 +326,10 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     <div className="pw-live-windows" style={{ left: cardLeft, width: cardWidth, maxHeight: Math.max(64, top ? viewport.height - position.y - 84 : position.y - 44), ...(top ? { top: position.y + 64 } : { bottom: viewport.height - position.y + 24 }) }}>
     {showContent && !collapsed && <section className="pw-live-card pw-glass" data-overlay-interactive>
       <header className="pw-live-card-header" {...dragEvents} onPointerDown={event => { if (!(event.target as Element).closest("button,input,textarea,a")) beginDrag(event, "move"); }}>
-        <span className="pw-live-brand" aria-label="PassWisely">P</span>
+        <img className="pw-live-brand" src="./logo512.png" alt="PassWisely" width={24} height={24} draggable={false} />
         <nav className="pw-live-tabs" aria-label="会话内容">
-          <button type="button" aria-pressed={tab === "answers"} onClick={() => switchTab("answers")}>Response <kbd>⌥1</kbd></button>
-          <button type="button" aria-pressed={tab === "transcript"} onClick={() => switchTab("transcript")}>Transcripts <kbd>⌥2</kbd></button>
+          <button type="button" aria-pressed={tab === "answers"} onClick={() => switchTab("answers")}>Response <Keycaps keys={["⌥", "1"]} /></button>
+          <button type="button" aria-pressed={tab === "transcript"} onClick={() => switchTab("transcript")}>Transcripts <Keycaps keys={["⌥", "2"]} /></button>
         </nav>
         <span className="pw-live-title" role="status">{loading ? "Connecting…" : title}</span>
         <button type="button" className="pw-live-icon" aria-label="Collapse / 收起内容" title="Collapse" onClick={() => setCollapsed(true)}><ChevronDown size={13} /></button>
@@ -343,9 +371,10 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
       </form>}
     </div>
     </div>
-    <div className="pw-live-toolbar pw-glass" data-overlay-interactive style={{ left: position.x, top: position.y }}>
+    <div ref={toolbar} className="pw-live-toolbar pw-glass" data-overlay-interactive style={{ left: position.x, top: position.y }}>
       <button type="button" className="pw-live-drag" aria-label="移动浮条" {...dragEvents} onPointerDown={event => beginDrag(event, "move")}><GripVertical size={13} /></button>
-      <span className="pw-live-toolbar-brand" title="PassWisely">P</span>
+      <img className="pw-live-toolbar-brand" src="./logo512.png" alt="PassWisely" width={24} height={24} draggable={false} />
+      <button type="button" className="pw-live-credits" title="PassWisely account & credits" onClick={() => { void api.accountOpenPortal(); }}>{credits} credits</button>
       <div className="pw-live-capture-controls">
         {controls.showStart && !snapshot?.captureNeedsCleanup ? <button type="button" className="pw-live-start" disabled={loading || controls.startDisabled} title={hasSessionText ? "开始新会话将清空当前转录和回答。音频将发送并保存至你的 Recall 项目。" : "音频将发送并保存至你的 Recall 项目；点击后开始英文实时转录。"} onClick={() => void runCapture(api.liveStart, "start")}><Play size={11} />Start Interview</button> : captureStatus === "recording" || captureStatus === "paused" ? <>
           <button type="button" className="pw-live-pause" disabled={captureBusy} title={captureStatus === "paused" ? "Resume Listening" : "Pause Listening"} aria-label={captureStatus === "paused" ? "Resume Listening / 继续采集" : "Pause Listening / 暂停采集"} onClick={() => void runCapture(captureStatus === "paused" ? api.liveResume : api.livePause)}>{captureStatus === "paused" ? <Play size={11} /> : <Pause size={11} />}</button>
@@ -354,11 +383,11 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
         </> : <button type="button" className="pw-live-done" disabled={controls.stopDisabled} onClick={() => void runCapture(api.liveStop, "stop")}>{captureStatus === "starting" ? "Cancel" : snapshot?.captureNeedsCleanup && ["ended", "error"].includes(captureStatus) ? "Release audio" : "Stopping…"}</button>}
       </div>
       <span className="pw-live-divider" />
-      <button type="button" className="pw-live-command" disabled={screenshotBusy || clearing} aria-label="Screenshot / 截图" onClick={() => void captureScreenshot()}>{screenshotBusy ? <Loader2 className="pw-live-spinning" size={13} /> : <Camera size={13} />}<kbd>⌘ H</kbd></button>
-      <button type="button" className="pw-live-command" disabled={!canAsk} aria-label="Solve / 生成回答" onClick={() => void submitQuestion()}>Solve <kbd>⌘ ↵</kbd></button>
+      <button type="button" className="pw-live-command" disabled={screenshotBusy || clearing} aria-label="Take Screenshot / 截图" onClick={() => void captureScreenshot()}>{screenshotBusy ? <Loader2 className="pw-live-spinning" size={16} /> : <Camera size={16} />}Take Screenshot <Keycaps keys={["⌘", "H"]} /></button>
+      <button type="button" className="pw-live-command" disabled={!canAsk} aria-label="Solve / 生成回答" onClick={() => void submitQuestion()}>Solve <Keycaps keys={["⌘", "↵"]} /></button>
       <button type="button" className={`pw-live-command ${manualInput ? "selected" : ""}`} title="Ask a question / 手动输入" aria-label="手动输入问题" aria-pressed={manualInput} onClick={() => { setManualInput(!manualInput); setCollapsed(false); setPanel(null); }}><MessageSquare size={14} /></button>
       {collapsed && <button type="button" className="pw-live-command" onClick={() => setCollapsed(false)}>Expand</button>}
-      <button type="button" className="pw-live-command" onClick={() => { void api.toggleMainWindow(); }}>Show / Hide <kbd>⌘ B</kbd></button>
+      <button type="button" className="pw-live-command" onClick={() => { void api.toggleMainWindow(); }}>Show / Hide <Keycaps keys={["⌘", "B"]} /></button>
       <div className="pw-live-settings-anchor" onPointerEnter={openSettings} onPointerLeave={closeSettings}>
         <button type="button" className="pw-live-icon" aria-label="Settings / 设置" aria-expanded={settingsOpen} onClick={() => { if (settingsTimer.current) clearTimeout(settingsTimer.current); setSettingsOpen(!settingsOpen); }}><Settings size={14} /></button>
         {settingsOpen && <div className="pw-live-menu pw-glass" role="menu"><strong>PassWisely</strong><span>{credits} credits</span>

@@ -35,15 +35,15 @@ test('live native geometry fills target workArea while renderer panels and click
   const h = harness(); const original = h.bounds();
   h.controller.setLive(true);
   assert.deepEqual(h.bounds(), { x: 0, y: 24, width: 1440, height: 876 });
-  assert.deepEqual(h.calls.at(-1), ['ignore', true, { forward: true }]);
+  assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', true, { forward: true }]);
   h.controller.setInteractive(true);
-  assert.deepEqual(h.calls.at(-1), ['ignore', false, { forward: true }]);
+  assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', false, { forward: true }]);
   h.controller.setInteractive(false);
-  assert.deepEqual(h.calls.at(-1), ['ignore', true, { forward: true }]);
+  assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', true, { forward: true }]);
   assert.deepEqual(h.bounds(), { x: 0, y: 24, width: 1440, height: 876 });
   h.controller.setLive(false);
   assert.deepEqual(h.bounds(), original);
-  assert.deepEqual(h.calls.at(-1), ['ignore', false, { forward: true }]);
+  assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', false, { forward: true }]);
 });
 
 test('overlay IPC rejects iframe, foreign renderer and malformed controls before window mutation', () => {
@@ -59,6 +59,50 @@ test('overlay IPC rejects iframe, foreign renderer and malformed controls before
   assert.deepEqual(h.calls.at(-1), ['focus']);
   h.handlers.get('overlay-set-focus')(h.event, false);
   assert.deepEqual(h.calls.at(-1), ['blur']);
+  assert.throws(() => h.handlers.get('overlay-get-geometry')({ sender: h.win.webContents, senderFrame: {} }), /Untrusted/);
+  assert.throws(() => h.handlers.get('overlay-get-geometry')({ sender: {}, senderFrame: h.win.webContents.mainFrame }), /Untrusted/);
+});
+
+test('geometry query plus event handshake never publishes the initial 600px Auth viewport', () => {
+  const h = harness();
+  assert.equal(h.handlers.get('overlay-get-geometry')(h.event), null);
+  h.controller.setLive(true);
+  assert.deepEqual(plain(h.controller.getGeometry()), { displayId: 1, width: 1440, height: 876 });
+  const events = h.calls.filter(call => call[0] === 'send' && call[1] === 'overlay-geometry');
+  assert.equal(events.length, 1);
+  assert.deepEqual(plain(events[0][2]), { displayId: 1, width: 1440, height: 876 });
+  // A subscriber attached after the initial event can recover the exact same
+  // authoritative snapshot by query; no reliance on window.innerWidth.
+  assert.deepEqual(plain(h.handlers.get('overlay-get-geometry')(h.event)), plain(events[0][2]));
+  h.controller.setLive(false);
+  assert.equal(h.controller.getGeometry(), null);
+});
+
+test('asynchronous native setBounds remains unready until actual bounds land and resize publishes them', () => {
+  const h = harness();
+  const setBounds = h.win.setBounds;
+  let pending;
+  h.win.setBounds = value => { pending = value; };
+  h.controller.setLive(true);
+  assert.equal(h.bounds().width, 600);
+  assert.equal(h.controller.getGeometry(), null);
+  assert.ok(!h.calls.some(call => call[0] === 'send' && call[1] === 'overlay-geometry'));
+  setBounds(pending);
+  h.controller.publishGeometry();
+  assert.deepEqual(plain(h.calls.at(-1)), ['send', 'overlay-geometry', { displayId: 1, width: 1440, height: 876 }]);
+  const count = h.calls.length;
+  h.controller.publishGeometry();
+  assert.equal(h.calls.length, count, 'ordinary duplicate native events do not republish');
+  h.controller.publishGeometry(true);
+  assert.equal(h.calls.length, count + 1, 'show can force a fresh snapshot');
+});
+
+test('a replacement display with the same dimensions retains distinct authoritative geometry identity', () => {
+  const h = harness(); h.controller.setLive(true);
+  h.setDisplays([{ id: 3, workArea: { x: 0, y: 24, width: 1440, height: 876 } }]);
+  h.controller.refreshDisplay();
+  assert.deepEqual(plain(h.controller.getGeometry()), { displayId: 3, width: 1440, height: 876 });
+  assert.deepEqual(plain(h.calls.at(-1)), ['send', 'overlay-geometry', { displayId: 3, width: 1440, height: 876 }]);
 });
 
 test('display removal returns full overlay to primary and recenters renderer without a polling loop', () => {
@@ -70,7 +114,8 @@ test('display removal returns full overlay to primary and recenters renderer wit
   h.setDisplays([{ id: 1, workArea: { x: 0, y: 24, width: 1280, height: 776 } }]);
   h.controller.refreshDisplay();
   assert.deepEqual(h.bounds(), { x: 0, y: 24, width: 1280, height: 776 });
-  assert.deepEqual(h.calls.at(-1), ['send', 'overlay-recenter']);
+  assert.ok(h.calls.some(call => call[0] === 'send' && call[1] === 'overlay-recenter'));
+  assert.deepEqual(plain(h.controller.getGeometry()), { displayId: 1, width: 1280, height: 776 });
   h.controller.setLive(false);
   assert.ok(h.bounds().x >= 0);
   assert.ok(h.bounds().y >= 24);
@@ -79,10 +124,10 @@ test('display removal returns full overlay to primary and recenters renderer wit
 test('non-live controls cannot make the login container click-through and new windows reset leases', () => {
   const h = harness();
   h.controller.setInteractive(false);
-  assert.deepEqual(h.calls.at(-1), ['ignore', false, { forward: true }]);
+  assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', false, { forward: true }]);
   h.controller.setLive(true); h.controller.setInteractive(true); h.controller.reset();
   h.controller.setLive(true);
-  assert.deepEqual(h.calls.at(-1), ['ignore', true, { forward: true }]);
+  assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', true, { forward: true }]);
 });
 
 test('actual main resize and move entrypoints cannot shrink or displace the live native overlay', () => {
@@ -123,7 +168,7 @@ test('actual activate and second-instance entrypoints reveal hidden windows and 
         const state = { mainWindow: win, isWindowVisible: false, shortcutsHelper: { refreshGlobalShortcuts: () => calls.push('shortcuts') } };
         vm.runInNewContext(code, { state, console: { log() {} }, PROTOCOL: 'passwisely', handleAuthCallback() {},
           app: { on: (event, callback) => handlers.set(event, callback) }, isAuthWindow: () => auth,
-          overlayWindow: { isLive: () => !auth, restoreMousePolicy: () => calls.push('mouse-policy') },
+          overlayWindow: { isLive: () => !auth, restoreMousePolicy: () => calls.push('mouse-policy'), publishGeometry: () => calls.push('geometry') },
           createWindow: () => calls.push('create'), handleWindowClosed: () => { state.mainWindow = null; calls.push('release-destroyed-window'); },
         });
         const activate = () => name === 'second-instance' ? handlers.get(name)({}, []) : handlers.get(name)();
@@ -154,15 +199,19 @@ test('preload overlay and screenshot subscriptions release exactly their own lis
   };
   load('preload.ts', { ipcRenderer, contextBridge: { exposeInMainWorld: (name, value) => { exposed[name] = value; } } });
   const api = exposed.electronAPI, received = [];
+  void api.getOverlayGeometry();
+  assert.deepEqual(invocations.at(-1), ['overlay-get-geometry']);
   const removeAction = api.onLiveShortcut(value => received.push(value));
   const removeRecenter = api.onOverlayRecenter(() => received.push('recenter'));
   const removeQueue = api.onScreenshotQueueChanged(() => received.push('queue'));
   const removeVisibility = api.onOverlayVisibilityChanged(value => received.push(value));
   const removeError = api.onScreenshotError(value => received.push(value));
+  const removeGeometry = api.onOverlayGeometryChanged(value => received.push(value));
   listeners.get('live-shortcut')({}, 'response'); listeners.get('overlay-recenter')(); listeners.get('screenshots-changed')();
   listeners.get('overlay-visibility')({}, true); listeners.get('screenshot-error')({}, 'Screen permission denied');
-  assert.deepEqual(received, ['response', 'recenter', 'queue', true, 'Screen permission denied']);
-  removeAction(); removeRecenter(); removeQueue(); removeVisibility(); removeError();
+  listeners.get('overlay-geometry')({}, { displayId: 1, width: 1440, height: 876 });
+  assert.deepEqual(received, ['response', 'recenter', 'queue', true, 'Screen permission denied', { displayId: 1, width: 1440, height: 876 }]);
+  removeAction(); removeRecenter(); removeQueue(); removeVisibility(); removeError(); removeGeometry();
   assert.ok(!listeners.has('live-shortcut') && !listeners.has('overlay-recenter') && !listeners.has('screenshots-changed'));
 });
 

@@ -528,12 +528,14 @@ function handleWindowMove(): void {
   state.windowPosition = { x: bounds.x, y: bounds.y };
   state.currentX = bounds.x;
   state.currentY = bounds.y;
+  overlayWindow.publishGeometry();
 }
 
 function handleWindowResize(): void {
   if (!state.mainWindow) return;
   const bounds = state.mainWindow.getBounds();
   state.windowSize = { width: bounds.width, height: bounds.height };
+  overlayWindow.publishGeometry();
 }
 
 function handleWindowClosed(): void {
@@ -572,6 +574,7 @@ function showMainWindow(): void {
   });
   mainWindow.setContentProtection(true);
   mainWindow.showInactive();
+  overlayWindow.publishGeometry(true);
   mainWindow.webContents.send("overlay-visibility", true);
   state.isWindowVisible = true;
   state.shortcutsHelper?.refreshGlobalShortcuts();

@@ -137,7 +137,7 @@ function renderWorkspace(state, visible = true) {
 test("initial and hidden renders contain no invented transcripts or render-time capture", () => {
   for (const visible of [false, true]) {
     const { dom: $, startCalls, askCalls } = renderWorkspace(undefined, visible);
-    assert.equal($(".pw-live").attr("hidden") !== undefined, !visible);
+    assert.equal($(".pw-live").attr("hidden") !== undefined, true, "SSR waits for native live geometry instead of using the Auth viewport");
     assert.equal($(".pw-live-segment").length, 0);
     assert.equal($(".pw-live-answer").length, 0);
     assert.equal($("textarea[aria-label='会话提问']").length, 0);
@@ -320,10 +320,11 @@ test("safe Markdown links use Electron's existing external handler and Copy keep
 // Component controller tests run the production event handlers and mount
 // subscriptions with IPC/DOM boundaries mocked. They do not claim native hit
 // testing or pixel verification, which require the signed Mac application.
-async function clientWorkspace(initial, overrides = {}) {
+async function clientWorkspace(initial, overrides = {}, initialBounds = { width: 1200, height: 800 }) {
   const previous = Object.fromEntries(["window", "document", "Element", "HTMLElement"].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   const listeners = new Map(), effects = [], states = [], refs = [], cleanups = [], interactions = [];
-  let si = 0, ri = 0, mounting = true, receive, shortcut, queueChanged, screenshotError, visibilityChanged, point = null;
+  let si = 0, ri = 0, mounting = true, receive, shortcut, queueChanged, screenshotError, visibilityChanged, geometryChanged, point = null;
+  let currentGeometry = { displayId: 1, width: 1200, height: 800 };
   class ElementBoundary {
     constructor(interactive = false) { this.interactive = interactive; }
     closest() { return this.interactive ? this : null; }
@@ -341,6 +342,8 @@ async function clientWorkspace(initial, overrides = {}) {
     onScreenshotQueueChanged(fn) { queueChanged = fn; return () => {}; },
     onScreenshotError(fn) { screenshotError = fn; return () => {}; },
     onOverlayVisibilityChanged(fn) { visibilityChanged = fn; return () => {}; },
+    async getOverlayGeometry() { return currentGeometry; },
+    onOverlayGeometryChanged(fn) { geometryChanged = fn; return () => {}; },
     onOverlayRecenter() { return () => {}; }, async setOverlayInteractive(value) { interactions.push(value); }, async setOverlayFocus() {},
     async liveStartOver() { return { success: true }; }, async liveAsk() { return { success: true }; },
     async liveStart() { return { success: true }; }, async liveStop() { return { success: true }; },
@@ -357,7 +360,7 @@ async function clientWorkspace(initial, overrides = {}) {
     useRef(initialRef) { const index = ri++; if (!(index in refs)) refs[index] = { current: initialRef }; return refs[index]; },
     useEffect(effect) { if (mounting) effects.push(effect); }, useLayoutEffect() {}, useCallback: fn => fn,
   };
-  Object.defineProperty(globalThis, "window", { configurable: true, value: { innerWidth: 1200, innerHeight: 800, electronAPI: api, addEventListener: add, removeEventListener: remove } });
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { innerWidth: initialBounds.width, innerHeight: initialBounds.height, electronAPI: api, addEventListener: add, removeEventListener: remove } });
   Object.defineProperty(globalThis, "document", { configurable: true, value: { addEventListener: add, removeEventListener: remove, elementFromPoint: () => point, activeElement: null } });
   Object.defineProperty(globalThis, "Element", { configurable: true, value: ElementBoundary });
   Object.defineProperty(globalThis, "HTMLElement", { configurable: true, value: ElementBoundary });
@@ -375,6 +378,8 @@ async function clientWorkspace(initial, overrides = {}) {
     async tick() { await new Promise(resolve => setImmediate(resolve)); },
     emit(next) { receive(next); }, shortcut(action) { shortcut(action); }, queueChanged() { queueChanged(); },
     screenshotError(message) { screenshotError(message); }, visibilityChanged(shown) { visibilityChanged(shown); },
+    geometryChanged(next) { currentGeometry = next; geometryChanged(next); },
+    resizeWindow(width, height) { window.innerWidth = width; window.innerHeight = height; for (const listener of listeners.get("resize") ?? []) listener(); },
     pointerMove(target, x = 600, y = 740) { for (const listener of listeners.get("pointermove") ?? []) listener({ target, clientX: x, clientY: y }); },
     setPoint(next) { point = next; },
     dispose() { for (const cleanup of cleanups.reverse()) cleanup(); for (const [key, descriptor] of Object.entries(previous)) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key]; } },
@@ -460,15 +465,15 @@ test("collapse, moving and resizing retain the session; lost pointer capture rel
   const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }));
   try {
     const initial = h.by(node => node.props.className === "pw-live-windows");
-    assert.equal(initial.props.style.width, 600); assert.equal(initial.props.style.bottom, 84);
+    assert.equal(initial.props.style.width, 600); assert.equal(initial.props.style.top, 84);
     h.label("Collapse / 收起内容").props.onClick();
     assert.equal(h.by(node => node.props.className === "pw-live-card pw-glass"), undefined);
     h.textButton("Expand").props.onClick();
     const target = new h.ElementBoundary(true);
     const drag = h.label("移动浮条");
-    drag.props.onPointerDown({ button: 0, pointerId: 1, clientX: 600, clientY: 740, currentTarget: target, preventDefault() {} });
-    drag.props.onPointerMove({ pointerId: 1, clientX: 660, clientY: 640 });
-    assert.equal(h.by(node => node.props.className === "pw-live-toolbar pw-glass").props.style.top, 640);
+    drag.props.onPointerDown({ button: 0, pointerId: 1, clientX: 600, clientY: 20, currentTarget: target, preventDefault() {} });
+    drag.props.onPointerMove({ pointerId: 1, clientX: 660, clientY: 120 });
+    assert.equal(h.by(node => node.props.className === "pw-live-toolbar pw-glass").props.style.top, 120);
     assert.equal(h.interactions.at(-1), true);
     h.setPoint(null); drag.props.onLostPointerCapture({ clientX: 0, clientY: 0 });
     assert.equal(h.interactions.at(-1), false);
@@ -512,4 +517,49 @@ test("idle screenshot errors reopen the card and native visibility resets the hi
     h.setPoint(null); h.pointerMove(null);
     assert.equal(h.interactions.at(-1), false);
   } finally { h.dispose(); }
+});
+
+
+test("the live card waits for authoritative workArea geometry, ignores Auth width and drops a stale initial read", async () => {
+  const pending = pendingResult();
+  const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }), { getOverlayGeometry: () => pending.promise }, { width: 600, height: 720 });
+  try {
+    assert.equal(h.by(node => node.props.className === "pw-live pw-overlay").props.hidden, true);
+    h.geometryChanged({ displayId: 7, width: 1920, height: 1040 });
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.width, 960);
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.top, 84);
+    assert.deepEqual(h.by(node => node.props.className === "pw-live-toolbar pw-glass").props.style, { left: 960, top: 20 });
+    pending.resolve({ displayId: 7, width: 600, height: 720 }); await h.tick();
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.width, 960);
+    assert.equal(h.by(node => node.props.className === "pw-live pw-overlay").props.hidden, false);
+  } finally { h.dispose(); }
+});
+
+test("default half-width tracks the native display until resized; showing again preserves user width and a new display reinitializes it", async () => {
+  const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }), {}, { width: 600, height: 720 });
+  try {
+    h.geometryChanged({ displayId: 1, width: 1920, height: 1040 });
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.width, 960);
+    const target = new h.ElementBoundary(true), resize = h.label("调整内容宽度");
+    resize.props.onPointerDown({ button: 0, pointerId: 1, clientX: 1440, clientY: 200, currentTarget: target, preventDefault() {} });
+    resize.props.onPointerMove({ pointerId: 1, clientX: 1540, clientY: 200 });
+    resize.props.onPointerUp({ pointerId: 1, clientX: 0, clientY: 0, currentTarget: target });
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.width, 1160);
+    h.visibilityChanged(false); h.visibilityChanged(true); await h.tick();
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.width, 1160);
+    h.resizeWindow(600, 720); await h.tick();
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.width, 1160, "DOM dimensions cannot replace native workArea");
+    h.geometryChanged({ displayId: 2, width: 1920, height: 1040 });
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.width, 960);
+    assert.equal(h.by(node => node.props.className === "pw-live-toolbar pw-glass").props.style.top, 20);
+  } finally { h.dispose(); }
+});
+
+test("the restored PassWisely logo is used in both surfaces, with complete screenshot text and distinct keycaps", () => {
+  const { dom: $ } = renderWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }));
+  assert.equal($("img.pw-live-brand[src='./logo512.png'][width='24'][height='24']").length, 1);
+  assert.equal($("img.pw-live-toolbar-brand[src='./logo512.png'][width='24'][height='24']").length, 1);
+  const screenshot = $("button[aria-label='Take Screenshot / 截图']");
+  assert.ok(screenshot.text().includes("Take Screenshot"));
+  assert.deepEqual(screenshot.find("kbd").toArray().map(element => $(element).text()), ["⌘", "H"]);
 });

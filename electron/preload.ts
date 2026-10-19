@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { LiveSessionAPI, LiveSnapshot } from "./live/types";
-import type { LiveShortcutAction, OverlayWindowAPI } from "./live/overlayTypes";
+import type { LiveShortcutAction, OverlayGeometry, OverlayWindowAPI } from "./live/overlayTypes";
 import type { AiProviderId } from "./aiProviders";
 import type {
   ResumeDocumentResponse,
@@ -146,6 +146,12 @@ export const PROCESSING_EVENTS = {
 console.log("Preload script is running");
 
 const electronAPI = {
+  getOverlayGeometry: () => ipcRenderer.invoke("overlay-get-geometry"),
+  onOverlayGeometryChanged: (callback: (geometry: OverlayGeometry) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, geometry: OverlayGeometry) => callback(geometry);
+    ipcRenderer.on("overlay-geometry", listener);
+    return () => ipcRenderer.removeListener("overlay-geometry", listener);
+  },
   setOverlayInteractive: (interactive: boolean) => ipcRenderer.invoke("overlay-set-interactive", interactive),
   setOverlayFocus: (focused: boolean) => ipcRenderer.invoke("overlay-set-focus", focused),
   onOverlayRecenter: (callback: () => void) => {

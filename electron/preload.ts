@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { LiveSessionAPI, LiveSnapshot } from "./live/types";
 import type { AiProviderId } from "./aiProviders";
 import type {
   ResumeDocumentResponse,
@@ -11,7 +12,7 @@ import type { PublicSettings, SaveAiSettingsInput } from "./settings";
 console.log("Preload script starting...");
 
 // Types for the exposed Electron API
-interface ElectronAPI {
+interface ElectronAPI extends LiveSessionAPI {
   accountGet: () => Promise<{
     success: boolean;
     user?: { id: string; email: string; locale: "zh" | "en"; credits: number };
@@ -31,7 +32,7 @@ interface ElectronAPI {
     currentPassword: string;
     newPassword: string;
   }) => Promise<{ success: boolean; error?: string }>;
-  accountLogout: () => Promise<{ success: boolean }>;
+  accountLogout: () => Promise<{ success: boolean; error?: string }>;
   quitApp: () => Promise<{ success: boolean }>;
   setAuthWindow: (enabled: boolean) => Promise<void>;
   minimizeWindow: () => Promise<{ success: boolean }>;
@@ -142,6 +143,25 @@ export const PROCESSING_EVENTS = {
 console.log("Preload script is running");
 
 const electronAPI = {
+  liveSetWorkspace: (visible: boolean) => ipcRenderer.invoke("live-set-workspace", visible),
+  onLiveAskShortcut: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("live-ask-shortcut", listener);
+    return () => ipcRenderer.removeListener("live-ask-shortcut", listener);
+  },
+  liveGetSnapshot: () => ipcRenderer.invoke("live-get-snapshot"),
+  liveStart: () => ipcRenderer.invoke("live-start"),
+  livePause: () => ipcRenderer.invoke("live-pause"),
+  liveResume: () => ipcRenderer.invoke("live-resume"),
+  liveStop: () => ipcRenderer.invoke("live-stop"),
+  liveAsk: (input: Parameters<LiveSessionAPI["liveAsk"]>[0]) => ipcRenderer.invoke("live-ask", input),
+  liveCancelAnswer: () => ipcRenderer.invoke("live-cancel-answer"),
+  liveClearAnswers: () => ipcRenderer.invoke("live-clear-answers"),
+  onLiveSnapshot: (callback: (snapshot: LiveSnapshot) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, snapshot: LiveSnapshot) => callback(snapshot);
+    ipcRenderer.on("live-snapshot", listener);
+    return () => ipcRenderer.removeListener("live-snapshot", listener);
+  },
   accountGet: () => ipcRenderer.invoke("account-get"),
   accountLogin: (input: { email: string; password: string }) =>
     ipcRenderer.invoke("account-login", input),

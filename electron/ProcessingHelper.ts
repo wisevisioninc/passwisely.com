@@ -42,6 +42,7 @@ export class ProcessingHelper {
   private currentExtraProcessingAbortController: AbortController | null = null;
   private currentInputTextAbortController: AbortController | null = null;
   private currentResumeAbortController: AbortController | null = null;
+  private readonly activeStreamControllers = new Set<AbortController>();
 
   constructor(deps: IProcessingHelperDeps) {
     this.deps = deps;
@@ -53,6 +54,7 @@ export class ProcessingHelper {
   }
 
   public configure(config: AiRuntimeConfig): void {
+    for (const controller of this.activeStreamControllers) controller.abort();
     if (this.currentProcessingAbortController || this.currentInputTextAbortController || this.currentExtraProcessingAbortController) this.cancelOngoingRequests();
     this.currentProcessingAbortController?.abort();
     this.currentExtraProcessingAbortController?.abort();
@@ -200,16 +202,122 @@ export class ProcessingHelper {
     });
   }
 
+  /** Stream ordinary conversation using the same configured route as solutions.
+   * onContent receives the complete answer so far, not a delta.
+   */
+  public async streamConversation(
+    messages: OpenAI.Chat.ChatCompletionMessageParam[],
+    signal: AbortSignal,
+    onContent: (text: string, model: string) => void,
+  ): Promise<OpenAI.Chat.ChatCompletion> {
+    signal.throwIfAborted();
+    if (!this.openaiClient) {
+      throw new Error(`${this.config.providerLabel} client is not initialized. Check AI Settings.`);
+    }
+    if (this.config.route === "wise" && !this.deps.getWiseAccessToken()) {
+      throw new Error("Please sign in before asking a question.");
+    }
+    if (!Array.isArray(messages) || messages.length === 0) {
+      throw new Error("Please provide conversation context or a question.");
+    }
+    const hasImages = messages.some(message => Array.isArray(message.content) &&
+      message.content.some((part: { type: string }) => part.type === "image_url"));
+    if (hasImages && !this.config.supportsVision) {
+      throw new Error(`${this.config.providerLabel} model ${this.config.model} is configured as text-only. Select a vision-capable model to include screenshots.`);
+    }
+    const completion = await this.streamCompletion({
+      model: this.config.model,
+      messages,
+      temperature: 0.2,
+      max_tokens: 4096,
+    }, signal, onContent);
+    if (completion.choices[0]?.finish_reason !== "stop") {
+      throw new Error("答案未完整生成，请重试。");
+    }
+    return completion;
+  }
+
+  private async streamCompletion(
+    body: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+    signal: AbortSignal,
+    onContent: (text: string, model: string) => void,
+    requestId: string = randomUUID(),
+  ): Promise<OpenAI.Chat.ChatCompletion> {
+    signal.throwIfAborted();
+    // Capture the route and clients once. configure() aborts this operation
+    // before replacing them, so a late result cannot use the next settings.
+    const config = this.config;
+    const client = this.openaiClient;
+    const grpcClient = config.route === "wise" ? this.wiseGrpcClient : null;
+    const operation = new AbortController();
+    const timeout = new AbortController();
+    const timer = setTimeout(() => timeout.abort(new Error("模型请求超时，请重试。")), 90_000);
+    const requestSignal = AbortSignal.any([signal, operation.signal, timeout.signal]);
+    this.activeStreamControllers.add(operation);
+    let latest = "", actualModel = body.model;
+    const update = (content: string, model: string) => {
+      requestSignal.throwIfAborted();
+      if (Buffer.byteLength(content) > 12 * 1024 * 1024) throw new Error("模型响应过大。");
+      latest = content;
+      actualModel = model;
+      onContent(content, model);
+    };
+    try {
+      let completion: OpenAI.Chat.ChatCompletion | undefined;
+      if (grpcClient) {
+        try {
+          completion = await grpcClient.streamChat(body, { signal: requestSignal, requestId,
+            token: this.deps.getWiseAccessToken(), provider: config.provider, providerApiKey: config.apiKey || undefined }, update);
+        } catch (error) {
+          // Only a method-not-found response is safe to retry through HTTP.
+          // Never restart a model request after partial output or a disconnect.
+          if (requestSignal.aborted || latest || !WiseGrpcClient.isStreamUnsupported(error)) throw error;
+        }
+      }
+      if (!completion) {
+        requestSignal.throwIfAborted();
+        if (!client) throw new Error(`${config.providerLabel} client is not initialized.`);
+        const request: any = { ...body, stream: true, stream_options: { include_usage: true } };
+        if (config.provider === "kimi" && body.model === "kimi-k3") Object.assign(request, { temperature: 0.6, thinking: { type: "disabled" } });
+        if (config.provider === "qwen") request.enable_thinking = false;
+        const stream = await client.chat.completions.create(request, { signal: requestSignal, maxRetries: 0, timeout: 90_000,
+          headers: config.route === "wise" ? { "x-wise-request-id": requestId } : undefined });
+        let finish: any = "", id = requestId, usage: any;
+        for await (const chunk of stream as any) {
+          requestSignal.throwIfAborted();
+          id = chunk.id || id; actualModel = chunk.model || actualModel; usage = chunk.usage || usage;
+          const choice = chunk.choices?.[0]; finish = choice?.finish_reason || finish;
+          if (choice?.delta?.content) {
+            update(latest + choice.delta.content, actualModel);
+          }
+        }
+        if (!finish) throw new Error("数据流提前结束，答案未完成，请重试。");
+        completion = { id, model: actualModel, object: "chat.completion", created: Math.floor(Date.now()/1000), usage,
+          choices: [{ index: 0, logprobs: null, finish_reason: finish, message: { role: "assistant", content: latest, refusal: null } }] };
+      }
+      requestSignal.throwIfAborted();
+      return completion;
+    } catch (error) {
+      if (timeout.signal.aborted && !signal.aborted) throw timeout.signal.reason;
+      if (config.route === "wise" &&
+        ((error instanceof WiseGrpcError && error.httpStatus === 401) || (error instanceof OpenAI.APIError && error.status === 401))) {
+        // A relay may also return an upstream provider's 401. The account
+        // service must validate its own session before invalidating it.
+        this.deps.onAuthenticationFailure?.();
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      this.activeStreamControllers.delete(operation);
+    }
+  }
+
   private async createSolutionCompletion(
     body: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
     signal: AbortSignal,
     requestId: string = randomUUID(),
     phase: "initial" | "debug" = "initial",
   ): Promise<OpenAI.Chat.ChatCompletion> {
-    signal.throwIfAborted();
-    const timeout = new AbortController();
-    const timer = setTimeout(() => timeout.abort(new Error("模型请求超时，请重试。")), 90_000);
-    const requestSignal = AbortSignal.any([signal, timeout.signal]);
     const window = this.deps.getMainWindow();
     let lastAt = 0, latest = "", actualModel = body.model;
     const emit = (force = false) => {
@@ -220,48 +328,13 @@ export class ProcessingHelper {
       lastAt = Date.now();
       window.webContents.send("solution-progress", { requestId, phase, data, model: actualModel });
     };
-    const update = (content: string, model: string) => { latest = content; actualModel = model; emit(); };
     try {
-      let completion: OpenAI.Chat.ChatCompletion | undefined;
-      if (this.config.route === "wise" && this.wiseGrpcClient) {
-        try {
-          completion = await this.wiseGrpcClient.streamChat(body, { signal: requestSignal, requestId,
-            token: this.deps.getWiseAccessToken(), provider: this.config.provider, providerApiKey: this.config.apiKey || undefined }, update);
-        } catch (error) {
-          // Only a method-not-found response is safe to retry through HTTP.
-          // Never restart a model request after partial output or a disconnect.
-          if (latest || !WiseGrpcClient.isStreamUnsupported(error)) throw error;
-        }
-      }
-      if (!completion) {
-        const request: any = { ...body, stream: true, stream_options: { include_usage: true } };
-        if (this.config.provider === "kimi" && body.model === "kimi-k3") Object.assign(request, { temperature: 0.6, thinking: { type: "disabled" } });
-        if (this.config.provider === "qwen") request.enable_thinking = false;
-        const stream = await this.openaiClient!.chat.completions.create(request, { signal: requestSignal, maxRetries: 0, timeout: 90_000,
-          headers: this.config.route === "wise" ? { "x-wise-request-id": requestId } : undefined });
-        let finish: any = "", id = requestId, usage: any;
-        for await (const chunk of stream as any) {
-          signal.throwIfAborted();
-          id = chunk.id || id; actualModel = chunk.model || actualModel; usage = chunk.usage || usage;
-          const choice = chunk.choices?.[0]; finish = choice?.finish_reason || finish;
-          if (choice?.delta?.content) {
-            latest += choice.delta.content;
-            if (Buffer.byteLength(latest) > 12 * 1024 * 1024) throw new Error("模型响应过大。");
-            emit();
-          }
-        }
-        if (!finish) throw new Error("数据流提前结束，答案未完成，请重试。");
-        completion = { id, model: actualModel, object: "chat.completion", created: Math.floor(Date.now()/1000), usage,
-          choices: [{ index: 0, logprobs: null, finish_reason: finish, message: { role: "assistant", content: latest, refusal: null } }] };
-      }
-      signal.throwIfAborted();
-      emit(true);
+      const completion = await this.streamCompletion(body, signal, (content, model) => {
+        latest = content; actualModel = model; emit();
+      }, requestId);
       if (completion.choices[0]?.finish_reason !== "stop") throw new Error("答案未完整生成，请重试。当前代码可能被截断，不能直接使用。");
       return completion;
-    } catch (error) {
-      if (timeout.signal.aborted && !signal.aborted) throw timeout.signal.reason;
-      throw error;
-    } finally { clearTimeout(timer); if (!signal.aborted) emit(true); }
+    } finally { if (!signal.aborted) emit(true); }
   }
 
   // --- Helper Function to Format API Errors ---
@@ -549,7 +622,7 @@ export class ProcessingHelper {
     const error = result.error || "Unable to use credits.";
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (/sign in|authentication|unauthorized/i.test(error)) {
-        mainWindow.webContents.send(this.deps.PROCESSING_EVENTS.UNAUTHORIZED);
+        this.deps.onAuthenticationFailure?.();
       } else if (/not enough|credit/i.test(error)) {
         mainWindow.webContents.send(this.deps.PROCESSING_EVENTS.OUT_OF_CREDITS);
       }
@@ -1493,6 +1566,7 @@ ${solutionFormat(language)}`,
 
   // --- Cancellation Logic ---
   public cancelOngoingRequests(): void {
+    for (const controller of this.activeStreamControllers) controller.abort();
     let wasCancelled = false;
 
     if (this.currentProcessingAbortController) {

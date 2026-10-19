@@ -12,6 +12,7 @@ import {
 import { UpdateNotification } from "./components/UpdateNotification";
 import { ToastContext } from "./contexts/toast";
 import { WindowControls } from "./components/shared/WindowControls";
+import { CaptureRecovery } from "./components/Live/CaptureRecovery";
 
 // Create a React Query client
 const queryClient = new QueryClient({
@@ -115,6 +116,7 @@ function App() {
   if (accountLoading) {
     return (
       <div className="h-screen relative grid place-items-center bg-[#111018] text-white rounded-2xl border border-white/10">
+        <CaptureRecovery />
         <div className="absolute inset-x-0 top-0"><WindowControls /></div>
         <div className="text-center">
           <img
@@ -130,14 +132,14 @@ function App() {
 
   if (!account) {
     return (
-      <AuthPage
+      <><CaptureRecovery /><AuthPage
         initialError={accountError}
         onAuthenticated={(user) => {
           setAccount(user);
           setCredits(user.credits);
           setAccountError("");
         }}
-      />
+      /></>
     );
   }
 

@@ -1,6 +1,6 @@
 require("dotenv").config()
-const { notarize } = require("@electron/notarize")
 const path = require("path")
+const { requireDeveloperIdSignature, notarizeAndStaple } = require("./macos-notarization")
 
 async function notarizeApp(appPath) {
   const fullPath = path.resolve(
@@ -11,23 +11,16 @@ async function notarizeApp(appPath) {
   console.log("Starting notarization...")
   console.log("App Path:", fullPath)
 
-  try {
-    await notarize({
-      tool: "notarytool",
-      appPath: fullPath,
-      appBundleId: "com.passwisely.desktop",
-      appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLE_APP_SPECIFIC_PASSWORD,
-      teamId: process.env.APPLE_TEAM_ID
-    })
-    console.log("Notarization complete!")
-  } catch (error) {
-    console.error("Error during notarization:", error)
-  }
+  requireDeveloperIdSignature(fullPath)
+  await notarizeAndStaple(fullPath)
+  console.log("Notarization and staple validation complete!")
 }
 
 if (require.main === module) {
-  notarizeApp(process.argv[2])
+  notarizeApp(process.argv[2]).catch(error => {
+    console.error("Error during notarization:", error.message)
+    process.exitCode = 1
+  })
 }
 
 module.exports = { notarizeApp }

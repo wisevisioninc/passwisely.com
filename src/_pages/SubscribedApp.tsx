@@ -1,7 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { Code2, Radio } from "lucide-react";
 import Queue from "../_pages/Queue";
 import Solutions from "../_pages/Solutions";
+import LiveWorkspace from "../components/Live/LiveWorkspace";
+import { CaptureStatusNotice } from "../components/Live/CaptureStatusNotice";
+import type { LiveSnapshot } from "../../electron/live/types";
 import { useToast } from "../contexts/toast";
 
 type SolutionPayload = {
@@ -47,6 +51,8 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
   setQuery,
 }) => {
   const queryClient = useQueryClient();
+  const [workspace, setWorkspace] = useState<"live" | "code">("live");
+  const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshot | null>(null);
   const [view, setView] = useState<"queue" | "solutions" | "debug">("queue");
   const [processingError, setProcessingError] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -55,37 +61,12 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
   );
   const { showToast } = useToast();
 
-  // Removed the dynamic window dimension update effect that was causing the overlay.
-  /*
   useEffect(() => {
-    if (!containerRef.current) return
-
-    const updateDimensions = () => {
-      if (!containerRef.current) return
-      const height = containerRef.current.scrollHeight
-      const width = containerRef.current.scrollWidth
-      window.electronAPI?.updateContentDimensions({ width, height })
+    if (workspace === "code") {
+      // Live can change the shared screenshot queue while Queue is unmounted.
+      void queryClient.invalidateQueries({ queryKey: ["screenshots"] });
     }
-
-    const resizeObserver = new ResizeObserver(updateDimensions)
-    resizeObserver.observe(containerRef.current)
-
-    const mutationObserver = new MutationObserver(updateDimensions)
-    mutationObserver.observe(containerRef.current, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      characterData: true
-    })
-
-    updateDimensions()
-
-    return () => {
-      resizeObserver.disconnect()
-      mutationObserver.disconnect()
-    }
-  }, [view])
-  */
+  }, [workspace, queryClient]);
 
   // Keep all initial-processing listeners on this component because it never
   // unmounts during queue -> solutions transitions. This prevents fast success
@@ -108,6 +89,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
     };
     const cleanupFunctions = [
       window.electronAPI.onSolutionStart(() => {
+        setWorkspace("code");
         activeInitial = true; activeDebug = false;
         queryClient.setQueryData(["new_solution"], null);
         clearProcessingTimeout();
@@ -168,6 +150,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
         markIncomplete(error?.trim() || "处理失败，请重试。");
       }),
       window.electronAPI.onDebugStart(() => {
+        setWorkspace("code");
         clearProcessingTimeout();
         activeDebug = true; activeInitial = false;
         processingTimeoutRef.current = setTimeout(() => {
@@ -195,8 +178,14 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
   }, [queryClient, showToast]);
 
   return (
-    <div ref={containerRef} className="min-h-0">
-      {view === "queue" && processingError && (
+    <div ref={containerRef} className="pw-workspace-shell min-h-0">
+      <nav className="pw-workspace-nav" aria-label="工作区">
+        <button type="button" aria-pressed={workspace === "live"} onClick={() => setWorkspace("live")}><Radio size={13} aria-hidden="true" />会话问答</button>
+        <button type="button" aria-pressed={workspace === "code"} onClick={() => setWorkspace("code")}><Code2 size={13} aria-hidden="true" />编程解题</button>
+        {workspace === "code" && <CaptureStatusNotice snapshot={liveSnapshot} onReturn={() => setWorkspace("live")} />}
+      </nav>
+      <LiveWorkspace visible={workspace === "live"} onSnapshot={setLiveSnapshot} />
+      {workspace === "code" && view === "queue" && processingError && (
         <div
           role="alert"
           className="mx-4 mt-3 flex max-w-xl items-start justify-between gap-3 rounded-lg border border-red-300/30 bg-red-950/80 px-3 py-2 text-xs text-red-50 shadow-lg backdrop-blur-xl"
@@ -212,7 +201,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
           </button>
         </div>
       )}
-      {view === "queue" ? (
+      {workspace === "code" && (view === "queue" ? (
         <Queue
           setView={(nextView) => setView(nextView)}
           credits={credits}
@@ -230,7 +219,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
           currentQuery={currentQuery}
           setQuery={setQuery}
         />
-      ) : null}
+      ) : null)}
     </div>
   );
 };

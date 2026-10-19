@@ -426,8 +426,16 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
                       <button
                         className="mt-2 w-full text-[10px] text-white/35 hover:text-red-300"
                         onClick={async () => {
-                          await window.electronAPI.accountLogout();
-                          window.location.reload();
+                          try {
+                            const result = await window.electronAPI.accountLogout();
+                            if (!result.success) {
+                              showToast("Sign out failed", result.error || "Please end audio capture and try again.", "error");
+                              return;
+                            }
+                            window.location.reload();
+                          } catch (error) {
+                            showToast("Sign out failed", error instanceof Error ? error.message : "Please try again.", "error");
+                          }
                         }}
                       >
                         Sign out

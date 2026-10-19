@@ -1,4 +1,5 @@
 import type { AiProviderId } from "../../electron/aiProviders"
+import type { LiveSessionAPI } from "../../electron/live/types"
 import type {
   ResumeDocumentResponse,
   ResumeProcessResponse,
@@ -10,7 +11,7 @@ import type {
   SaveAiSettingsInput,
 } from "../../electron/settings"
 
-export interface ElectronAPI {
+export interface ElectronAPI extends LiveSessionAPI {
   accountGet: () => Promise<{
     success: boolean
     user?: {
@@ -61,7 +62,7 @@ export interface ElectronAPI {
     success: boolean
     error?: string
   }>
-  accountLogout: () => Promise<{ success: boolean }>
+  accountLogout: () => Promise<{ success: boolean; error?: string }>
   quitApp: () => Promise<{ success: boolean }>
   setAuthWindow: (enabled: boolean) => Promise<void>
   minimizeWindow: () => Promise<{ success: boolean }>

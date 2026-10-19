@@ -27,10 +27,15 @@ export class ShortcutsHelper {
     });
 
     globalShortcut.register("CommandOrControl+Enter", async () => {
+      if (this.deps.isLiveWorkspace()) {
+        this.deps.getMainWindow()?.webContents.send("live-ask-shortcut");
+        return;
+      }
       await this.deps.processingHelper?.processScreenshots();
     });
 
     globalShortcut.register("CommandOrControl+R", () => {
+      if (this.deps.isLiveWorkspace()) { this.deps.clearLiveAnswers(); return; }
       console.log(
         "Command + R pressed. Canceling requests and resetting queues...",
       );

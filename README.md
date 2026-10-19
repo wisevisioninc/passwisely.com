@@ -1,6 +1,31 @@
 # PassWisely
 
-PassWisely is a transparent Electron desktop assistant for capturing a problem, adding a text query, and generating an AI-assisted solution. The same source supports macOS (Intel and Apple Silicon) and Windows (x64 and ARM64).
+PassWisely is an Electron desktop assistant for live conversation transcription, screenshots, text questions, and streaming AI answers. Programming solutions and the resume workspace remain available. Recall audio capture supports Apple Silicon macOS 14.2+ and Windows x64; Intel Mac and Linux can use the other workspaces but cannot start Recall capture.
+
+## Live conversation workspace
+
+The default workspace provides explicit **Start / Pause / Resume / End** controls. Starting requests microphone, system-audio and accessibility permissions on supported Macs, obtains a short-lived upload token from the authenticated website, then initializes `@recallai/desktop-sdk` 2.0.39. Recording is shown as active only after the SDK confirms it. Audio is sent and stored in your Recall project for real-time ASR; no audio starts automatically. SDK diagnostic telemetry is explicitly disabled (`telemetryMode: "off"`).
+
+This release uses Recall's built-in **English-only low-latency ASR**, with explicit `language_code: en`. Chinese real-time ASR is deferred; Recall's multilingual accuracy mode has minute-scale latency and is not substituted silently. System audio and microphone transcripts have separate source labels. Interim text updates in place, final text replaces it, and unknown sources remain unknown. Labels describe the audio source, not verified speaker identity. Pause retains the session; End retains its text for follow-up questions. A failed native shutdown retains ownership and offers cleanup retry instead of starting another capture process.
+
+Ask AI combines a snapshot of final transcripts, the current typed question, selected queued screenshots, and up to four completed answer turns. Any of text, screenshots, or final transcript is sufficient. Responses stream as ordinary text and can include code; they do not require the programming workspace's JSON format. Stop generation preserves its preview and does not stop audio. New sessions reject late events from previous recordings or answers. Screenshot attachments remain queued until explicitly removed and can be reused.
+
+The transcript retains at most 500 segments / 128 KiB of serialized data; text context is limited to 64 KiB before images. Older content can be omitted with an explicit notice. Partial, cancelled, failed and incomplete answers are not treated as completed history. Session text and answers are held in memory; they are not a durable local recording archive. The website's existing model usage/credit accounting applies to answers; Recall charges are billed to the configured Recall project, with no new duration-based PassWisely ASR credit policy in this change.
+
+Configure the website **on the server only**:
+
+```dotenv
+RECALL_API_KEY=your-own-recall-project-key
+RECALL_API_REGION=ap-northeast-1
+```
+
+Supported region values are `us-west-2`, `us-east-1`, `eu-central-1`, and `ap-northeast-1`. The region must match the key's project. The authenticated `POST /api/desktop/recall/upload-token` accepts only a session UUID; clients cannot choose a provider, server key, or arbitrary URL. Upload creation is bounded and retries for the same user/session reuse a short-lived result within one worker; this cache is not shared across instances or restarts.
+
+Audio travels from the native SDK to Recall and transcripts return through its callback; Wise does not proxy raw audio. Wise's authenticated route requests a short-lived upload token from Recall, which issues the token. Wise continues to relay model requests when using its default model key. A personal Kimi key retains direct model requests.
+
+In the conversation workspace `Command/Ctrl + Enter` asks AI using the current draft, and `Command/Ctrl + R` clears only answers. Screenshot and visibility shortcuts remain available. Switching to Programming restores the existing solve/debug workflow. The interface follows observed SystemContainer session interactions using an independent implementation; no SystemContainer code, credentials, or binaries are included.
+
+Official integration references: [audio-only](https://docs.recall.ai/docs/audio-only), [supported platforms](https://docs.recall.ai/docs/dsdk-supported-platforms), [real-time transcription](https://docs.recall.ai/docs/dsdk-realtime-transcription).
 
 ## Requirements
 
@@ -33,8 +58,8 @@ Do not place a real key in source control. Copy `.env.example` to `.env` only fo
 ## Usage
 
 - Take screenshot: `Command/Ctrl + H`
-- Process screenshots or a text query: `Command/Ctrl + Enter`
-- Reset: `Command/Ctrl + R`
+- Ask with the current draft/transcript/screenshots in Conversation, or solve/debug in Programming: `Command/Ctrl + Enter`
+- Clear answers in Conversation; cancel processing and clear screenshot queues in Programming: `Command/Ctrl + R`
 - Show/hide: `Command/Ctrl + B`
 - Move window: `Command/Ctrl + Arrow`
 - Language: `Alt + P` (Python), `Alt + C` (C++), `Alt + J` (Java)
@@ -74,16 +99,21 @@ Platform installers should be created on their native operating system:
 
 ```bash
 # Run on macOS; produces x64 and arm64 DMG/ZIP artifacts.
-npm run dist:mac
+export APPLE_TEAM_ID=VFF94RK9TN
+export APPLE_KEYCHAIN_PROFILE=passwisely-notary
+export CSC_NAME="<installed Developer ID Application certificate SHA-1>"
+export MACOS_SIGNING_IDENTITY="$CSC_NAME"
+npm run dist:mac -- --publish never -c.forceCodeSigning=true -c.dmg.writeUpdateInfo=false
 
-# Run on Windows; produces x64 and arm64 NSIS installers.
+# Run on Windows; produces the x64 NSIS installer.
 npm run dist:win
 ```
 
-Unsigned macOS builds are ad-hoc signed as a complete bundle so local packages
-cannot contain the inconsistent partial signature that macOS reports as
-“damaged.” Public distribution still requires a Developer ID Application
-certificate and Apple notarization.
+macOS packaging normalizes all nested Mach-O signatures, including the Recall
+SDK under Resources, before the normal Developer ID signing phase. An ad-hoc
+structural signature alone does not establish that hardened-runtime library
+validation permits launch. Runtime validation and public distribution use a
+Developer ID Application certificate; public artifacts also require notarization.
 
 The release pipeline automatically notarizes and staples the app after a real
 Developer ID signature is applied. Configure one of the supported notarytool
@@ -93,12 +123,22 @@ credential sets before building:
 - `APPLE_API_KEY`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER`
 - `APPLE_KEYCHAIN_PROFILE`, plus optional `APPLE_KEYCHAIN`
 
+The DMG hook signs and staples the completed image after electron-builder's
+blockmap stage, so the command above disables DMG update metadata. Publish the
+final installers only; do not distribute stale DMG blockmaps or update feeds.
+The packaged ZIP contains the already notarized and stapled application.
+
 For a manual notarization diagnostic, run:
 
 ```bash
-APPLE_ID=... APPLE_APP_SPECIFIC_PASSWORD=... APPLE_TEAM_ID=... \
-  npm run notarize:mac -- release/mac/PassWisely.app
+APPLE_TEAM_ID=VFF94RK9TN APPLE_KEYCHAIN_PROFILE=passwisely-notary \
+  npm run notarize:mac -- release/mac-arm64/PassWisely.app
+# For Intel, use release/mac/PassWisely.app.
 ```
+
+This command requires all application code to have the expected Developer ID,
+hardened runtime, and trusted timestamp; it exits unsuccessfully if signature,
+notarization, stapling, or ticket validation fails.
 
 Automatic updates are disabled unless `PASSWISELY_UPDATE_URL` points to a generic electron-updater feed.
 

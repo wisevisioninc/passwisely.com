@@ -1,6 +1,7 @@
 const path = require("node:path")
 const { spawnSync } = require("node:child_process")
 const { notarize } = require("@electron/notarize")
+const { collectCodePaths } = require("./after-pack-macos")
 
 const EXPECTED_TEAM_ID = process.env.APPLE_TEAM_ID || "VFF94RK9TN"
 
@@ -58,22 +59,26 @@ function run(command, args, options = {}) {
 }
 
 function requireDeveloperIdSignature(appPath) {
-  const details = run(
-    "/usr/bin/codesign",
-    ["-dv", "--verbose=4", appPath],
-    { capture: true },
-  )
-
-  if (!details.includes("Authority=Developer ID Application")) {
-    throw new Error(
-      `${appPath} is not signed with a Developer ID Application certificate.`,
-    )
-  }
-
-  if (!details.includes(`TeamIdentifier=${EXPECTED_TEAM_ID}`)) {
-    throw new Error(
-      `${appPath} is not signed by the expected Apple team ${EXPECTED_TEAM_ID}.`,
-    )
+  const isApp = path.extname(appPath).toLowerCase() === ".app"
+  // A valid outer resource seal does not establish that Resources SDK libraries
+  // satisfy hardened-runtime library validation. Verify their actual signatures.
+  const plan = isApp ? collectCodePaths(appPath) : null
+  const targets = plan ? [...new Set([...plan.leaves.map(leaf => leaf.path), ...plan.bundles])] : [appPath]
+  for (const target of targets) {
+    const details = run("/usr/bin/codesign", ["-dv", "--verbose=4", target], { capture: true })
+    if (!/^Authority=Developer ID Application:/m.test(details)) {
+      throw new Error(`${target} is not signed with a Developer ID Application certificate.`)
+    }
+    if (!details.split(/\r?\n/).includes(`TeamIdentifier=${EXPECTED_TEAM_ID}`)) {
+      throw new Error(`${target} is not signed by the expected Apple team ${EXPECTED_TEAM_ID}.`)
+    }
+    if (!/^Timestamp=.+/m.test(details)) {
+      throw new Error(`${target} is missing a trusted signing timestamp required for public release.`)
+    }
+    if (isApp && !/^CodeDirectory\s.*\bruntime\b/m.test(details)) {
+      throw new Error(`${target} is missing the hardened runtime signature required for public release.`)
+    }
+    run("/usr/bin/codesign", ["--verify", "--strict", target])
   }
 
   run("/usr/bin/codesign", [

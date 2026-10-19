@@ -1,5 +1,6 @@
 import * as dotenv from "dotenv";
-import { app, BrowserWindow, screen, shell } from "electron";
+import { app, BrowserWindow, nativeImage, screen, shell } from "electron";
+import fs from "node:fs";
 import path from "path";
 import { initAutoUpdater } from "./autoUpdater";
 import { initializeIpcHandlers } from "./ipcHandlers";
@@ -12,8 +13,13 @@ import {
 } from "./settings";
 import { AI_PROVIDERS, AiProviderId } from "./aiProviders";
 import { ShortcutsHelper } from "./shortcuts";
+import { createCaptureCloseGuard } from "./live/WindowCloseGuard";
+import { createAuthenticationLossHandler } from "./live/AuthenticationLoss";
 import { AccountService } from "./account";
 import { initializeWindowControls, isAuthWindow } from "./windowControls";
+import { LiveSessionService } from "./live/LiveSessionService";
+import { RecallCapture } from "./live/RecallCapture";
+import { initializeLiveIpc } from "./live/ipc";
 
 // Constants
 const isDev = !app.isPackaged;
@@ -38,6 +44,8 @@ const state = {
   processingHelper: null as ProcessingHelper | null,
   settingsStore: null as SettingsStore | null,
   accountService: null as AccountService | null,
+  liveSession: null as LiveSessionService | null,
+  liveWorkspace: true,
 
   // View and state management
   view: "queue" as "queue" | "solutions" | "debug",
@@ -87,9 +95,12 @@ export interface IProcessingHelperDeps {
     requestId: string,
   ) => Promise<{ success: boolean; error?: string; credits?: number }>;
   getWiseAccessToken: () => string;
+  onAuthenticationFailure?: () => void;
 }
 
 export interface IShortcutsHelperDeps {
+  isLiveWorkspace: () => boolean;
+  clearLiveAnswers: () => void;
   getMainWindow: () => BrowserWindow | null;
   takeScreenshot: () => Promise<string>;
   getImagePreview: (filepath: string) => Promise<string>;
@@ -128,12 +139,14 @@ export interface IIpcHandlerDeps {
   saveAiSettings: (input: SaveAiSettingsInput) => PublicSettings;
   clearApiKey: (provider?: AiProviderId) => PublicSettings;
   accountService: AccountService;
+  liveSession: LiveSessionService;
 }
 
 // Initialize helpers
+let handleAuthenticationLost: () => Promise<void> = async () => {};
 function initializeHelpers() {
   state.settingsStore = new SettingsStore();
-  state.accountService = new AccountService();
+  state.accountService = new AccountService(() => { void handleAuthenticationLost(); });
   state.screenshotHelper = new ScreenshotHelper(state.view);
   state.processingHelper = new ProcessingHelper({
     getScreenshotHelper,
@@ -161,13 +174,52 @@ function initializeHelpers() {
       };
     },
     getWiseAccessToken: () => state.accountService!.getToken(),
+    onAuthenticationFailure: () => { void state.accountService!.getAccount(); },
     PROCESSING_EVENTS: state.PROCESSING_EVENTS,
   } as IProcessingHelperDeps);
   state.processingHelper.configure({
     ...state.settingsStore.getRuntimeConfig(),
     wiseAccessToken: state.accountService.getToken(),
   });
+  state.liveSession = new LiveSessionService({
+    support: RecallCapture.support(),
+    createCapture: callbacks => new RecallCapture(callbacks),
+    createUpload: (id, signal) => state.accountService!.createRecallUpload(id, signal),
+    stream: (messages, signal, update) => state.processingHelper!.streamConversation(messages, signal, update),
+    language: () => state.settingsStore!.getResponseLanguage(),
+    images: async () => {
+      const paths = [...(getView() === "queue" ? getScreenshotQueue() : getExtraScreenshotQueue())];
+      if (paths.length > 5) throw new Error("一次最多使用 5 张截图。");
+      let total = 0;
+      return paths.map(filepath => {
+        if (fs.statSync(filepath).size > 16 * 1024 * 1024) throw new Error("截图超过 16 MB，请重新截取。");
+        let image = nativeImage.createFromPath(filepath);
+        if (image.isEmpty()) throw new Error("无法读取截图，请重新截取。");
+        const size = image.getSize(), scale = Math.min(1, 1280 / size.width, 1280 / size.height);
+        if (scale < 1) image = image.resize({ width: Math.max(1, Math.round(size.width * scale)), height: Math.max(1, Math.round(size.height * scale)) });
+        const jpeg = image.toJPEG(70);
+        total += jpeg.byteLength;
+        if (total > 4 * 1024 * 1024) throw new Error("截图总大小过大，请减少附件。");
+        return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+      });
+    },
+    publish: snapshot => {
+      const window = getMainWindow();
+      if (window && !window.isDestroyed()) window.webContents.send("live-snapshot", snapshot);
+    },
+  });
+  handleAuthenticationLost = createAuthenticationLossHandler({
+    cancelRequests: () => { state.processingHelper?.cancelOngoingRequests(); },
+    notifyUnauthorized: () => {
+      const window = getMainWindow();
+      if (window && !window.isDestroyed()) window.webContents.send(state.PROCESSING_EVENTS.UNAUTHORIZED);
+    },
+    reset: () => state.liveSession!.reset(),
+    cleanupFailed: message => { console.error("Authentication cleanup failed:", message); showMainWindow(); },
+  });
   state.shortcutsHelper = new ShortcutsHelper({
+    isLiveWorkspace: () => state.liveWorkspace,
+    clearLiveAnswers: () => { state.liveSession?.clearAnswers(); },
     getMainWindow,
     takeScreenshot,
     getImagePreview,
@@ -290,6 +342,17 @@ async function createWindow(): Promise<void> {
   // }
 
   state.mainWindow = new BrowserWindow(windowSettings);
+  const ownedWindow = state.mainWindow;
+  ownedWindow.on("close", createCaptureCloseGuard({
+    needsCleanup: () => {
+      const session = state.liveSession?.getSnapshot();
+      return !!session?.captureNeedsCleanup || session?.captureStatus === "starting";
+    },
+    reset: () => state.liveSession!.reset(),
+    isDestroyed: () => ownedWindow.isDestroyed(),
+    close: () => ownedWindow.close(),
+    failed: message => { console.error("Audio cleanup failed:", message); showMainWindow(); },
+  }));
 
   // Add this to prevent accidental closing
   // state.mainWindow.on('close', (event) => {
@@ -350,6 +413,10 @@ async function createWindow(): Promise<void> {
   // Clear interval when window is closed
   state.mainWindow.on("closed", () => {
     clearInterval(topMostInterval);
+    void state.liveSession?.reset().catch(error => console.error("Session cleanup failed:", error.message));
+  });
+  state.mainWindow.webContents.on("render-process-gone", () => {
+    void state.liveSession?.reset().catch(error => console.error("Session cleanup failed:", error.message));
   });
 
   // Add more detailed logging for window events
@@ -560,7 +627,7 @@ function setWindowDimensions(width: number, height: number): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
     const currentBounds = mainWindow.getBounds();
     const workArea = screen.getDisplayMatching(currentBounds).workArea;
-    const maxWidth = Math.floor(workArea.width * 0.5);
+    const maxWidth = Math.min(1120, Math.floor(workArea.width * 0.9));
     const nextWidth = Math.max(320, Math.min(Math.ceil(width + 32), maxWidth));
     const nextHeight = Math.max(
       120,
@@ -626,6 +693,12 @@ async function initializeApp() {
       saveAiSettings,
       clearApiKey,
       accountService: state.accountService!,
+      liveSession: state.liveSession!,
+    });
+    initializeLiveIpc(state.liveSession!, getMainWindow, visible => { state.liveWorkspace = visible; }, () => {
+      if (state.accountService!.getToken()) return true;
+      void handleAuthenticationLost();
+      return false;
     });
     await createWindow();
     state.shortcutsHelper?.registerGlobalShortcuts();
@@ -674,6 +747,23 @@ app.on("window-all-closed", () => {
     app.quit();
     state.mainWindow = null;
   }
+});
+
+let finishedShutdown = false;
+let shuttingDown = false;
+app.on("before-quit", event => {
+  if (finishedShutdown || !state.liveSession) return;
+  event.preventDefault();
+  if (shuttingDown) return;
+  shuttingDown = true;
+  void state.liveSession.dispose().then(() => {
+    finishedShutdown = true;
+    app.quit();
+  }).catch(error => {
+    shuttingDown = false;
+    console.error("Audio shutdown failed:", error.message);
+    showMainWindow();
+  });
 });
 
 app.on("activate", () => {

@@ -37,6 +37,8 @@ interface StoredAccount {
 }
 
 export class AccountService {
+  private invalidated = false;
+  constructor(private readonly authenticationLost: () => void = () => {}) {}
   private readonly apiBase =
     process.env.PASSWISELY_API_URL?.replace(/\/+$/, "") ||
     "https://passwisely.com/api";
@@ -64,6 +66,7 @@ export class AccountService {
   }
 
   public getToken(): string {
+    if (this.invalidated) return "";
     const stored = this.read();
     if (stored.encryptedToken && safeStorage.isEncryptionAvailable()) {
       try {
@@ -85,6 +88,7 @@ export class AccountService {
     } else {
       this.write({ plainToken: token });
     }
+    this.invalidated = false;
   }
 
   private async request<T>(
@@ -93,24 +97,31 @@ export class AccountService {
     authenticated = false,
   ): Promise<T> {
     const headers = new Headers(init.headers);
+    let requestToken = "";
     headers.set("accept", "application/json");
     if (init.body) headers.set("content-type", "application/json");
     if (authenticated) {
       const token = this.getToken();
-      if (!token) throw new Error("Please sign in.");
+      if (!token) { this.authenticationLost(); throw new Error("Please sign in."); }
+      requestToken = token;
       headers.set("authorization", `Bearer ${token}`);
     }
     const response = await fetch(`${this.apiBase}${endpoint}`, {
       ...init,
       headers,
-      signal: AbortSignal.timeout(20_000),
+      signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
     });
     const payload = (await response.json().catch(() => ({}))) as T & {
       error?: string;
       code?: string;
     };
     if (!response.ok) {
-      if (response.status === 401) this.clear();
+      // Only this account's authenticated rejection invalidates the session.
+      // A bad login or a stale response for an earlier token must not log out
+      // a newer authenticated account.
+      if (authenticated && response.status === 401 && this.getToken() === requestToken) {
+        try { this.clear(); } finally { this.authenticationLost(); }
+      }
       throw new AccountRequestError(
         payload.error || `Account service error (${response.status}).`,
         payload.code,
@@ -145,6 +156,12 @@ export class AccountService {
 
   public login(email: string, password: string): Promise<AccountResult> {
     return this.authenticate("login", email, password, "en");
+  }
+
+  public createRecallUpload(sessionId: string, signal: AbortSignal): Promise<{ uploadToken: string; uploadId: string; apiUrl: string }> {
+    return this.request("/desktop/recall/upload-token", {
+      method: "POST", body: JSON.stringify({ sessionId }), signal,
+    }, true);
   }
 
   public register(
@@ -193,7 +210,7 @@ export class AccountService {
   }
 
   public async getAccount(): Promise<AccountResult> {
-    if (!this.getToken()) return { success: false };
+    if (!this.getToken()) { this.authenticationLost(); return { success: false }; }
     try {
       const result = await this.request<{ user: AccountUser }>(
         "/account",
@@ -323,6 +340,7 @@ export class AccountService {
   }
 
   public clear(): void {
+    this.invalidated = true;
     try {
       fs.unlinkSync(this.filePath);
     } catch (error) {

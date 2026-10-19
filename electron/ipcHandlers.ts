@@ -42,7 +42,9 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
         input?.newPassword || "",
       ),
   );
-  ipcMain.handle("account-logout", () => {
+  ipcMain.handle("account-logout", async () => {
+    const stopped = await deps.liveSession.reset();
+    if (!stopped.success) return stopped;
     deps.accountService.clear();
     return { success: true };
   });

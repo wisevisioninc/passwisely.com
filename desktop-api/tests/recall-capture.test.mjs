@@ -1,0 +1,386 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import vm from "node:vm";
+import { createHash } from "node:crypto";
+import test from "node:test";
+import ts from "typescript";
+
+const [captureSource, transcriptSource] = await Promise.all([
+  readFile(new URL("../../electron/live/RecallCapture.ts", import.meta.url), "utf8"),
+  readFile(new URL("../../electron/live/recallTranscript.ts", import.meta.url), "utf8"),
+]);
+const compile = source => ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+const tick = () => new Promise(resolve => setImmediate(resolve));
+
+function harness({ platform = "win32", arch = "x64", release = "23.2.0" } = {}) {
+  const callbacks = new Map();
+  const calls = [];
+  const states = [], transcripts = [], errors = [];
+  const timers = new Set();
+  let sourceId = 0, imports = 0;
+  const emit = (event, value) => { for (const fn of [...(callbacks.get(event) || [])]) fn(value); };
+  const sdk = {
+    addEventListener(event, callback) { const entries = callbacks.get(event) || new Set(); entries.add(callback); callbacks.set(event, entries); },
+    removeEventListener(event, callback) { callbacks.get(event)?.delete(callback); },
+    async init(config) { calls.push(["init", config]); },
+    async requestPermission(permission) { calls.push(["permission", permission]); emit("permission-status", { permission, status: "granted" }); },
+    async prepareDesktopAudioRecording() { const id = `source-${++sourceId}`; calls.push(["prepare", id]); return id; },
+    async startRecording(value) { calls.push(["start", value]); emit("recording-started", { window: { id: value.windowId } }); },
+    async pauseRecording(value) { calls.push(["pause", value]); },
+    async resumeRecording(value) { calls.push(["resume", value]); },
+    async stopRecording(value) { calls.push(["stop", value]); emit("recording-ended", { window: { id: value.windowId } }); },
+    async shutdown() { calls.push(["shutdown"]); emit("shutdown", { code: 0, signal: "" }); },
+  };
+  const dependencies = {
+    "node:crypto": { createHash },
+    "node:os": { release: () => release },
+    "@recallai/desktop-sdk": sdk,
+  };
+  function load(code) {
+    const exports = {};
+    vm.runInNewContext(compile(code), {
+      exports, Date, process: { platform, arch },
+      require(name) { if (name === "@recallai/desktop-sdk") imports++; return dependencies[name]; },
+      setTimeout(fn, ms) { const timer = { fn, ms }; timers.add(timer); return timer; },
+      clearTimeout(timer) { timers.delete(timer); },
+    });
+    return exports;
+  }
+  dependencies["./recallTranscript"] = load(transcriptSource);
+  const { RecallCapture } = load(captureSource);
+  const create = () => new RecallCapture({ onState: s => states.push(s), onTranscript: s => transcripts.push(s), onError: e => errors.push(e) });
+  return { sdk, calls, states, transcripts, errors, emit, create, RecallCapture, imports: () => imports,
+    expire() { for (const timer of [...timers]) { assert.equal(timer.ms, 15_000); timers.delete(timer); timer.fn(); } },
+    listenerCount: () => [...callbacks.values()].reduce((n, set) => n + set.size, 0),
+    normalizer: () => dependencies["./recallTranscript"].createRecallTranscriptNormalizer(),
+  };
+}
+const input = { uploadToken: "fixture-upload-token", apiUrl: "https://ap-northeast-1.recall.ai" };
+const event = (id, text = "hello", partial = false, participant = { id: 1, is_host: true }, start = 0) => ({
+  window: { id }, event: partial ? "transcript.partial_data" : "transcript.data",
+  data: { data: { words: [{ text, start_timestamp: { relative: start }, end_timestamp: { relative: start + 0.5 } }], participant } },
+});
+
+test("unsupported hosts never import the native SDK; macOS audio-only boundary is14.2", async () => {
+  for (const options of [{ platform: "linux" }, { platform: "darwin", arch: "x64" }, { platform: "darwin", arch: "arm64", release: "23.1.0" }]) {
+    const h = harness(options);
+    assert.equal(h.RecallCapture.support().supported, false);
+    await assert.rejects(h.create().start(input));
+    assert.equal(h.imports(), 0);
+  }
+  assert.equal(harness({ platform: "darwin", arch: "arm64" }).RecallCapture.support().supported, true);
+});
+
+test("permissions are requested only during explicit start and listeners precede native init", async () => {
+  const h = harness({ platform: "darwin", arch: "arm64" });
+  const capture = h.create();
+  assert.equal(h.imports(), 0);
+  h.sdk.init = async config => { assert.ok(h.listenerCount() > 0); h.calls.push(["init", config]); };
+  await capture.start(input);
+  assert.deepEqual(h.calls.filter(c => c[0] === "permission").map(c => c[1]), ["accessibility", "microphone", "system-audio"]);
+  assert.equal(h.calls[0][1].apiUrl, input.apiUrl);
+  assert.equal(h.calls[0][1].restartOnError, false);
+  assert.equal(h.calls[0][1].telemetryMode, "off");
+  assert.deepEqual(Array.from(h.calls[0][1].acquirePermissionsOnStartup), []);
+  assert.equal(h.states.at(-1), "recording");
+  await capture.dispose();
+  assert.equal(h.listenerCount(), 0);
+});
+
+test("start command acknowledgement is insufficient without matching recording-started", async () => {
+  const h = harness(); const capture = h.create();
+  h.sdk.startRecording = async value => { h.calls.push(["start", value]); };
+  let resolved = false;
+  const start = capture.start(input).then(() => { resolved = true; });
+  await tick();
+  h.emit("recording-started", { window: { id: "wrong-window" } });
+  await tick(); assert.equal(resolved, false);
+  h.emit("recording-started", { window: { id: "source-1" } });
+  await start; assert.equal(resolved, true);
+  await capture.dispose();
+});
+
+test("missing permission confirmation times out, and native error details stay private", async () => {
+  const h = harness({ platform: "darwin", arch: "arm64" }); const capture = h.create();
+  h.sdk.requestPermission = async () => undefined;
+  const start = capture.start(input); const rejected = assert.rejects(start, /15 秒/);
+  await tick(); h.expire(); await rejected;
+  assert.equal(h.states.at(-1), "error");
+  await capture.dispose();
+  const h2 = harness(); const second = h2.create();
+  h2.sdk.init = async () => { throw new Error("权限 fixture-secret-token"); };
+  await assert.rejects(second.start(input), error => !error.message.includes("fixture-secret-token"));
+  assert.ok(h2.errors.every(message => !message.includes("fixture-secret-token")));
+  await second.dispose();
+});
+
+test("initial permission status events are observed without startup permission acquisition", async () => {
+  const h = harness({ platform: "darwin", arch: "arm64" }); const capture = h.create();
+  h.sdk.init = async config => {
+    assert.deepEqual(Array.from(config.acquirePermissionsOnStartup), []);
+    for (const permission of ["accessibility", "microphone", "system-audio"]) h.emit("permission-status", { permission, status: "granted" });
+  };
+  await capture.start(input);
+  assert.equal(h.calls.filter(call => call[0] === "permission").length, 0);
+  await capture.dispose();
+});
+
+test("permission refusals identify the exact missing permission and whitelisted status", async () => {
+  for (const [missing, status] of [["accessibility", "denied"], ["microphone", "error"], ["system-audio", "not_installed"]]) {
+    const h = harness({ platform: "darwin", arch: "arm64" }); const capture = h.create();
+    h.sdk.requestPermission = async permission => h.emit("permission-status", {
+      permission, status: permission === missing ? status : "granted", message: "fixture-secret-token",
+    });
+    await assert.rejects(capture.start(input), error => error.message.includes(`${missing}=${status}`) && !error.message.includes("fixture-secret-token") && !error.message.includes("=granted"));
+    assert.equal(h.calls.filter(call => call[0] === "prepare").length, 0);
+    await capture.dispose();
+  }
+});
+
+test("unrecognized or absent permission statuses remain unknown and safe in timeout diagnostics", async () => {
+  const h = harness({ platform: "darwin", arch: "arm64" }); const capture = h.create();
+  h.sdk.requestPermission = async permission => h.emit("permission-status", {
+    permission, status: permission === "accessibility" ? "fixture-secret-status" : permission === "microphone" ? { toString() { throw new Error("must not stringify native data"); } } : undefined,
+  });
+  const start = capture.start(input);
+  const rejected = assert.rejects(start, error => /15 秒/.test(error.message) && ["accessibility=unknown", "microphone=unknown", "system-audio=unknown"].every(value => error.message.includes(value)) && !error.message.includes("fixture-secret"));
+  await tick(); h.expire(); await rejected;
+  await capture.dispose();
+});
+
+test("permission command failures disclose the permission and normalized state without SDK errors", async () => {
+  const h = harness({ platform: "darwin", arch: "arm64" }); const capture = h.create();
+  h.sdk.requestPermission = async () => { throw new Error("fixture-secret-command"); };
+  await assert.rejects(capture.start(input), error => error.message.includes("请求失败（accessibility）") && error.message.includes("accessibility=unknown") && !error.message.includes("fixture-secret"));
+  await capture.dispose();
+});
+
+test("pause/resume wait command acknowledgement and drop paused or foreign-window transcripts", async () => {
+  const h = harness(); const capture = h.create();
+  await capture.start(input);
+  h.emit("realtime-event", event("wrong-window"));
+  h.emit("realtime-event", event("source-1"));
+  assert.equal(h.transcripts.length, 1);
+  let acknowledge;
+  h.sdk.pauseRecording = () => new Promise(resolve => { acknowledge = resolve; });
+  const pause = capture.pause();
+  assert.equal(h.states.at(-1), "pausing");
+  await tick();
+  h.emit("realtime-event", event("source-1", "ignored", true));
+  acknowledge(); await pause;
+  assert.equal(h.states.at(-1), "paused");
+  h.emit("realtime-event", event("source-1", "ignored too", true));
+  await capture.resume();
+  assert.equal(h.states.at(-1), "recording");
+  h.emit("realtime-event", event("source-1", "second", false, { id: 1, is_host: true }, 2));
+  assert.equal(h.transcripts.length, 2);
+  await capture.dispose();
+});
+
+test("stop/start reuses one SDK process and filters late events from retired sources", async () => {
+  const h = harness(); const capture = h.create();
+  await capture.start(input);
+  await capture.stop();
+  await capture.start(input);
+  h.emit("realtime-event", event("source-1", "old"));
+  h.emit("recording-ended", { window: { id: "source-1" } });
+  h.emit("realtime-event", event("source-2", "current"));
+  assert.equal(h.states.at(-1), "recording");
+  assert.equal(h.transcripts.length, 1);
+  assert.equal(h.transcripts[0].text, "current");
+  assert.equal(h.calls.filter(c => c[0] === "init").length, 1);
+  await capture.dispose();
+});
+
+test("stopping while start awaits its event cancels that start without corrupting stop", async () => {
+  const h = harness(); const capture = h.create();
+  h.sdk.startRecording = async () => undefined;
+  const start = capture.start(input); const rejected = assert.rejects(start, /取消/);
+  await tick(); await capture.stop(); await rejected;
+  assert.equal(h.states.at(-1), "ended");
+  await capture.dispose();
+});
+
+test("missing stop acknowledgement retains source ownership and supports cleanup retry", async () => {
+  const h = harness(); const capture = h.create();
+  await capture.start(input);
+  h.sdk.stopRecording = async () => undefined;
+  const stop = capture.stop(); const rejected = assert.rejects(stop, /仍保留/);
+  await tick(); h.expire(); await rejected;
+  await assert.rejects(h.create().start(input), /仍持有/);
+  await capture.dispose();
+  assert.equal(h.listenerCount(), 0);
+});
+
+test("shutdown failure keeps the singleton owner and listeners until successful retry", async () => {
+  const h = harness(); const capture = h.create();
+  await capture.start(input);
+  h.sdk.shutdown = async () => { throw new Error("fixture-secret"); };
+  await assert.rejects(capture.dispose(), /仍保留/);
+  assert.ok(h.listenerCount() > 0);
+  const next = h.create();
+  await assert.rejects(next.start(input), /仍持有/);
+  h.sdk.shutdown = async () => { h.emit("shutdown", { code: 0 }); };
+  await capture.dispose();
+  assert.equal(h.listenerCount(), 0);
+  await next.start(input);
+  await next.dispose();
+});
+
+test("shutdown acknowledgement without native close cannot release the singleton owner", async () => {
+  const h = harness(); const capture = h.create();
+  await capture.start(input);
+  h.sdk.shutdown = async () => undefined;
+  const close = capture.dispose(); const rejected = assert.rejects(close, /仍保留/);
+  await tick(); h.expire(); await rejected;
+  assert.ok(h.listenerCount() > 0);
+  await assert.rejects(h.create().start(input), /仍持有/);
+  // A late close event is still authoritative and makes cleanup retryable.
+  h.emit("shutdown", { code: 0 });
+  await capture.dispose();
+  assert.equal(h.listenerCount(), 0);
+});
+
+test("start refusal and absent recording-ended still permit direct bounded shutdown cleanup", async () => {
+  const h = harness(); const capture = h.create();
+  h.sdk.startRecording = async () => { throw new Error("fixture-invalid-token"); };
+  await assert.rejects(capture.start(input));
+  h.sdk.stopRecording = async () => undefined;
+  const stop = capture.stop(); const rejected = assert.rejects(stop, /仍保留/);
+  await tick(); h.expire(); await rejected;
+  await capture.dispose();
+  assert.equal(h.calls.filter(call => call[0] === "shutdown").length, 1);
+  assert.equal(h.listenerCount(), 0);
+  h.sdk.startRecording = async value => { h.emit("recording-started", { window: { id: value.windowId } }); };
+  const next = h.create(); await next.start(input); await next.dispose();
+});
+
+test("listener cleanup failure remains retryable after the native process exits", async () => {
+  const h = harness(); const capture = h.create();
+  await capture.start(input);
+  const remove = h.sdk.removeEventListener;
+  h.sdk.removeEventListener = () => { throw new Error("fixture-secret"); };
+  await assert.rejects(capture.dispose(), /监听器清理未完成/);
+  await assert.rejects(h.create().start(input), /仍持有/);
+  h.sdk.removeEventListener = remove;
+  await capture.dispose();
+  assert.equal(h.listenerCount(), 0);
+  assert.equal(h.calls.filter(c => c[0] === "shutdown").length, 1);
+});
+
+test("pausing and stopping admit final tail utterances but never ongoing partials", async (t) => {
+  let now = 100_000;
+  t.mock.method(Date, "now", () => now);
+  const h = harness(); const capture = h.create();
+  await capture.start(input);
+  h.emit("realtime-event", event("source-1", "hel", true));
+  let paused;
+  h.sdk.pauseRecording = () => new Promise(resolve => { paused = resolve; });
+  const pause = capture.pause();
+  await tick();
+  h.emit("realtime-event", event("source-1", "hello", false));
+  h.emit("realtime-event", event("source-1", "discard", true));
+  assert.equal(h.transcripts.length, 2);
+  assert.equal(h.transcripts[0].id, h.transcripts[1].id);
+  paused(); await pause;
+  h.emit("realtime-event", event("source-1", "tail", false, { id: 1, is_host: true }, 1));
+  assert.equal(h.transcripts.length, 3);
+  now += 2001;
+  h.emit("realtime-event", event("source-1", "too late", false, { id: 1, is_host: true }, 2));
+  assert.equal(h.transcripts.length, 3);
+  await capture.resume();
+  let ended;
+  h.sdk.stopRecording = value => new Promise(resolve => { ended = () => { h.emit("recording-ended", { window: { id: value.windowId } }); resolve(); }; });
+  const stop = capture.stop(); await tick();
+  h.emit("realtime-event", event("source-1", "last", false, { id: 1, is_host: true }, 3));
+  h.emit("realtime-event", event("source-1", "not final", true, { id: 1, is_host: true }, 4));
+  assert.equal(h.transcripts.length, 4);
+  ended(); await stop; await capture.dispose();
+});
+
+test("stop calls coalesce and native shutdown during stop confirms no capture remains", async () => {
+  const h = harness(); const capture = h.create();
+  await capture.start(input);
+  let ended;
+  h.sdk.stopRecording = () => new Promise(resolve => { ended = () => { h.emit("shutdown", { code: 0 }); resolve(); }; });
+  const first = capture.stop(); const second = capture.stop();
+  assert.equal(first, second);
+  await tick(); ended(); await first;
+  assert.equal(h.states.at(-1), "ended");
+  await capture.dispose();
+});
+
+test("synchronous SDK failures cannot leave an unhandled event waiter or release ownership", async () => {
+  const h = harness(); const capture = h.create();
+  h.sdk.startRecording = () => { throw new Error("fixture-secret"); };
+  await assert.rejects(capture.start(input), /无法启动/);
+  await tick();
+  h.sdk.stopRecording = () => { throw new Error("fixture-secret"); };
+  await assert.rejects(capture.stop(), /仍保留/);
+  await assert.rejects(h.create().start(input), /仍持有/);
+  assert.ok(h.errors.every(message => !message.includes("fixture-secret")));
+  await capture.dispose();
+});
+
+test("normalizer gives partial/final a stable ID, preserves timing, and deduplicates final", () => {
+  const n = harness().normalizer();
+  const a = n.normalize(event("source", "hel", true), 100);
+  const b = n.normalize(event("source", "hello", true), 200);
+  const c = n.normalize(event("source", "hello", false), 300);
+  assert.equal(a.id, b.id); assert.equal(b.id, c.id);
+  assert.equal(c.source, "microphone"); assert.equal(c.participantId, "1");
+  assert.equal(c.startMs, 0); assert.equal(c.endMs, 500);
+  assert.equal(a.isFinal, false); assert.equal(c.isFinal, true);
+  assert.equal(n.normalize(event("source", "hello", false), 400), null);
+  assert.equal(n.normalize(event("source", "late partial", true), 500), null);
+});
+
+test("normalizer source precedence does not share speaker IDs across simultaneous sources", () => {
+  const n = harness().normalizer();
+  const mic = event("source", "local", true, { id: 1, is_host: true });
+  mic.data.source = "system";
+  const a = n.normalize(mic);
+  const b = n.normalize(event("source", "other", true, { id: 2, is_host: false }));
+  const unknown = n.normalize(event("source", "unknown", false, {}));
+  assert.equal(a.source, "system"); assert.equal(b.source, "system");
+  assert.notEqual(a.id, b.id);
+  assert.equal(unknown.source, "unknown"); assert.equal(unknown.participantId, undefined);
+  assert.equal(n.normalize(event("source", "host", false, { name: "Host" }, 3)).source, "microphone");
+  assert.equal(n.normalize(event("source", "guest", false, { name: "Guest" }, 4)).source, "system");
+});
+
+test("timestamp-free updates keep active partial identity but repeated utterances can complete", () => {
+  const n = harness().normalizer();
+  const make = partial => { const e = event("source", "yes", partial); delete e.data.data.words[0].start_timestamp; delete e.data.data.words[0].end_timestamp; return e; };
+  const a = n.normalize(make(true), 100);
+  const b = n.normalize(make(false), 200);
+  assert.equal(a.id, b.id);
+  assert.equal(n.normalize(make(false), 250), null);
+  const c = n.normalize(make(true), 5000);
+  const d = n.normalize(make(false), 5100);
+  assert.notEqual(c.id, a.id); assert.equal(c.id, d.id);
+  assert.equal(d.startMs, undefined);
+  assert.equal(n.normalize({ event: "transcript.data", data: { data: { words: [] } } }), null);
+});
+
+test("transcript boundary bounds words/text/speaker without colliding long identities", () => {
+  const n = harness().normalizer();
+  const a = event("source", "x".repeat(100_000), false, { id: "p".repeat(1000) + "a", name: "Guest".repeat(500), is_host: true });
+  a.data.data.utterance_id = "u".repeat(1000) + "a";
+  const first = n.normalize(a);
+  const b = event("source", "x".repeat(100_000), false, { id: "p".repeat(1000) + "b", name: "Guest".repeat(500), is_host: true });
+  b.data.data.utterance_id = "u".repeat(1000) + "b";
+  const second = n.normalize(b);
+  assert.ok(first.text.length <= 16_384); assert.ok(first.text.endsWith("…"));
+  assert.ok(first.speaker.length <= 120); assert.ok(first.speaker.endsWith("…"));
+  assert.equal(first.source, "microphone");
+  assert.match(first.participantId, /^sha256:[0-9a-f]{64}$/);
+  assert.notEqual(first.participantId, second.participantId); assert.notEqual(first.id, second.id);
+  const c = event("source", "different utterance", false, a.data.data.participant);
+  c.data.data.utterance_id = "u".repeat(1000) + "b";
+  assert.notEqual(n.normalize(c).id, first.id);
+  const many = event("source", "unused", false, { id: 2 });
+  many.data.data.words = Array.from({ length: 10_000 }, () => ({ text: "w" }));
+  const result = n.normalize(many);
+  assert.equal(result.text.split(" ").length, 1024); assert.ok(result.text.endsWith("…"));
+});

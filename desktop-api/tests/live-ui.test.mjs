@@ -502,6 +502,35 @@ test("the settings hover timer owns its 500ms close delay and can be cancelled w
   } finally { globalThis.setTimeout = originalSet; globalThis.clearTimeout = originalClear; h.dispose(); }
 });
 
+test("the settings popover chooses available space and stays within the screen after vertical movement", async () => {
+  const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }));
+  try {
+    h.label("Settings / 设置").props.onClick();
+    let menu = h.by(node => node.props.role === "menu");
+    assert.equal(menu.props["data-placement"], "below");
+    assert.ok(menu.props.style.maxHeight > 600);
+    const target = new h.ElementBoundary(true);
+    const drag = h.label("移动浮条");
+    drag.props.onPointerDown({ button: 0, pointerId: 1, clientX: 600, clientY: 20, currentTarget: target, preventDefault() {} });
+    drag.props.onPointerMove({ pointerId: 1, clientX: 600, clientY: 1000 });
+    menu = h.by(node => node.props.role === "menu");
+    const bar = h.by(node => node.props.className === "pw-live-toolbar pw-glass");
+    assert.equal(menu.props["data-placement"], "above");
+    assert.equal(menu.props.style.top, "auto");
+    assert.ok(menu.props.style.maxHeight + 8 <= bar.props.style.top - 20);
+  } finally { h.dispose(); }
+});
+
+test("transcript title describes the view while recording state remains on the controls", async () => {
+  for (const captureStatus of ["recording", "paused", "ended"]) {
+    const h = await clientWorkspace(snapshot({ captureStatus, captureNeedsCleanup: captureStatus !== "ended", transcripts: [{ id: "t", source: "microphone", text: "synthetic speech", receivedAt: 1, isFinal: true }] }));
+    try {
+      h.textButton("Transcripts").props.onClick();
+      assert.equal(elementText(h.by(node => node.props.className === "pw-live-title")), "AI Transcripts");
+    } finally { h.dispose(); }
+  }
+});
+
 
 test("idle screenshot errors reopen the card and native visibility resets the hit-test cache", async () => {
   const h = await clientWorkspace(snapshot());

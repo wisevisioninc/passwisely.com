@@ -218,8 +218,11 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   const availableWidth = Math.max(0, viewport.width - 40);
   const cardWidth = Math.min(Math.max(Math.min(320, availableWidth), contentWidth), availableWidth);
   const cardLeft = Math.max(20, Math.min(position.x - cardWidth / 2, viewport.width - cardWidth - 20));
-  const title = generating ? answers.at(-1)?.status === "preparing" ? "Thinking…" : "AI Response" : tab === "transcript" ? CAPTURE_LABELS[captureStatus] : "AI Response";
+  const title = screenshotBusy ? "Analyzing screen..." : generating ? "Thinking..." : tab === "transcript" ? "AI Transcripts" : "AI Response";
   const hasSessionText = transcripts.length > 0 || answers.length > 0;
+  const showContent = !!panel || manualInput || active || retainedSession || hasSessionText || answerBusy || screenshotBusy || !!error || !!snapshot?.error || !!snapshot?.screenshotError;
+  const clampVisiblePosition = (next: OverlayPosition, width = cardWidth) => clampOverlayPosition(next, viewport,
+    Math.max(toolbar.current?.offsetWidth ?? 0, showContent && !collapsed ? width : 0));
 
   const switchTab = (next: "transcript" | "answers") => {
     if (scroll.current) scrollOffsets.current[tab] = scroll.current.scrollTop;
@@ -281,7 +284,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     else if (action === "response") { switchTab("answers"); setPanel(null); setCollapsed(false); setRetainedSession(true); }
     else if (action === "transcripts") { switchTab("transcript"); setPanel(null); setCollapsed(false); setRetainedSession(true); }
     else if (action === "scroll-up" || action === "scroll-down") scroll.current?.scrollBy({ top: action === "scroll-up" ? -300 : 300, behavior: "smooth" });
-    else if (action.startsWith("move-")) { userPosition.current = true; setPosition(current => clampOverlayPosition({ x: current.x + (action === "move-left" ? -60 : action === "move-right" ? 60 : 0), y: current.y + (action === "move-up" ? -60 : action === "move-down" ? 60 : 0) }, viewport, Math.max(cardWidth, toolbar.current?.offsetWidth ?? 620))); }
+    else if (action.startsWith("move-")) { userPosition.current = true; setPosition(current => clampVisiblePosition({ x: current.x + (action === "move-left" ? -60 : action === "move-right" ? 60 : 0), y: current.y + (action === "move-up" ? -60 : action === "move-down" ? 60 : 0) })); }
   };
   const answerAction = async (operation: () => Promise<LiveResult>) => {
     setError(""); try { const result = await operation(); if (!result.success) throw new Error(result.error || "Operation failed."); }
@@ -306,8 +309,8 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   };
   const moveDrag = (event: React.PointerEvent<HTMLElement>) => {
     const current = drag.current; if (!current || current.pointerId !== event.pointerId) return;
-    if (current.kind === "move") { userPosition.current = true; setPosition(clampOverlayPosition({ x: current.position.x + event.clientX - current.x, y: current.position.y + event.clientY - current.y }, viewport, Math.max(cardWidth, toolbar.current?.offsetWidth ?? 620))); }
-    else { userWidth.current = true; const width = Math.max(Math.min(320, viewport.width - 40), Math.min(viewport.width - 40, current.width + (event.clientX - current.x) * 2)); setContentWidth(width); setPosition(position => clampOverlayPosition(position, viewport, Math.max(width, toolbar.current?.offsetWidth ?? 620))); }
+    if (current.kind === "move") { userPosition.current = true; setPosition(clampVisiblePosition({ x: current.position.x + event.clientX - current.x, y: current.position.y + event.clientY - current.y })); }
+    else { userWidth.current = true; const width = Math.max(Math.min(320, viewport.width - 40), Math.min(viewport.width - 40, current.width + (event.clientX - current.x) * 2)); setContentWidth(width); setPosition(position => clampVisiblePosition(position, width)); }
   };
   const endDrag = (event: React.PointerEvent<HTMLElement>) => {
     if (drag.current?.pointerId !== event.pointerId) return;
@@ -316,7 +319,25 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     setInteractive(isOverlayInteractiveTarget(target));
   };
   const dragEvents = { onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag, onLostPointerCapture: (event: React.PointerEvent<HTMLElement>) => { drag.current = null; setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(event.clientX, event.clientY))); } };
-  const showContent = !!panel || manualInput || active || retainedSession || hasSessionText || answerBusy || screenshotBusy || !!error || !!snapshot?.error || !!snapshot?.screenshotError;
+  useLayoutEffect(() => {
+    const element = toolbar.current;
+    if (!element || !geometryReady || !visible) return;
+    const fit = () => {
+      setPosition(current => {
+        const next = clampVisiblePosition(current);
+        return next.x === current.x && next.y === current.y ? current : next;
+      });
+    };
+    // The bar has an intrinsic width independent of its left coordinate.
+    // Font loading and recording controls can still change that width.
+    const observer = new ResizeObserver(fit);
+    observer.observe(element);
+    fit();
+    return () => observer.disconnect();
+  }, [geometry?.width, geometry?.height, cardWidth, showContent, collapsed, visible]);
+  const menuAbove = Math.max(0, position.y - 28);
+  const menuBelow = Math.max(0, viewport.height - position.y - 68);
+  const menuPlacement = menuBelow >= menuAbove ? "below" : "above";
 
   return <section className="pw-live pw-overlay" aria-label="会话浮层" hidden={!visible || !geometryReady} data-edge={top ? "top" : "bottom"} onClickCapture={event => {
     if ((event.target as Element).closest("button")) setTimeout(() => {
@@ -358,7 +379,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
           </section>
         </div>
         {!pinned && <button type="button" className="pw-live-follow" onClick={() => setPinned(true)}><ArrowDown size={12} />View Latest</button>}
-        {(tab === "answers" && answers.length > 0 && !generating || tab === "transcript" && !active && transcripts.length > 0) && <footer className="pw-live-bottom-actions"><span>Scroll Up <kbd>⌘ ⇧ ↑</kbd></span><button type="button" disabled={clearing} onClick={() => void startOver()}>Start Over <kbd>⌘ G</kbd></button></footer>}
+        {(tab === "answers" && answers.length > 0 && !generating || tab === "transcript" && !active && transcripts.length > 0) && <footer className="pw-live-bottom-actions">{tab === "answers" && <button type="button" aria-label="Scroll Up" onClick={() => scroll.current?.scrollBy({ top: -300, behavior: "smooth" })}>Scroll Up <Keycaps keys={["⌘", "⇧", "↑"]} /></button>}<button type="button" disabled={clearing} onClick={() => void startOver()}>Start Over <Keycaps keys={["⌘", "G"]} /></button></footer>}
       </>}
       <div className="pw-live-resize" role="separator" aria-label="调整内容宽度" aria-orientation="vertical" {...dragEvents} onPointerDown={event => beginDrag(event, "resize")} />
     </section>}
@@ -367,14 +388,15 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
       {screenshots.length > 0 && <div className="pw-live-attachments pw-glass" data-overlay-interactive aria-label="待提交截图"><div className="pw-live-thumbnails">{screenshots.map((shot, index) => <figure key={shot.path}><img src={shot.preview} alt={`截图 ${index + 1}`} /><button type="button" aria-label={`删除截图 ${index + 1}`} onClick={() => void deleteScreenshot(shot.path)}><X size={10} /></button></figure>)}</div><label><input type="checkbox" checked={includeScreenshots} onChange={event => setIncludeScreenshots(event.target.checked)} />Include screenshots</label></div>}
       {manualInput && !panel && <form className="pw-live-composer pw-glass" data-overlay-interactive onSubmit={event => { event.preventDefault(); void submitQuestion(); }}>
         <textarea ref={input} aria-label="会话提问" value={question} rows={2} placeholder={active ? "Ask about your screen or audio" : "Ask about your screen"} onChange={event => { draftRevision.current++; setQuestion(event.target.value); }} onFocus={() => { void api.setOverlayFocus(true).catch(() => {}); }} onKeyDown={event => { if (event.key === "Escape") { setManualInput(false); void api.setOverlayFocus(false).catch(() => {}); } else if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); void submitQuestion(); } }} />
-        <button type="submit" disabled={!canAsk} aria-label="发送问题">Submit <kbd>↵</kbd></button>
+        <button type="submit" disabled={!canAsk} aria-label="发送问题">Submit <Keycaps keys={["↵"]} /></button>
       </form>}
     </div>
     </div>
     <div ref={toolbar} className="pw-live-toolbar pw-glass" data-overlay-interactive style={{ left: position.x, top: position.y }}>
       <button type="button" className="pw-live-drag" aria-label="移动浮条" {...dragEvents} onPointerDown={event => beginDrag(event, "move")}><GripVertical size={13} /></button>
-      <img className="pw-live-toolbar-brand" src="./logo512.png" alt="PassWisely" width={24} height={24} draggable={false} />
+      <div className="pw-live-toolbar-actions">
       <button type="button" className="pw-live-credits" title="PassWisely account & credits" onClick={() => { void api.accountOpenPortal(); }}>{credits} credits</button>
+      <img className="pw-live-toolbar-brand" src="./logo512.png" alt="PassWisely" width={24} height={24} draggable={false} />
       <div className="pw-live-capture-controls">
         {controls.showStart && !snapshot?.captureNeedsCleanup ? <button type="button" className="pw-live-start" disabled={loading || controls.startDisabled} title={hasSessionText ? "开始新会话将清空当前转录和回答。音频将发送并保存至你的 Recall 项目。" : "音频将发送并保存至你的 Recall 项目；点击后开始英文实时转录。"} onClick={() => void runCapture(api.liveStart, "start")}><Play size={11} />Start Interview</button> : captureStatus === "recording" || captureStatus === "paused" ? <>
           <button type="button" className="pw-live-pause" disabled={captureBusy} title={captureStatus === "paused" ? "Resume Listening" : "Pause Listening"} aria-label={captureStatus === "paused" ? "Resume Listening / 继续采集" : "Pause Listening / 暂停采集"} onClick={() => void runCapture(captureStatus === "paused" ? api.liveResume : api.livePause)}>{captureStatus === "paused" ? <Play size={11} /> : <Pause size={11} />}</button>
@@ -383,19 +405,20 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
         </> : <button type="button" className="pw-live-done" disabled={controls.stopDisabled} onClick={() => void runCapture(api.liveStop, "stop")}>{captureStatus === "starting" ? "Cancel" : snapshot?.captureNeedsCleanup && ["ended", "error"].includes(captureStatus) ? "Release audio" : "Stopping…"}</button>}
       </div>
       <span className="pw-live-divider" />
-      <button type="button" className="pw-live-command" disabled={screenshotBusy || clearing} aria-label="Take Screenshot / 截图" onClick={() => void captureScreenshot()}>{screenshotBusy ? <Loader2 className="pw-live-spinning" size={16} /> : <Camera size={16} />}Take Screenshot <Keycaps keys={["⌘", "H"]} /></button>
+      <button type="button" className="pw-live-command" disabled={screenshotBusy || clearing} aria-label="Take Screenshot / 截图" onClick={() => void captureScreenshot()}>{screenshotBusy && <Loader2 className="pw-live-spinning" size={16} />}Take Screenshot <Keycaps keys={["⌘", "H"]} /></button>
       <button type="button" className="pw-live-command" disabled={!canAsk} aria-label="Solve / 生成回答" onClick={() => void submitQuestion()}>Solve <Keycaps keys={["⌘", "↵"]} /></button>
       <button type="button" className={`pw-live-command ${manualInput ? "selected" : ""}`} title="Ask a question / 手动输入" aria-label="手动输入问题" aria-pressed={manualInput} onClick={() => { setManualInput(!manualInput); setCollapsed(false); setPanel(null); }}><MessageSquare size={14} /></button>
       {collapsed && <button type="button" className="pw-live-command" onClick={() => setCollapsed(false)}>Expand</button>}
       <button type="button" className="pw-live-command" onClick={() => { void api.toggleMainWindow(); }}>Show / Hide <Keycaps keys={["⌘", "B"]} /></button>
+      </div>
       <div className="pw-live-settings-anchor" onPointerEnter={openSettings} onPointerLeave={closeSettings}>
         <button type="button" className="pw-live-icon" aria-label="Settings / 设置" aria-expanded={settingsOpen} onClick={() => { if (settingsTimer.current) clearTimeout(settingsTimer.current); setSettingsOpen(!settingsOpen); }}><Settings size={14} /></button>
-        {settingsOpen && <div className="pw-live-menu pw-glass" role="menu"><strong>PassWisely</strong><span>{credits} credits</span>
+        {settingsOpen && <div className="pw-live-menu pw-glass" role="menu" data-placement={menuPlacement} style={{ top: menuPlacement === "below" ? "calc(100% + 8px)" : "auto", bottom: menuPlacement === "above" ? "calc(100% + 8px)" : "auto", maxHeight: menuPlacement === "below" ? menuBelow : menuAbove }}><strong>PassWisely</strong><span>{credits} credits</span>
           <button type="button" role="menuitem" onClick={() => { setPanel("settings"); setSettingsOpen(false); }}>AI Settings · Language</button>
           <button type="button" role="menuitem" onClick={() => { setPanel("resume"); setSettingsOpen(false); }}>Resume / 简历助手</button>
           <button type="button" role="menuitem" onClick={() => { setSettingsOpen(false); onProgramming?.(); }}>Programming / 编程解题</button>
           <button type="button" role="menuitem" onClick={() => { setPanel("shortcuts"); setSettingsOpen(false); }}>Keyboard Shortcuts</button>
-          <button type="button" role="menuitem" disabled={clearing} onClick={() => void startOver()}>Start Over <kbd>⌘ G</kbd></button>
+          <button type="button" role="menuitem" disabled={clearing} onClick={() => void startOver()}>Start Over <Keycaps keys={["⌘", "G"]} /></button>
           <button type="button" role="menuitem" onClick={() => { void api.accountOpenPortal(); }}>Account & credits</button>
           <button type="button" role="menuitem" onClick={() => { void api.accountLogout().then(result => { if (result.success) window.location.reload(); else setError(result.error || "Sign out failed."); }).catch(reason => setError(errorText(reason))); }}>Sign out</button>
           <button type="button" role="menuitem" onClick={() => { void api.quitApp().catch(reason => setError(errorText(reason))); }}>Quit PassWisely</button>

@@ -16,4 +16,5 @@ export function initializeLiveIpc(service: LiveSessionService, getWindow: () => 
   handle("live-ask", input => isAuthenticated() ? service.ask(input) : { success: false, error: "Please sign in." });
   handle("live-cancel-answer", () => service.cancelAnswer());
   handle("live-clear-answers", () => service.clearAnswers());
+  handle("live-start-over", () => service.startOver());
 }

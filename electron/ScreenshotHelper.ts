@@ -1,248 +1,161 @@
-// ScreenshotHelper.ts
-
-import { app, desktopCapturer, screen } from "electron";
+import { app, desktopCapturer, screen, shell, type Display } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { MAX_SCREENSHOTS } from "./screenshotLimits";
 
+export interface ScreenshotMutationResult {
+  success: boolean;
+  error?: string;
+  removed: string[];
+  failed: Array<{ path: string; error: string }>;
+}
+type View = "queue" | "solutions" | "debug";
+
+/** Owns both queues and serializes captures/retirements by exact file identity. */
 export class ScreenshotHelper {
   private screenshotQueue: string[] = [];
   private extraScreenshotQueue: string[] = [];
-  private readonly MAX_SCREENSHOTS = 5;
-
   private readonly screenshotDir: string;
   private readonly extraScreenshotDir: string;
+  private mutation: Promise<void> = Promise.resolve();
 
-  private view: "queue" | "solutions" | "debug" = "queue";
-
-  constructor(view: "queue" | "solutions" | "debug" = "queue") {
-    this.view = view;
-
-    // Initialize directories
+  constructor(private view: View = "queue", private readonly getDisplay: () => Display = () => screen.getPrimaryDisplay()) {
     this.screenshotDir = path.join(app.getPath("userData"), "screenshots");
-    this.extraScreenshotDir = path.join(
-      app.getPath("userData"),
-      "extra_screenshots",
-    );
-
+    this.extraScreenshotDir = path.join(app.getPath("userData"), "extra_screenshots");
     fs.mkdirSync(this.screenshotDir, { recursive: true });
     fs.mkdirSync(this.extraScreenshotDir, { recursive: true });
     this.screenshotQueue = this.loadExistingScreenshots(this.screenshotDir);
-    this.extraScreenshotQueue = this.loadExistingScreenshots(
-      this.extraScreenshotDir,
-    );
+    this.extraScreenshotQueue = this.loadExistingScreenshots(this.extraScreenshotDir);
   }
-
   private loadExistingScreenshots(directory: string): string[] {
-    return fs
-      .readdirSync(directory, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.endsWith(".png"))
-      .map((entry) => path.join(directory, entry.name))
-      .sort(
-        (left, right) =>
-          fs.statSync(left).mtimeMs - fs.statSync(right).mtimeMs,
-      )
-      .slice(-this.MAX_SCREENSHOTS);
+    return fs.readdirSync(directory, { withFileTypes: true })
+      .filter(entry => entry.isFile() && entry.name.endsWith(".png"))
+      .map(entry => path.join(directory, entry.name))
+      .sort((left, right) => fs.statSync(left).mtimeMs - fs.statSync(right).mtimeMs)
+      .slice(-MAX_SCREENSHOTS);
   }
-
-  public getView(): "queue" | "solutions" | "debug" {
-    return this.view;
+  private serialize<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.mutation.then(operation);
+    this.mutation = result.then(() => undefined, () => undefined);
+    return result;
   }
-
-  public setView(view: "queue" | "solutions" | "debug"): void {
-    console.log("Setting view in ScreenshotHelper:", view);
-    console.log(
-      "Current queues - Main:",
-      this.screenshotQueue,
-      "Extra:",
-      this.extraScreenshotQueue,
-    );
-    this.view = view;
+  getView(): View { return this.view; }
+  setView(view: View): void { this.view = view; }
+  getScreenshotQueue(): string[] { return [...this.screenshotQueue]; }
+  getExtraScreenshotQueue(): string[] { return [...this.extraScreenshotQueue]; }
+  /** Live always uses the normal pending queue, irrespective of the code view. */
+  getPendingScreenshots(): string[] { return this.getScreenshotQueue(); }
+  private owned(filePath: string): boolean {
+    return this.screenshotQueue.includes(filePath) || this.extraScreenshotQueue.includes(filePath);
   }
-
-  public getScreenshotQueue(): string[] {
-    return this.screenshotQueue;
+  private async verifyOwnedFile(filePath: string): Promise<void> {
+    if (!this.owned(filePath) || path.extname(filePath).toLowerCase() !== ".png" ||
+      ![this.screenshotDir, this.extraScreenshotDir].includes(path.dirname(filePath))) {
+      throw new Error("Screenshot is not owned by the pending queue.");
+    }
+    const stat = await fs.promises.lstat(filePath);
+    if (!stat.isFile() || stat.isSymbolicLink()) throw new Error("Screenshot is no longer a regular owned file.");
   }
-
-  public getExtraScreenshotQueue(): string[] {
-    console.log("Getting extra screenshot queue:", this.extraScreenshotQueue);
-    return this.extraScreenshotQueue;
+  private async retire(paths: readonly string[], signal?: AbortSignal, ownedAtEnqueue = new Set<string>()): Promise<ScreenshotMutationResult> {
+    const result: ScreenshotMutationResult = { success: true, removed: [], failed: [] };
+    for (const filePath of paths) {
+      if (signal?.aborted) {
+        result.failed.push({ path: filePath, error: "Screenshot cleanup was cancelled; the pending file was retained." });
+        continue;
+      }
+      // Another serialized operation may have released a file owned when this
+      // operation queued. Preserve that bounded proof without a global tombstone cache.
+      if (!this.owned(filePath) && ownedAtEnqueue.has(filePath)) { result.removed.push(filePath); continue; }
+      try {
+        await this.verifyOwnedFile(filePath);
+        signal?.throwIfAborted();
+        await shell.trashItem(filePath);
+        this.screenshotQueue = this.screenshotQueue.filter(item => item !== filePath);
+        this.extraScreenshotQueue = this.extraScreenshotQueue.filter(item => item !== filePath);
+        result.removed.push(filePath);
+      } catch (error) {
+        result.failed.push({ path: filePath, error: error instanceof Error ? error.message : "Moving screenshot to Trash failed." });
+      }
+    }
+    result.success = result.failed.length === 0;
+    if (!result.success) result.error = result.failed.map(item => item.error).join("; ");
+    return result;
   }
-
-  public clearQueues(): void {
-    // Clear screenshotQueue
-    this.screenshotQueue.forEach((screenshotPath) => {
-      fs.unlink(screenshotPath, (err) => {
-        if (err)
-          console.error(`Error deleting screenshot at ${screenshotPath}:`, err);
-      });
-    });
-    this.screenshotQueue = [];
-
-    // Clear extraScreenshotQueue
-    this.extraScreenshotQueue.forEach((screenshotPath) => {
-      fs.unlink(screenshotPath, (err) => {
-        if (err)
-          console.error(
-            `Error deleting extra screenshot at ${screenshotPath}:`,
-            err,
-          );
-      });
-    });
-    this.extraScreenshotQueue = [];
+  consumeScreenshots(paths: readonly string[], signal?: AbortSignal): Promise<ScreenshotMutationResult> {
+    const snapshot = [...new Set(paths)];
+    const ownedAtEnqueue = new Set(snapshot.filter(filePath => this.owned(filePath)));
+    return this.serialize(() => this.retire(snapshot, signal, ownedAtEnqueue));
   }
-
-  private async captureScreenshot(): Promise<Buffer> {
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const scaleFactor = primaryDisplay.scaleFactor || 1;
-    const thumbnailSize = {
-      width: Math.max(1, Math.round(primaryDisplay.size.width * scaleFactor)),
-      height: Math.max(1, Math.round(primaryDisplay.size.height * scaleFactor)),
-    };
+  clearPendingScreenshots(signal?: AbortSignal): Promise<ScreenshotMutationResult> {
+    return this.consumeScreenshots(this.getPendingScreenshots(), signal);
+  }
+  clearQueues(): Promise<ScreenshotMutationResult> {
+    return this.consumeScreenshots([...this.screenshotQueue, ...this.extraScreenshotQueue]);
+  }
+  clearExtraScreenshotQueue(): Promise<ScreenshotMutationResult> {
+    return this.consumeScreenshots(this.extraScreenshotQueue);
+  }
+  deleteScreenshot(filePath: string): Promise<ScreenshotMutationResult> {
+    return this.consumeScreenshots([path.resolve(filePath)]);
+  }
+  private async captureScreenshot(display: Display): Promise<Buffer> {
+    const scaleFactor = display.scaleFactor || 1;
     const sources = await desktopCapturer.getSources({
       types: ["screen"],
-      thumbnailSize,
+      thumbnailSize: {
+        width: Math.max(1, Math.round(display.size.width * scaleFactor)),
+        height: Math.max(1, Math.round(display.size.height * scaleFactor)),
+      },
       fetchWindowIcons: false,
     });
-    const displayId = String(primaryDisplay.id);
-    const source =
-      sources.find((candidate) => candidate.display_id === displayId) ||
-      sources[0];
-
+    const source = sources.find(candidate => candidate.display_id === String(display.id));
     if (!source || source.thumbnail.isEmpty()) {
-      throw new Error(
-        process.platform === "darwin"
-          ? "Screen capture failed. Enable Screen Recording permission for PassWisely in System Settings."
-          : "Screen capture failed. Make sure a display is connected and screen capture is permitted.",
-      );
+      throw new Error(process.platform === "darwin"
+        ? "Screen capture failed. Enable Screen Recording permission for PassWisely in System Settings and verify the selected display is connected."
+        : "Screen capture failed. Make sure the selected display is connected and screen capture is permitted.");
     }
     return source.thumbnail.toPNG();
   }
-
-  public async takeScreenshot(
-    hideMainWindow: () => void,
-    showMainWindow: () => void,
-  ): Promise<string> {
-    console.log("Taking screenshot in view:", this.view);
-    hideMainWindow();
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    let screenshotPath = "";
-    try {
-      const screenshotBuffer = await this.captureScreenshot();
-
-      // Save and manage the screenshot based on current view
-      if (this.view === "queue") {
-        screenshotPath = path.join(this.screenshotDir, `${randomUUID()}.png`);
-        await fs.promises.writeFile(screenshotPath, screenshotBuffer);
-        console.log("Adding screenshot to main queue:", screenshotPath);
-        this.screenshotQueue.push(screenshotPath);
-        if (this.screenshotQueue.length > this.MAX_SCREENSHOTS) {
-          const removedPath = this.screenshotQueue.shift();
-          if (removedPath) {
-            try {
-              await fs.promises.unlink(removedPath);
-              console.log(
-                "Removed old screenshot from main queue:",
-                removedPath,
-              );
-            } catch (error) {
-              console.error("Error removing old screenshot:", error);
-            }
-          }
+  private takeIntoQueue(queue: "main" | "extra", hideMainWindow: () => void, showMainWindow: () => void): Promise<string> {
+    const selectedDisplay = this.getDisplay();
+    const display = { ...selectedDisplay, size: { ...selectedDisplay.size } };
+    return this.serialize(async () => {
+      hideMainWindow();
+      try {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const screenshotBuffer = await this.captureScreenshot(display);
+        const paths = queue === "main" ? this.screenshotQueue : this.extraScreenshotQueue;
+        if (paths.length >= MAX_SCREENSHOTS) {
+          const removed = await this.retire(paths.slice(0, paths.length - MAX_SCREENSHOTS + 1));
+          if (!removed.success) throw new Error("The screenshot queue is full. " + removed.error);
         }
-      } else {
-        // In solutions view, only add to extra queue
-        screenshotPath = path.join(
-          this.extraScreenshotDir,
-          `${randomUUID()}.png`,
-        );
-        await fs.promises.writeFile(screenshotPath, screenshotBuffer);
-        console.log("Adding screenshot to extra queue:", screenshotPath);
-        this.extraScreenshotQueue.push(screenshotPath);
-        if (this.extraScreenshotQueue.length > this.MAX_SCREENSHOTS) {
-          const removedPath = this.extraScreenshotQueue.shift();
-          if (removedPath) {
-            try {
-              await fs.promises.unlink(removedPath);
-              console.log(
-                "Removed old screenshot from extra queue:",
-                removedPath,
-              );
-            } catch (error) {
-              console.error("Error removing old screenshot:", error);
-            }
-          }
+        const filePath = path.join(queue === "main" ? this.screenshotDir : this.extraScreenshotDir, randomUUID() + ".png");
+        const file = await fs.promises.open(filePath, "wx");
+        (queue === "main" ? this.screenshotQueue : this.extraScreenshotQueue).push(filePath);
+        try { await file.writeFile(screenshotBuffer); }
+        catch (error) {
+          await file.close();
+          const cleanup = await this.retire([filePath]);
+          throw new Error((error instanceof Error ? error.message : "Writing screenshot failed.") + (cleanup.success ? "" : " " + cleanup.error));
         }
+        await file.close();
+        return filePath;
+      } finally {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        showMainWindow();
       }
-    } catch (error) {
-      console.error("Screenshot error:", error);
-      throw error;
-    } finally {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      showMainWindow();
-    }
-
-    return screenshotPath;
-  }
-
-  public async getImagePreview(filepath: string): Promise<string> {
-    try {
-      const data = await fs.promises.readFile(filepath);
-      return `data:image/png;base64,${data.toString("base64")}`;
-    } catch (error) {
-      console.error("Error reading image:", error);
-      throw error;
-    }
-  }
-
-  public async deleteScreenshot(
-    filePath: string,
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const resolvedPath = path.resolve(filePath);
-      const allowedDirectories = [
-        path.resolve(this.screenshotDir),
-        path.resolve(this.extraScreenshotDir),
-      ];
-      if (
-        !allowedDirectories.some(
-          (directory) =>
-            resolvedPath.startsWith(`${directory}${path.sep}`) &&
-            path.extname(resolvedPath).toLowerCase() === ".png",
-        )
-      ) {
-        return { success: false, error: "Invalid screenshot path" };
-      }
-
-      await fs.promises.unlink(resolvedPath);
-      this.screenshotQueue = this.screenshotQueue.filter(
-        (queuedPath) => queuedPath !== resolvedPath,
-      );
-      this.extraScreenshotQueue = this.extraScreenshotQueue.filter(
-        (queuedPath) => queuedPath !== resolvedPath,
-      );
-      return { success: true };
-    } catch (error) {
-      console.error("Error deleting file:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Delete failed",
-      };
-    }
-  }
-
-  public clearExtraScreenshotQueue(): void {
-    // Clear extraScreenshotQueue
-    this.extraScreenshotQueue.forEach((screenshotPath) => {
-      fs.unlink(screenshotPath, (err) => {
-        if (err)
-          console.error(
-            `Error deleting extra screenshot at ${screenshotPath}:`,
-            err,
-          );
-      });
     });
-    this.extraScreenshotQueue = [];
+  }
+  takeScreenshot(hideMainWindow: () => void, showMainWindow: () => void): Promise<string> {
+    // Select once before the asynchronous capture, rather than re-reading view later.
+    return this.takeIntoQueue(this.view === "queue" ? "main" : "extra", hideMainWindow, showMainWindow);
+  }
+  takeLiveScreenshot(hideMainWindow: () => void, showMainWindow: () => void): Promise<string> {
+    return this.takeIntoQueue("main", hideMainWindow, showMainWindow);
+  }
+  async getImagePreview(filePath: string): Promise<string> {
+    await this.verifyOwnedFile(filePath);
+    return "data:image/png;base64," + (await fs.promises.readFile(filePath)).toString("base64");
   }
 }

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { LiveSessionAPI, LiveSnapshot } from "./live/types";
+import type { LiveShortcutAction, OverlayWindowAPI } from "./live/overlayTypes";
 import type { AiProviderId } from "./aiProviders";
 import type {
   ResumeDocumentResponse,
@@ -12,7 +13,7 @@ import type { PublicSettings, SaveAiSettingsInput } from "./settings";
 console.log("Preload script starting...");
 
 // Types for the exposed Electron API
-interface ElectronAPI extends LiveSessionAPI {
+interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
   accountGet: () => Promise<{
     success: boolean;
     user?: { id: string; email: string; locale: "zh" | "en"; credits: number };
@@ -54,6 +55,8 @@ interface ElectronAPI extends LiveSessionAPI {
   onScreenshotTaken: (
     callback: (data: { path: string; preview: string }) => void,
   ) => () => void;
+  onScreenshotQueueChanged: (callback: () => void) => () => void;
+  onScreenshotError: (callback: (message: string) => void) => () => void;
   onResetView: (callback: () => void) => () => void;
   onSolutionProgress: (callback: (update: { requestId: string; phase: "initial" | "debug"; data: any; model: string }) => void) => () => void;
   onProcessingCancelled: (callback: () => void) => () => void;
@@ -143,12 +146,24 @@ export const PROCESSING_EVENTS = {
 console.log("Preload script is running");
 
 const electronAPI = {
-  liveSetWorkspace: (visible: boolean) => ipcRenderer.invoke("live-set-workspace", visible),
-  onLiveAskShortcut: (callback: () => void) => {
+  setOverlayInteractive: (interactive: boolean) => ipcRenderer.invoke("overlay-set-interactive", interactive),
+  setOverlayFocus: (focused: boolean) => ipcRenderer.invoke("overlay-set-focus", focused),
+  onOverlayRecenter: (callback: () => void) => {
     const listener = () => callback();
-    ipcRenderer.on("live-ask-shortcut", listener);
-    return () => ipcRenderer.removeListener("live-ask-shortcut", listener);
+    ipcRenderer.on("overlay-recenter", listener);
+    return () => ipcRenderer.removeListener("overlay-recenter", listener);
   },
+  onOverlayVisibilityChanged: (callback: (visible: boolean) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, visible: boolean) => callback(visible);
+    ipcRenderer.on("overlay-visibility", listener);
+    return () => ipcRenderer.removeListener("overlay-visibility", listener);
+  },
+  onLiveShortcut: (callback: (action: LiveShortcutAction) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, action: LiveShortcutAction) => callback(action);
+    ipcRenderer.on("live-shortcut", listener);
+    return () => ipcRenderer.removeListener("live-shortcut", listener);
+  },
+  liveSetWorkspace: (visible: boolean) => ipcRenderer.invoke("live-set-workspace", visible),
   liveGetSnapshot: () => ipcRenderer.invoke("live-get-snapshot"),
   liveStart: () => ipcRenderer.invoke("live-start"),
   livePause: () => ipcRenderer.invoke("live-pause"),
@@ -157,6 +172,7 @@ const electronAPI = {
   liveAsk: (input: Parameters<LiveSessionAPI["liveAsk"]>[0]) => ipcRenderer.invoke("live-ask", input),
   liveCancelAnswer: () => ipcRenderer.invoke("live-cancel-answer"),
   liveClearAnswers: () => ipcRenderer.invoke("live-clear-answers"),
+  liveStartOver: () => ipcRenderer.invoke("live-start-over"),
   onLiveSnapshot: (callback: (snapshot: LiveSnapshot) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, snapshot: LiveSnapshot) => callback(snapshot);
     ipcRenderer.on("live-snapshot", listener);
@@ -234,6 +250,16 @@ const electronAPI = {
     return () => {
       ipcRenderer.removeListener("screenshot-taken", subscription);
     };
+  },
+  onScreenshotQueueChanged: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("screenshots-changed", listener);
+    return () => ipcRenderer.removeListener("screenshots-changed", listener);
+  },
+  onScreenshotError: (callback: (message: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, message: string) => callback(message);
+    ipcRenderer.on("screenshot-error", listener);
+    return () => ipcRenderer.removeListener("screenshot-error", listener);
   },
   onResetView: (callback: () => void) => {
     const subscription = () => callback();

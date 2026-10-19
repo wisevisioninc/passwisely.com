@@ -21,6 +21,7 @@ export interface LiveAnswer {
   error?: string;
   contextTruncated?: boolean;
   screenshotCount: number;
+  screenshotCleanupError?: string;
 }
 export interface LiveSnapshot {
   sessionId: string;
@@ -36,6 +37,7 @@ export interface LiveSnapshot {
   platformSupported: boolean;
   platformMessage?: string;
   captureNeedsCleanup: boolean;
+  screenshotError?: string;
 }
 export type LiveResult = { success: boolean; error?: string; requestId?: string };
 export interface LiveAskInput {
@@ -44,7 +46,6 @@ export interface LiveAskInput {
 }
 export interface LiveSessionAPI {
   liveSetWorkspace: (visible: boolean) => Promise<void>;
-  onLiveAskShortcut: (listener: () => void) => () => void;
   liveGetSnapshot: () => Promise<LiveSnapshot>;
   liveStart: () => Promise<LiveResult>;
   livePause: () => Promise<LiveResult>;
@@ -53,5 +54,6 @@ export interface LiveSessionAPI {
   liveAsk: (input: LiveAskInput) => Promise<LiveResult>;
   liveCancelAnswer: () => Promise<LiveResult>;
   liveClearAnswers: () => Promise<LiveResult>;
+  liveStartOver: () => Promise<LiveResult>;
   onLiveSnapshot: (listener: (snapshot: LiveSnapshot) => void) => () => void;
 }

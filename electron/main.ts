@@ -20,6 +20,9 @@ import { initializeWindowControls, isAuthWindow } from "./windowControls";
 import { LiveSessionService } from "./live/LiveSessionService";
 import { RecallCapture } from "./live/RecallCapture";
 import { initializeLiveIpc } from "./live/ipc";
+import { OverlayWindowController, initializeOverlayIpc } from "./live/OverlayWindow";
+import type { LiveShortcutAction } from "./live/overlayTypes";
+import { MAX_SCREENSHOTS } from "./screenshotLimits";
 
 // Constants
 const isDev = !app.isPackaged;
@@ -69,6 +72,20 @@ const state = {
   } as const,
 };
 
+const overlayWindow = new OverlayWindowController(getMainWindow);
+function applyWorkspaceWindow(): void {
+  overlayWindow.setLive(state.liveWorkspace && !isAuthWindow());
+  state.shortcutsHelper?.refreshGlobalShortcuts();
+}
+function sendLiveShortcut(action: LiveShortcutAction): void {
+  const window = getMainWindow();
+  if (window && !window.isDestroyed()) window.webContents.send("live-shortcut", action);
+}
+function notifyScreenshotQueueChanged(): void {
+  const window = getMainWindow();
+  if (window && !window.isDestroyed()) window.webContents.send("screenshots-changed");
+}
+
 // Add interfaces for helper classes
 export interface IProcessingHelperDeps {
   getScreenshotHelper: () => ScreenshotHelper | null;
@@ -81,7 +98,7 @@ export interface IProcessingHelperDeps {
   setQuery: (query: any) => void;
   getScreenshotQueue: () => string[];
   getExtraScreenshotQueue: () => string[];
-  clearQueues: () => void;
+  clearQueues: () => Promise<{ success: boolean; error?: string }>;
   takeScreenshot: () => Promise<string>;
   getImagePreview: (filepath: string) => Promise<string>;
   deleteScreenshot: (
@@ -100,12 +117,12 @@ export interface IProcessingHelperDeps {
 
 export interface IShortcutsHelperDeps {
   isLiveWorkspace: () => boolean;
-  clearLiveAnswers: () => void;
+  canUseShortcuts: () => boolean;
   getMainWindow: () => BrowserWindow | null;
   takeScreenshot: () => Promise<string>;
   getImagePreview: (filepath: string) => Promise<string>;
   processingHelper: ProcessingHelper | null;
-  clearQueues: () => void;
+  clearQueues: () => Promise<{ success: boolean; error?: string }>;
   setView: (view: "queue" | "solutions" | "debug") => void;
   isVisible: () => boolean;
   toggleMainWindow: () => void;
@@ -129,7 +146,7 @@ export interface IIpcHandlerDeps {
   takeScreenshot: () => Promise<string>;
   getView: () => "queue" | "solutions" | "debug";
   toggleMainWindow: () => void;
-  clearQueues: () => void;
+  clearQueues: () => Promise<{ success: boolean; error?: string }>;
   setView: (view: "queue" | "solutions" | "debug") => void;
   moveWindowLeft: () => void;
   moveWindowRight: () => void;
@@ -147,7 +164,7 @@ let handleAuthenticationLost: () => Promise<void> = async () => {};
 function initializeHelpers() {
   state.settingsStore = new SettingsStore();
   state.accountService = new AccountService(() => { void handleAuthenticationLost(); });
-  state.screenshotHelper = new ScreenshotHelper(state.view);
+  state.screenshotHelper = new ScreenshotHelper(state.view, () => overlayWindow.getDisplay());
   state.processingHelper = new ProcessingHelper({
     getScreenshotHelper,
     getMainWindow,
@@ -187,11 +204,17 @@ function initializeHelpers() {
     createUpload: (id, signal) => state.accountService!.createRecallUpload(id, signal),
     stream: (messages, signal, update) => state.processingHelper!.streamConversation(messages, signal, update),
     language: () => state.settingsStore!.getResponseLanguage(),
-    images: async () => {
-      const paths = [...(getView() === "queue" ? getScreenshotQueue() : getExtraScreenshotQueue())];
-      if (paths.length > 5) throw new Error("一次最多使用 5 张截图。");
+    pendingScreenshots: () => state.screenshotHelper!.getPendingScreenshots(),
+    consumeScreenshots: async (paths, signal) => {
+      try { return await state.screenshotHelper!.consumeScreenshots(paths, signal); }
+      finally { notifyScreenshotQueueChanged(); }
+    },
+    images: async (paths, signal) => {
+      signal.throwIfAborted();
+      if (paths.length > MAX_SCREENSHOTS) throw new Error(`一次最多使用 ${MAX_SCREENSHOTS} 张截图。`);
       let total = 0;
       return paths.map(filepath => {
+        signal.throwIfAborted();
         if (fs.statSync(filepath).size > 16 * 1024 * 1024) throw new Error("截图超过 16 MB，请重新截取。");
         let image = nativeImage.createFromPath(filepath);
         if (image.isEmpty()) throw new Error("无法读取截图，请重新截取。");
@@ -218,8 +241,8 @@ function initializeHelpers() {
     cleanupFailed: message => { console.error("Authentication cleanup failed:", message); showMainWindow(); },
   });
   state.shortcutsHelper = new ShortcutsHelper({
-    isLiveWorkspace: () => state.liveWorkspace,
-    clearLiveAnswers: () => { state.liveSession?.clearAnswers(); },
+    isLiveWorkspace: () => overlayWindow.isLive(),
+    canUseShortcuts: () => !isAuthWindow(),
     getMainWindow,
     takeScreenshot,
     getImagePreview,
@@ -373,9 +396,6 @@ async function createWindow(): Promise<void> {
     state.mainWindow.setSkipTaskbar(true);
   }
 
-  // Set higher level always-on-top priority
-  state.mainWindow.setAlwaysOnTop(true, "screen-saver");
-
   // Ensure window appears above fullscreen applications
   state.mainWindow.setVisibleOnAllWorkspaces(true, {
     visibleOnFullScreen: true,
@@ -395,29 +415,14 @@ async function createWindow(): Promise<void> {
     state.mainWindow.moveTop();
   }
 
-  // Additional window settings after creation
-  state.mainWindow.moveTop();
-  state.mainWindow.focus();
-
-  // Add a periodic check to ensure window stays on top
-  const ensureTopMost = () => {
-    if (state.mainWindow && !state.mainWindow.isDestroyed() && !state.mainWindow.isMinimized() && state.mainWindow.isVisible()) {
-      state.mainWindow.moveTop();
-      state.mainWindow.setAlwaysOnTop(true, "screen-saver");
-    }
-  };
-
-  // Check every 1 second to ensure window stays on top
-  const topMostInterval = setInterval(ensureTopMost, 1000);
-
-  // Clear interval when window is closed
   state.mainWindow.on("closed", () => {
-    clearInterval(topMostInterval);
     void state.liveSession?.reset().catch(error => console.error("Session cleanup failed:", error.message));
   });
   state.mainWindow.webContents.on("render-process-gone", () => {
+    overlayWindow.setInteractive(false);
     void state.liveSession?.reset().catch(error => console.error("Session cleanup failed:", error.message));
   });
+  state.mainWindow.webContents.on("did-start-loading", () => overlayWindow.setInteractive(false));
 
   // Add more detailed logging for window events
   state.mainWindow.webContents.on("did-finish-load", () => {
@@ -514,6 +519,7 @@ async function createWindow(): Promise<void> {
   state.currentX = bounds.x;
   state.currentY = bounds.y;
   state.isWindowVisible = true;
+  applyWorkspaceWindow();
 }
 
 function handleWindowMove(): void {
@@ -531,6 +537,7 @@ function handleWindowResize(): void {
 }
 
 function handleWindowClosed(): void {
+  overlayWindow.reset();
   state.mainWindow = null;
   state.isWindowVisible = false;
   state.windowPosition = null;
@@ -545,31 +552,29 @@ function hideMainWindow(): void {
   state.windowPosition = { x: bounds.x, y: bounds.y };
   state.windowSize = { width: bounds.width, height: bounds.height };
   mainWindow.setIgnoreMouseEvents(true, { forward: true });
-  mainWindow.setAlwaysOnTop(true, "floating", 1);
-  mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  mainWindow.setOpacity(0);
+  if (overlayWindow.isLive()) overlayWindow.setInteractive(false);
   mainWindow.hide();
+  mainWindow.webContents.send("overlay-visibility", false);
   state.isWindowVisible = false;
+  state.shortcutsHelper?.refreshGlobalShortcuts();
 }
 
 function showMainWindow(): void {
   const mainWindow = state.mainWindow;
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  if (state.windowPosition && state.windowSize) {
+  if (!overlayWindow.isLive() && state.windowPosition && state.windowSize) {
     mainWindow.setBounds({ ...state.windowPosition, ...state.windowSize });
   }
-  mainWindow.setIgnoreMouseEvents(false);
-  mainWindow.setAlwaysOnTop(true, "screen-saver", 1);
-  mainWindow.moveTop();
+  overlayWindow.restoreMousePolicy();
   mainWindow.setVisibleOnAllWorkspaces(true, {
     visibleOnFullScreen: true,
     skipTransformProcessType: true,
   });
   mainWindow.setContentProtection(true);
-  mainWindow.setOpacity(0);
   mainWindow.showInactive();
-  mainWindow.setOpacity(1);
+  mainWindow.webContents.send("overlay-visibility", true);
   state.isWindowVisible = true;
+  state.shortcutsHelper?.refreshGlobalShortcuts();
 }
 
 function toggleMainWindow(): void {
@@ -583,6 +588,7 @@ function toggleMainWindow(): void {
 
 // Window movement functions
 function moveWindowHorizontal(updateFn: (x: number) => number): void {
+  if (overlayWindow.isLive()) { sendLiveShortcut(updateFn(0) < 0 ? "move-left" : "move-right"); return; }
   if (!state.mainWindow) return;
   state.currentX = updateFn(state.currentX);
   state.mainWindow.setPosition(
@@ -592,6 +598,7 @@ function moveWindowHorizontal(updateFn: (x: number) => number): void {
 }
 
 function moveWindowVertical(updateFn: (y: number) => number): void {
+  if (overlayWindow.isLive()) { sendLiveShortcut(updateFn(0) < 0 ? "move-up" : "move-down"); return; }
   if (!state.mainWindow) return;
 
   const newY = updateFn(state.currentY);
@@ -622,7 +629,7 @@ function moveWindowVertical(updateFn: (y: number) => number): void {
 
 // Window dimension functions
 function setWindowDimensions(width: number, height: number): void {
-  if (isAuthWindow()) return;
+  if (isAuthWindow() || overlayWindow.isLive() || !Number.isFinite(width) || !Number.isFinite(height)) return;
   const mainWindow = state.mainWindow;
   if (mainWindow && !mainWindow.isDestroyed()) {
     const currentBounds = mainWindow.getBounds();
@@ -661,7 +668,12 @@ async function initializeApp() {
   try {
     loadEnvVariables();
     initializeHelpers();
-    initializeWindowControls(getMainWindow);
+    initializeWindowControls(getMainWindow, applyWorkspaceWindow);
+    initializeOverlayIpc(overlayWindow, getMainWindow);
+    const refreshOverlayDisplay = () => overlayWindow.refreshDisplay();
+    screen.on("display-added", refreshOverlayDisplay);
+    screen.on("display-removed", refreshOverlayDisplay);
+    screen.on("display-metrics-changed", refreshOverlayDisplay);
     initializeIpcHandlers({
       getMainWindow,
       setWindowDimensions,
@@ -672,7 +684,7 @@ async function initializeApp() {
       processingHelper: state.processingHelper,
       PROCESSING_EVENTS: state.PROCESSING_EVENTS,
       takeScreenshot,
-      getView,
+      getView: () => overlayWindow.isLive() ? "queue" : getView(),
       toggleMainWindow,
       clearQueues,
       setView,
@@ -695,7 +707,7 @@ async function initializeApp() {
       accountService: state.accountService!,
       liveSession: state.liveSession!,
     });
-    initializeLiveIpc(state.liveSession!, getMainWindow, visible => { state.liveWorkspace = visible; }, () => {
+    initializeLiveIpc(state.liveSession!, getMainWindow, visible => { state.liveWorkspace = visible; applyWorkspaceWindow(); }, () => {
       if (state.accountService!.getToken()) return true;
       void handleAuthenticationLost();
       return false;
@@ -817,21 +829,27 @@ function getExtraScreenshotQueue(): string[] {
   return state.screenshotHelper?.getExtraScreenshotQueue() || [];
 }
 
-function clearQueues(): void {
-  state.screenshotHelper?.clearQueues();
-  state.problemInfo = null;
-  state.query = null;
-  setView("queue");
+async function clearQueues(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const result = await state.screenshotHelper?.clearQueues();
+    if (!result) return { success: false, error: "Screenshot helper not initialized" };
+    if (!result.success) return result;
+    state.problemInfo = null;
+    state.query = null;
+    setView("queue");
+    return result;
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Screenshot cleanup failed" };
+  } finally { notifyScreenshotQueueChanged(); }
 }
 
 async function takeScreenshot(): Promise<string> {
   if (!state.mainWindow) throw new Error("No main window available");
-  return (
-    state.screenshotHelper?.takeScreenshot(
-      () => hideMainWindow(),
-      () => showMainWindow(),
-    ) || ""
-  );
+  try {
+    return await (state.screenshotHelper?.[overlayWindow.isLive() ? "takeLiveScreenshot" : "takeScreenshot"](
+      () => hideMainWindow(), () => showMainWindow(),
+    ) || "");
+  } finally { notifyScreenshotQueueChanged(); }
 }
 
 async function getImagePreview(filepath: string): Promise<string> {
@@ -841,12 +859,9 @@ async function getImagePreview(filepath: string): Promise<string> {
 async function deleteScreenshot(
   path: string,
 ): Promise<{ success: boolean; error?: string }> {
-  return (
-    state.screenshotHelper?.deleteScreenshot(path) || {
-      success: false,
-      error: "Screenshot helper not initialized",
-    }
-  );
+  try {
+    return await (state.screenshotHelper?.deleteScreenshot(path) || { success: false, error: "Screenshot helper not initialized" });
+  } finally { notifyScreenshotQueueChanged(); }
 }
 
 function setHasDebugged(value: boolean): void {

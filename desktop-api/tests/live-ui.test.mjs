@@ -140,7 +140,8 @@ test("initial and hidden renders contain no invented transcripts or render-time 
     assert.equal($(".pw-live").attr("hidden") !== undefined, !visible);
     assert.equal($(".pw-live-segment").length, 0);
     assert.equal($(".pw-live-answer").length, 0);
-    assert.equal($("textarea[aria-label='会话提问']").val(), "");
+    assert.equal($("textarea[aria-label='会话提问']").length, 0);
+    assert.equal($(".pw-live-card").length, 0, "idle contains only the compact command bar");
     assert.equal(startCalls, 0);
     assert.equal(askCalls, 0);
   }
@@ -150,26 +151,26 @@ test("sending requires usable context; partial ASR alone is not final context", 
   const segment = { id: "fixture-segment", source: "unknown", text: "一句待确认的语音", receivedAt: 1, isFinal: false };
   for (const transcripts of [[], [segment]]) {
     const { dom: $ } = renderWorkspace(snapshot({ transcripts }));
-    assert.equal($("button[aria-label='发送问题']").prop("disabled"), true);
+    assert.equal($("button[aria-label='Solve / 生成回答']").prop("disabled"), true);
   }
   const { dom: $ } = renderWorkspace(snapshot({ transcripts: [{ ...segment, isFinal: true }] }));
-  assert.equal($("button[aria-label='发送问题']").prop("disabled"), false);
-  assert.ok($(".pw-live-segment-meta").text().includes("来源未知"));
+  assert.equal($("button[aria-label='Solve / 生成回答']").prop("disabled"), false);
+  assert.ok($(".pw-live-segment.source-unknown").attr("aria-label").includes("来源未知"));
 });
 
 test("recording consent disclosure is present before capture and generation has its own stop", () => {
   const { dom: $ } = renderWorkspace(snapshot());
-  const disclosure = $(".pw-live-audio-notice").text();
+  const disclosure = $(".pw-live-start").attr("title");
   assert.ok(disclosure.includes("发送并保存"));
   assert.ok(disclosure.includes("你的 Recall 项目"));
-  assert.ok(disclosure.includes("点击“开始会话”后才开始采集"));
+  assert.ok(disclosure.includes("点击后开始英文实时转录"));
   const answer = { id: "fixture-answer", question: "上下文是什么？", text: "已收到的部分回答", model: "fixture-model", status: "streaming", createdAt: 1, screenshotCount: 0 };
   const { dom: active } = renderWorkspace(snapshot({ captureStatus: "recording", answers: [answer] }));
-  const stopAnswer = active(".pw-live-composer-actions button.stop");
+  const stopAnswer = active("button[aria-label='停止生成']");
   assert.equal(stopAnswer.length, 1);
   assert.equal(stopAnswer.prop("disabled"), false);
   assert.ok(active(".pw-live-answer-text").text().includes(answer.text));
-  assert.equal(active("button[aria-label='发送问题']").length, 0);
+  assert.equal(active("button[aria-label='Solve / 生成回答']").prop("disabled"), true);
 });
 
 test("ending keeps session text visible and a new session discloses its clearing boundary", () => {
@@ -178,9 +179,8 @@ test("ending keeps session text visible and a new session discloses its clearing
   const { dom: $ } = renderWorkspace(snapshot({ captureStatus: "ended", transcripts: [transcript], answers: [answer] }));
   assert.ok($(".pw-live-segment").text().includes(transcript.text));
   assert.ok($(".pw-live-answer-text").text().includes(answer.text));
-  assert.equal($("button[title='开始新会话将清空当前转录和回答']").length, 1);
-  assert.ok($(".pw-live-audio-notice").text().includes("开始新会话会清空"));
-  assert.equal($("button[aria-label='发送问题']").prop("disabled"), false);
+  assert.ok($(".pw-live-start").attr("title").includes("开始新会话将清空当前转录和回答"));
+  assert.equal($("button[aria-label='Solve / 生成回答']").prop("disabled"), false);
 });
 
 function elements(node) {
@@ -192,20 +192,20 @@ const elementText = node => typeof node === "string" ? node : React.isValidEleme
 test("only starting a session changes the current answer tab; pause, resume and end preserve it", async () => {
   const previousWindow = globalThis.window;
   try {
-    for (const [captureStatus, label, method] of [["ended", "新会话", "liveStart"], ["recording", "暂停", "livePause"], ["paused", "继续", "liveResume"], ["recording", "结束", "liveStop"]]) {
+    for (const [captureStatus, label, method] of [["ended", "Start Interview", "liveStart"], ["recording", "Pause Listening / 暂停采集", "livePause"], ["paused", "Resume Listening / 继续采集", "liveResume"], ["paused", "Done", "liveStop"]]) {
       const tabs = [], panels = [];
       let nullable = 0, calls = 0;
       const react = {
         ...React, useState(initial) {
           if (initial === null) return [nullable++ === 0 ? snapshot({ captureStatus, captureNeedsCleanup: captureStatus !== "ended" }) : null, value => panels.push(value)];
-          if (initial === "transcript") return ["answers", value => tabs.push(value)];
+          if (initial === "answers") return ["answers", value => tabs.push(value)];
           return [initial, () => {}];
         }, useRef: initial => ({ current: initial }), useEffect() {}, useLayoutEffect() {}, useCallback: fn => fn,
       };
       globalThis.window = { electronAPI: { [method]: async () => { calls++; return { success: true }; } } };
       const Component = production(undefined, react).default;
       const tree = Component({ visible: true });
-      const button = elements(tree).find(node => node.type === "button" && elementText(node) === label);
+      const button = elements(tree).find(node => node.type === "button" && (elementText(node).trim() === label || node.props["aria-label"] === label));
       assert.ok(button, `production ${label} button exists`);
       button.props.onClick(); await new Promise(resolve => setImmediate(resolve));
       assert.equal(calls, 1);
@@ -231,6 +231,7 @@ test("the mounted workspace forwards ordered real snapshots to navigation even w
       globalThis.window = { electronAPI: {
         onLiveSnapshot(listener) { receive = listener; return () => {}; },
         async liveGetSnapshot() { return snapshot({ revision: 1, captureStatus: "recording" }); },
+        async liveSetWorkspace() {},
       } };
       const Component = production(undefined, react).default;
       Component({ visible, onSnapshot: next => forwarded.push(next) });
@@ -314,4 +315,201 @@ test("safe Markdown links use Electron's existing external handler and Copy keep
     if (navigatorDescriptor) Object.defineProperty(globalThis, "navigator", navigatorDescriptor);
     else delete globalThis.navigator;
   }
+});
+
+// Component controller tests run the production event handlers and mount
+// subscriptions with IPC/DOM boundaries mocked. They do not claim native hit
+// testing or pixel verification, which require the signed Mac application.
+async function clientWorkspace(initial, overrides = {}) {
+  const previous = Object.fromEntries(["window", "document", "Element", "HTMLElement"].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  const listeners = new Map(), effects = [], states = [], refs = [], cleanups = [], interactions = [];
+  let si = 0, ri = 0, mounting = true, receive, shortcut, queueChanged, screenshotError, visibilityChanged, point = null;
+  class ElementBoundary {
+    constructor(interactive = false) { this.interactive = interactive; }
+    closest() { return this.interactive ? this : null; }
+    matches() { return false; }
+    setPointerCapture() { this.captured = true; }
+    hasPointerCapture() { return !!this.captured; }
+    releasePointerCapture() { this.captured = false; }
+  }
+  const add = (name, fn) => { if (!listeners.has(name)) listeners.set(name, new Set()); listeners.get(name).add(fn); };
+  const remove = (name, fn) => listeners.get(name)?.delete(fn);
+  const api = {
+    onLiveSnapshot(fn) { receive = fn; return () => {}; }, async liveGetSnapshot() { return initial; },
+    async liveSetWorkspace() {}, onLiveShortcut(fn) { shortcut = fn; return () => {}; },
+    async getScreenshots() { return []; }, onScreenshotTaken() { return () => {}; },
+    onScreenshotQueueChanged(fn) { queueChanged = fn; return () => {}; },
+    onScreenshotError(fn) { screenshotError = fn; return () => {}; },
+    onOverlayVisibilityChanged(fn) { visibilityChanged = fn; return () => {}; },
+    onOverlayRecenter() { return () => {}; }, async setOverlayInteractive(value) { interactions.push(value); }, async setOverlayFocus() {},
+    async liveStartOver() { return { success: true }; }, async liveAsk() { return { success: true }; },
+    async liveStart() { return { success: true }; }, async liveStop() { return { success: true }; },
+    async livePause() { return { success: true }; }, async liveResume() { return { success: true }; },
+    async liveCancelAnswer() { return { success: true }; }, async triggerScreenshot() { return { success: true }; },
+    ...overrides,
+  };
+  const react = { ...React,
+    useState(initialState) {
+      const index = si++;
+      if (!(index in states)) states[index] = index === 0 ? initial : initialState;
+      return [states[index], value => { states[index] = typeof value === "function" ? value(states[index]) : value; }];
+    },
+    useRef(initialRef) { const index = ri++; if (!(index in refs)) refs[index] = { current: initialRef }; return refs[index]; },
+    useEffect(effect) { if (mounting) effects.push(effect); }, useLayoutEffect() {}, useCallback: fn => fn,
+  };
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { innerWidth: 1200, innerHeight: 800, electronAPI: api, addEventListener: add, removeEventListener: remove } });
+  Object.defineProperty(globalThis, "document", { configurable: true, value: { addEventListener: add, removeEventListener: remove, elementFromPoint: () => point, activeElement: null } });
+  Object.defineProperty(globalThis, "Element", { configurable: true, value: ElementBoundary });
+  Object.defineProperty(globalThis, "HTMLElement", { configurable: true, value: ElementBoundary });
+  const Component = production(undefined, react).default;
+  const render = () => { si = 0; ri = 0; return Component({ visible: true }); };
+  render(); mounting = false;
+  for (const effect of effects) { const cleanup = effect(); if (typeof cleanup === "function") cleanups.push(cleanup); }
+  await new Promise(resolve => setImmediate(resolve));
+  const nodes = () => elements(render());
+  const by = predicate => nodes().find(predicate);
+  const label = value => by(node => node.props["aria-label"] === value);
+  const textButton = value => by(node => node.type === "button" && elementText(node).trim().startsWith(value));
+  return {
+    render, nodes, by, label, textButton, api, interactions, ElementBoundary,
+    async tick() { await new Promise(resolve => setImmediate(resolve)); },
+    emit(next) { receive(next); }, shortcut(action) { shortcut(action); }, queueChanged() { queueChanged(); },
+    screenshotError(message) { screenshotError(message); }, visibilityChanged(shown) { visibilityChanged(shown); },
+    pointerMove(target, x = 600, y = 740) { for (const listener of listeners.get("pointermove") ?? []) listener({ target, clientX: x, clientY: y }); },
+    setPoint(next) { point = next; },
+    dispose() { for (const cleanup of cleanups.reverse()) cleanup(); for (const [key, descriptor] of Object.entries(previous)) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key]; } },
+  };
+}
+function pendingResult() { let resolve; const promise = new Promise(yes => { resolve = yes; }); return { promise, resolve }; }
+
+test("recording shows pause only; paused exposes resume and Done; cancellation and retained cleanup remain reachable", () => {
+  const { dom: recording } = renderWorkspace(snapshot({ captureStatus: "recording", captureNeedsCleanup: true }));
+  assert.equal(recording("button[title='Pause Listening']").length, 1);
+  assert.equal(recording("button[title='Stop Listening']").length, 0);
+  const { dom: paused } = renderWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }));
+  assert.equal(paused("button[title='Resume Listening']").length, 1);
+  assert.equal(paused("button[title='Stop Listening']").length, 1);
+  for (const [captureStatus, text] of [["starting", "Cancel"], ["error", "Release audio"], ["ended", "Release audio"]]) {
+    const { dom: $ } = renderWorkspace(snapshot({ captureStatus, captureNeedsCleanup: captureStatus !== "starting" }));
+    assert.ok($(".pw-live-done").text().includes(text));
+    assert.equal($(".pw-live-done").prop("disabled"), false);
+  }
+});
+
+test("Start Over and its shortcut share one guarded request; late completion cannot erase or close a newer draft", async () => {
+  let request = pendingResult(), clears = 0;
+  const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }), { liveStartOver() { clears++; return request.promise; } });
+  try {
+    h.label("手动输入问题").props.onClick();
+    h.textButton("Transcripts").props.onClick();
+    h.label("Settings / 设置").props.onClick();
+    h.textButton("Start Over").props.onClick();
+    h.label("会话提问").props.onChange({ target: { value: "newly typed while Trash waits" } });
+    request.resolve({ success: true }); await h.tick();
+    assert.equal(h.label("会话提问").props.value, "newly typed while Trash waits");
+    assert.equal(h.textButton("Transcripts").props["aria-pressed"], true, "clear retains the current tab");
+    assert.equal(clears, 1);
+    request = pendingResult(); h.shortcut("clear");
+    h.emit(snapshot({ sessionId: "new-session", revision: 20, captureStatus: "recording", captureNeedsCleanup: true }));
+    h.label("会话提问").props.onChange({ target: { value: "next session draft" } });
+    request.resolve({ success: true }); await h.tick();
+    assert.equal(clears, 2); assert.equal(h.label("会话提问").props.value, "next session draft");
+  } finally { h.dispose(); }
+});
+
+test("stopped-session Start Over clears the accepted draft and hides empty content; failed cleanup stays visible", async () => {
+  const answer = { id: "ended", question: "question", text: "retained answer", model: "fixture", status: "completed", createdAt: 1, screenshotCount: 0 };
+  let request = pendingResult();
+  const h = await clientWorkspace(snapshot({ captureStatus: "ended", answers: [answer] }), { liveStartOver: () => request.promise });
+  try {
+    h.label("手动输入问题").props.onClick();
+    h.label("会话提问").props.onChange({ target: { value: "clear this draft" } });
+    h.textButton("Start Over").props.onClick();
+    h.emit(snapshot({ captureStatus: "ended", revision: 11 }));
+    request.resolve({ success: true }); await h.tick();
+    assert.equal(h.label("会话提问").props.value, "");
+    request = pendingResult(); h.shortcut("clear"); request.resolve({ success: true }); await h.tick();
+    assert.equal(h.label("会话提问"), undefined);
+    assert.equal(h.by(node => node.props.className === "pw-live-card pw-glass"), undefined);
+    request = pendingResult(); h.shortcut("clear"); request.resolve({ success: false, error: "fixture Trash failure" }); await h.tick();
+    assert.ok(elementText(h.by(node => node.props.role === "alert")).includes("fixture Trash failure"));
+  } finally { h.dispose(); }
+});
+
+test("transient input supports Escape and Enter while an older submission cannot clear later text", async () => {
+  const request = pendingResult(), asks = [];
+  const h = await clientWorkspace(snapshot(), { liveAsk(input) { asks.push(input); return request.promise; } });
+  try {
+    h.label("手动输入问题").props.onClick();
+    h.label("会话提问").props.onChange({ target: { value: "first question" } });
+    let input = h.label("会话提问");
+    input.props.onKeyDown({ key: "Enter", shiftKey: false, nativeEvent: { isComposing: true } });
+    assert.equal(asks.length, 0);
+    input.props.onKeyDown({ key: "Enter", shiftKey: false, nativeEvent: { isComposing: false }, preventDefault() {}, stopPropagation() {} });
+    assert.equal(asks.length, 1); assert.equal(asks[0].question, "first question");
+    h.label("手动输入问题").props.onClick();
+    h.label("会话提问").props.onChange({ target: { value: "new question" } });
+    request.resolve({ success: true }); await h.tick();
+    assert.equal(h.label("会话提问").props.value, "new question");
+    h.label("会话提问").props.onKeyDown({ key: "Escape" });
+    assert.equal(h.label("会话提问"), undefined);
+  } finally { h.dispose(); }
+});
+
+test("collapse, moving and resizing retain the session; lost pointer capture releases empty-surface mouse ownership", async () => {
+  const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }));
+  try {
+    const initial = h.by(node => node.props.className === "pw-live-windows");
+    assert.equal(initial.props.style.width, 600); assert.equal(initial.props.style.bottom, 84);
+    h.label("Collapse / 收起内容").props.onClick();
+    assert.equal(h.by(node => node.props.className === "pw-live-card pw-glass"), undefined);
+    h.textButton("Expand").props.onClick();
+    const target = new h.ElementBoundary(true);
+    const drag = h.label("移动浮条");
+    drag.props.onPointerDown({ button: 0, pointerId: 1, clientX: 600, clientY: 740, currentTarget: target, preventDefault() {} });
+    drag.props.onPointerMove({ pointerId: 1, clientX: 660, clientY: 640 });
+    assert.equal(h.by(node => node.props.className === "pw-live-toolbar pw-glass").props.style.top, 640);
+    assert.equal(h.interactions.at(-1), true);
+    h.setPoint(null); drag.props.onLostPointerCapture({ clientX: 0, clientY: 0 });
+    assert.equal(h.interactions.at(-1), false);
+    const resize = h.label("调整内容宽度");
+    resize.props.onPointerDown({ button: 0, pointerId: 2, clientX: 900, clientY: 400, currentTarget: target, preventDefault() {} });
+    resize.props.onPointerMove({ pointerId: 2, clientX: 1000, clientY: 400 });
+    assert.equal(h.by(node => node.props.className === "pw-live-windows").props.style.width, 800);
+    resize.props.onPointerUp({ pointerId: 2, clientX: 0, clientY: 0, currentTarget: target });
+    assert.equal(h.interactions.at(-1), false);
+  } finally { h.dispose(); }
+});
+
+test("the settings hover timer owns its 500ms close delay and can be cancelled when entering its popover", async () => {
+  const h = await clientWorkspace(snapshot());
+  const originalSet = globalThis.setTimeout, originalClear = globalThis.clearTimeout;
+  const timers = [], cancelled = [];
+  globalThis.setTimeout = (callback, delay) => { const timer = { callback, delay }; timers.push(timer); return timer; };
+  globalThis.clearTimeout = timer => { cancelled.push(timer); };
+  try {
+    const anchor = h.by(node => node.props.className === "pw-live-settings-anchor");
+    anchor.props.onPointerEnter(); assert.ok(h.by(node => node.props.role === "menu"));
+    anchor.props.onPointerLeave(); assert.equal(timers.at(-1).delay, 500);
+    anchor.props.onPointerEnter(); assert.ok(cancelled.includes(timers.at(-1)));
+    anchor.props.onPointerLeave(); timers.at(-1).callback();
+    assert.equal(h.by(node => node.props.role === "menu"), undefined);
+  } finally { globalThis.setTimeout = originalSet; globalThis.clearTimeout = originalClear; h.dispose(); }
+});
+
+
+test("idle screenshot errors reopen the card and native visibility resets the hit-test cache", async () => {
+  const h = await clientWorkspace(snapshot());
+  try {
+    assert.equal(h.by(node => node.props.className === "pw-live-card pw-glass"), undefined);
+    h.screenshotError("fixture screen permission failure");
+    assert.ok(elementText(h.by(node => node.props.role === "alert")).includes("fixture screen permission failure"));
+    const region = new h.ElementBoundary(true);
+    h.setPoint(region); h.pointerMove(region);
+    assert.equal(h.interactions.at(-1), true);
+    h.visibilityChanged(false); assert.equal(h.interactions.at(-1), false);
+    h.visibilityChanged(true); assert.equal(h.interactions.at(-1), true);
+    h.setPoint(null); h.pointerMove(null);
+    assert.equal(h.interactions.at(-1), false);
+  } finally { h.dispose(); }
 });

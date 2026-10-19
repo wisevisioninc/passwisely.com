@@ -19,7 +19,7 @@ function production(relative, mocks = {}) {
   const module = { exports: {} };
   new Function("require", "module", "exports", javascript)(id => {
     if (id in mocks) return mocks[id];
-    if (id.startsWith("./")) return production(path.relative(root, path.resolve(path.dirname(filename), `${id}.ts`)), mocks);
+    if (id.startsWith(".")) return production(path.relative(root, path.resolve(path.dirname(filename), `${id}.ts`)), mocks);
     return require(id);
   }, module, module.exports);
   return module.exports;
@@ -52,7 +52,7 @@ test("authenticated account rejection cancels capture; cleanup failure retains o
       async start() { callbacks.onState("recording"); }, async pause() {}, async resume() {},
       async stop() { stopped++; }, async dispose() { if (failDispose) throw new Error("fixture release failed"); },
     }; },
-    stream: async () => assert.fail("no model invocation expected"), images: async () => [], language: () => "en", publish() {},
+    stream: async () => assert.fail("no model invocation expected"), pendingScreenshots: () => [], images: async () => [], consumeScreenshots: async () => ({ success: true }), language: () => "en", publish() {},
   });
   const handle = createAuthenticationLossHandler({
     cancelRequests() { cancelled++; }, notifyUnauthorized() { lost++; },
@@ -127,19 +127,31 @@ test("Programming navigation keeps the actual capture or pause state visible and
   for (const captureStatus of ["recording", "paused", "error"]) {
     const snapshot = captureSnapshot({ captureStatus });
     let stateIndex = 0;
+    const states = [];
     const mockReact = {
-      ...React, useState(initial) { return [["code", snapshot][stateIndex++] ?? initial, () => {}]; },
+      ...React, useState(initial) {
+        const index = stateIndex++;
+        if (!(index in states)) states[index] = initial;
+        return [states[index], value => { states[index] = typeof value === "function" ? value(states[index]) : value; }];
+      },
       useRef() { return { current: null }; }, useEffect() {},
     };
+    const LiveWorkspace = () => null;
     const { default: Component } = production("src/_pages/SubscribedApp.tsx", {
       react: mockReact, "@tanstack/react-query": { useQueryClient: () => ({}) },
       "../contexts/toast": { useToast: () => ({ showToast() {} }) },
       "../_pages/Queue": { default: () => null, __esModule: true },
       "../_pages/Solutions": { default: () => null, __esModule: true },
-      "../components/Live/LiveWorkspace": { default: () => null, __esModule: true },
+      "../components/Live/LiveWorkspace": { default: LiveWorkspace, __esModule: true },
       "../components/Live/CaptureStatusNotice": statusUi,
     });
-    const html = renderToStaticMarkup(Component({ credits: 1, currentLanguage: "python", currentQuery: "" }));
+    const props = { credits: 1, currentLanguage: "python", currentQuery: "" };
+    const render = () => { stateIndex = 0; return Component(props); };
+    const initial = render();
+    const live = React.Children.toArray(initial.props.children).find(child => child.type === LiveWorkspace);
+    live.props.onSnapshot(snapshot);
+    live.props.onProgramming();
+    const html = renderToStaticMarkup(render());
     const $ = parseHtml(html);
     assert.equal($("button.pw-workspace-capture").length, 1);
     assert.ok($("button.pw-workspace-capture").text().includes(statusUi.captureStatusNotice(snapshot)));

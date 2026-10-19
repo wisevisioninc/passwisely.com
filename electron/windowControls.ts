@@ -4,10 +4,11 @@ let authWindow = true;
 let restoreBounds: Electron.Rectangle | null = null;
 export function isAuthWindow() { return authWindow; }
 
-export function initializeWindowControls(getWindow: () => BrowserWindow | null) {
-  ipcMain.handle("set-auth-window", (_event, enabled: boolean) => {
+export function initializeWindowControls(getWindow: () => BrowserWindow | null, onAuthChange: () => void = () => {}) {
+  ipcMain.handle("set-auth-window", (event, enabled: boolean) => {
     const win = getWindow();
     if (!win || win.isDestroyed()) return;
+    if (event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame || typeof enabled !== "boolean") throw new Error("Untrusted window caller.");
     const changed = authWindow !== Boolean(enabled);
     authWindow = Boolean(enabled);
     win.setMinimizable(authWindow);
@@ -26,6 +27,7 @@ export function initializeWindowControls(getWindow: () => BrowserWindow | null) 
         width: Math.min(600, area.width), height: Math.min(720, area.height),
       });
     }
+    onAuthChange();
   });
   ipcMain.handle("minimize-window", () => {
     const win = getWindow();

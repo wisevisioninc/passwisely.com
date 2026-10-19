@@ -1,5 +1,6 @@
 import type { AiProviderId } from "../../electron/aiProviders"
 import type { LiveSessionAPI } from "../../electron/live/types"
+import type { OverlayWindowAPI } from "../../electron/live/overlayTypes"
 import type {
   ResumeDocumentResponse,
   ResumeProcessResponse,
@@ -11,7 +12,7 @@ import type {
   SaveAiSettingsInput,
 } from "../../electron/settings"
 
-export interface ElectronAPI extends LiveSessionAPI {
+export interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
   accountGet: () => Promise<{
     success: boolean
     user?: {
@@ -84,6 +85,8 @@ export interface ElectronAPI extends LiveSessionAPI {
   onScreenshotTaken: (
     callback: (data: { path: string; preview: string }) => void
   ) => () => void
+  onScreenshotQueueChanged: (callback: () => void) => () => void
+  onScreenshotError: (callback: (message: string) => void) => () => void
   onResetView: (callback: () => void) => () => void
   onSolutionProgress: (callback: (update: { requestId: string; phase: "initial" | "debug"; data: any; model: string }) => void) => () => void;
   onProcessingCancelled: (callback: () => void) => () => void;

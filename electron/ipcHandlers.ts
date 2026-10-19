@@ -378,8 +378,7 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
 
   ipcMain.handle("reset-queues", async () => {
     try {
-      deps.clearQueues();
-      return { success: true };
+      return await deps.clearQueues();
     } catch (error) {
       console.error("Error resetting queues:", error);
       return { error: "Failed to reset queues" };
@@ -403,13 +402,14 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
     return { success: true };
   });
 
-  ipcMain.handle("trigger-reset", () => {
+  ipcMain.handle("trigger-reset", async () => {
     try {
       // First cancel any ongoing requests
       deps.processingHelper?.cancelOngoingRequests();
 
-      // Clear all queues immediately
-      deps.clearQueues();
+      // Preserve the current view until owned screenshot cleanup succeeds.
+      const cleared = await deps.clearQueues();
+      if (!cleared.success) return cleared;
 
       // Reset view to queue
       deps.setView("queue");

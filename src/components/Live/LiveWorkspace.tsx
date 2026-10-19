@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Camera, Check, ChevronLeft, Copy, FileUser, Loader2, Mic, Monitor, Pause, Play, Radio, Settings, Square, Trash2, X } from "lucide-react";
-import type { CaptureStatus, LiveResult, LiveSessionAPI, LiveSnapshot } from "../../../electron/live/types";
+import { ArrowDown, Camera, Check, ChevronDown, ChevronLeft, Copy, GripVertical, Loader2, MessageSquare, Pause, Play, Radio, Settings, Square, X } from "lucide-react";
+import type { CaptureStatus, LiveResult, LiveSnapshot } from "../../../electron/live/types";
 import type { Screenshot } from "../../types/screenshots";
 import { AISettings } from "../shared/AISettings";
 import { ResumePanel } from "../shared/ResumePanel";
@@ -8,8 +8,8 @@ import { AnswerMarkdown } from "./AnswerMarkdown";
 import "./live.css";
 
 const CAPTURE_LABELS: Record<CaptureStatus, string> = {
-  idle: "尚未开始", starting: "正在连接", recording: "正在聆听", pausing: "正在暂停",
-  paused: "会话已暂停", resuming: "正在恢复", stopping: "正在结束", ended: "会话已结束", error: "采集不可用",
+  idle: "AI Response", starting: "Establishing connection…", recording: "Listening", pausing: "Pausing…",
+  paused: "Session paused", resuming: "Resuming…", stopping: "Stopping…", ended: "Session ended", error: "Audio unavailable",
 };
 const SOURCE_LABELS = { microphone: "麦克风", system: "系统声音", unknown: "来源未知" };
 
@@ -36,12 +36,6 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : "操作失败，请重试。";
 }
 
-function elapsedLabel(startedAt: number | undefined, endedAt: number | undefined, now: number): string {
-  const seconds = startedAt ? Math.max(0, Math.floor(((endedAt ?? now) - startedAt) / 1000)) : 0;
-  const minutes = Math.floor(seconds / 60);
-  return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
 function clockLabel(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
@@ -61,8 +55,19 @@ function CopyText({ text }: { text: string }) {
   </button>;
 }
 
-export default function LiveWorkspace({ visible, onSnapshot }: { visible: boolean; onSnapshot?: (snapshot: LiveSnapshot) => void }) {
-  const api = window.electronAPI as typeof window.electronAPI & LiveSessionAPI;
+export interface OverlayPosition { x: number; y: number }
+export function isOverlayInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && !!target.closest('[data-overlay-interactive],[role="dialog"],[role="alertdialog"],[data-radix-popper-content-wrapper],[data-overlay-global]');
+}
+export function clampOverlayPosition(position: OverlayPosition, viewport: { width: number; height: number }): OverlayPosition {
+  const half = Math.min(310, Math.max(0, (viewport.width - 40) / 2));
+  return { x: Math.max(20 + half, Math.min(position.x, viewport.width - 20 - half)), y: Math.max(20, Math.min(position.y, viewport.height - 60)) };
+}
+
+export default function LiveWorkspace({ visible, onSnapshot, onProgramming, credits = 0 }: {
+  visible: boolean; onSnapshot?: (snapshot: LiveSnapshot) => void; onProgramming?: () => void; credits?: number;
+}) {
+  const api = window.electronAPI;
   const [snapshot, setSnapshot] = useState<LiveSnapshot | null>(null);
   const snapshotRef = useRef<LiveSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,260 +75,304 @@ export default function LiveWorkspace({ visible, onSnapshot }: { visible: boolea
   const [captureBusy, setCaptureBusy] = useState(false);
   const [answerBusy, setAnswerBusy] = useState(false);
   const [screenshotBusy, setScreenshotBusy] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [includeScreenshots, setIncludeScreenshots] = useState(true);
   const [question, setQuestion] = useState("");
-  const [tab, setTab] = useState<"transcript" | "answers">("transcript");
-  const [panel, setPanel] = useState<"settings" | "resume" | null>(null);
-  const [now, setNow] = useState(Date.now());
-  const [followTranscript, setFollowTranscript] = useState(true);
-  const [followAnswers, setFollowAnswers] = useState(true);
-  const transcriptScroll = useRef<HTMLDivElement>(null);
-  const answerScroll = useRef<HTMLDivElement>(null);
+  const [tab, setTab] = useState<"transcript" | "answers">("answers");
+  const [manualInput, setManualInput] = useState(false);
+  const [retainedSession, setRetainedSession] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [panel, setPanel] = useState<"settings" | "resume" | "shortcuts" | null>(null);
+  const [viewport, setViewport] = useState({ width: window.innerWidth || 1200, height: window.innerHeight || 800 });
+  const [position, setPosition] = useState<OverlayPosition>({ x: (window.innerWidth || 1200) / 2, y: (window.innerHeight || 800) - 60 });
+  const [contentWidth, setContentWidth] = useState((window.innerWidth || 1200) / 2);
+  const [pinned, setPinned] = useState(true);
+  const scroll = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const scrollOffsets = useRef({ transcript: 0, answers: 0 });
+  const pendingScroll = useRef<number | null>(null);
   const screenshotRead = useRef(0);
   const alive = useRef(false);
   const askLocked = useRef(false);
+  const clearLocked = useRef(false);
+  const draftRevision = useRef(0);
   const captureLocked = useRef(false);
   const captureOperation = useRef(0);
   const captureAction = useRef<"start" | "normal" | "stop" | null>(null);
-  const shortcutAction = useRef<() => void>(() => {});
+  const shortcutAction = useRef<(action: string) => void>(() => {});
   const publishSnapshot = useRef(onSnapshot);
+  const visibleRef = useRef(visible);
+  const settingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const drag = useRef<{ kind: "move" | "resize"; pointerId: number; x: number; y: number; position: OverlayPosition; width: number } | null>(null);
+  const hit = useRef<boolean | null>(null);
+  const pointer = useRef<{ x: number; y: number } | null>(null);
   publishSnapshot.current = onSnapshot;
+  visibleRef.current = visible;
 
   useEffect(() => {
     alive.current = true;
-    if (typeof api.liveGetSnapshot !== "function" || typeof api.onLiveSnapshot !== "function") {
-      setError("当前版本尚未接入实时会话，请更新应用。");
-      setLoading(false);
-      return () => { alive.current = false; };
-    }
     const accept = (next: LiveSnapshot) => {
       if (!alive.current || !isNewerLiveSnapshot(snapshotRef.current, next)) return;
-      snapshotRef.current = next;
-      setSnapshot(next);
-      publishSnapshot.current?.(next);
-      setLoading(false);
+      snapshotRef.current = next; setSnapshot(next); publishSnapshot.current?.(next); setLoading(false);
+      if (["starting", "recording", "paused", "pausing", "resuming"].includes(next.captureStatus)) setRetainedSession(true);
+      if (next.error || next.screenshotError) setCollapsed(false);
     };
-    // Subscribe first: a slower initial read must not overwrite a newer IPC update.
     const unsubscribe = api.onLiveSnapshot(accept);
-    void api.liveGetSnapshot().then(accept).catch((reason) => {
-      if (alive.current && !snapshotRef.current) { setError(errorText(reason)); setLoading(false); }
-    });
-    return () => { alive.current = false; unsubscribe(); };
+    void api.liveGetSnapshot().then(accept).catch(reason => { if (alive.current && !snapshotRef.current) { setError(errorText(reason)); setLoading(false); } });
+    return () => { alive.current = false; unsubscribe(); if (settingsTimer.current) clearTimeout(settingsTimer.current); void api.liveSetWorkspace(false).catch(() => {}); };
   }, []);
-
-  useEffect(() => {
-    if (typeof api.liveSetWorkspace !== "function") return;
-    // Visibility changes send their new value. An old effect's cleanup must not
-    // send false after the next workspace has already become active.
-    void api.liveSetWorkspace(visible).catch((reason) => {
-      if (alive.current) setError(errorText(reason));
-    });
-  }, [visible]);
-
-  useEffect(() => {
-    if (typeof api.onLiveAskShortcut !== "function") return;
-    return api.onLiveAskShortcut(() => shortcutAction.current());
-  }, []);
+  useEffect(() => { void api.liveSetWorkspace(visible).catch(reason => { if (alive.current) setError(errorText(reason)); }); }, [visible]);
+  useEffect(() => api.onLiveShortcut(action => shortcutAction.current(action)), []);
 
   const refreshScreenshots = useCallback(async () => {
     const read = ++screenshotRead.current;
-    try {
-      const next = await window.electronAPI.getScreenshots();
-      if (alive.current && read === screenshotRead.current) setScreenshots(next);
-    } catch (reason) {
-      if (alive.current && read === screenshotRead.current) setError(`截图读取失败：${errorText(reason)}`);
-    }
+    try { const next = await api.getScreenshots(); if (alive.current && read === screenshotRead.current) setScreenshots(next); }
+    catch (reason) { if (alive.current && read === screenshotRead.current) setError(errorText(reason)); }
   }, []);
-
   useEffect(() => {
-    const off = window.electronAPI.onScreenshotTaken(() => { void refreshScreenshots(); });
-    const offReset = window.electronAPI.onResetView(() => { void refreshScreenshots(); });
+    const off = api.onScreenshotTaken(() => {
+      void refreshScreenshots(); hit.current = null;
+      if (visibleRef.current && pointer.current) setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(pointer.current.x, pointer.current.y)));
+    });
+    const offQueue = api.onScreenshotQueueChanged(() => { void refreshScreenshots(); });
+    const offError = api.onScreenshotError(message => { if (alive.current) { setError(message); setCollapsed(false); } });
     void refreshScreenshots();
-    return () => { screenshotRead.current++; off(); offReset(); };
+    return () => { screenshotRead.current++; off(); offQueue(); offError(); };
   }, [refreshScreenshots]);
-
   useEffect(() => { if (visible) void refreshScreenshots(); }, [visible, refreshScreenshots]);
+
+  const setInteractive = useCallback((interactive: boolean) => {
+    if (hit.current === interactive) return;
+    hit.current = interactive;
+    void api.setOverlayInteractive(interactive).catch(() => { hit.current = null; });
+  }, []);
   useEffect(() => {
-    if (!visible) return;
-    setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [visible]);
+    const move = (event: PointerEvent) => { pointer.current = { x: event.clientX, y: event.clientY }; setInteractive(visibleRef.current && (!!drag.current || isOverlayInteractiveTarget(event.target))); };
+    const leave = () => { if (!drag.current) setInteractive(false); };
+    const isField = (target: EventTarget | null) => target instanceof HTMLElement && target.matches('input,textarea,select,[contenteditable="true"]');
+    const focus = (event: FocusEvent) => {
+      if (visibleRef.current && isField(event.target) && isOverlayInteractiveTarget(event.target)) void api.setOverlayFocus(true).catch(() => {});
+    };
+    const blur = (event: FocusEvent) => {
+      // Let an in-overlay button receive its click before changing native focus.
+      if (isField(event.target) && !isField(event.relatedTarget) && !isOverlayInteractiveTarget(event.relatedTarget)) void api.setOverlayFocus(false).catch(() => {});
+    };
+    const resize = () => {
+      const next = { width: window.innerWidth, height: window.innerHeight };
+      setViewport(next); setPosition(current => clampOverlayPosition(current, next));
+      setContentWidth(current => Math.min(current, next.width - 40));
+    };
+    const recenter = () => { setPosition({ x: window.innerWidth / 2, y: window.innerHeight - 60 }); setContentWidth(window.innerWidth / 2); };
+    document.addEventListener("pointermove", move); document.addEventListener("pointerleave", leave);
+    document.addEventListener("focusin", focus); document.addEventListener("focusout", blur);
+    window.addEventListener("resize", resize);
+    const off = api.onOverlayRecenter(recenter);
+    const offVisibility = api.onOverlayVisibilityChanged(shown => {
+      hit.current = null;
+      if (!shown) { drag.current = null; setInteractive(false); }
+      else if (visibleRef.current && pointer.current) setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(pointer.current.x, pointer.current.y)));
+    });
+    return () => { document.removeEventListener("pointermove", move); document.removeEventListener("pointerleave", leave); document.removeEventListener("focusin", focus); document.removeEventListener("focusout", blur); window.removeEventListener("resize", resize); off(); offVisibility(); setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); };
+  }, [setInteractive]);
+  useEffect(() => { if (!visible) { setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); } }, [visible, setInteractive]);
 
   const transcripts = snapshot?.transcripts ?? [];
   const answers = snapshot?.answers ?? [];
-  const generating = answers.some((answer) => answer.status === "preparing" || answer.status === "streaming");
-  const hasTranscript = transcripts.some((segment) => segment.isFinal && segment.text.trim());
+  const generating = answers.some(answer => answer.status === "preparing" || answer.status === "streaming");
+  const hasTranscript = transcripts.some(segment => segment.isFinal && segment.text.trim());
   const hasContext = !!question.trim() || hasTranscript || (includeScreenshots && screenshots.length > 0);
-  const canAsk = !!snapshot && hasContext && !generating && !answerBusy && !screenshotBusy;
+  const canAsk = !!snapshot && hasContext && !generating && !answerBusy && !screenshotBusy && !clearing;
   const captureStatus = snapshot?.captureStatus ?? "idle";
-  const transitional = ["starting", "pausing", "resuming", "stopping"].includes(captureStatus);
-  const captureControls = liveCaptureControls(snapshot, captureBusy);
+  const active = ["starting", "recording", "pausing", "paused", "resuming", "stopping"].includes(captureStatus);
+  const controls = liveCaptureControls(snapshot, captureBusy);
+  const top = position.y < viewport.height / 2;
+  const cardWidth = Math.min(Math.max(Math.min(320, viewport.width - 40), contentWidth), viewport.width - 40);
+  const cardLeft = Math.max(20, Math.min(position.x - cardWidth / 2, viewport.width - cardWidth - 20));
+  const title = generating ? answers.at(-1)?.status === "preparing" ? "Thinking…" : "AI Response" : tab === "transcript" ? CAPTURE_LABELS[captureStatus] : "AI Response";
   const hasSessionText = transcripts.length > 0 || answers.length > 0;
 
+  const switchTab = (next: "transcript" | "answers") => {
+    if (scroll.current) scrollOffsets.current[tab] = scroll.current.scrollTop;
+    pendingScroll.current = scrollOffsets.current[next]; setTab(next);
+  };
   useLayoutEffect(() => {
-    if (followTranscript && visible && transcriptScroll.current) transcriptScroll.current.scrollTop = transcriptScroll.current.scrollHeight;
-  }, [snapshot?.transcripts, followTranscript, tab, panel, visible]);
-  useLayoutEffect(() => {
-    if (followAnswers && visible && answerScroll.current) answerScroll.current.scrollTop = answerScroll.current.scrollHeight;
-  }, [snapshot?.answers, followAnswers, tab, panel, visible]);
+    if (!scroll.current || !visible || panel) return;
+    if (pendingScroll.current !== null) { scroll.current.scrollTop = pendingScroll.current; pendingScroll.current = null; }
+    else if (pinned) scroll.current.scrollTop = scroll.current.scrollHeight;
+  }, [snapshot?.transcripts, snapshot?.answers, visible, panel, tab, pinned]);
+  useEffect(() => { if (manualInput && visible && !panel) { input.current?.focus(); void api.setOverlayFocus(true).catch(() => {}); } }, [manualInput, visible, panel]);
 
   const runCapture = async (operation: () => Promise<LiveResult>, action: "start" | "normal" | "stop" = "normal") => {
     const current = snapshotRef.current;
-    const releasingPending = action === "stop" && captureAction.current !== "stop" &&
-      (current?.captureStatus === "starting" || (current?.captureNeedsCleanup && ["ended", "error"].includes(current.captureStatus)));
-    if (captureLocked.current && !releasingPending) return;
-    const operationId = ++captureOperation.current;
-    captureAction.current = action;
-    captureLocked.current = true;
+    const releasing = action === "stop" && captureAction.current !== "stop" && (current?.captureStatus === "starting" || (current?.captureNeedsCleanup && ["ended", "error"].includes(current.captureStatus)));
+    if (captureLocked.current && !releasing) return;
+    const id = ++captureOperation.current; captureAction.current = action; captureLocked.current = true;
     setCaptureBusy(true); setError("");
-    try {
-      const result = await operation();
-      if (operationId !== captureOperation.current) return;
-      if (!result.success) throw new Error(result.error || "采集操作失败。");
-      if (action === "start") { setTab("transcript"); setPanel(null); }
-    } catch (reason) { if (alive.current && operationId === captureOperation.current) setError(errorText(reason)); }
-    finally {
-      if (operationId === captureOperation.current) {
-        captureLocked.current = false; captureAction.current = null;
-        if (alive.current) setCaptureBusy(false);
-      }
-    }
+    if (action === "start") { switchTab("transcript"); setPanel(null); setCollapsed(false); }
+    try { const result = await operation(); if (id === captureOperation.current && !result.success) throw new Error(result.error || "Audio operation failed."); }
+    catch (reason) { if (alive.current && id === captureOperation.current) setError(errorText(reason)); }
+    finally { if (id === captureOperation.current) { captureLocked.current = false; captureAction.current = null; if (alive.current) setCaptureBusy(false); } }
   };
-
   const submitQuestion = async () => {
-    if (!canAsk || askLocked.current) return;
-    askLocked.current = true;
-    const submittedQuestion = question;
-    setAnswerBusy(true); setError(""); setTab("answers"); setPanel(null); setFollowAnswers(true);
+    if (!canAsk || askLocked.current || clearLocked.current) return;
+    askLocked.current = true; const submitted = question, session = snapshotRef.current?.sessionId, draft = draftRevision.current;
+    setAnswerBusy(true); setError(""); switchTab("answers"); setPanel(null); setManualInput(false); setPinned(true); setCollapsed(false);
     try {
-      const result = await api.liveAsk({ question: submittedQuestion.trim(), includeScreenshots });
-      if (!result.success) throw new Error(result.error || "回答请求失败。");
-      // Preserve text typed while this request was being accepted.
-      if (alive.current) setQuestion((current) => current === submittedQuestion ? "" : current);
-    } catch (reason) { if (alive.current) setError(errorText(reason)); }
+      const result = await api.liveAsk({ question: submitted.trim(), includeScreenshots });
+      if (!result.success) throw new Error(result.error || "Answer request failed.");
+      if (alive.current && session === snapshotRef.current?.sessionId && draftRevision.current === draft) { draftRevision.current++; setQuestion(""); }
+    } catch (reason) { if (alive.current) { setError(errorText(reason)); if (submitted) setManualInput(true); } }
     finally { askLocked.current = false; if (alive.current) setAnswerBusy(false); }
   };
-  // The native shortcut listener remains mounted, while its action always reads
-  // the current draft, attachments, visibility and open panel.
-  shortcutAction.current = () => { if (visible && !panel) void submitQuestion(); };
-
-  const answerAction = async (operation: () => Promise<LiveResult>) => {
-    setError("");
-    try { const result = await operation(); if (!result.success) throw new Error(result.error || "操作失败。"); }
-    catch (reason) { if (alive.current) setError(errorText(reason)); }
-  };
-
-  const captureScreenshot = async () => {
-    if (screenshotBusy) return;
-    setScreenshotBusy(true); setError("");
+  const startOver = async () => {
+    if (clearLocked.current) return;
+    clearLocked.current = true; setClearing(true); setError("");
+    const submitted = question, session = snapshotRef.current?.sessionId, draft = draftRevision.current;
     try {
-      const result = await api.triggerScreenshot();
-      if (!result.success) throw new Error(result.error || "截图失败。");
-      await refreshScreenshots();
-    } catch (reason) { if (alive.current) setError(errorText(reason)); }
+      const result = await api.liveStartOver();
+      if (!result.success) throw new Error(result.error || "Start Over failed.");
+      if (alive.current && session === snapshotRef.current?.sessionId) {
+        if (draftRevision.current === draft) { draftRevision.current++; setQuestion(""); if (!submitted) setManualInput(false); }
+        if (!["starting", "recording", "paused", "pausing", "resuming", "stopping"].includes(snapshotRef.current?.captureStatus ?? "idle")) setRetainedSession(false);
+      }
+    } catch (reason) { if (alive.current) { setError(errorText(reason)); setCollapsed(false); } }
+    finally { clearLocked.current = false; if (alive.current) setClearing(false); }
+  };
+  const toggleSession = () => {
+    const current = snapshotRef.current;
+    if (current?.captureNeedsCleanup || (current && ["starting", "recording", "paused", "pausing", "resuming", "stopping"].includes(current.captureStatus))) void runCapture(api.liveStop, "stop");
+    else if (current?.platformSupported) void runCapture(api.liveStart, "start");
+  };
+  shortcutAction.current = action => {
+    if (!visible) return;
+    if (action === "ask" && !panel) void submitQuestion();
+    else if (action === "clear") void startOver();
+    else if (action === "toggle-session") toggleSession();
+    else if (action === "response") { switchTab("answers"); setPanel(null); setCollapsed(false); setRetainedSession(true); }
+    else if (action === "transcripts") { switchTab("transcript"); setPanel(null); setCollapsed(false); setRetainedSession(true); }
+    else if (action === "scroll-up" || action === "scroll-down") scroll.current?.scrollBy({ top: action === "scroll-up" ? -300 : 300, behavior: "smooth" });
+    else if (action.startsWith("move-")) setPosition(current => clampOverlayPosition({ x: current.x + (action === "move-left" ? -60 : action === "move-right" ? 60 : 0), y: current.y + (action === "move-up" ? -60 : action === "move-down" ? 60 : 0) }, viewport));
+  };
+  const answerAction = async (operation: () => Promise<LiveResult>) => {
+    setError(""); try { const result = await operation(); if (!result.success) throw new Error(result.error || "Operation failed."); }
+    catch (reason) { if (alive.current) { setError(errorText(reason)); setCollapsed(false); } }
+  };
+  const captureScreenshot = async () => {
+    if (screenshotBusy) return; setScreenshotBusy(true); setError("");
+    try { const result = await api.triggerScreenshot(); if (!result.success) throw new Error(result.error || "Screenshot failed."); await refreshScreenshots(); }
+    catch (reason) { if (alive.current) { setError(errorText(reason)); setCollapsed(false); } }
     finally { if (alive.current) setScreenshotBusy(false); }
   };
-
   const deleteScreenshot = async (path: string) => {
-    setError("");
-    try {
-      const result = await api.deleteScreenshot(path);
-      if (!result.success) throw new Error(result.error || "截图删除失败。");
-      await refreshScreenshots();
-    } catch (reason) { if (alive.current) setError(errorText(reason)); }
+    try { const result = await api.deleteScreenshot(path); if (!result.success) throw new Error(result.error || "Screenshot removal failed."); await refreshScreenshots(); }
+    catch (reason) { if (alive.current) setError(errorText(reason)); }
   };
+  const openSettings = () => { if (settingsTimer.current) clearTimeout(settingsTimer.current); setSettingsOpen(true); };
+  const closeSettings = () => { if (settingsTimer.current) clearTimeout(settingsTimer.current); settingsTimer.current = setTimeout(() => setSettingsOpen(false), 500); };
+  const beginDrag = (event: React.PointerEvent<HTMLElement>, kind: "move" | "resize") => {
+    if (event.button !== 0) return;
+    drag.current = { kind, pointerId: event.pointerId, x: event.clientX, y: event.clientY, position, width: cardWidth };
+    event.currentTarget.setPointerCapture(event.pointerId); setInteractive(true); event.preventDefault();
+  };
+  const moveDrag = (event: React.PointerEvent<HTMLElement>) => {
+    const current = drag.current; if (!current || current.pointerId !== event.pointerId) return;
+    if (current.kind === "move") setPosition(clampOverlayPosition({ x: current.position.x + event.clientX - current.x, y: current.position.y + event.clientY - current.y }, viewport));
+    else setContentWidth(Math.max(Math.min(320, viewport.width - 40), Math.min(viewport.width - 40, current.width + (event.clientX - current.x) * 2)));
+  };
+  const endDrag = (event: React.PointerEvent<HTMLElement>) => {
+    if (drag.current?.pointerId !== event.pointerId) return;
+    drag.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    setInteractive(isOverlayInteractiveTarget(target));
+  };
+  const dragEvents = { onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag, onLostPointerCapture: (event: React.PointerEvent<HTMLElement>) => { drag.current = null; setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(event.clientX, event.clientY))); } };
+  const showContent = !!panel || manualInput || active || retainedSession || hasSessionText || answerBusy || screenshotBusy || !!error || !!snapshot?.error || !!snapshot?.screenshotError;
 
-  return <section className="pw-live" aria-label="实时会话工作区" hidden={!visible}>
-    <header className="pw-live-toolbar">
-      <div className="pw-live-session-status">
-        <span className={`pw-live-status-dot ${captureStatus === "recording" ? "recording" : ""}`} aria-hidden="true" />
-        <div><strong role="status">{loading ? "正在读取会话" : CAPTURE_LABELS[captureStatus]}</strong>
-          <span className="pw-live-sdk"><Radio size={11} aria-hidden="true" /> Recall V2 · {snapshot?.platformSupported === false ? "当前平台不支持采集" : "英文实时转录"}</span></div>
-        <time className="pw-live-timer" title="会话时长（包含暂停时间）">{elapsedLabel(snapshot?.startedAt, snapshot?.endedAt, now)}</time>
-      </div>
-      <div className="pw-live-controls">
-        {captureControls.showStart ? <button type="button" className="pw-live-button primary" disabled={loading || captureControls.startDisabled}
-          title={hasSessionText ? "开始新会话将清空当前转录和回答" : "开始音频采集"}
-          onClick={() => void runCapture(api.liveStart, "start")}><Play size={13} />{hasSessionText || captureStatus === "ended" ? "新会话" : "开始会话"}</button>
-          : <button type="button" className="pw-live-button" disabled={transitional || captureBusy || !["recording", "paused"].includes(captureStatus)}
-            onClick={() => void runCapture(captureStatus === "paused" ? api.liveResume : api.livePause)}>
-            {transitional || captureBusy ? <Loader2 className="pw-live-spinning" size={13} /> : captureStatus === "paused" ? <Play size={13} /> : <Pause size={13} />}
-            {captureStatus === "paused" ? "继续" : transitional ? "处理中" : "暂停"}</button>}
-        <button type="button" className="pw-live-button" disabled={captureControls.stopDisabled} onClick={() => void runCapture(api.liveStop, "stop")}><Square size={12} />{captureControls.stopLabel}</button>
-        <span className="pw-live-divider" />
-        <button type="button" className={`pw-live-icon ${panel === "resume" ? "selected" : ""}`} aria-label="简历助手" title="简历助手" aria-pressed={panel === "resume"} onClick={() => setPanel(panel === "resume" ? null : "resume")}><FileUser size={16} /></button>
-        <button type="button" className={`pw-live-icon ${panel === "settings" ? "selected" : ""}`} aria-label="模型设置" title="模型设置" aria-pressed={panel === "settings"} onClick={() => setPanel(panel === "settings" ? null : "settings")}><Settings size={16} /></button>
-      </div>
-    </header>
-
-    <p className="pw-live-audio-notice">当前为英文实时 ASR，中文尚未接入。音频将发送并保存至你的 Recall 项目。点击“开始会话”后才开始采集。</p>
-    {hasSessionText && captureControls.showStart && <p className="pw-live-audio-notice">当前转录和回答仍可查看、复制及继续提问；开始新会话会清空这些内容。</p>}
-
-    {(error || snapshot?.error || snapshot?.platformMessage) && <div className="pw-live-alert" role={error || snapshot?.error ? "alert" : "status"}>
-      <span>{error || snapshot?.error || snapshot?.platformMessage}</span>
-      {error && <button type="button" className="pw-live-icon" aria-label="关闭操作提示" onClick={() => setError("")}><X size={13} /></button>}
-    </div>}
-
-    {panel ? <div className="pw-live-settings-view">
-      <button type="button" className="pw-live-back" onClick={() => setPanel(null)}><ChevronLeft size={14} />返回会话 · {panel === "settings" ? "模型设置" : "简历助手"}</button>
-      <div className="pw-live-settings-content">{panel === "settings" ? <AISettings /> : <ResumePanel />}</div>
-    </div> : <>
-      <nav className="pw-live-mobile-tabs" aria-label="会话内容">
-        <button type="button" aria-pressed={tab === "transcript"} onClick={() => setTab("transcript")}>转录 <span>{transcripts.length}</span></button>
-        <button type="button" aria-pressed={tab === "answers"} onClick={() => setTab("answers")}>AI 回答 <span>{answers.length}</span>{generating && <span className="pw-live-small-dot" />}</button>
-      </nav>
-      <div className={`pw-live-content show-${tab}`}>
-        <section className="pw-live-pane pw-live-transcript-pane" aria-label="会话转录">
-          <div className="pw-live-pane-heading"><h2>会话转录</h2><span>仅按音频来源标记</span></div>
-          <div className="pw-live-scroll" ref={transcriptScroll} onScroll={(event) => { const el = event.currentTarget; setFollowTranscript(el.scrollHeight - el.scrollTop - el.clientHeight < 50); }}>
-            {transcripts.length === 0 ? <div className="pw-live-empty"><Mic size={24} strokeWidth={1.5} /><strong>{captureStatus === "recording" ? "正在等待语音" : "听到的内容，留在这里"}</strong>
-              <p>{captureStatus === "paused" ? "会话暂停。继续后接收新的转录。" : "开始会话后显示真实转录。也可直接输入或截图提问。"}</p></div>
-              : transcripts.map((segment) => <article className={`pw-live-segment source-${segment.source} ${segment.isFinal ? "final" : "partial"}`} key={segment.id}>
-                <div className="pw-live-segment-meta"><span>{segment.source === "microphone" ? <Mic size={11} /> : segment.source === "system" ? <Monitor size={11} /> : <Radio size={11} />}{SOURCE_LABELS[segment.source]}</span>
-                  <time dateTime={new Date(segment.receivedAt).toISOString()}>{clockLabel(segment.receivedAt)}</time>{!segment.isFinal && <span className="pw-live-interim-label">识别中</span>}</div>
-                <p>{segment.text}{!segment.isFinal && <span className="pw-live-caret" aria-hidden="true" />}</p>
-              </article>)}
-            {snapshot?.transcriptTruncated && <p className="pw-live-context-note">较早转录已超出保留范围；回答使用当前保留的上下文。</p>}
-          </div>
-          {!followTranscript && <button type="button" className="pw-live-follow" onClick={() => setFollowTranscript(true)}><ArrowDown size={12} />跟随最新转录</button>}
-        </section>
-        <section className="pw-live-pane pw-live-answer-pane" aria-label="AI 回答">
-          <div className="pw-live-pane-heading"><h2>AI 回答</h2><button type="button" className="pw-live-text-button" disabled={answers.length === 0 || generating || answerBusy} onClick={() => void answerAction(api.liveClearAnswers)}><Trash2 size={12} />清空回答</button></div>
-          <div className="pw-live-scroll" ref={answerScroll} onScroll={(event) => { const el = event.currentTarget; setFollowAnswers(el.scrollHeight - el.scrollTop - el.clientHeight < 50); }}>
-            {answers.length === 0 ? <div className="pw-live-empty"><Radio size={25} strokeWidth={1.5} /><strong>把上下文变成下一步</strong><p>输入问题，或使用已定稿转录与截图。回答由你手动触发。</p></div>
-              : answers.map((answer) => <article className="pw-live-answer" key={answer.id}>
-                <div className="pw-live-question"><span>你的提问</span><p>{answer.question || "根据当前会话上下文提供建议"}</p>{answer.screenshotCount > 0 && <small><Camera size={11} />{answer.screenshotCount} 张截图</small>}</div>
-                <div className="pw-live-answer-meta"><span>{answer.status === "preparing" || answer.status === "streaming" ? <Loader2 className="pw-live-spinning" size={12} /> : <Radio size={12} />}
-                  {answer.status === "preparing" ? "正在准备上下文" : answer.status === "streaming" ? "正在回答" : answer.status === "cancelled" ? "已停止 · 保留已生成内容" : answer.status === "error" ? "回答未完成" : "回答完成"}
-                  {answer.model && <small>{answer.model}</small>}</span>{answer.text && <CopyText text={answer.text} />}</div>
-                <div className="pw-live-answer-text">{answer.text ? <AnswerMarkdown text={answer.text} /> : answer.status === "preparing" || answer.status === "streaming" ? "等待首段内容…" : "尚未生成正文。"}{answer.status === "streaming" && answer.text && <span className="pw-live-caret" aria-hidden="true" />}</div>
-                {answer.contextTruncated && <p className="pw-live-context-note">上下文超出预算，已使用最近内容。</p>}
-                {answer.error && <p className="pw-live-answer-error" role="alert">{answer.error}</p>}
-              </article>)}
-          </div>
-          {!followAnswers && <button type="button" className="pw-live-follow" onClick={() => setFollowAnswers(true)}><ArrowDown size={12} />回到最新回答</button>}
-        </section>
-      </div>
-      <form className="pw-live-composer" onSubmit={(event) => { event.preventDefault(); void submitQuestion(); }}>
-        {screenshots.length > 0 && <div className="pw-live-attachments" aria-label="待提交截图">
-          <div className="pw-live-thumbnails">{screenshots.map((shot, index) => <figure key={shot.path}>
-            <img src={shot.preview} alt={`截图 ${index + 1}`} /><figcaption>{index + 1}</figcaption>
-            <button type="button" aria-label={`删除截图 ${index + 1}`} title="删除截图" onClick={() => void deleteScreenshot(shot.path)}><X size={11} /></button>
-          </figure>)}</div>
-          <label><input type="checkbox" checked={includeScreenshots} onChange={(event) => setIncludeScreenshots(event.target.checked)} />包含 {screenshots.length} 张截图</label>
-          <span>发送后保留，可再次使用</span>
-        </div>}
-        <div className="pw-live-composer-input">
-          <textarea aria-label="会话提问" value={question} rows={2} placeholder={hasTranscript ? "基于刚才的对话提问…" : "输入问题，或添加截图…"} onChange={(event) => setQuestion(event.target.value)}
-            onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); void submitQuestion(); } }} />
-          <div className="pw-live-composer-actions"><button type="button" className="pw-live-icon" disabled={screenshotBusy} aria-label="添加屏幕截图" title="添加屏幕截图" onClick={() => void captureScreenshot()}>{screenshotBusy ? <Loader2 className="pw-live-spinning" size={17} /> : <Camera size={17} />}</button>
-            {generating ? <button type="button" className="pw-live-button stop" onClick={() => void answerAction(api.liveCancelAnswer)}><Square size={12} />停止生成</button>
-              : <button type="submit" className="pw-live-send" disabled={!canAsk} aria-label="发送问题" title="发送问题"><ArrowUp size={17} /></button>}</div>
+  return <section className="pw-live pw-overlay" aria-label="会话浮层" hidden={!visible} data-edge={top ? "top" : "bottom"} onClickCapture={event => {
+    if ((event.target as Element).closest("button")) setTimeout(() => {
+      if (!document.activeElement?.matches('input,textarea,select,[contenteditable="true"]')) void api.setOverlayFocus(false).catch(() => {});
+    }, 0);
+  }}>
+    <div className="pw-live-windows" style={{ left: cardLeft, width: cardWidth, maxHeight: Math.max(64, top ? viewport.height - position.y - 84 : position.y - 44), ...(top ? { top: position.y + 64 } : { bottom: viewport.height - position.y + 24 }) }}>
+    {showContent && !collapsed && <section className="pw-live-card pw-glass" data-overlay-interactive>
+      <header className="pw-live-card-header" {...dragEvents} onPointerDown={event => { if (!(event.target as Element).closest("button,input,textarea,a")) beginDrag(event, "move"); }}>
+        <span className="pw-live-brand" aria-label="PassWisely">P</span>
+        <nav className="pw-live-tabs" aria-label="会话内容">
+          <button type="button" aria-pressed={tab === "answers"} onClick={() => switchTab("answers")}>Response <kbd>⌥1</kbd></button>
+          <button type="button" aria-pressed={tab === "transcript"} onClick={() => switchTab("transcript")}>Transcripts <kbd>⌥2</kbd></button>
+        </nav>
+        <span className="pw-live-title" role="status">{loading ? "Connecting…" : title}</span>
+        <button type="button" className="pw-live-icon" aria-label="Collapse / 收起内容" title="Collapse" onClick={() => setCollapsed(true)}><ChevronDown size={13} /></button>
+        {generating && <button type="button" className="pw-live-icon" title="Stop generation / 停止生成" aria-label="停止生成" onClick={() => void answerAction(api.liveCancelAnswer)}><Square size={12} /></button>}
+      </header>
+      {(error || snapshot?.error || snapshot?.platformMessage || snapshot?.screenshotError) && <div className="pw-live-alert" role="alert"><span>{error || snapshot?.error || snapshot?.platformMessage || snapshot?.screenshotError}</span><button type="button" className="pw-live-icon" aria-label="关闭操作提示" onClick={() => setError("")}><X size={12} /></button></div>}
+      {panel ? <div className="pw-live-settings-view">
+        <button type="button" className="pw-live-back" onClick={() => setPanel(null)}><ChevronLeft size={13} />Back · {panel === "settings" ? "AI Settings / 语言" : panel === "resume" ? "Resume / 简历" : "Shortcuts"}</button>
+        <div className="pw-live-settings-content">{panel === "settings" ? <AISettings /> : panel === "resume" ? <ResumePanel /> : <dl className="pw-live-shortcuts">{[["Solve", "⌘ ↵"], ["Screenshot", "⌘ H"], ["Show / Hide", "⌘ B"], ["Start Over", "⌘ G"], ["Start / Stop Listening", "⌘ ⇧ \\"], ["Response / Transcripts", "⌥ 1 / ⌥ 2"], ["Scroll", "⌘ ⇧ ↑ / ↓"], ["Move", "⌘ arrows"]].map(([label, key]) => <div key={label}><dt>{label}</dt><dd>{key}</dd></div>)}</dl>}</div>
+      </div> : <>
+        <div className="pw-live-scroll" ref={scroll} style={{ maxHeight: viewport.height * 2 / 3 }} onScroll={event => { const element = event.currentTarget; const nearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 50; setPinned(nearBottom); scrollOffsets.current[tab] = element.scrollTop; }}>
+          <section className="pw-live-response-view" aria-label="AI 回答" hidden={tab !== "answers"}>
+            {answers.length === 0 ? <div className="pw-live-empty-response"><span className="pw-live-question">💡 Crack it</span><p>Ask about your screen or audio.</p></div> : answers.map(answer => <article className="pw-live-answer" key={answer.id}>
+              <div className="pw-live-question">{answer.question || "💡 Crack it"}{answer.screenshotCount > 0 && <small><Camera size={10} />{answer.screenshotCount}</small>}</div>
+              <div className="pw-live-answer-meta"><span>{answer.status === "preparing" ? "Thinking…" : answer.status === "streaming" ? "AI Response" : answer.status === "cancelled" ? "Stopped · preview retained" : answer.status === "error" ? "Response incomplete" : "AI Response"}{answer.model && <small>{answer.model}</small>}</span>{answer.text && <CopyText text={answer.text} />}</div>
+              <div className="pw-live-answer-text">{answer.text ? <AnswerMarkdown text={answer.text} /> : ["preparing", "streaming"].includes(answer.status) ? <Loader2 className="pw-live-spinning" size={14} /> : "No response text."}{answer.status === "streaming" && answer.text && <span className="pw-live-caret" aria-hidden="true" />}</div>
+              {answer.contextTruncated && <p className="pw-live-context-note">Using recent context; earlier content exceeded the limit.</p>}
+              {(answer.error || answer.screenshotCleanupError) && <p className="pw-live-answer-error" role="alert">{answer.error || answer.screenshotCleanupError}</p>}
+            </article>)}
+          </section>
+          <section className="pw-live-transcript-view" aria-label="会话转录" hidden={tab !== "transcript"}>
+            {transcripts.length === 0 ? <p className="pw-live-empty-transcript">{captureStatus === "starting" ? "Establishing connection…" : captureStatus === "paused" ? "Session paused" : captureStatus === "recording" ? "Listening for audio…" : 'Click "Start Interview" to create your first transcript.'}</p> : transcripts.map(segment => <article className={`pw-live-segment source-${segment.source} ${segment.isFinal ? "final" : "partial"}`} key={segment.id} aria-label={`${SOURCE_LABELS[segment.source]}${segment.isFinal ? "" : " · 识别中"}`} title={`${SOURCE_LABELS[segment.source]} · ${clockLabel(segment.receivedAt)}`}>
+              <p>{segment.text}</p>{segment.source === "unknown" && <small>来源未知</small>}{!segment.isFinal && <span className="pw-live-caret" aria-hidden="true" />}
+            </article>)}
+            {snapshot?.transcriptTruncated && <p className="pw-live-context-note">Earlier transcript exceeded the retention limit.</p>}
+          </section>
         </div>
-        <div className="pw-live-composer-note"><span>{hasTranscript ? "已包含本次会话转录与此前问答" : "手动问答 · 支持文字与截图"}</span><span>Enter 发送 · Shift + Enter 换行</span></div>
-      </form>
-    </>}
+        {!pinned && <button type="button" className="pw-live-follow" onClick={() => setPinned(true)}><ArrowDown size={12} />View Latest</button>}
+        {(tab === "answers" && answers.length > 0 && !generating || tab === "transcript" && !active && transcripts.length > 0) && <footer className="pw-live-bottom-actions"><span>Scroll Up <kbd>⌘ ⇧ ↑</kbd></span><button type="button" disabled={clearing} onClick={() => void startOver()}>Start Over <kbd>⌘ G</kbd></button></footer>}
+      </>}
+      <div className="pw-live-resize" role="separator" aria-label="调整内容宽度" aria-orientation="vertical" {...dragEvents} onPointerDown={event => beginDrag(event, "resize")} />
+    </section>}
+
+    <div className="pw-live-island">
+      {screenshots.length > 0 && <div className="pw-live-attachments pw-glass" data-overlay-interactive aria-label="待提交截图"><div className="pw-live-thumbnails">{screenshots.map((shot, index) => <figure key={shot.path}><img src={shot.preview} alt={`截图 ${index + 1}`} /><button type="button" aria-label={`删除截图 ${index + 1}`} onClick={() => void deleteScreenshot(shot.path)}><X size={10} /></button></figure>)}</div><label><input type="checkbox" checked={includeScreenshots} onChange={event => setIncludeScreenshots(event.target.checked)} />Include screenshots</label></div>}
+      {manualInput && !panel && <form className="pw-live-composer pw-glass" data-overlay-interactive onSubmit={event => { event.preventDefault(); void submitQuestion(); }}>
+        <textarea ref={input} aria-label="会话提问" value={question} rows={2} placeholder={active ? "Ask about your screen or audio" : "Ask about your screen"} onChange={event => { draftRevision.current++; setQuestion(event.target.value); }} onFocus={() => { void api.setOverlayFocus(true).catch(() => {}); }} onKeyDown={event => { if (event.key === "Escape") { setManualInput(false); void api.setOverlayFocus(false).catch(() => {}); } else if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); void submitQuestion(); } }} />
+        <button type="submit" disabled={!canAsk} aria-label="发送问题">Submit <kbd>↵</kbd></button>
+      </form>}
+    </div>
+    </div>
+    <div className="pw-live-toolbar pw-glass" data-overlay-interactive style={{ left: position.x, top: position.y }}>
+      <button type="button" className="pw-live-drag" aria-label="移动浮条" {...dragEvents} onPointerDown={event => beginDrag(event, "move")}><GripVertical size={13} /></button>
+      <span className="pw-live-toolbar-brand" title="PassWisely">P</span>
+      <div className="pw-live-capture-controls">
+        {controls.showStart && !snapshot?.captureNeedsCleanup ? <button type="button" className="pw-live-start" disabled={loading || controls.startDisabled} title={hasSessionText ? "开始新会话将清空当前转录和回答。音频将发送并保存至你的 Recall 项目。" : "音频将发送并保存至你的 Recall 项目；点击后开始英文实时转录。"} onClick={() => void runCapture(api.liveStart, "start")}><Play size={11} />Start Interview</button> : captureStatus === "recording" || captureStatus === "paused" ? <>
+          <button type="button" className="pw-live-pause" disabled={captureBusy} title={captureStatus === "paused" ? "Resume Listening" : "Pause Listening"} aria-label={captureStatus === "paused" ? "Resume Listening / 继续采集" : "Pause Listening / 暂停采集"} onClick={() => void runCapture(captureStatus === "paused" ? api.liveResume : api.livePause)}>{captureStatus === "paused" ? <Play size={11} /> : <Pause size={11} />}</button>
+          <span className={`pw-live-waveform ${captureStatus === "paused" ? "paused" : ""}`} role="status" aria-label={CAPTURE_LABELS[captureStatus]}><i /><i /><i /><i /><i /></span>
+          {captureStatus === "paused" && <button type="button" className="pw-live-done" disabled={controls.stopDisabled} title="Stop Listening" onClick={() => void runCapture(api.liveStop, "stop")}>Done <Square size={9} /></button>}
+        </> : <button type="button" className="pw-live-done" disabled={controls.stopDisabled} onClick={() => void runCapture(api.liveStop, "stop")}>{captureStatus === "starting" ? "Cancel" : snapshot?.captureNeedsCleanup && ["ended", "error"].includes(captureStatus) ? "Release audio" : "Stopping…"}</button>}
+      </div>
+      <span className="pw-live-divider" />
+      <button type="button" className="pw-live-command" disabled={screenshotBusy || clearing} aria-label="Screenshot / 截图" onClick={() => void captureScreenshot()}>{screenshotBusy ? <Loader2 className="pw-live-spinning" size={13} /> : <Camera size={13} />}<kbd>⌘ H</kbd></button>
+      <button type="button" className="pw-live-command" disabled={!canAsk} aria-label="Solve / 生成回答" onClick={() => void submitQuestion()}>Solve <kbd>⌘ ↵</kbd></button>
+      <button type="button" className={`pw-live-command ${manualInput ? "selected" : ""}`} title="Ask a question / 手动输入" aria-label="手动输入问题" aria-pressed={manualInput} onClick={() => { setManualInput(!manualInput); setCollapsed(false); setPanel(null); }}><MessageSquare size={14} /></button>
+      {collapsed && <button type="button" className="pw-live-command" onClick={() => setCollapsed(false)}>Expand</button>}
+      <button type="button" className="pw-live-command" onClick={() => { void api.toggleMainWindow(); }}>Show / Hide <kbd>⌘ B</kbd></button>
+      <div className="pw-live-settings-anchor" onPointerEnter={openSettings} onPointerLeave={closeSettings}>
+        <button type="button" className="pw-live-icon" aria-label="Settings / 设置" aria-expanded={settingsOpen} onClick={() => { if (settingsTimer.current) clearTimeout(settingsTimer.current); setSettingsOpen(!settingsOpen); }}><Settings size={14} /></button>
+        {settingsOpen && <div className="pw-live-menu pw-glass" role="menu"><strong>PassWisely</strong><span>{credits} credits</span>
+          <button type="button" role="menuitem" onClick={() => { setPanel("settings"); setSettingsOpen(false); }}>AI Settings · Language</button>
+          <button type="button" role="menuitem" onClick={() => { setPanel("resume"); setSettingsOpen(false); }}>Resume / 简历助手</button>
+          <button type="button" role="menuitem" onClick={() => { setSettingsOpen(false); onProgramming?.(); }}>Programming / 编程解题</button>
+          <button type="button" role="menuitem" onClick={() => { setPanel("shortcuts"); setSettingsOpen(false); }}>Keyboard Shortcuts</button>
+          <button type="button" role="menuitem" disabled={clearing} onClick={() => void startOver()}>Start Over <kbd>⌘ G</kbd></button>
+          <button type="button" role="menuitem" onClick={() => { void api.accountOpenPortal(); }}>Account & credits</button>
+          <button type="button" role="menuitem" onClick={() => { void api.accountLogout().then(result => { if (result.success) window.location.reload(); else setError(result.error || "Sign out failed."); }).catch(reason => setError(errorText(reason))); }}>Sign out</button>
+          <button type="button" role="menuitem" onClick={() => { void api.quitApp().catch(reason => setError(errorText(reason))); }}>Quit PassWisely</button>
+          <p className="pw-live-audio-notice">English ASR. 音频将发送并保存至你的 Recall 项目，用于实时转录。点击 Start Interview 后才开始采集。{hasSessionText && " 新会话会清空当前转录和回答。"}</p>
+        </div>}
+      </div>
+    </div>
   </section>;
 }

@@ -155,8 +155,9 @@ function App() {
             currentQuery={currentQuery}
             setQuery={setQuery}
           />
-          <UpdateNotification />
+          <div data-overlay-global><UpdateNotification /></div>
           <Toast
+            data-overlay-interactive
             open={toastState.open}
             onOpenChange={(open) =>
               setToastState((prev) => ({ ...prev, open }))

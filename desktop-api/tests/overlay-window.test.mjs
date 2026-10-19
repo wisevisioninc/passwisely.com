@@ -1,0 +1,200 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import vm from 'node:vm'
+import ts from 'typescript'
+
+function load(relative, electron) {
+  const exports = {};
+  const code = ts.transpileModule(fs.readFileSync(new URL(`../../electron/${relative}`, import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  vm.runInNewContext(code, { exports, require: name => { assert.equal(name, 'electron'); return electron; }, console: { log() {}, error() {} }, process: { platform: 'darwin' } });
+  return exports;
+}
+const plain = value => JSON.parse(JSON.stringify(value));
+
+function harness() {
+  let bounds = { x: 50, y: 90, width: 600, height: 600 };
+  let displays = [{ id: 1, workArea: { x: 0, y: 24, width: 1440, height: 876 } }, { id: 2, workArea: { x: -1920, y: 0, width: 1920, height: 1080 } }];
+  const calls = [], handlers = new Map(), mainFrame = {};
+  const win = {
+    isDestroyed: () => false, getBounds: () => ({ ...bounds }),
+    setBounds: value => { bounds = { ...value }; calls.push(['bounds', plain(value)]); },
+    setMovable: value => calls.push(['movable', value]), setResizable: value => calls.push(['resizable', value]),
+    setIgnoreMouseEvents: (value, options) => calls.push(['ignore', value, plain(options)]),
+    focus: () => calls.push(['focus']), blur: () => calls.push(['blur']),
+    webContents: { mainFrame, send: (...args) => calls.push(['send', ...args]) },
+  };
+  const electron = { ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) }, screen: { getAllDisplays: () => displays, getPrimaryDisplay: () => displays[0], getDisplayMatching: rect => displays.find(display => rect.x >= display.workArea.x && rect.x < display.workArea.x + display.workArea.width) || displays[0] } };
+  const { OverlayWindowController, initializeOverlayIpc } = load('live/OverlayWindow.ts', electron);
+  const controller = new OverlayWindowController(() => win);
+  initializeOverlayIpc(controller, () => win);
+  return { controller, calls, handlers, win, bounds: () => bounds, event: { sender: win.webContents, senderFrame: mainFrame }, setDisplays: value => { displays = value; } };
+}
+
+test('live native geometry fills target workArea while renderer panels and click regions remain independent', () => {
+  const h = harness(); const original = h.bounds();
+  h.controller.setLive(true);
+  assert.deepEqual(h.bounds(), { x: 0, y: 24, width: 1440, height: 876 });
+  assert.deepEqual(h.calls.at(-1), ['ignore', true, { forward: true }]);
+  h.controller.setInteractive(true);
+  assert.deepEqual(h.calls.at(-1), ['ignore', false, { forward: true }]);
+  h.controller.setInteractive(false);
+  assert.deepEqual(h.calls.at(-1), ['ignore', true, { forward: true }]);
+  assert.deepEqual(h.bounds(), { x: 0, y: 24, width: 1440, height: 876 });
+  h.controller.setLive(false);
+  assert.deepEqual(h.bounds(), original);
+  assert.deepEqual(h.calls.at(-1), ['ignore', false, { forward: true }]);
+});
+
+test('overlay IPC rejects iframe, foreign renderer and malformed controls before window mutation', () => {
+  const h = harness(); h.controller.setLive(true); const before = h.calls.length;
+  for (const channel of ['overlay-set-interactive', 'overlay-set-focus']) {
+    const handler = h.handlers.get(channel);
+    assert.throws(() => handler({ sender: {}, senderFrame: h.win.webContents.mainFrame }, true), /Untrusted/);
+    assert.throws(() => handler({ sender: h.win.webContents, senderFrame: {} }, true), /Untrusted/);
+    assert.throws(() => handler(h.event, 'true'), /Invalid/);
+  }
+  assert.equal(h.calls.length, before);
+  h.handlers.get('overlay-set-focus')(h.event, true);
+  assert.deepEqual(h.calls.at(-1), ['focus']);
+  h.handlers.get('overlay-set-focus')(h.event, false);
+  assert.deepEqual(h.calls.at(-1), ['blur']);
+});
+
+test('display removal returns full overlay to primary and recenters renderer without a polling loop', () => {
+  const h = harness();
+  h.win.setBounds({ x: -1500, y: 100, width: 600, height: 600 });
+  h.controller.setLive(true);
+  assert.equal(h.controller.getDisplay().id, 2);
+  assert.equal(h.bounds().x, -1920);
+  h.setDisplays([{ id: 1, workArea: { x: 0, y: 24, width: 1280, height: 776 } }]);
+  h.controller.refreshDisplay();
+  assert.deepEqual(h.bounds(), { x: 0, y: 24, width: 1280, height: 776 });
+  assert.deepEqual(h.calls.at(-1), ['send', 'overlay-recenter']);
+  h.controller.setLive(false);
+  assert.ok(h.bounds().x >= 0);
+  assert.ok(h.bounds().y >= 24);
+});
+
+test('non-live controls cannot make the login container click-through and new windows reset leases', () => {
+  const h = harness();
+  h.controller.setInteractive(false);
+  assert.deepEqual(h.calls.at(-1), ['ignore', false, { forward: true }]);
+  h.controller.setLive(true); h.controller.setInteractive(true); h.controller.reset();
+  h.controller.setLive(true);
+  assert.deepEqual(h.calls.at(-1), ['ignore', true, { forward: true }]);
+});
+
+test('actual main resize and move entrypoints cannot shrink or displace the live native overlay', () => {
+  const source = fs.readFileSync(new URL('../../electron/main.ts', import.meta.url), 'utf8');
+  const ast = ts.createSourceFile('main.ts', source, ts.ScriptTarget.Latest, true);
+  const names = ['setWindowDimensions', 'moveWindowHorizontal', 'moveWindowVertical'];
+  const functions = ast.statements.filter(node => ts.isFunctionDeclaration(node) && names.includes(node.name?.text)).map(node => node.getText(ast)).join('\n');
+  const calls = [], actions = [], exports = {};
+  const win = { isDestroyed: () => false, setBounds: value => calls.push(plain(value)), setPosition: (...args) => calls.push(args) };
+  const code = ts.transpileModule(`${functions}\nexports.resize=setWindowDimensions;exports.moveX=moveWindowHorizontal;exports.moveY=moveWindowVertical;`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  vm.runInNewContext(code, { exports, state: { mainWindow: win }, overlayWindow: { isLive: () => true }, isAuthWindow: () => false, sendLiveShortcut: action => actions.push(action) });
+  exports.resize(300, 80); exports.moveX(x => x - 60); exports.moveY(y => y + 60);
+  assert.deepEqual(calls, []);
+  assert.deepEqual(actions, ['move-left', 'move-down']);
+});
+
+test('preload overlay and screenshot subscriptions release exactly their own listeners', () => {
+  const listeners = new Map(), invocations = [], exposed = {};
+  const ipcRenderer = {
+    on: (channel, callback) => listeners.set(channel, callback),
+    removeListener: (channel, callback) => { assert.equal(listeners.get(channel), callback); listeners.delete(channel); },
+    invoke: async (...args) => { invocations.push(args); },
+  };
+  load('preload.ts', { ipcRenderer, contextBridge: { exposeInMainWorld: (name, value) => { exposed[name] = value; } } });
+  const api = exposed.electronAPI, received = [];
+  const removeAction = api.onLiveShortcut(value => received.push(value));
+  const removeRecenter = api.onOverlayRecenter(() => received.push('recenter'));
+  const removeQueue = api.onScreenshotQueueChanged(() => received.push('queue'));
+  const removeVisibility = api.onOverlayVisibilityChanged(value => received.push(value));
+  const removeError = api.onScreenshotError(value => received.push(value));
+  listeners.get('live-shortcut')({}, 'response'); listeners.get('overlay-recenter')(); listeners.get('screenshots-changed')();
+  listeners.get('overlay-visibility')({}, true); listeners.get('screenshot-error')({}, 'Screen permission denied');
+  assert.deepEqual(received, ['response', 'recenter', 'queue', true, 'Screen permission denied']);
+  removeAction(); removeRecenter(); removeQueue(); removeVisibility(); removeError();
+  assert.ok(!listeners.has('live-shortcut') && !listeners.has('overlay-recenter') && !listeners.has('screenshots-changed'));
+});
+
+function shortcutsHarness() {
+  const registered = new Map(), events = [], calls = [];
+  let live = true, enabled = true, visible = true, clearResult = { success: true }, captureFails = false;
+  const deps = { isLiveWorkspace: () => live, canUseShortcuts: () => enabled,
+    isVisible: () => visible,
+    getMainWindow: () => ({ isDestroyed: () => false, webContents: { send: (...args) => events.push(args) } }),
+    takeScreenshot: async () => { calls.push('capture'); if (captureFails) throw new Error('Screen permission denied'); return '/fixture.png'; }, getImagePreview: async () => 'fixture-preview',
+    processingHelper: { processScreenshots: () => calls.push('solve'), cancelOngoingRequests: () => calls.push('cancel') },
+    toggleMainWindow: () => calls.push('toggle-native'), clearQueues: async () => { calls.push('clear-screenshots'); return await clearResult; }, setView: () => calls.push('queue'),
+    moveWindowLeft: () => calls.push('native-left'), moveWindowRight() {}, moveWindowUp() {}, moveWindowDown() {},
+  };
+  const { ShortcutsHelper } = load('shortcuts.ts', { globalShortcut: { register: (key, callback) => { registered.set(key, callback); return true; }, unregister: key => registered.delete(key), unregisterAll() { registered.clear(); } }, app: { on() {} } });
+  const helper = new ShortcutsHelper(deps); helper.registerGlobalShortcuts();
+  return { registered, events, calls, setLive: value => { live = value; helper.refreshGlobalShortcuts(); }, setEnabled: value => { enabled = value; helper.refreshGlobalShortcuts(); }, setVisible: value => { visible = value; helper.refreshGlobalShortcuts(); }, setClear: value => { clearResult = value; }, failCapture: () => { captureFails = true; } };
+}
+
+test('SC shortcut map routes live actions without native geometry or programming work', async () => {
+  const h = shortcutsHarness();
+  for (const [key, action] of [['CommandOrControl+Enter', 'ask'], ['Alt+1', 'response'], ['Alt+2', 'transcripts'], ['CommandOrControl+Shift+\\', 'toggle-session'], ['CommandOrControl+Left', 'move-left'], ['CommandOrControl+Shift+Up', 'scroll-up']]) {
+    h.registered.get(key)(); assert.deepEqual(h.events.at(-1), ['live-shortcut', action]);
+  }
+  assert.deepEqual(h.calls, []);
+  h.registered.get('CommandOrControl+B')();
+  assert.deepEqual(h.calls, ['toggle-native']);
+  await h.registered.get('CommandOrControl+H')();
+  assert.deepEqual(plain(h.events.at(-1)), ['screenshot-taken', { path: '/fixture.png', preview: 'fixture-preview' }]);
+});
+
+test('clear shortcut requests the same renderer operation as its button without a second main pre-call', () => {
+  const h = shortcutsHarness();
+  h.registered.get('CommandOrControl+G')();
+  assert.deepEqual(h.events, [['live-shortcut', 'clear']]);
+  assert.deepEqual(h.calls, []);
+});
+
+test('screenshot hotkey failures use their own visible error channel rather than programming errors', async () => {
+  const h = shortcutsHarness(); h.failCapture();
+  await h.registered.get('CommandOrControl+H')();
+  assert.equal(h.events.length, 1);
+  assert.equal(h.events[0][0], 'screenshot-error');
+  assert.equal(typeof h.events[0][1], 'string');
+});
+
+test('hidden overlay retains only restore and session shortcuts, and restores visible bindings without polling', () => {
+  const h = shortcutsHarness(); h.setVisible(false);
+  assert.deepEqual([...h.registered.keys()].sort(), ['CommandOrControl+B', 'CommandOrControl+Shift+\\']);
+  h.registered.get('CommandOrControl+B')();
+  assert.deepEqual(h.calls, ['toggle-native']);
+  h.setVisible(true);
+  assert.ok(h.registered.has('CommandOrControl+H') && h.registered.has('Alt+1'));
+});
+
+test('programming reset waits for recoverable screenshot cleanup before clearing the old view', async () => {
+  const h = shortcutsHarness(); h.setLive(false); let finish;
+  h.setClear(new Promise(resolve => { finish = resolve; }));
+  const pending = h.registered.get('CommandOrControl+R')();
+  assert.deepEqual(h.calls, ['cancel', 'clear-screenshots']);
+  assert.deepEqual(h.events, []);
+  finish({ success: false, error: 'Trash unavailable' }); await pending;
+  assert.ok(!h.calls.includes('queue'));
+  assert.ok(!h.events.some(event => event[0] === 'reset-view'));
+  assert.equal(h.events.at(-1)[0], 'solution-error');
+  h.setClear({ success: true });
+  await h.registered.get('CommandOrControl+R')();
+  assert.ok(h.calls.includes('queue'));
+  assert.ok(h.events.some(event => event[0] === 'reset-view'));
+});
+
+test('programming keeps its established controls while auth never captures or mutates sessions through shortcuts', async () => {
+  const h = shortcutsHarness(); h.setLive(false);
+  h.registered.get('CommandOrControl+Enter')(); h.registered.get('CommandOrControl+Left')();
+  assert.deepEqual(h.calls, ['solve', 'native-left']);
+  const lateCapture = h.registered.get('CommandOrControl+H');
+  h.setEnabled(false);
+  assert.equal(h.registered.size, 0);
+  await lateCapture();
+  assert.deepEqual(h.calls, ['solve', 'native-left']);
+});

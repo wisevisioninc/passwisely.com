@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Code2, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import Queue from "../_pages/Queue";
 import Solutions from "../_pages/Solutions";
 import LiveWorkspace from "../components/Live/LiveWorkspace";
@@ -179,12 +179,11 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
 
   return (
     <div ref={containerRef} className="pw-workspace-shell min-h-0">
-      <nav className="pw-workspace-nav" aria-label="工作区">
-        <button type="button" aria-pressed={workspace === "live"} onClick={() => setWorkspace("live")}><Radio size={13} aria-hidden="true" />会话问答</button>
-        <button type="button" aria-pressed={workspace === "code"} onClick={() => setWorkspace("code")}><Code2 size={13} aria-hidden="true" />编程解题</button>
-        {workspace === "code" && <CaptureStatusNotice snapshot={liveSnapshot} onReturn={() => setWorkspace("live")} />}
-      </nav>
-      <LiveWorkspace visible={workspace === "live"} onSnapshot={setLiveSnapshot} />
+      {workspace === "code" && <nav className="pw-code-return" aria-label="编程模式">
+        <button type="button" onClick={() => setWorkspace("live")}><Radio size={13} aria-hidden="true" />Back to conversation / 返回会话</button>
+        <CaptureStatusNotice snapshot={liveSnapshot} onReturn={() => setWorkspace("live")} />
+      </nav>}
+      <LiveWorkspace visible={workspace === "live"} onSnapshot={setLiveSnapshot} onProgramming={() => setWorkspace("code")} credits={credits} />
       {workspace === "code" && view === "queue" && processingError && (
         <div
           role="alert"

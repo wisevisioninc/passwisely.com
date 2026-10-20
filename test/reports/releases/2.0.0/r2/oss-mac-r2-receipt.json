@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "revision": 2,
+  "artifacts": [
+    {
+      "platform": "mac-arm64",
+      "filename": "PassWisely-macOS-arm64.dmg",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r2/PassWisely-macOS-arm64.dmg",
+      "sha256": "e2492951c2c54941b3638b39a181e5b1738e1e171b1a8db85011b09b5e2f4973",
+      "bytes": 159709325,
+      "publicSha256Verified": true,
+      "created": true
+    }
+  ]
+}

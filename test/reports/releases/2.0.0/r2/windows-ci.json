@@ -120,5 +120,24 @@
       "signedBuildRequested": false
     }
   ],
-  "scope": "Locally verified exact downloaded GitHub artifact ZIP and every CI hash/size; CI evidence establishes actual hosted-Windows silent install/uninstall and isolated SDK JavaScript import. No normal GUI, login, native agent initialization, audio capture, upload or ASR validation; Windows native recording/overlay device testing remains pending. Installer is unsigned."
+  "scope": "Locally verified exact downloaded GitHub artifact ZIP and every CI hash/size; CI evidence establishes actual hosted-Windows silent install/uninstall and isolated SDK JavaScript import. No normal GUI, login, native agent initialization, audio capture, upload or ASR validation; Windows native recording/overlay device testing remains pending. Installer is unsigned.",
+  "publication": {
+    "receipt": {
+      "version": "2.0.0",
+      "revision": 2,
+      "artifacts": [
+        {
+          "platform": "windows-x64",
+          "filename": "PassWisely-Windows-x64.exe",
+          "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r2/PassWisely-Windows-x64.exe",
+          "sha256": "604cf3be66ed413da88f54cb1add56227a8ae390070453e96972cfdc56dbf2aa",
+          "bytes": 123183203,
+          "publicSha256Verified": true,
+          "created": true
+        }
+      ]
+    },
+    "wiseInstallerSha256MatchesLocal": true,
+    "scope": "Only the EXE was uploaded to a new immutable r2 object; no sidecars, r1 objects or Mac artifacts were changed. Public HEAD size and complete public GET SHA-256 were verified on Wise by the revision-aware uploader."
+  }
 }

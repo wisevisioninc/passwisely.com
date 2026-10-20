@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-20T12:28:53.040Z",
+  "migration": "0010_expiring_credit_grants.sql",
+  "migrationSha256": "a455c84274f2538dc20e000c980de8489d6e649faa0da37e4caa2d37f1d7daee",
+  "committed": true,
+  "commitEvidence": "Root previously executed --apply successfully; post-commit matching DB marker, exact function bodies and read-only RPC independently verified.",
+  "metadataBackupDirectory": "/home/jerry/.local/state/passwisely/schema-migrations/0010-fWrOGa",
+  "metadataBackupState": "before-ddl/manifest prepared describes pre-commit DDL metadata backup; it is not the migration completion authority.",
+  "tls": {
+    "encrypted": true,
+    "authorized": true,
+    "protocol": "TLSv1.3"
+  },
+  "postCommitReadOnlyChecks": {
+    "readOnly": true,
+    "markerMatches": true,
+    "functions": [
+      {
+        "signature": "protect_purchase_entitlement()",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": true
+      },
+      {
+        "signature": "credit_balance_at(uuid,timestamptz)",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": false
+      },
+      {
+        "signature": "get_credit_balance(uuid)",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": true
+      },
+      {
+        "signature": "consume_credits(uuid,integer,text,text)",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": true
+      },
+      {
+        "signature": "refund_credit_debit(uuid,text,integer,text,text)",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": true
+      },
+      {
+        "signature": "refund_credits(uuid,integer,text,text)",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": true
+      },
+      {
+        "signature": "complete_purchase(uuid,text,text,text)",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": true
+      },
+      {
+        "signature": "handle_new_user()",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": true
+      },
+      {
+        "signature": "admin_statistics()",
+        "exists": true,
+        "bodyMatches": true,
+        "securityAttributesMatch": true,
+        "permissionsMatch": true,
+        "serviceRoleExecute": true
+      }
+    ],
+    "tables": [
+      {
+        "table": "credit_grants",
+        "exists": true,
+        "rlsEnabled": true,
+        "anonNoDirectPrivileges": true,
+        "authenticatedNoDirectPrivileges": true,
+        "serviceRoleNoDirectPrivileges": true
+      },
+      {
+        "table": "credit_debit_allocations",
+        "exists": true,
+        "rlsEnabled": true,
+        "anonNoDirectPrivileges": true,
+        "authenticatedNoDirectPrivileges": true,
+        "serviceRoleNoDirectPrivileges": true
+      }
+    ],
+    "permanentCreditsSumUnchanged": true,
+    "grantsCountIsZero": true,
+    "newRpcReadableViaPostgrest": true,
+    "noNegativeProfileBalances": true,
+    "newLedgerTablesEmptyAtAudit": true
+  },
+  "success": true,
+  "scope": {
+    "ddlExecuted": 0,
+    "userRowsWritten": 0,
+    "creditGrantsCreated": 0,
+    "creditDebits": 0,
+    "creditRefunds": 0,
+    "payments": 0,
+    "credentialsCopied": false,
+    "accountDetailsRecorded": false,
+    "independentConnectionConcurrencyTested": false
+  },
+  "evidenceMinimization": "Repository report retains verification outcomes; account aggregates and balances are omitted."
+}

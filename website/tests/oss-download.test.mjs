@@ -19,7 +19,7 @@ test("verified v2 Mac ARM64 and Windows keep Intel on its honest legacy URL", ()
     const artifact = app.downloadArtifact(platform), response = app.downloadResponse(platform);
     const version = platform === "mac-x64" ? "1.2.6" : "2.0.0";
     assert.equal(artifact.version, version); assert.equal(response.status, 307);
-    assert.equal(response.headers.get("location"), `${app.OSS_RELEASE_ORIGIN}/releases/v${version}/${artifact.filename}`);
+    assert.equal(response.headers.get("location"), `${app.OSS_RELEASE_ORIGIN}/releases/v${version}/${artifact.revision > 1 ? `r${artifact.revision}/` : ""}${artifact.filename}`);
     assert.equal(response.headers.get("x-passwisely-release-version"), version);
     assert.equal(response.headers.get("x-passwisely-artifact-sha256"), platform === "mac-x64" ? null : "a".repeat(64));
   }
@@ -47,7 +47,7 @@ test("unknown and prototype names cannot select a download", () => {
 
 test("artifact owner validates version, filename, digest, length and legacy exception", () => {
   const app = application(), valid = verified().artifacts["mac-arm64"];
-  for (const patch of [{version:"../../2"}, {filename:"other.exe"}, {sha256:"invalid"}, {bytes:0}, {bytes:Infinity}, {legacy:true}]) {
+  for (const patch of [{version:"../../2"}, {filename:"other.exe"}, {sha256:"invalid"}, {bytes:0}, {bytes:Infinity}, {revision:0}, {revision:1.5}, {revision:"2/../"}, {legacy:true}]) {
     assert.throws(() => app.versionedArtifact("mac-arm64", { ...valid, ...patch }), /release artifact/);
   }
   assert.throws(() => app.versionedArtifact("unknown", valid), /release artifact/);
@@ -75,4 +75,13 @@ test("Windows download notice preserves unsigned/native-acceptance scope in both
   assert.match(app.downloadArtifact("windows-x64").notice.en, /Unsigned.*await testing/);
   assert.equal(app.downloadArtifact("mac-x64").notice, null);
   assert.throws(() => app.versionedArtifact("windows-x64", { ...verified().artifacts["windows-x64"], notice: "invalid" }), /notice/);
+});
+
+
+test("an earlier immutable revision remains addressable without an r1 suffix", () => {
+  const app = application();
+  const old = app.versionedArtifact("mac-arm64", { ...verified().artifacts["mac-arm64"], revision: 1 });
+  assert.equal(old.url, `${app.OSS_RELEASE_ORIGIN}/releases/v2.0.0/${old.filename}`);
+  const current = app.versionedArtifact("mac-arm64", { ...verified().artifacts["mac-arm64"], revision: 2 });
+  assert.equal(current.url, `${app.OSS_RELEASE_ORIGIN}/releases/v2.0.0/r2/${old.filename}`);
 });

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "artifact": "/Users/chenyejin/codebase/passwisely/release/2.0.0-r2/PassWisely-macOS-arm64.dmg",
+  "scope": "Read-only mounting, signature/notarization and full bundle-file comparison. No GUI, SDK initialization, rebuild, signing, upload or database operation.",
+  "success": true,
+  "cleanup": {
+    "attempted": true,
+    "detached": true,
+    "mountpointRetained": "/private/tmp/passwisely-r2-dmg-x1275l0w",
+    "initialCheckerErrorCode": "CLEANUP_ROOT_DEVICE_UNKNOWN",
+    "recoveredWithMatchingImageAndDevices": true,
+    "deviceSelection": {
+      "device": "/dev/disk4",
+      "contentHint": "GUID_partition_scheme",
+      "basis": "Owned image physical partition-scheme root; APFS synthesized container is separate."
+    }
+  },
+  "bytes": 159709325,
+  "sha256": "e2492951c2c54941b3638b39a181e5b1738e1e171b1a8db85011b09b5e2f4973",
+  "dmgSignature": {
+    "metadataReadable": true,
+    "developerId": true,
+    "team": "VFF94RK9TN",
+    "timestamp": true,
+    "runtime": false,
+    "strictValid": true
+  },
+  "dmgStaplerValid": true,
+  "dmgGatekeeper": {
+    "accepted": true,
+    "notarizedDeveloperId": true
+  },
+  "mountOwner": {
+    "image": "/Users/chenyejin/codebase/passwisely/release/2.0.0-r2/PassWisely-macOS-arm64.dmg",
+    "mountpoint": "/private/tmp/passwisely-r2-dmg-x1275l0w",
+    "devices": [
+      "/dev/disk4",
+      "/dev/disk4s1",
+      "/dev/disk5",
+      "/dev/disk5s1"
+    ],
+    "readOnlyRequested": true,
+    "readOnlyObserved": true
+  },
+  "mountedAsarSha256": "735229d3b56f7b33bb51e836f762fffb1e70069d542631e798770003dfac4f56",
+  "referenceAsarSha256": "735229d3b56f7b33bb51e836f762fffb1e70069d542631e798770003dfac4f56",
+  "asarMatched": true,
+  "bundleFiles": {
+    "sourceEntries": 327,
+    "mountedEntries": 327,
+    "exactMatched": true,
+    "fingerprint": "0149a0ae91388d09ad761f06f5f12ece725aaa2ea3996638f3a0941d388d1d63"
+  },
+  "mountedAppSignature": {
+    "metadataReadable": true,
+    "developerId": true,
+    "team": "VFF94RK9TN",
+    "timestamp": true,
+    "runtime": true,
+    "strictDeepValid": true
+  },
+  "mountedAppStaplerValid": true,
+  "mountedAppGatekeeper": {
+    "accepted": true,
+    "notarizedDeveloperId": true
+  },
+  "version": {
+    "short": "2.0.0",
+    "bundle": "2.0.0"
+  },
+  "checkedAt": "2026-10-20T12:10:57.078236+00:00",
+  "appSourceCommit": "6f1779dc9bb74aebb79c13ca15e75f1f13d9e936",
+  "referenceAppReportSha256": "3502cc49531b4df26e275ce4f97894f0d56ba39cb860ba8581225cfc846d6ebe"
+}

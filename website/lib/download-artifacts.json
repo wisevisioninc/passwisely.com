@@ -4,10 +4,11 @@
     "mac-arm64": {
       "version": "2.0.0",
       "filename": "PassWisely-macOS-arm64.dmg",
-      "sha256": null,
-      "bytes": null,
+      "sha256": "e2492951c2c54941b3638b39a181e5b1738e1e171b1a8db85011b09b5e2f4973",
+      "bytes": 159709325,
       "legacy": false,
-      "liveAudio": "included"
+      "liveAudio": "included",
+      "revision": 2
     },
     "mac-x64": {
       "version": "1.2.6",
@@ -20,14 +21,15 @@
     "windows-x64": {
       "version": "2.0.0",
       "filename": "PassWisely-Windows-x64.exe",
-      "sha256": null,
-      "bytes": null,
+      "sha256": "604cf3be66ed413da88f54cb1add56227a8ae390070453e96972cfdc56dbf2aa",
+      "bytes": 123183203,
       "legacy": false,
       "liveAudio": "included",
       "notice": {
         "zh": "Windows 安装包未签名，录音与浮层交互尚待 Windows 实机验证。",
         "en": "Unsigned Windows installer. Audio and overlay interactions await testing on a Windows device."
-      }
+      },
+      "revision": 2
     }
   }
 }

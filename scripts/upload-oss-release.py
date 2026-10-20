@@ -119,6 +119,7 @@ def main() -> None:
     parser.add_argument("--env-file", type=Path, required=True)
     parser.add_argument("--release-dir", type=Path, required=True)
     parser.add_argument("--version", required=True)
+    parser.add_argument("--revision", type=int, default=1)
     parser.add_argument("--bucket", default="passwisely-releases-prod")
     parser.add_argument("--endpoint", default="oss-cn-beijing.aliyuncs.com")
     parser.add_argument("--platform", action="append", choices=tuple(INSTALLERS))
@@ -126,6 +127,8 @@ def main() -> None:
     args = parser.parse_args()
     if not re.fullmatch(r"\d+\.\d+\.\d+", args.version):
         raise SystemExit("Version must be major.minor.patch.")
+    if not 1 <= args.revision <= 2147483647:
+        raise SystemExit("Revision must be a positive 32-bit integer.")
     platforms = args.platform or list(INSTALLERS)
     if len(set(platforms)) != len(platforms):
         raise SystemExit("Duplicate platform selection.")
@@ -144,7 +147,8 @@ def main() -> None:
 
     artifacts = []
     for platform, source in sources:
-        key = f"releases/v{args.version}/{source.name}"
+        revision_path = f"r{args.revision}/" if args.revision > 1 else ""
+        key = f"releases/v{args.version}/{revision_path}{source.name}"
         before, digest = source.stat(), sha256_file(source)
         created = upload(source, key, args.bucket, args.endpoint, access_key_id, access_key_secret)
         after = source.stat()
@@ -156,7 +160,7 @@ def main() -> None:
         print(f"verified={key} created={created} bytes={after.st_size} sha256={digest}")
     if args.manifest_out:
         with args.manifest_out.open("x", encoding="utf-8") as stream:
-            json.dump({"version": args.version, "artifacts": artifacts}, stream, indent=2)
+            json.dump({"version": args.version, "revision": args.revision, "artifacts": artifacts}, stream, indent=2)
             stream.write("\n")
 
 

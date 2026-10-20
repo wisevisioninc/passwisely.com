@@ -1,0 +1,415 @@
+{
+  "checkedAt": "2026-10-20T12:07:23.609Z",
+  "app": "/Users/chenyejin/codebase/passwisely/release/2.0.0-r2/mac-arm64/PassWisely.app",
+  "appSourceCommit": "6f1779dc9bb74aebb79c13ca15e75f1f13d9e936",
+  "sourceProvenance": "Build owner pinned the compiled assets to this full commit. Verification compares packaged/current compiled bytes and separately records committed/worktree source changes; it does not recompile.",
+  "scope": "Read-only bundle checks; packaged Electron is used only in guarded Node mode to require the Recall import closure. No GUI, SDK init, recording, provider requests, signing, notarization submission or DMG checks.",
+  "status": "verified",
+  "outerSignature": {
+    "commandSucceeded": true,
+    "developerId": true,
+    "team": "VFF94RK9TN",
+    "timestampPresent": true,
+    "runtime": true
+  },
+  "currentHead": "916789b0a21ad99566ed815425a3ba665a13c95e",
+  "sourceChangesSinceAppBuild": [
+    "README.md",
+    "scripts/upload-oss-release.py",
+    "src/components/Queue/QueueCommands.tsx",
+    "src/components/Solutions/SolutionCommands.tsx",
+    "website/README.md",
+    "website/app/LandingPage.tsx",
+    "website/app/PassWiselySite.tsx",
+    "website/app/api/auth/login/route.ts",
+    "website/app/api/auth/register/route.ts",
+    "website/app/api/checkout/route.ts",
+    "website/app/api/resume/agents/route.ts",
+    "website/app/api/stripe/webhook/route.ts",
+    "website/app/landing.css",
+    "website/lib/auth.ts",
+    "website/lib/download-artifacts.json",
+    "website/lib/downloads.ts",
+    "website/lib/payments/catalog.ts",
+    "website/lib/payments/orders.ts",
+    "website/lib/stripe.ts",
+    "website/lib/supabase.ts",
+    "website/package.json",
+    "website/pnpm-lock.yaml",
+    "website/supabase/migrations/0010_expiring_credit_grants.sql",
+    "website/tests/credit-balance.test.mjs",
+    "website/tests/live-account.mjs",
+    "website/tests/monthly-credit-ledger.test.mjs",
+    "website/tests/oss-download.test.mjs",
+    "website/tests/password-management.test.mjs",
+    "website/tests/pricing-checkout.test.mjs",
+    "website/tests/rendered-html.test.mjs"
+  ],
+  "committedChangesSinceAppBuild": [
+    "README.md",
+    "src/components/Queue/QueueCommands.tsx",
+    "src/components/Solutions/SolutionCommands.tsx",
+    "website/README.md",
+    "website/app/LandingPage.tsx",
+    "website/app/PassWiselySite.tsx",
+    "website/app/api/auth/login/route.ts",
+    "website/app/api/auth/register/route.ts",
+    "website/app/api/checkout/route.ts",
+    "website/app/api/resume/agents/route.ts",
+    "website/app/api/stripe/webhook/route.ts",
+    "website/app/landing.css",
+    "website/lib/auth.ts",
+    "website/lib/payments/catalog.ts",
+    "website/lib/payments/orders.ts",
+    "website/lib/stripe.ts",
+    "website/lib/supabase.ts",
+    "website/package.json",
+    "website/pnpm-lock.yaml",
+    "website/supabase/migrations/0010_expiring_credit_grants.sql",
+    "website/tests/credit-balance.test.mjs",
+    "website/tests/live-account.mjs",
+    "website/tests/monthly-credit-ledger.test.mjs",
+    "website/tests/password-management.test.mjs",
+    "website/tests/pricing-checkout.test.mjs",
+    "website/tests/rendered-html.test.mjs"
+  ],
+  "sourceEquivalence": {
+    "relevantAppSourceUnchanged": false,
+    "relevantChangedPaths": [
+      "src/components/Queue/QueueCommands.tsx",
+      "src/components/Solutions/SolutionCommands.tsx"
+    ],
+    "normalizedTranspileChecks": [
+      {
+        "path": "src/components/Queue/QueueCommands.tsx",
+        "sourceBeforeSha256": "6d2036288b959eb407370be842024b5def3a388effef19cee79b9527b2b1376d",
+        "sourceNowSha256": "80ee7315902db88a953e847157431332f7eb72d8c130a88a26e2cf744cc66a53",
+        "transpiledEquivalent": true,
+        "compilerVersion": "5.8.3"
+      },
+      {
+        "path": "src/components/Solutions/SolutionCommands.tsx",
+        "sourceBeforeSha256": "7b768b203f6a7bf3143aabe7d0cb021847907a0821a5433f0d5402f4077442f9",
+        "sourceNowSha256": "f5e8f422136f96890ce5e3a56370716d6260003454f019bfc6214936cc603218",
+        "transpiledEquivalent": true,
+        "compilerVersion": "5.8.3"
+      }
+    ],
+    "boundary": "Source is not claimed identical: known removed dead JSX comments are compared using TypeScript transpilation with removeComments=true. This is separate from byte equality of the packaged/current compiled assets, and is not a new Vite build.",
+    "relevantAppSourceCompatible": true,
+    "untrackedAppSourcePaths": []
+  },
+  "metadata": {
+    "bundleId": "com.passwisely.desktop",
+    "shortVersion": "2.0.0",
+    "version": "2.0.0",
+    "lsEnvironmentPresent": true,
+    "lsEnvironmentIsOnlyElectronDefault": true,
+    "loopbackApiInLsEnvironment": false,
+    "packageVersion": "2.0.0",
+    "sdkVersion": "2.0.39"
+  },
+  "asar": {
+    "sha256": "735229d3b56f7b33bb51e836f762fffb1e70069d542631e798770003dfac4f56",
+    "bytes": 89969873,
+    "unchangedDuringVerification": true
+  },
+  "assets": {
+    "manifest": [
+      {
+        "path": "dist/assets/index-B6ZbWSPo.js",
+        "sha256": "e2faa8ef2b2ad29b586906988475197f34324aad02285fc982ab5ae513a26a9e",
+        "bytes": 1127543
+      },
+      {
+        "path": "dist/assets/index-CEMhtHdV.css",
+        "sha256": "584ad2eb2e21dee8970711cc83477645307188dac8785b25822e01a6420205e2",
+        "bytes": 45647
+      },
+      {
+        "path": "dist/favicon.ico",
+        "sha256": "c0fbb20ca9df072a524ebe810b617a584d11238e1f0b9be6bf97e0894778a113",
+        "bytes": 19603
+      },
+      {
+        "path": "dist/fonts/Inter.ttf",
+        "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+        "bytes": 876576
+      },
+      {
+        "path": "dist/fonts/OFL-Inter.txt",
+        "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57",
+        "bytes": 4377
+      },
+      {
+        "path": "dist/fonts/SOURCE.json",
+        "sha256": "ac8d71d9f0290502bcd5db712d0d6fe04b1b5a4b12f1f9f0182a06cb78fdd230",
+        "bytes": 401
+      },
+      {
+        "path": "dist/index.html",
+        "sha256": "21e0665cf7e582798a5f111a9e61e7e4725baa2ff9c0480f6737929c3a35f20c",
+        "bytes": 653
+      },
+      {
+        "path": "dist/logo192.png",
+        "sha256": "c4dc37b969e1e2d0fdbe276b5d58e0fcc176a760c1af5de6c860704465999dbd",
+        "bytes": 24382
+      },
+      {
+        "path": "dist/logo512.png",
+        "sha256": "63376bcd0e3c82e60d482be68577a5d73a26ebc088dd72827783376e68a66273",
+        "bytes": 102448
+      },
+      {
+        "path": "dist-electron/electron/ProcessingHelper.js",
+        "sha256": "3d25539b9805e86540cf8483d7800317ccacd8bf2e86dc7219203d213b262b56",
+        "bytes": 68380
+      },
+      {
+        "path": "dist-electron/electron/ResumeHelper.js",
+        "sha256": "c1bdd56a82e60218b00c2c8ba708777218d897b5f7560a65c21ec63b15106784",
+        "bytes": 11981
+      },
+      {
+        "path": "dist-electron/electron/ScreenshotHelper.js",
+        "sha256": "9b1a0d493155ac9f0a90be10fd68fd90557e1df18394859e2b1412a0b40245b2",
+        "bytes": 8726
+      },
+      {
+        "path": "dist-electron/electron/WindowCaptureProtection.js",
+        "sha256": "f9df143224edc9bbd5a63fbf7a0df11c75b7bcda5380042b487e0d5ae3887650",
+        "bytes": 1369
+      },
+      {
+        "path": "dist-electron/electron/WindowVisibility.js",
+        "sha256": "a030e0b818be32fb80a4bd068ba7aa75f107a1425935ad4b864445e4dd5c5ea6",
+        "bytes": 3910
+      },
+      {
+        "path": "dist-electron/electron/WiseGrpcClient.js",
+        "sha256": "0432e73ae4ec28306711cf02787cf8072a4fc1d5011c6449b7271874dba916d1",
+        "bytes": 10608
+      },
+      {
+        "path": "dist-electron/electron/account.js",
+        "sha256": "d1512ea3fe8565438fb6f5bb161bf7d11d02713a5a4b532d822ac28bab61c0ab",
+        "bytes": 11487
+      },
+      {
+        "path": "dist-electron/electron/aiProviders.js",
+        "sha256": "160111946ac182686c1c47958e44775f2871cbdf0d40ba952b7e66c591f5ad1c",
+        "bytes": 5373
+      },
+      {
+        "path": "dist-electron/electron/autoUpdater.js",
+        "sha256": "fabfa457b1381a18677d04ac54bb03eba69d37c6f99f96bf9b04976c31f16fc0",
+        "bytes": 4390
+      },
+      {
+        "path": "dist-electron/electron/ipcHandlers.js",
+        "sha256": "dea4b95a06e8639ab2d0cc4e924ddeb3fc0bcfcb9b9739c88d75c47dabe3788d",
+        "bytes": 16951
+      },
+      {
+        "path": "dist-electron/electron/languages.js",
+        "sha256": "6f37d3701586c3955d8d153f0f8344f863285b2ffd9c7aba3f39db161a05fc2f",
+        "bytes": 6334
+      },
+      {
+        "path": "dist-electron/electron/live/AuthenticationLoss.js",
+        "sha256": "4febd30a271a2019066d59c75b7e1637c924204099de6eb0561d20faa383e4f7",
+        "bytes": 872
+      },
+      {
+        "path": "dist-electron/electron/live/ConversationContext.js",
+        "sha256": "638f92b44f2b1f58eae3a85618a7a5d31cdce1e456c16347d80bf9a0913101a7",
+        "bytes": 8311
+      },
+      {
+        "path": "dist-electron/electron/live/LiveSessionService.js",
+        "sha256": "9a340ce31a0c61217ffddda8f37e9d37e5a5a9ab20b0499ff528690f334600df",
+        "bytes": 21904
+      },
+      {
+        "path": "dist-electron/electron/live/OverlayWindow.js",
+        "sha256": "1080a91a4366236570def2c447b044b36a05f7c819857fe87ab30bd921b4ba94",
+        "bytes": 7419
+      },
+      {
+        "path": "dist-electron/electron/live/RecallCapture.js",
+        "sha256": "d7d9c69e89b9226dd3f824dec956f8a4febd8db7ef2c7a9a19cc490d80d02a1e",
+        "bytes": 22136
+      },
+      {
+        "path": "dist-electron/electron/live/TranscriptText.js",
+        "sha256": "eedc2fc8260fb514b9115d9a1c354e284d2d009e48b183ca641c6d2a5bbeec4f",
+        "bytes": 1300
+      },
+      {
+        "path": "dist-electron/electron/live/WindowCloseGuard.js",
+        "sha256": "8d9cc5b1fd597fc0c503583505071a6e3b574d170f67f8528a18b2ccbc84f7fd",
+        "bytes": 1173
+      },
+      {
+        "path": "dist-electron/electron/live/ipc.js",
+        "sha256": "423990cbee788b8728ddb9e16589a7f68f1839cc9bf2d078fa6e0feda48413d8",
+        "bytes": 3137
+      },
+      {
+        "path": "dist-electron/electron/live/overlayTypes.js",
+        "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230",
+        "bytes": 77
+      },
+      {
+        "path": "dist-electron/electron/live/recallTranscript.js",
+        "sha256": "1fd8d68d5c3e9279cf1a8ee904d97f4f42dcf2379380c4005487d275a620a410",
+        "bytes": 9174
+      },
+      {
+        "path": "dist-electron/electron/live/transcription.js",
+        "sha256": "9cff5dd06919e1720c148360c23dd5de8e7e1ce1af4283de7d5284096bb20d74",
+        "bytes": 1687
+      },
+      {
+        "path": "dist-electron/electron/live/types.js",
+        "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230",
+        "bytes": 77
+      },
+      {
+        "path": "dist-electron/electron/main.js",
+        "sha256": "bb4fc3ddef9fae61e4a144a5afeb4700f1254a41d9144db2acac7b58c08a9020",
+        "bytes": 35900
+      },
+      {
+        "path": "dist-electron/electron/preload.js",
+        "sha256": "16a66471eebc0ff5e68e18059378ae9e6813bc9ec36330261e7e9b6d4417a420",
+        "bytes": 16525
+      },
+      {
+        "path": "dist-electron/electron/resumeTypes.js",
+        "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230",
+        "bytes": 77
+      },
+      {
+        "path": "dist-electron/electron/screenshotLimits.js",
+        "sha256": "ad0e7741a78241ed7bc356d8a80a1e2080d9a4f94b22a82b3f4745c9ec4bef7c",
+        "bytes": 140
+      },
+      {
+        "path": "dist-electron/electron/settings.js",
+        "sha256": "80a8e06525acd9ce996489f3f7425349f709e35d7a13437bf75ca66491559262",
+        "bytes": 14375
+      },
+      {
+        "path": "dist-electron/electron/shortcuts.js",
+        "sha256": "5f89050efe15465439abc4af4f8251be40cd4679b3b632e1e0a3915554161e9c",
+        "bytes": 5745
+      },
+      {
+        "path": "dist-electron/electron/solutionStream.js",
+        "sha256": "8b0d92ec3943bf5ddb46dd3980103220bbb580037e5739888454b3cffedd17f4",
+        "bytes": 7061
+      },
+      {
+        "path": "dist-electron/electron/windowControls.js",
+        "sha256": "d9d6ad71b5ef695c77fa43e96af2b01bf5bb1842ae8dc13639a7aaf8771e3b48",
+        "bytes": 2625
+      },
+      {
+        "path": "dist-electron/fileFromPath-BClw9K40.js",
+        "sha256": "31c4b32ba468587da0dac45cbc3fd70b53eadca1c4461464929a1360d2dea1c0",
+        "bytes": 4425
+      },
+      {
+        "path": "dist-electron/main-DvnaZtHk.js",
+        "sha256": "e642a02b695fc0df33a4cd4882f9a0829270323f3eef6216a008d9d1aefdeaed",
+        "bytes": 4484545
+      },
+      {
+        "path": "dist-electron/main.js",
+        "sha256": "6b7db8e78c4eb75c9a2aff88217ad7a5a8d16d75de16ba69e507b1d93a004b8c",
+        "bytes": 1374
+      },
+      {
+        "path": "dist-electron/preload.js",
+        "sha256": "6a9311d67391f5cd4fa25225a37a8a914be0d9b4dfabc34972409cfb9c279181",
+        "bytes": 9410
+      },
+      {
+        "path": "dist-electron/shared/billing.js",
+        "sha256": "081849aff4281fdc37995f443bd8e25f0451f4436896d41fe85d24cbc763cb49",
+        "bytes": 222
+      }
+    ],
+    "comparison": "byte-for-byte against current dist and dist-electron, excluding source maps according to package files policy",
+    "files": 45,
+    "matched": true,
+    "mismatched": [],
+    "missing": [],
+    "unexpected": [],
+    "unchangedDuringVerification": true
+  },
+  "apiConfiguration": {
+    "boundary": "Packaged AccountService defaults plus Info.plist LSEnvironment; no ambient user environment was inspected.",
+    "defaults": [
+      {
+        "path": "dist-electron/main-DvnaZtHk.js",
+        "productionFallbackIsHttps": true
+      },
+      {
+        "path": "dist-electron/electron/account.js",
+        "productionFallbackIsHttps": true
+      }
+    ],
+    "allProductionFallbacksVerified": true,
+    "rootDotEnvPackaged": false
+  },
+  "architecture": {
+    "main": [
+      "arm64"
+    ],
+    "nativeLeaves": 122,
+    "architectureCounts": {
+      "arm64": 122,
+      "x86_64": 2
+    },
+    "errors": []
+  },
+  "signatures": {
+    "expectedTeam": "VFF94RK9TN",
+    "expectedNativeLeaves": 122,
+    "expectedCodeContainers": 10,
+    "targets": 132,
+    "nativeLeaves": 122,
+    "codeContainers": 10,
+    "strictDeepValid": true,
+    "errors": [],
+    "signerCertificate": {
+      "expectedSha1": "9432E36F20C14D5EF7475C443BB8DB704A931E35",
+      "observedSha1": "9432E36F20C14D5EF7475C443BB8DB704A931E35",
+      "matched": true,
+      "publicCertificateExtractedOnlyTo": "/private/tmp/passwisely-v2-bundle-verification/r2"
+    }
+  },
+  "runtime": {
+    "success": true,
+    "code": "RECALL_RUNTIME_OK",
+    "stage": "complete",
+    "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+    "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+    "methods": [
+      "init",
+      "prepareDesktopAudioRecording",
+      "startRecording"
+    ]
+  },
+  "notarization": {
+    "staplerValid": true,
+    "staplerExitCode": 0,
+    "gatekeeperAccepted": true,
+    "notarizedDeveloperId": true
+  },
+  "currentHeadAtFinish": "916789b0a21ad99566ed815425a3ba665a13c95e",
+  "success": true
+}

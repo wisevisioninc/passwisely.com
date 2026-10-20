@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-20T12:12:02.199612+00:00",
+  "command": "node --test desktop-api/tests/*.test.mjs website/tests/*.test.mjs",
+  "runtime": "Node 24 bundled workspace runtime",
+  "result": {
+    "tests": 394,
+    "pass": 394,
+    "fail": 0,
+    "skipped": 0,
+    "durationMilliseconds": 22038.708792
+  },
+  "additionalCheck": "Monthly-credit SQL test rerun after adding Supabase default table ACL fixture: 17/17 passed.",
+  "typeChecks": [
+    "renderer tsc noEmit",
+    "Electron tsc noEmit",
+    "website tsc noEmit incremental false"
+  ],
+  "limitations": [
+    "PGlite exercises real PostgreSQL PL/pgSQL on one connection; independent PostgreSQL connection lock contention not measured.",
+    "Native Windows audio and overlay interactions not tested on a user device.",
+    "No real payment was submitted."
+  ]
+}

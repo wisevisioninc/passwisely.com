@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-20T12:03:09.004411+00:00",
+  "success": true,
+  "version": "2.0.0",
+  "revision": 2,
+  "provenance": {
+    "runUrl": "https://github.com/yejinchen-ai/passwisely/actions/runs/39417849334",
+    "runNumber": 21,
+    "commit": "6f1779dc9bb74aebb79c13ca15e75f1f13d9e936",
+    "artifactId": 12262980449,
+    "artifactName": "PassWisely-Windows-x64-unsigned",
+    "archiveSha256": "8df15ff0e9dcd014d816191407d7f660edae740dd26cfc5c5a38ddb47c17f2e2",
+    "archiveBytes": 123308545,
+    "archiveDigestMatchesGitHubUi": true
+  },
+  "archiveSafety": {
+    "entries": 7,
+    "duplicateNames": false,
+    "unsafePaths": false,
+    "symlinks": false,
+    "allManifestEntriesVerified": true
+  },
+  "files": [
+    {
+      "file": "latest.yml",
+      "bytes": 349,
+      "sha256": "5b8fba00b2f29acfeb6552f70c4e305e4d09b8413add62fa56025fe7e9aab3c6"
+    },
+    {
+      "file": "PassWisely-Windows-x64.exe",
+      "bytes": 123183203,
+      "sha256": "604cf3be66ed413da88f54cb1add56227a8ae390070453e96972cfdc56dbf2aa"
+    },
+    {
+      "file": "PassWisely-Windows-x64.exe.blockmap",
+      "bytes": 130675,
+      "sha256": "0528a99651c905808fe9bb5c808d91acf88abb8396f22fd1e5dbb5be31fd2edc"
+    },
+    {
+      "file": "windows-install.json",
+      "bytes": 949,
+      "sha256": "e97f8137b3d83452276bec6ff8ea0d19eb26fbed9ab579ce291f72b3fab09568"
+    },
+    {
+      "file": "windows-runtime.json",
+      "bytes": 499,
+      "sha256": "bcfe1b606e247d7e51610a1eda44dfe0a8c0efad6012c29733a41c5c1cbd7387"
+    },
+    {
+      "file": "windows-signature.json",
+      "bytes": 227,
+      "sha256": "f22565b75ff9790a4e8b0d75476a378d59b11405bab9403b7ebaf5b9d52c7a7a"
+    }
+  ],
+  "installer": {
+    "path": "/Users/chenyejin/codebase/passwisely/release/2.0.0-r2/PassWisely-Windows-x64.exe",
+    "file": "PassWisely-Windows-x64.exe",
+    "bytes": 123183203,
+    "sha256": "604cf3be66ed413da88f54cb1add56227a8ae390070453e96972cfdc56dbf2aa"
+  },
+  "runtime": {
+    "success": true,
+    "code": "WINDOWS_IMPORT_OK",
+    "stage": "complete",
+    "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+    "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+    "methods": [
+      "init",
+      "prepareDesktopAudioRecording",
+      "startRecording",
+      "pauseRecording",
+      "resumeRecording",
+      "stopRecording",
+      "shutdown"
+    ],
+    "native": [
+      "agent-windows.exe:PE-x64-header",
+      "gstreamer-1.0:unpacked-DLLs"
+    ],
+    "scope": "Package resources and SDK JavaScript import only; no native agent initialization, capture, upload or ASR."
+  },
+  "install": {
+    "success": true,
+    "scope": "Actual per-user silent NSIS install, installed-package import/resources, and uninstall. No normal GUI startup, login, native agent init, recording, upload or ASR.",
+    "installExit": 0,
+    "installedRuntime": {
+      "success": true,
+      "code": "WINDOWS_IMPORT_OK",
+      "stage": "complete",
+      "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+      "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+      "methods": [
+        "init",
+        "prepareDesktopAudioRecording",
+        "startRecording",
+        "pauseRecording",
+        "resumeRecording",
+        "stopRecording",
+        "shutdown"
+      ],
+      "native": [
+        "agent-windows.exe:PE-x64-header",
+        "gstreamer-1.0:unpacked-DLLs"
+      ],
+      "scope": "Package resources and SDK JavaScript import only; no native agent initialization, capture, upload or ASR."
+    },
+    "uninstallExit": 0,
+    "installedPayloadRemoved": true
+  },
+  "signature": [
+    {
+      "file": "PassWisely.exe",
+      "status": "NotSigned",
+      "signedBuildRequested": false
+    },
+    {
+      "file": "PassWisely-Windows-x64.exe",
+      "status": "NotSigned",
+      "signedBuildRequested": false
+    }
+  ],
+  "scope": "Locally verified exact downloaded GitHub artifact ZIP and every CI hash/size; CI evidence establishes actual hosted-Windows silent install/uninstall and isolated SDK JavaScript import. No normal GUI, login, native agent initialization, audio capture, upload or ASR validation; Windows native recording/overlay device testing remains pending. Installer is unsigned."
+}

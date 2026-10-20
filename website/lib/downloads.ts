@@ -5,6 +5,7 @@ export type DownloadPlatform = "mac-arm64" | "mac-x64" | "windows-x64";
 export interface DownloadArtifact {
   platform: DownloadPlatform;
   version: string;
+  revision: number;
   filename: string;
   sha256: string | null;
   bytes: number | null;
@@ -20,6 +21,8 @@ export interface DownloadArtifact {
 export function versionedArtifact(platform: DownloadPlatform, input: unknown): DownloadArtifact {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Invalid release artifact.");
   const value = input as Record<string, unknown>;
+  const revision = value.revision === undefined ? 1 : value.revision;
+  if (!Number.isSafeInteger(revision) || Number(revision) < 1) throw new Error("Invalid release artifact revision.");
   const filenames: Record<DownloadPlatform, string> = {
     "mac-arm64": "PassWisely-macOS-arm64.dmg",
     "mac-x64": "PassWisely-macOS-x64.dmg",
@@ -43,10 +46,10 @@ export function versionedArtifact(platform: DownloadPlatform, input: unknown): D
   }
   const notice = rawNotice ? Object.freeze({ zh: (rawNotice as { zh: string }).zh, en: (rawNotice as { en: string }).en }) : null;
   const available = value.legacy || (value.sha256 !== null && value.bytes !== null);
-  return Object.freeze({ platform, version: value.version, filename: value.filename as string,
+  return Object.freeze({ platform, version: value.version, revision: Number(revision), filename: value.filename as string,
     sha256: value.sha256 as string | null, bytes: value.bytes as number | null,
     legacy: value.legacy, notice, liveAudio: value.liveAudio as DownloadArtifact["liveAudio"], available,
-    url: `${OSS_RELEASE_ORIGIN}/releases/v${value.version}/${encodeURIComponent(value.filename as string)}` });
+    url: `${OSS_RELEASE_ORIGIN}/releases/v${value.version}/${Number(revision) > 1 ? `r${revision}/` : ""}${encodeURIComponent(value.filename as string)}` });
 }
 
 export const DOWNLOAD_ARTIFACTS = Object.freeze(Object.fromEntries(

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowDown, Camera, Check, ChevronDown, ChevronLeft, Copy, GripVertical, Loader2, MessageSquare, Pause, Play, Radio, Settings, Square, X } from "lucide-react";
+import { ArrowDown, Camera, Check, ChevronLeft, Copy, GripVertical, Loader2, MessageSquare, Pause, Play, Radio, Settings, Square, X } from "lucide-react";
 import type { CaptureStatus, LiveResult, LiveSnapshot } from "../../../electron/live/types";
 import { projectTranscriptParagraphs } from "../../../electron/live/TranscriptParagraphs";
 import type { OverlayGeometry } from "../../../electron/live/overlayTypes";
@@ -105,8 +105,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   const [question, setQuestion] = useState("");
   const [tab, setTab] = useState<"transcript" | "answers">("answers");
   const [manualInput, setManualInput] = useState(false);
-  const [retainedSession, setRetainedSession] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [contentOpened, setContentOpened] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsAutoFocus, setSettingsAutoFocus] = useState(false);
   const [panel, setPanel] = useState<"settings" | "resume" | "shortcuts" | null>(null);
@@ -154,8 +153,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     const accept = (next: LiveSnapshot) => {
       if (!alive.current || !isNewerLiveSnapshot(snapshotRef.current, next)) return;
       snapshotRef.current = next; setSnapshot(next); publishSnapshot.current?.(next); setLoading(false);
-      if (["starting", "recording", "paused", "pausing", "resuming"].includes(next.captureStatus)) setRetainedSession(true);
-      if (next.error || next.screenshotError) setCollapsed(false);
+      if (["starting", "recording", "paused", "pausing", "resuming"].includes(next.captureStatus)) setContentOpened(true);
     };
     const unsubscribe = api.onLiveSnapshot(accept);
     void api.liveGetSnapshot().then(accept).catch(reason => { if (alive.current && !snapshotRef.current) { setError(errorText(reason)); setLoading(false); } });
@@ -175,7 +173,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
       if (visibleRef.current && pointer.current) setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(pointer.current.x, pointer.current.y)));
     });
     const offQueue = api.onScreenshotQueueChanged(() => { void refreshScreenshots(); });
-    const offError = api.onScreenshotError(message => { if (alive.current) { setError(message); setCollapsed(false); } });
+    const offError = api.onScreenshotError(message => { if (alive.current) { setError(message); } });
     void refreshScreenshots();
     return () => { screenshotRead.current++; off(); offQueue(); offError(); };
   }, [refreshScreenshots]);
@@ -287,9 +285,9 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   const cardLeft = Math.max(20, Math.min(position.x - cardWidth / 2, viewport.width - cardWidth - 20));
   const title = screenshotBusy ? "Analyzing screen..." : generating ? "Thinking..." : tab === "transcript" ? "AI Transcripts" : "AI Response";
   const hasSessionText = transcripts.length > 0 || answers.length > 0;
-  const showContent = !!panel || manualInput || active || retainedSession || hasSessionText || answerBusy || screenshotBusy || !!error || !!snapshot?.error || !!snapshot?.screenshotError;
+  const showContent = !!panel || manualInput || active || contentOpened || hasSessionText || answerBusy || screenshotBusy || !!error || !!snapshot?.error || !!snapshot?.screenshotError;
   const clampVisiblePosition = (next: OverlayPosition, width = cardWidth) => clampOverlayPosition(next, viewport,
-    Math.max(toolbar.current?.offsetWidth ?? 0, showContent && !collapsed ? width : 0));
+    Math.max(toolbar.current?.offsetWidth ?? 0, showContent ? width : 0));
 
   const switchTab = (next: "transcript" | "answers") => {
     if (scroll.current) scrollOffsets.current[tab] = scroll.current.scrollTop;
@@ -308,7 +306,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     if (captureLocked.current && !releasing) return;
     const id = ++captureOperation.current; captureAction.current = action; captureLocked.current = true;
     setCaptureBusy(true); setError("");
-    if (action === "start") { switchTab("transcript"); setPanel(null); setCollapsed(false); }
+    if (action === "start") { setContentOpened(true); switchTab("transcript"); setPanel(null); }
     try { const result = await operation(); if (id === captureOperation.current && !result.success) throw new Error(result.error || "Audio operation failed."); }
     catch (reason) { if (alive.current && id === captureOperation.current) setError(errorText(reason)); }
     finally { if (id === captureOperation.current) { captureLocked.current = false; captureAction.current = null; if (alive.current) setCaptureBusy(false); } }
@@ -316,9 +314,9 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   const submitQuestion = async () => {
     if (!canAsk || askLocked.current || clearLocked.current) return;
     askLocked.current = true; const submitted = question, session = snapshotRef.current?.sessionId, draft = draftRevision.current;
-    setAnswerBusy(true); setError(""); switchTab("answers"); setPanel(null); setManualInput(false); setPinned(true); setCollapsed(false);
+    setContentOpened(true); setAnswerBusy(true); setError(""); switchTab("answers"); setPanel(null); setManualInput(false); setPinned(true);
     try {
-      const result = await api.liveAsk({ question: submitted.trim(), includeScreenshots });
+      const result = await api.liveAsk({ question: submitted.trim(), includeScreenshots, codeLanguage: currentLanguage as LiveCodeLanguage });
       if (!result.success) throw new Error(result.error || "Answer request failed.");
       if (alive.current && session === snapshotRef.current?.sessionId && draftRevision.current === draft) { draftRevision.current++; setQuestion(""); }
     } catch (reason) { if (alive.current) { setError(errorText(reason)); if (submitted) setManualInput(true); } }
@@ -326,16 +324,15 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   };
   const startOver = async () => {
     if (clearLocked.current) return;
-    clearLocked.current = true; setClearing(true); setError("");
+    clearLocked.current = true; setContentOpened(true); setClearing(true); setError("");
     const submitted = question, session = snapshotRef.current?.sessionId, draft = draftRevision.current;
     try {
       const result = await api.liveStartOver();
       if (!result.success) throw new Error(result.error || "Start Over failed.");
       if (alive.current && session === snapshotRef.current?.sessionId) {
         if (draftRevision.current === draft) { draftRevision.current++; setQuestion(""); if (!submitted) setManualInput(false); }
-        if (!["starting", "recording", "paused", "pausing", "resuming", "stopping"].includes(snapshotRef.current?.captureStatus ?? "idle")) setRetainedSession(false);
       }
-    } catch (reason) { if (alive.current) { setError(errorText(reason)); setCollapsed(false); } }
+    } catch (reason) { if (alive.current) { setError(errorText(reason)); } }
     finally { clearLocked.current = false; if (alive.current) setClearing(false); }
   };
   const toggleSession = () => {
@@ -348,19 +345,19 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     if (action === "ask" && !panel) void submitQuestion();
     else if (action === "clear") void startOver();
     else if (action === "toggle-session") toggleSession();
-    else if (action === "response") { switchTab("answers"); setPanel(null); setCollapsed(false); setRetainedSession(true); }
-    else if (action === "transcripts") { switchTab("transcript"); setPanel(null); setCollapsed(false); setRetainedSession(true); }
+    else if (action === "response") { switchTab("answers"); setPanel(null); setContentOpened(true); }
+    else if (action === "transcripts") { switchTab("transcript"); setPanel(null); setContentOpened(true); }
     else if (action === "scroll-up" || action === "scroll-down") scroll.current?.scrollBy({ top: action === "scroll-up" ? -300 : 300, behavior: "smooth" });
     else if (action.startsWith("move-")) { userPosition.current = true; setPosition(current => clampVisiblePosition({ x: current.x + (action === "move-left" ? -60 : action === "move-right" ? 60 : 0), y: current.y + (action === "move-up" ? -60 : action === "move-down" ? 60 : 0) })); }
   };
   const answerAction = async (operation: () => Promise<LiveResult>) => {
     setError(""); try { const result = await operation(); if (!result.success) throw new Error(result.error || "Operation failed."); }
-    catch (reason) { if (alive.current) { setError(errorText(reason)); setCollapsed(false); } }
+    catch (reason) { if (alive.current) { setError(errorText(reason)); } }
   };
   const captureScreenshot = async () => {
     if (screenshotBusy) return; setScreenshotBusy(true); setError("");
     try { const result = await api.triggerScreenshot(); if (!result.success) throw new Error(result.error || "Screenshot failed."); await refreshScreenshots(); }
-    catch (reason) { if (alive.current) { setError(errorText(reason)); setCollapsed(false); } }
+    catch (reason) { if (alive.current) { setError(errorText(reason)); } }
     finally { if (alive.current) setScreenshotBusy(false); }
   };
   const deleteScreenshot = async (path: string) => {
@@ -398,7 +395,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
   const openSettingsPanel = (next: "settings" | "resume" | "shortcuts") => {
     if (settingsWritePending.current) return;
     panelOwner.current = next;
-    closeSettingsNow(); setPanel(next); setCollapsed(false);
+    closeSettingsNow(); setPanel(next);
   };
   const beginDrag = (event: React.PointerEvent<HTMLElement>, kind: "move" | "resize") => {
     if (event.button !== 0) return;
@@ -432,7 +429,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     observer.observe(element);
     fit();
     return () => observer.disconnect();
-  }, [geometry?.width, geometry?.height, cardWidth, showContent, collapsed, visible]);
+  }, [geometry?.width, geometry?.height, cardWidth, showContent, visible]);
   const menuAbove = Math.max(0, position.y - 28);
   const menuBelow = Math.max(0, viewport.height - position.y - 68);
   const menuPlacement = menuBelow >= menuAbove ? "below" : "above";
@@ -453,7 +450,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     }, 0);
   }}>
     <div className="pw-live-windows" style={{ left: cardLeft, width: cardWidth, maxHeight: Math.max(64, top ? viewport.height - position.y - 84 : position.y - 44), ...(top ? { top: position.y + 64 } : { bottom: viewport.height - position.y + 24 }) }}>
-    {showContent && !collapsed && <section className="pw-live-card pw-glass">
+    {showContent && <section className="pw-live-card pw-glass">
       <header className="pw-live-card-header" data-overlay-interactive {...dragEvents} onPointerDown={event => { if (!(event.target as Element).closest("button,input,textarea,a")) beginDrag(event, "move"); }}>
         <img className="pw-live-brand" src="./logo512.png" alt="PassWisely" width={24} height={24} draggable={false} />
         <nav className="pw-live-tabs" aria-label="会话内容">
@@ -461,7 +458,6 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
           <button type="button" aria-pressed={tab === "transcript"} onClick={() => switchTab("transcript")}>Transcripts <LiveKeycaps keys={["⌥", "2"]} /></button>
         </nav>
         <span className="pw-live-title" role="status">{loading ? "Connecting…" : title}</span>
-        <button type="button" className="pw-live-icon" aria-label="Collapse / 收起内容" title="Collapse" onClick={() => setCollapsed(true)}><ChevronDown size={13} /></button>
         {generating && <button type="button" className="pw-live-icon" title="Stop generation / 停止生成" aria-label="停止生成" onClick={() => void answerAction(api.liveCancelAnswer)}><Square size={12} /></button>}
       </header>
       {(error || snapshot?.error || snapshot?.platformMessage || snapshot?.screenshotError) && <div className="pw-live-alert" role="alert"><span>{error || snapshot?.error || snapshot?.platformMessage || snapshot?.screenshotError}</span><button type="button" className="pw-live-icon" data-overlay-interactive aria-label="关闭操作提示" onClick={() => setError("")}><X size={12} /></button></div>}
@@ -511,13 +507,12 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
           <button type="button" className="pw-live-pause" disabled={captureBusy} title={captureStatus === "paused" ? "Resume Listening" : "Pause Listening"} aria-label={captureStatus === "paused" ? "Resume Listening / 继续采集" : "Pause Listening / 暂停采集"} onClick={() => void runCapture(captureStatus === "paused" ? api.liveResume : api.livePause)}>{captureStatus === "paused" ? <Play size={11} /> : <Pause size={11} />}</button>
           <span className={`pw-live-waveform ${captureStatus === "paused" ? "paused" : ""}`} role="status" aria-label={CAPTURE_LABELS[captureStatus]}><i /><i /><i /><i /><i /></span>
           {captureStatus === "paused" && <button type="button" className="pw-live-done" disabled={controls.stopDisabled} title="Stop Listening" onClick={() => void runCapture(api.liveStop, "stop")}>Done <Square size={9} /></button>}
-        </> : <button type="button" className="pw-live-done" disabled={controls.stopDisabled} onClick={() => void runCapture(api.liveStop, "stop")}>{captureStatus === "starting" ? "Cancel" : snapshot?.captureNeedsCleanup && ["ended", "error"].includes(captureStatus) ? "Release audio" : "Stopping…"}</button>}
+        </> : <button type="button" className="pw-live-done" disabled={controls.stopDisabled} onClick={() => void runCapture(api.liveStop, "stop")}>{captureStatus === "starting" ? "Cancel" : snapshot?.captureNeedsCleanup && ["ended", "error"].includes(captureStatus) ? "Release audio" : CAPTURE_LABELS[captureStatus]}</button>}
       </div>
       <span className="pw-live-divider" />
       <button type="button" className="pw-live-command" disabled={screenshotBusy || clearing} aria-label="Take Screenshot / 截图" onClick={() => void captureScreenshot()}>{screenshotBusy && <Loader2 className="pw-live-spinning" size={16} />}Take Screenshot <LiveKeycaps keys={["⌘", "H"]} /></button>
       <button type="button" className="pw-live-command" disabled={!canAsk} aria-label="Solve / 生成回答" onClick={() => void submitQuestion()}>Solve <LiveKeycaps keys={["⌘", "↵"]} /></button>
-      <button type="button" className={`pw-live-command ${manualInput ? "selected" : ""}`} title="Ask a question / 手动输入" aria-label="手动输入问题" aria-pressed={manualInput} onClick={() => { setManualInput(!manualInput); setCollapsed(false); setPanel(null); }}><MessageSquare size={14} /></button>
-      {collapsed && <button type="button" className="pw-live-command" onClick={() => setCollapsed(false)}>Expand</button>}
+      <button type="button" className={`pw-live-command ${manualInput ? "selected" : ""}`} title="Ask a question / 手动输入" aria-label="手动输入问题" aria-pressed={manualInput} onClick={() => { setManualInput(!manualInput); setPanel(null); }}><MessageSquare size={14} /></button>
       <button type="button" className="pw-live-command" onClick={() => { void api.toggleMainWindow(); }}>Show / Hide <LiveKeycaps keys={["⌘", "B"]} /></button>
       </div>
       <div ref={settingsAnchor} className="pw-live-settings-anchor" onPointerEnter={openSettings} onPointerLeave={closeSettings}
@@ -542,10 +537,10 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
           onOpenShortcuts={() => openSettingsPanel("shortcuts")} onOpenProgramming={() => { if (settingsWritePending.current) return; closeSettingsNow(); onProgramming?.(); }}
           onLogout={() => {
             closeSettingsNow();
-            void api.accountLogout().then(result => { if (result.success) window.location.reload(); else { setError(result.error || "Sign out failed."); setCollapsed(false); } })
-              .catch(reason => { setError(errorText(reason)); setCollapsed(false); });
+            void api.accountLogout().then(result => { if (result.success) window.location.reload(); else { setError(result.error || "Sign out failed."); } })
+              .catch(reason => { setError(errorText(reason)); });
           }}
-          onQuit={() => { closeSettingsNow(); void api.quitApp().catch(reason => { setError(errorText(reason)); setCollapsed(false); }); }} />}
+          onQuit={() => { closeSettingsNow(); void api.quitApp().catch(reason => { setError(errorText(reason)); }); }} />}
       </div>
     </div>
   </section>;

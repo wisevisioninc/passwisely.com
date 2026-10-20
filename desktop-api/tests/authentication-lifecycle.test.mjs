@@ -192,11 +192,10 @@ test("the login recovery component exposes the real stop IPC and retains release
 });
 
 test("the production App retains the recovery component while the authentication page is displayed", () => {
-  let stateIndex = 0;
   const CaptureRecovery = () => React.createElement("aside", { "data-recovery": true });
   const AuthPage = () => React.createElement("main", { "data-auth": true });
   const mockReact = {
-    ...React, useState(initial) { return [stateIndex++ === 5 ? false : initial, () => {}]; },
+    ...React, useState(initial) { const value = typeof initial === "function" ? initial() : initial; return [value === true ? false : value, () => {}]; },
     useEffect() {}, useLayoutEffect() {}, useCallback: fn => fn,
   };
   const { default: App } = production("src/App.tsx", {

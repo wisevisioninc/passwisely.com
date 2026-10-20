@@ -1,3 +1,4 @@
+import type { CodeLanguage } from "../languages";
 import type { TranscriptionProfile } from "./transcription";
 
 export type AudioSource = "microphone" | "system" | "unknown";
@@ -50,6 +51,7 @@ export type LiveResult = { success: boolean; error?: string; requestId?: string 
 export interface LiveAskInput {
   question: string;
   includeScreenshots: boolean;
+  codeLanguage?: CodeLanguage;
 }
 export interface LiveSessionAPI {
   liveCopyText: (text: string) => Promise<LiveResult>;

@@ -1,0 +1,472 @@
+{
+  "schemaVersion": 1,
+  "scope": "Selected SystemContainer 3.0.1 first-party JS, static only; no target execution, GUI interaction, credential reads or repeat REA analysis.",
+  "provenance": {
+    "evidenceId": "ev_f0579ae07d723777fecc7a1fd7bf0fe355941fbfab0cec305d744cf259ddb0c1",
+    "analysisKind": "read-only static literal extraction; no target execution",
+    "installedAsar": "/Applications/systemcontainer.app/Contents/Resources/app.asar",
+    "installedAsarSha256": "528ea903d8dc6a1b42331ae7658689ab39e37fe63c09eef242475b2fa978fd78",
+    "installedAsarBytes": 206100163,
+    "version": "3.0.1",
+    "member": "out/renderer/assets/main-CLCIkAdW.js",
+    "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+    "offsetUnit": "zero-based UTF-8 bytes, end exclusive"
+  },
+  "priorEvidenceCoverage": {
+    "evidenceId": "ev_f0579ae07d723777fecc7a1fd7bf0fe355941fbfab0cec305d744cf259ddb0c1",
+    "selectedFirstPartyFiles": 14,
+    "parsedJavaScriptFiles": 8,
+    "astNodes": 585805,
+    "parseFailures": 0,
+    "graphCoverage": "partial",
+    "limits": [
+      "globals/window semantic workers exhausted heap",
+      "main semantic result exceeded parent budget",
+      "Static/module facts remain available; no whole-package completeness claim."
+    ]
+  },
+  "offsetUnit": "zero-based UTF-8 original-file bytes; end exclusive",
+  "evidence": [
+    {
+      "id": "catalog-code",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 895041,
+      "byteEndExclusive": 895510,
+      "rangeSha256": "a8ae1594ac0ad45c2733c0e946ea304ca9bc7b61e8d97873678ebda43c4beb60",
+      "classification": "observed literal",
+      "description": "Code Language: complete ordered literal catalog of 16 {value,label} entries, mapped to id/label/order in the companion JSON.",
+      "limits": []
+    },
+    {
+      "id": "catalog-output",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 895514,
+      "byteEndExclusive": 896495,
+      "rangeSha256": "c275821181a682f11b7b391f2a25f3d104be8036117f272d5a3cac7e34c56c4d",
+      "classification": "observed literal",
+      "description": "Output Language: complete ordered literal catalog of 22 {value,label} entries, mapped to id/label/order in the companion JSON.",
+      "limits": []
+    },
+    {
+      "id": "catalog-meetingAudio",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 896499,
+      "byteEndExclusive": 897071,
+      "rangeSha256": "2f51f7e16df97d623ecd4e1809bafe5f4aa24585fb8c102145a48832c5757546",
+      "classification": "observed literal",
+      "description": "Meeting Audio Language: complete ordered literal catalog of 12 {value,label} entries, mapped to id/label/order in the companion JSON.",
+      "limits": []
+    },
+    {
+      "id": "settings-defaults",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 898342,
+      "byteEndExclusive": 898530,
+      "rangeSha256": "7c9a435fb6b106125f1d77495e32837e8fca1f5d7ec29e0079c8bf61060f761b",
+      "classification": "observed static expression",
+      "description": "Reads session.user.displayLanguage/defaultAudioLanguage/programmingLanguage and uses nullish client fallbacks en-US/en-US/python.",
+      "limits": [
+        "Does not establish server defaults or currently saved user selections."
+      ]
+    },
+    {
+      "id": "settings-persist-output-audio",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 898818,
+      "byteEndExclusive": 899260,
+      "rangeSha256": "03e7e899e6a3f02c331ff9139449d1ec8e3b3570074791ca12c827c35cdc4f49",
+      "classification": "observed static expression",
+      "description": "Persists displayLanguage and defaultAudioLanguage with user.settings.put, then updates the session.user cache.",
+      "limits": []
+    },
+    {
+      "id": "settings-persist-code",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 899618,
+      "byteEndExclusive": 900096,
+      "rangeSha256": "8165fb783f19e5acc89761102ccbb0578621670273beb54ae7093b95227a34c8",
+      "classification": "observed static expression",
+      "description": "Persists programmingLanguage with user.settings.put, then updates session.user.programmingLanguage.",
+      "limits": []
+    },
+    {
+      "id": "settings-catalog-consumers",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 898342,
+      "byteEndExclusive": 903920,
+      "rangeSha256": "0ef0d2eadaaa9abea58f352748f86a812ba854c8331aead5e21a12db5e5edeac",
+      "classification": "observed static component",
+      "description": "Compact G2 renders Output from xo, Code from ou, Meeting Audio from vo. Output wording applies to summaries/actionables/AI responses; Code wording applies to AI code responses. Meeting Audio select is disabled during an audio session.",
+      "limits": [
+        "Advanced G2 branch contains Output and Meeting Audio, not the Code select.",
+        "Labels/tooltips describe intended use, not measured model adherence."
+      ]
+    },
+    {
+      "id": "ai-input-from-settings",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 727810,
+      "byteEndExclusive": 729085,
+      "rangeSha256": "25d979f67398598e17a61b5777b3f28c163784f3260d4cd72f9afdb1a4fde216",
+      "classification": "observed static method",
+      "description": "createResponseFromContext reads session.user displayLanguage and programmingLanguage and assigns them to a new response input.",
+      "limits": []
+    },
+    {
+      "id": "ai-request-consumer",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 720489,
+      "byteEndExclusive": 723050,
+      "rangeSha256": "d7a25117e90929b0c2b4e35cc677d34c26f9cf9ff3c1dcdfb05957b3fbc5d0cd",
+      "classification": "observed static method",
+      "description": "streamResponse submits displayLanguage and programmingLanguage in desktop.ai.trigger.v2.post together with messages, screenshots-derived context, user input and selected prompt.",
+      "limits": [
+        "Remote service implementation, model prompts, validation and actual language adherence are not visible in selected desktop source."
+      ]
+    },
+    {
+      "id": "audio-language-legacy-consumer",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 844553,
+      "byteEndExclusive": 844714,
+      "rangeSha256": "b3301374b0f86e92b81215df0580a226f8891342a4f9728b8cd40344024a422f",
+      "classification": "observed static method",
+      "description": "Legacy media-stream transcription getAudioLanguage fetches user.defaultAudioLanguage and falls back to en-US after an error.",
+      "limits": [
+        "This does not establish the remote language/provider configuration for the Recall V2 upload path."
+      ]
+    },
+    {
+      "id": "recall-v2-upload-config",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 860260,
+      "byteEndExclusive": 860576,
+      "rangeSha256": "355c85623ce0e97af6f61003108f7c05648b437837cc009b37547252ce4a593e",
+      "classification": "observed static method",
+      "description": "Recall V2 capture calls createSdkUpload with sessionId and optional providerConfig. The selected desktop path does not itself prove how the remote service maps defaultAudioLanguage to provider options.",
+      "limits": [
+        "Reuse of prior source-bound range from the ASR ledger; current V2 remote configuration remains unknown."
+      ]
+    },
+    {
+      "id": "start-interview-control",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 541715,
+      "byteEndExclusive": 542311,
+      "rangeSha256": "1fbecca45e0f2d1b76c00f6cf2f7bde2b854e5776dff6231cf1c67d367d4a95e",
+      "classification": "observed static component",
+      "description": "da displays the shared listen label with a waveform/loading indicator and calls its supplied onClick.",
+      "limits": []
+    },
+    {
+      "id": "start-session-owner",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 542527,
+      "byteEndExclusive": 543425,
+      "rangeSha256": "d21e1ed0bc69533c79d63f60d6398c5214e69ef37bb46c1d4a7ec254f018b44c",
+      "classification": "observed static function",
+      "description": "V1 clears the previous conversation and calls contextService.startNewAudioSession with session options.",
+      "limits": []
+    },
+    {
+      "id": "audio-control-actions",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 834943,
+      "byteEndExclusive": 836845,
+      "rangeSha256": "07ac966b96b913c779e9b56a7c10c5ca48a34900dffc1cf91a150afb4345af9d",
+      "classification": "observed static component",
+      "description": "Ek selects start/loading/error/running states. Running passes pauseAudio, resumeAudio and stopAudio handlers; off invokes V1.",
+      "limits": []
+    },
+    {
+      "id": "pause-resume-controls",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 836846,
+      "byteEndExclusive": 837999,
+      "rangeSha256": "5da03367d02ecd1638fa650e5ea270db95cc14421ea33ddcba0fc198b08eddc4",
+      "classification": "observed static component",
+      "description": "kk toggles Pause Listening/Resume Listening and pause/play icons; the Done stop action appears while paused.",
+      "limits": []
+    },
+    {
+      "id": "stop-control",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 838000,
+      "byteEndExclusive": 838448,
+      "rangeSha256": "1e58c96feb2e6569ed953f706bca4e1d1dac24f20f8c2834816937af98f665b5",
+      "classification": "observed static function",
+      "description": "Ak renders Done with Stop Listening tooltip and invokes onStop.",
+      "limits": []
+    },
+    {
+      "id": "content-header",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 985866,
+      "byteEndExclusive": 988097,
+      "rangeSha256": "0e8b4d69ef964b3abd5fb8cb7f9318182943cfd93379dd059d882fb2d889ef2a",
+      "classification": "observed static component",
+      "description": "DN renders Response/Transcripts tabs, title and optional supplied children; no collapse/expand control is produced inside this header.",
+      "limits": []
+    },
+    {
+      "id": "content-visibility-dispatch",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 989968,
+      "byteEndExclusive": 990229,
+      "rangeSha256": "fa5a7b4e9cbd7f6b8805fe730b6aa318a739585238c51c3b56618c4d34309924",
+      "classification": "observed static component",
+      "description": "_N chooses the response/transcript body while a conversation/capture/transcription/audio session/retained body exists.",
+      "limits": []
+    },
+    {
+      "id": "content-start-default-tab",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 990230,
+      "byteEndExclusive": 992657,
+      "rangeSha256": "91b0b23077032ceffa48254ffe7a1e2adda1026a886a027ab4042806431ff0cc",
+      "classification": "observed static component",
+      "description": "FN switches to transcripts when isInAudioSession is true; an AI trigger/conversation subsequently switches to response. The supplied DN usage has no children action.",
+      "limits": []
+    },
+    {
+      "id": "content-session-retention",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 997382,
+      "byteEndExclusive": 997970,
+      "rangeSha256": "58ed4e464b656aed92a5fdd711a002332764b427c95d97ac53263e9dc5d6517c",
+      "classification": "observed static component",
+      "description": "ZN sets retained-body state true on isInAudioSession and shows its Resizable body when AI content, active session or retained state is true. Start Over clears retained state only outside an audio session.",
+      "limits": [
+        "Pause visibility is a derivation from pause retaining an audio session, not a new runtime observation."
+      ]
+    },
+    {
+      "id": "content-feature-branch",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 998146,
+      "byteEndExclusive": 998347,
+      "rangeSha256": "da6091264291e45fe142cd6a4d670409cf4e65f772312e35e3937f63a179c74b",
+      "classification": "observed static component",
+      "description": "VN returns this Start Interview/main-body path only when insightsV3 is false.",
+      "limits": []
+    },
+    {
+      "id": "alternate-chat-collapse",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1114830,
+      "byteEndExclusive": 1117053,
+      "rangeSha256": "b9f14f1c85479c5e2a69460f8ca02d4b17fbe4acd50ca8d0a30a007a3febb654",
+      "classification": "observed static component",
+      "description": "Separate CR toolbar has an explicit Open Chat/Close Chat action toggling shared local visibility state.",
+      "limits": []
+    },
+    {
+      "id": "alternate-chat-feature-branch",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1117244,
+      "byteEndExclusive": 1117397,
+      "rangeSha256": "961b833ec8cddf51abceee4d57f5bb4e24c4972d87f020f5df9e635dd58a4ec8",
+      "classification": "observed static component",
+      "description": "vR renders the separate unified insights app only when insightsV3 is true.",
+      "limits": [
+        "Current remote feature-flag value was not read or executed."
+      ]
+    },
+    {
+      "id": "alternate-chat-body",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1117398,
+      "byteEndExclusive": 1118618,
+      "rangeSha256": "e8be016a54dd250b6ba7059d285828aeddd02f500ea46afb10f45a991f2c5689",
+      "classification": "observed static component",
+      "description": "bR renders its chat body only while isInAudioSession and chat-open state are true.",
+      "limits": []
+    },
+    {
+      "id": "gear-click-owner",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1015351,
+      "byteEndExclusive": 1016666,
+      "rangeSha256": "30e9ed5e425475f67b9e8363f99045486619a2741b55d61ab57f8c80ae6ff62d",
+      "classification": "observed static component",
+      "description": "d9 opens/closes Settings through React state and timers; direct click handler toggles state and cancels the close timer. Hover opens; mouse exit closes after 500ms. No direct focus-window or unfocus-window call appears in this component.",
+      "limits": [
+        "Does not prove absence of a global/ancestor/native focus reaction."
+      ]
+    },
+    {
+      "id": "manual-input-focus",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 980987,
+      "byteEndExclusive": 981451,
+      "rangeSha256": "93f5aaf9c03295766eabd41e50a0d6dd62c12e3ff3c43c0f0ce5b5a12d7528fb",
+      "classification": "observed static hook",
+      "description": "kN sends focus-window and focuses the input, or on the Windows waiting-for-Tab path sends unfocus-window.",
+      "limits": []
+    },
+    {
+      "id": "manual-input-release",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 981451,
+      "byteEndExclusive": 981664,
+      "rangeSha256": "7900b16f1e2ee395e4b78dc7d3237807e4c137b8201927583caa6ca8c1d8b893",
+      "classification": "observed static hook",
+      "description": "AN sends unfocus-window when isManualInputActive is false; this is tied to manual-input state rather than each ordinary gear click.",
+      "limits": []
+    },
+    {
+      "id": "native-platform-flags",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 1142,
+      "byteEndExclusive": 1389,
+      "rangeSha256": "e1e311c90b75691d63d9df7048ac3abc31fd91846c15b232ea570910c8dfb793",
+      "classification": "observed static expression",
+      "description": "B is darwin; S is win32. Platform branches must be interpreted using these bindings.",
+      "limits": []
+    },
+    {
+      "id": "native-overlay-constructor",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 6304,
+      "byteEndExclusive": 7950,
+      "rangeSha256": "afc95e45bd41b7cd5e1192dd846d9df896a6048c696c6918b4587d844bd2cf4c",
+      "classification": "observed static constructor",
+      "description": "Default BrowserWindow options use type panel, alwaysOnTop, transparent frameless full overlay. The screen-saver always-on-top level and disabled background throttling apply only to Windows (S). The macOS B branch polls focus every 100ms and calls showInactive once upon unfocused transition.",
+      "limits": [
+        "Does not establish undocumented NSPanel style flags or actual OS stacking/flicker behavior."
+      ]
+    },
+    {
+      "id": "native-blur-owner",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 10638,
+      "byteEndExclusive": 10813,
+      "rangeSha256": "fe8fd8c5be696f181de2dfc1ac1f17050e7897ac5541badab6dc6418a521114c",
+      "classification": "observed static methods",
+      "description": "focus calls window.focus. blur restores undetectability then calls window.blur; its setFocusable(false/true) workaround applies only to Windows.",
+      "limits": []
+    },
+    {
+      "id": "native-focus-ipc",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 74506,
+      "byteEndExclusive": 74648,
+      "rangeSha256": "9cfb6edb8ce38819e72cb730f5208a6c0ced41b77532f5f3b9453b6ef3f0bea7",
+      "classification": "observed static handlers",
+      "description": "focus-window and unfocus-window IPC dispatch to currentWindow.focus/blur.",
+      "limits": []
+    },
+    {
+      "id": "content-resizable-wrapper",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 910324,
+      "byteEndExclusive": 911348,
+      "rangeSha256": "2969024d21bd5a33d36b9ceeda611fb84e417734c9bb61839d26dd0b314fa98c",
+      "classification": "observed static wrapper",
+      "description": "The Resizable wrapper called by ZN animates show/hide based on its show prop and passes through its supplied children; it adds no collapse/expand control."
+    },
+    {
+      "id": "default-recording-shortcut",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 892634,
+      "byteEndExclusive": 893129,
+      "rangeSha256": "7ba21590bfd8db35d984c07405d6ae135849ac3f24799462e5d83f9e7f53b87b",
+      "classification": "observed static expression",
+      "description": "Tg.toggle_session defaults to CommandOrControl+Shift+Backslash."
+    },
+    {
+      "id": "recording-shortcut-registration",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 998146,
+      "byteEndExclusive": 998347,
+      "rangeSha256": "da6091264291e45fe142cd6a4d670409cf4e65f772312e35e3937f63a179c74b",
+      "classification": "observed static expression",
+      "description": "VN registers the resolved toggle_session shortcut directly with UN.toggleSession."
+    },
+    {
+      "id": "recording-shortcut-action-owner",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 997971,
+      "byteEndExclusive": 998140,
+      "rangeSha256": "43fee43f75734654630385d3a79f6f323604323870e6bd3fd64ab9f4dde320fd",
+      "classification": "observed static expression",
+      "description": "UN.toggleSession calls stopAudio while isInAudioSession is true; otherwise V1 starts a new session. It does not call pauseAudio/resumeAudio."
+    }
+  ],
+  "derivedConclusions": [
+    {
+      "statement": "For the Start Interview command-bar/main-content path, starting opens/preserves the body and selects Transcripts. Pausing/resuming keeps that session body visible; the FN/DN path does not add a Collapse/Expand button.",
+      "supports": [
+        "audio-control-actions",
+        "pause-resume-controls",
+        "content-start-default-tab",
+        "content-session-retention",
+        "content-header"
+      ]
+    },
+    {
+      "statement": "It would be incorrect to claim SystemContainer has no collapse control anywhere: the separate insightsV3 branch has Open Chat/Close Chat.",
+      "supports": [
+        "content-feature-branch",
+        "alternate-chat-collapse",
+        "alternate-chat-feature-branch"
+      ]
+    },
+    {
+      "statement": "Static gear-handler behavior differs from an unconditional native blur after every button: its owner only toggles DOM state/timers. OS flicker cannot be declared fixed from this static finding.",
+      "supports": [
+        "gear-click-owner",
+        "native-blur-owner",
+        "manual-input-release"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Remote language adherence and server defaults.",
+    "Current feature flag insightV3 and provider configuration under Recall V2.",
+    "Actual native focus, panel stacking and flicker under current macOS without a bounded runtime test."
+  ],
+  "identityValidation": {
+    "installedAsarSha256": "528ea903d8dc6a1b42331ae7658689ab39e37fe63c09eef242475b2fa978fd78",
+    "installedAsarBytes": 206100163,
+    "manifestPath": "/private/tmp/passwisely-rea-analysis/selection-manifest.json",
+    "asarMatchesManifest": true,
+    "allFocusedMembersMatchManifest": true,
+    "allRangeHashesVerified": true
+  }
+}

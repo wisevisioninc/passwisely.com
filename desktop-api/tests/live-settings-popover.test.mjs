@@ -135,7 +135,7 @@ test("popover independently loads and immediately saves only the changed respons
     await h.settle();
     assert.equal(h.render().props.role, "dialog");
     assert.equal(h.nodes().some(node => node.props.role === "menu"), false);
-    assert.equal(h.select("Output Language").props.value, "en");
+    assert.equal(h.select("Output Language").props.value, "en-US");
     assert.equal(h.select("Code Language").props.value, "python");
     assert.equal(h.select("Meeting Audio Language").props.value, "recall-en");
     assert.equal(h.select("Display"), undefined, "single display is omitted");
@@ -161,11 +161,11 @@ test("pending saves are single-flight; failures keep confirmed values and remain
     assert.equal(h.calls.filter(([name]) => name === "save-ai").length, 1);
     assert.equal(h.select("Output Language").props.disabled, true);
     pending.resolve({ success: false, error: "fixture save rejected" }); await h.settle();
-    assert.equal(h.select("Output Language").props.value, "en"); assert.match(h.message(), /fixture save rejected/);
+    assert.equal(h.select("Output Language").props.value, "en-US"); assert.match(h.message(), /fixture save rejected/);
     assert.equal(h.select("Output Language").props.disabled, false);
     h.api.saveAiSettings = async () => ({ success: true, settings: { responseLanguage: "en" } });
     h.select("Output Language").props.onChange({ target: { value: "zh-CN" } }); await h.settle();
-    assert.match(h.message(), /不同的回答语言/); assert.equal(h.select("Output Language").props.value, "en");
+    assert.match(h.message(), /不同的回答语言/); assert.equal(h.select("Output Language").props.value, "en-US");
     h.api.saveTranscriptionSettings = async () => ({ success: true, settings: { profileId: "recall-en" } });
     h.select("Meeting Audio Language").props.onChange({ target: { value: "deepgram-zh" } }); await h.settle();
     assert.match(h.message(), /不同的语音设置/); assert.equal(h.select("Meeting Audio Language").props.value, "recall-en");
@@ -287,7 +287,7 @@ test("compact output language preserves an active answer and rejects stale handl
     h.select("Output Language").props.onChange({ target: { value: "zh-CN" } });
     await h.settle();
     assert.equal(h.calls.some(([name]) => name === "save-ai"), false, "neither current nor stale UI handlers may reconfigure an active answer");
-    assert.equal(h.select("Output Language").props.value, "en");
+    assert.equal(h.select("Output Language").props.value, "en-US");
     assert.equal(h.select("Meeting Audio Language").props.disabled, false, "AI generation does not couple the independent speech preference to AI settings");
     h.update({ answerBusy: false });
     assert.equal(h.select("Output Language").props.disabled, false);
@@ -334,5 +334,24 @@ test("a reopened compact editor defers its snapshot until the workspace's earlie
     assert.equal(h.select("Output Language").props.value, "zh-CN");
     assert.equal(h.select("Meeting Audio Language").props.value, "deepgram-zh");
     assert.equal(h.select("Output Language").props.disabled, false);
+  } finally { h.cleanup(); }
+});
+
+
+test("both compact language selects exactly match the independent SystemContainer catalog", async () => {
+  const manifest = JSON.parse(readFileSync(path.join(root, "test/languages/systemcontainer-catalog.json"), "utf8"));
+  const h = controller();
+  try {
+    await h.settle();
+    for (const [label, expected] of [["Output Language", manifest.output.entries], ["Code Language", manifest.code.entries]]) {
+      const actual = elements(h.select(label)).filter(node => node.type === "option" && node.props.value).map(node => ({ id: node.props.value, label: text(node) }));
+      assert.deepEqual(actual, expected.map(({ id, label }) => ({ id, label })));
+    }
+    assert.equal(h.select("Output Language").props.value, "en-US", "legacy English is rendered as the single catalog English option");
+    assert.equal(h.calls.some(([name]) => name === "save-ai"), false, "loading a legacy ID does not rewrite native settings");
+    h.select("Output Language").props.onChange({ target: { value: "ja-JP" } }); await h.settle();
+    assert.deepEqual(h.calls.filter(([name]) => name === "save-ai"), [["save-ai", { responseLanguage: "ja-JP" }]]);
+    h.select("Code Language").props.onChange({ target: { value: "rust" } });
+    assert.deepEqual(h.calls.filter(([name]) => name === "code"), [["code", "rust"]]);
   } finally { h.cleanup(); }
 });

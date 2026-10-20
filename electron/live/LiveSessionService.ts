@@ -1,3 +1,5 @@
+import { requireCodeLanguage, requireOutputLanguage } from "../languages";
+import type { CodeLanguage, OutputLanguageId } from "../languages";
 import { randomUUID } from "node:crypto";
 import type OpenAI from "openai";
 import { buildConversationMessages } from "./ConversationContext";
@@ -193,6 +195,11 @@ export class LiveSessionService {
     if (this.answer) return { success: false, error: "请等待当前回答或先停止生成。" };
     if (!input || typeof input.question !== "string" || typeof input.includeScreenshots !== "boolean") return { success: false, error: "无效的问题参数。" };
     if (input.includeScreenshots && this.pendingConsumption) return { success: false, error: "截图正在移至废纸篓，请稍后再试。" };
+    let codeLanguage: CodeLanguage, responseLanguage: OutputLanguageId;
+    try {
+      codeLanguage = requireCodeLanguage(input.codeLanguage).id;
+      responseLanguage = requireOutputLanguage(this.deps.language()).id;
+    } catch (error) { return { success: false, error: message(error) }; }
     const question = input.question.trim();
     if (Buffer.byteLength(question) > 16 * 1024) return { success: false, error: "问题超过 16 KB，请缩短后重试。" };
     const transcripts = structuredClone(this.state.transcripts), answers = structuredClone(this.state.answers);
@@ -205,7 +212,7 @@ export class LiveSessionService {
     while (this.state.answers.length > 12) this.state.answers.shift();
     const sessionId = this.state.sessionId;
     this.emit(true);
-    void this.generate(answer, sessionId, controller, { question, transcripts, answers, screenshotPaths });
+    void this.generate(answer, sessionId, controller, { question, transcripts, answers, screenshotPaths, codeLanguage, responseLanguage });
     return { success: true, requestId: answer.id };
   }
   private trimAnswers(): void {
@@ -217,7 +224,7 @@ export class LiveSessionService {
     void task.finally(() => { if (this.pendingConsumption === task) this.pendingConsumption = null; });
     return task;
   }
-  private async generate(answer: LiveAnswer, sessionId: string, controller: AbortController, context: { question: string; transcripts: TranscriptSegment[]; answers: LiveAnswer[]; screenshotPaths: string[] }): Promise<void> {
+  private async generate(answer: LiveAnswer, sessionId: string, controller: AbortController, context: { question: string; transcripts: TranscriptSegment[]; answers: LiveAnswer[]; screenshotPaths: string[]; codeLanguage: CodeLanguage; responseLanguage: OutputLanguageId }): Promise<void> {
     const current = () => this.answer === controller && this.state.sessionId === sessionId;
     let consumption: Promise<LiveResult> | undefined;
     const submitted = () => {
@@ -240,7 +247,7 @@ export class LiveSessionService {
       if (images.length !== context.screenshotPaths.length) throw new Error("截图快照处理不完整，待提交截图已保留。请重试。");
       if (!context.question && !images.length && !context.transcripts.some(x => x.isFinal)) throw new Error("没有可用的截图、问题或最终转录。");
       answer.screenshotCount = images.length;
-      const built = buildConversationMessages({ ...context, images, responseLanguage: this.deps.language() });
+      const built = buildConversationMessages({ ...context, images });
       if (Buffer.byteLength(JSON.stringify(built.messages)) > 11 * 1024 * 1024) throw new Error("上下文超过传输限制，请减少截图或问题长度。");
       answer.contextTruncated = built.truncated || this.state.transcriptTruncated;
       const completion = await this.deps.stream(built.messages, controller.signal, (text, model) => {

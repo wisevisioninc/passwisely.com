@@ -1,8 +1,8 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import type {
   AiProviderId,
-  ResponseLanguage,
 } from "../../../electron/aiProviders";
+import { OUTPUT_LANGUAGES, getOutputLanguage } from "../../../electron/languages";
 import { getAiProviderDefinition } from "../../../electron/aiProviders";
 import type {
   PublicProviderSettings,
@@ -193,24 +193,18 @@ const AIProviderSettings: React.FC<SettingsWriteProps> = ({ runSettingsWrite = d
           Answer language
         </label>
         <select
-          value={settings.responseLanguage}
-          onChange={(event) =>
-            setSettings((current) =>
-              current
-                ? {
-                    ...current,
-                    responseLanguage: event.target.value as ResponseLanguage,
-                  }
-                : current,
-            )
-          }
+          value={getOutputLanguage(settings.responseLanguage)?.id ?? ""}
+          onChange={(event) => {
+            const language = getOutputLanguage(event.target.value);
+            if (language) setSettings(current => current ? { ...current, responseLanguage: language.id } : current);
+          }}
           className="w-full rounded bg-gray-900 px-2 py-1.5 text-[11px] outline-none"
         >
-          <option value="zh-CN">中文（默认）</option>
-          <option value="en">English</option>
+          {!getOutputLanguage(settings.responseLanguage) && <option value="" disabled>Select language</option>}
+          {OUTPUT_LANGUAGES.map(language => <option key={language.id} value={language.id}>{language.label}</option>)}
         </select>
         <p className="mt-1 text-[9px] leading-relaxed text-white/40">
-          中文模式下说明和答案使用中文，代码与技术标识可保留英文。
+          说明、回答和代码注释遵循所选语言；代码语法与技术标识保持原样。
         </p>
       </div>
 

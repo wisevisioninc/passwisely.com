@@ -5,6 +5,7 @@ import type { OverlayDisplay, OverlayGeometry } from "./overlayTypes";
 export class OverlayWindowController {
   private live = false;
   private interactive = false;
+  private keyboardLease = false;
   private displayId?: number;
   private normalBounds?: Electron.Rectangle;
   private lastGeometryKey?: string;
@@ -63,9 +64,10 @@ export class OverlayWindowController {
 
   setLive(enabled: boolean): void {
     const win = this.getWindow();
-    if (!win || win.isDestroyed()) { this.live = false; return; }
+    if (!win || win.isDestroyed()) { this.live = false; this.keyboardLease = false; return; }
     if (enabled === this.live) { this.publishGeometry(); return; }
     this.lastGeometryKey = undefined;
+    this.keyboardLease = false;
     if (enabled) {
       this.normalBounds = win.getBounds();
       this.displayId = screen.getDisplayMatching(this.normalBounds).id;
@@ -108,13 +110,21 @@ export class OverlayWindowController {
     if (win && !win.isDestroyed()) win.setIgnoreMouseEvents(this.live && !this.interactive, { forward: true });
   }
   setFocus(focused: boolean): void {
-    if (!this.live) return;
     const win = this.getWindow();
-    if (!win || win.isDestroyed()) return;
-    if (focused) win.focus(); else win.blur();
+    if (!this.live || !win || win.isDestroyed()) { this.keyboardLease = false; return; }
+    if (focused) {
+      if (!win.isFocused()) win.focus();
+      this.keyboardLease = true;
+    } else if (this.keyboardLease) {
+      // External focus loss may already have returned native keyboard focus.
+      // Release ownership without reactivating/deactivating the panel again.
+      if (win.isFocused()) win.blur();
+      this.keyboardLease = false;
+    }
   }
   reset(): void {
     this.live = false;
+    this.keyboardLease = false;
     this.interactive = false;
     this.displayId = undefined;
     this.normalBounds = undefined;

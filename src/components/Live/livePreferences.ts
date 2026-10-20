@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { DEFAULT_CODE_LANGUAGE, getCodeLanguage } from "../../../electron/languages";
+import type { CodeLanguage } from "../../../electron/languages";
 
 export type KeyDisplayMode = "icon" | "text";
 export const LIVE_UI_PREFERENCES_KEY = "passwisely.liveUi.preferences.v1";
 export const LIVE_UI_PREFERENCES_BACKUP_KEY = `${LIVE_UI_PREFERENCES_KEY}.before-key-display.bak`;
+export const LIVE_CODE_LANGUAGE_BACKUP_KEY = `${LIVE_UI_PREFERENCES_KEY}.before-code-language.bak`;
 const CHANGE_EVENT = "passwisely:live-ui-preferences-changed";
 type PreferenceStorage = Pick<Storage, "getItem" | "setItem">;
 export type SaveKeyDisplayResult = { success: true; mode: KeyDisplayMode } | { success: false; error: string };
@@ -27,22 +30,47 @@ export function readKeyDisplayMode(storage?: PreferenceStorage): KeyDisplayMode 
   } catch { return "icon"; }
 }
 
+function writePreference(field: "keyDisplayMode" | "codeLanguage", value: string, backupKey: string, storage?: PreferenceStorage): void {
+  const target = storage ?? browserStorage();
+  const previous = target.getItem(LIVE_UI_PREFERENCES_KEY);
+  const preferences = parsePreferences(previous);
+  // Each preference's first write owns an immutable backup. Never overwrite
+  // malformed input or unrelated/future fields, including the other preference.
+  if (previous !== null && target.getItem(backupKey) === null) target.setItem(backupKey, previous);
+  target.setItem(LIVE_UI_PREFERENCES_KEY, JSON.stringify({ ...preferences, [field]: value }));
+  if (!storage && typeof window !== "undefined") window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
 export function saveKeyDisplayMode(mode: unknown, storage?: PreferenceStorage): SaveKeyDisplayResult {
   if (mode !== "icon" && mode !== "text") return { success: false, error: "请选择有效的快捷键显示方式。" };
   try {
-    const target = storage ?? browserStorage();
-    const previous = target.getItem(LIVE_UI_PREFERENCES_KEY);
-    const preferences = parsePreferences(previous);
-    // Backup is immutable once created. If either read/backup fails, do not write
-    // over the current preferences; unrelated and unknown fields stay intact.
-    if (previous !== null && target.getItem(LIVE_UI_PREFERENCES_BACKUP_KEY) === null) {
-      target.setItem(LIVE_UI_PREFERENCES_BACKUP_KEY, previous);
-    }
-    target.setItem(LIVE_UI_PREFERENCES_KEY, JSON.stringify({ ...preferences, keyDisplayMode: mode }));
-    if (!storage && typeof window !== "undefined") window.dispatchEvent(new Event(CHANGE_EVENT));
+    writePreference("keyDisplayMode", mode, LIVE_UI_PREFERENCES_BACKUP_KEY, storage);
     return { success: true, mode };
   } catch {
     return { success: false, error: "无法保存快捷键显示方式；原配置已保留，请重试。" };
+  }
+}
+
+export type CodeLanguagePreference = { language: CodeLanguage | null; error?: string };
+export function readCodeLanguagePreference(storage?: PreferenceStorage): CodeLanguagePreference {
+  try {
+    const value = parsePreferences((storage ?? browserStorage()).getItem(LIVE_UI_PREFERENCES_KEY)).codeLanguage;
+    if (value === undefined) return { language: DEFAULT_CODE_LANGUAGE };
+    const language = getCodeLanguage(value);
+    if (language) return { language: language.id };
+    return { language: null, error: "已保存的代码语言无法识别；请明确选择有效语言后再生成回答。原配置已保留。" };
+  } catch {
+    return { language: null, error: "无法读取代码语言设置；请明确选择有效语言后再生成回答，原配置已保留。" };
+  }
+}
+export function saveCodeLanguage(value: unknown, storage?: PreferenceStorage): { success: true; language: CodeLanguage } | { success: false; error: string } {
+  const language = getCodeLanguage(value);
+  if (!language) return { success: false, error: "请选择有效的代码语言。" };
+  try {
+    writePreference("codeLanguage", language.id, LIVE_CODE_LANGUAGE_BACKUP_KEY, storage);
+    return { success: true, language: language.id };
+  } catch {
+    return { success: false, error: "无法保存代码语言；原配置已保留。" };
   }
 }
 

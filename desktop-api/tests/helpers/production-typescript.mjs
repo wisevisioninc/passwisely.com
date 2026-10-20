@@ -7,8 +7,9 @@ import ts from "typescript";
  * chooses the source entry; no substitute normalizer/projector is supplied.
  * CSS is a non-executable browser asset; these controller tests do not render it.
  */
-export function createProductionTsLoader({ mocks = {}, console: consoleOverride = console } = {}) {
+export function createProductionTsLoader({ mocks = {}, console: consoleOverride = console, env } = {}) {
   const modules = new Map();
+  const processBoundary = env === undefined ? process : { ...process, env };
   function load(filename) {
     if (modules.has(filename)) return modules.get(filename).exports;
     const javascript = ts.transpileModule(readFileSync(filename, "utf8"), {
@@ -18,7 +19,7 @@ export function createProductionTsLoader({ mocks = {}, console: consoleOverride 
     const module = { exports: {} };
     modules.set(filename, module);
     const require = createRequire(filename);
-    new Function("require", "module", "exports", "console", javascript)(id => {
+    new Function("require", "module", "exports", "console", "process", javascript)(id => {
       if (id in mocks) return mocks[id];
       if (id.endsWith(".css")) return {};
       if (!id.startsWith(".")) return require(id);
@@ -26,7 +27,7 @@ export function createProductionTsLoader({ mocks = {}, console: consoleOverride 
       const dependency = [base, `${base}.ts`, `${base}.tsx`, path.join(base, "index.ts"), path.join(base, "index.tsx")].find(candidate => existsSync(candidate) && statSync(candidate).isFile());
       if (!dependency) throw new Error(`Production dependency not found: ${base}`);
       return load(dependency);
-    }, module, module.exports, consoleOverride);
+    }, module, module.exports, consoleOverride, processBoundary);
     return module.exports;
   }
   return load;

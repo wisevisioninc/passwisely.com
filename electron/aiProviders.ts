@@ -10,8 +10,9 @@ export const AI_PROVIDER_IDS = [
 
 export type AiProviderId = (typeof AI_PROVIDER_IDS)[number];
 
-export const RESPONSE_LANGUAGES = ["zh-CN", "en"] as const;
-export type ResponseLanguage = (typeof RESPONSE_LANGUAGES)[number];
+import type { ResponseLanguage } from "./languages";
+export { RESPONSE_LANGUAGES } from "./languages";
+export type { ResponseLanguage } from "./languages";
 
 export interface AiModelPreset {
   id: string;

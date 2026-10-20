@@ -1,3 +1,4 @@
+import { getCodeLanguage } from "../../../electron/languages";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
 
@@ -17,7 +18,7 @@ export default function SolutionPanel({ data, language }: { data?: SolutionData 
     {data?.error && <p role="alert" className="rounded border border-amber-400/50 bg-amber-950/70 p-2 text-xs text-amber-100">{data.error} 当前代码可能不完整，请重新生成后使用。</p>}
     {section("1. 简短思路", data?.thoughts?.length ? data.thoughts.map((text, i) => <p key={i}>{text}</p>) : <span className="text-gray-400">{pending ? "等待首段内容…" : "未提供"}</span>)}
     {section("2. 时间与空间复杂度", <div className="space-y-1"><p>时间复杂度：{data?.time_complexity || (pending ? "生成中…" : "未提供")}</p><p>空间复杂度：{data?.space_complexity || (pending ? "生成中…" : "未提供")}</p></div>)}
-    {section("3. 完整代码", data?.code ? pending || data.error ? <pre className="overflow-x-auto rounded bg-slate-950/60 p-3 font-mono text-xs whitespace-pre-wrap">{data.code}</pre> : <SyntaxHighlighter language={language === "golang" ? "go" : language} style={dracula} showLineNumbers wrapLongLines customStyle={{ margin: 0, padding: "0.75rem", background: "rgba(22,27,34,.5)" }}>{data.code}</SyntaxHighlighter> : <span className="text-gray-400">{pending ? "生成中…" : "未提供代码"}</span>)}
+    {section("3. 完整代码", data?.code ? pending || data.error ? <pre className="overflow-x-auto rounded bg-slate-950/60 p-3 font-mono text-xs whitespace-pre-wrap">{data.code}</pre> : <SyntaxHighlighter language={getCodeLanguage(language)?.highlightId ?? "text"} style={dracula} showLineNumbers wrapLongLines customStyle={{ margin: 0, padding: "0.75rem", background: "rgba(22,27,34,.5)" }}>{data.code}</SyntaxHighlighter> : <span className="text-gray-400">{pending ? "生成中…" : "未提供代码"}</span>)}
     {section("4. 其他解法", data?.alternatives?.length ? data.alternatives.map((text, i) => <p key={i}>{text}</p>) : <span className="text-gray-400">{pending ? "生成中…" : data?.error ? "尚未生成。" : "暂无值得补充的其他解法。"}</span>)}
   </div>;
 }

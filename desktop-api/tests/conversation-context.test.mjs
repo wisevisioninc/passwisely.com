@@ -1,13 +1,8 @@
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFile } from "node:fs/promises";
-import ts from "typescript";
-
-const source = await readFile(new URL("../../electron/live/ConversationContext.ts", import.meta.url), "utf8");
-const js = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText;
-const { buildConversationMessages, MAX_CONVERSATION_TEXT_BYTES } = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
+const { buildConversationMessages, MAX_CONVERSATION_TEXT_BYTES } = createProductionTsLoader({ env: {} })(fileURLToPath(new URL("../../electron/live/ConversationContext.ts", import.meta.url)));
 const segment = (id, text, overrides = {}) => ({
   id, text, source: "system", isFinal: true, receivedAt: Number(id) || 1,
   ...overrides,

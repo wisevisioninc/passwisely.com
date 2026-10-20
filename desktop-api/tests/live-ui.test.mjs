@@ -423,7 +423,7 @@ test("Start Over and its shortcut share one guarded request; late completion can
   } finally { h.dispose(); }
 });
 
-test("stopped-session Start Over clears the accepted draft and hides empty content; failed cleanup stays visible", async () => {
+test("stopped-session Start Over clears the accepted draft and retains the opened content; failed cleanup stays visible", async () => {
   const answer = { id: "ended", question: "question", text: "retained answer", model: "fixture", status: "completed", createdAt: 1, screenshotCount: 0 };
   let request = pendingResult();
   const h = await clientWorkspace(snapshot({ captureStatus: "ended", answers: [answer] }), { liveStartOver: () => request.promise });
@@ -436,7 +436,7 @@ test("stopped-session Start Over clears the accepted draft and hides empty conte
     assert.equal(h.label("会话提问").props.value, "");
     request = pendingResult(); h.shortcut("clear"); request.resolve({ success: true }); await h.tick();
     assert.equal(h.label("会话提问"), undefined);
-    assert.equal(h.by(node => node.props.className === "pw-live-card pw-glass"), undefined);
+    assert.ok(h.by(node => node.props.className === "pw-live-card pw-glass"), "clearing content must not hide the opened panel");
     request = pendingResult(); h.shortcut("clear"); request.resolve({ success: false, error: "fixture Trash failure" }); await h.tick();
     assert.ok(elementText(h.by(node => node.props.role === "alert")).includes("fixture Trash failure"));
   } finally { h.dispose(); }
@@ -462,14 +462,14 @@ test("transient input supports Escape and Enter while an older submission cannot
   } finally { h.dispose(); }
 });
 
-test("collapse, moving and resizing retain the session; lost pointer capture releases empty-surface mouse ownership", async () => {
+test("moving and resizing retain the session; lost pointer capture releases empty-surface mouse ownership", async () => {
   const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }));
   try {
     const initial = h.by(node => node.props.className === "pw-live-windows");
     assert.equal(initial.props.style.width, 600); assert.equal(initial.props.style.top, 84);
-    h.label("Collapse / 收起内容").props.onClick();
-    assert.equal(h.by(node => node.props.className === "pw-live-card pw-glass"), undefined);
-    h.textButton("Expand").props.onClick();
+    assert.equal(h.label("Collapse / 收起内容"), undefined);
+    assert.equal(h.textButton("Expand"), undefined);
+    assert.ok(h.by(node => node.props.className === "pw-live-card pw-glass"));
     const target = new h.ElementBoundary(true);
     const drag = h.label("移动浮条");
     drag.props.onPointerDown({ button: 0, pointerId: 1, clientX: 600, clientY: 20, currentTarget: target, preventDefault() {} });
@@ -768,5 +768,37 @@ test("an owned native select keeps an unknown focus transfer but releases on kno
     const hiddenCount = focuses.length;
     select2.isConnected = false; h.render(); await tick();
     assert.equal(focuses.length, hiddenCount, "hide clears the lease and pending focus work rather than leaving a stale owner");
+  } finally { h.dispose(); }
+});
+
+test("Start Interview opens content before its first snapshot and capture controls never close that opened panel", async () => {
+  const starting = pendingResult(); let starts = 0, pauses = 0, resumes = 0, toggles = 0;
+  const h = await clientWorkspace(snapshot(), {
+    liveStart() { starts++; return starting.promise; }, async livePause() { pauses++; return { success: true }; },
+    async liveResume() { resumes++; return { success: true }; }, async toggleMainWindow() { toggles++; },
+  });
+  const card = () => h.by(node => node.props.className === "pw-live-card pw-glass");
+  try {
+    assert.equal(card(), undefined);
+    h.textButton("Start Interview").props.onClick();
+    assert.ok(card(), "the user's Start intent owns visibility before the SDK produces a snapshot");
+    assert.equal(starts, 1);
+    starting.resolve({ success: true }); await h.tick(); assert.ok(card());
+    h.emit(snapshot({ revision: 12, captureStatus: "recording", captureNeedsCleanup: true }));
+    h.label("Pause Listening / 暂停采集").props.onClick(); await h.tick();
+    h.emit(snapshot({ revision: 13, captureStatus: "pausing", captureNeedsCleanup: true }));
+    assert.ok(card()); assert.ok(h.textButton("Pausing…"));
+    h.emit(snapshot({ revision: 14, captureStatus: "paused", captureNeedsCleanup: true }));
+    assert.ok(card()); h.label("Resume Listening / 继续采集").props.onClick(); await h.tick();
+    h.emit(snapshot({ revision: 15, captureStatus: "resuming", captureNeedsCleanup: true }));
+    assert.ok(card()); assert.ok(h.textButton("Resuming…"));
+    h.emit(snapshot({ revision: 16, captureStatus: "recording", captureNeedsCleanup: true }));
+    h.emit(snapshot({ revision: 17, captureStatus: "ended" })); assert.ok(card(), "ending before a first word still retains the opened content");
+    assert.equal(pauses, 1); assert.equal(resumes, 1);
+    h.label("Settings / 设置").props.onClick(); assert.ok(card());
+    h.by(node => node.type?.name === "LiveSettingsPopover").props.onClose(); assert.ok(card());
+    assert.equal(h.label("Collapse / 收起内容"), undefined); assert.equal(h.textButton("Expand"), undefined);
+    assert.equal(toggles, 0, "capture and settings never invoke the explicit window visibility operation");
+    h.textButton("Show / Hide").props.onClick(); assert.equal(toggles, 1);
   } finally { h.dispose(); }
 });

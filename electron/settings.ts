@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile } from "./live/transcription";
 import type { TranscriptionSettings } from "./live/transcription";
+import { DEFAULT_OUTPUT_LANGUAGE, getOutputLanguage } from "./languages";
 
 import {
   AI_PROVIDERS,
@@ -89,14 +90,6 @@ function firstEnvironmentValue(names: string[]): string {
 function parseEnvironmentBoolean(value: string): boolean | undefined {
   if (["1", "true", "yes", "on"].includes(value.toLowerCase())) return true;
   if (["0", "false", "no", "off"].includes(value.toLowerCase())) return false;
-  return undefined;
-}
-
-function normalizeResponseLanguage(value: unknown): ResponseLanguage | undefined {
-  if (typeof value !== "string") return undefined;
-  const normalized = value.trim().toLowerCase();
-  if (["zh", "zh-cn", "chinese", "中文"].includes(normalized)) return "zh-CN";
-  if (["en", "en-us", "english", "英文"].includes(normalized)) return "en";
   return undefined;
 }
 
@@ -306,9 +299,9 @@ export class SettingsStore {
 
   public getResponseLanguage(): ResponseLanguage {
     return (
-      normalizeResponseLanguage(process.env.AI_RESPONSE_LANGUAGE) ||
-      normalizeResponseLanguage(this.read().responseLanguage) ||
-      "zh-CN"
+      getOutputLanguage(process.env.AI_RESPONSE_LANGUAGE)?.id ||
+      getOutputLanguage(this.read().responseLanguage)?.id ||
+      DEFAULT_OUTPUT_LANGUAGE
     );
   }
 
@@ -379,14 +372,15 @@ export class SettingsStore {
   }
 
   public save(input: SaveAiSettingsInput): PublicSettings {
+    const responseLanguage = input.responseLanguage === undefined ? undefined : getOutputLanguage(input.responseLanguage);
+    if (responseLanguage === null) throw new Error("Unsupported output language. Choose a language in Settings.");
     const settings = this.migrate(this.read());
     const provider = isAiProviderId(input.provider)
       ? input.provider
       : this.getActiveProvider();
     const definition = getAiProviderDefinition(provider);
     settings.activeProvider = provider;
-    const responseLanguage = normalizeResponseLanguage(input.responseLanguage);
-    if (responseLanguage) settings.responseLanguage = responseLanguage;
+    if (responseLanguage) settings.responseLanguage = responseLanguage.id;
     settings.providers ||= {};
     const providerSettings = (settings.providers[provider] ||= {});
     const apiKey = input.apiKey?.trim();

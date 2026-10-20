@@ -198,10 +198,10 @@ test("advanced speech Save uses its supplied workspace gate and a rejected gate 
   }
 });
 
-function advancedProviderController(runSettingsWrite, apiOverrides = {}) {
+function advancedProviderController(runSettingsWrite, apiOverrides = {}, initialResponseLanguage = "en") {
   const previousWindow = globalThis.window, toasts = [], calls = [];
   const provider = { id: "kimi", label: "Kimi", hasApiKey: true, model: "kimi-k3", baseUrl: "https://api.example.test", supportsVision: false, supportsJsonMode: false, models: [], route: "direct", usesWiseDefaultKey: false };
-  const settings = { provider: "kimi", responseLanguage: "en", hasApiKey: true, model: provider.model, baseUrl: provider.baseUrl, supportsVision: false, supportsJsonMode: false, storageSecure: true, providers: [provider] };
+  const settings = { provider: "kimi", responseLanguage: initialResponseLanguage, hasApiKey: true, model: provider.model, baseUrl: provider.baseUrl, supportsVision: false, supportsJsonMode: false, storageSecure: true, providers: [provider] };
   const api = {
     async saveAiSettings(input) { calls.push(["save", input]); return { success: true, settings }; },
     async clearApiKey(input) { calls.push(["clear", input]); return { success: true, settings }; }, ...apiOverrides,
@@ -219,7 +219,7 @@ function advancedProviderController(runSettingsWrite, apiOverrides = {}) {
   assert.equal(providerNode.props.runSettingsWrite, runSettingsWrite);
   assert.equal(speechNode.props.runSettingsWrite, runSettingsWrite);
   const tree = providerNode.type(providerNode.props);
-  return { calls, toasts,
+  return { calls, toasts, tree,
     button: label => elements(tree).find(node => node.type === "button" && text(node) === label),
     cleanup() { globalThis.window = previousWindow; },
   };
@@ -281,4 +281,28 @@ test("live overlay describes saved speech settings generically and displays the 
       assert.ok(metadata.includes(transcription.latency === "delayed" ? "分钟级（实验）" : "实时"));
     }
   } finally { if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow; console.error = previousError; }
+});
+
+
+test("advanced answer-language options use the exact shared 22-choice catalog and render legacy English canonically", () => {
+  const manifest = JSON.parse(readFileSync(path.join(root, "test/languages/systemcontainer-catalog.json"), "utf8"));
+  const h = advancedProviderController(operation => operation());
+  try {
+    const output = elements(h.tree).find(node => node.type === "select" && node.props.value === "en-US");
+    assert.ok(output, "legacy English has a visible selected option in the advanced settings");
+    assert.deepEqual(elements(output).filter(node => node.type === "option").map(node => ({ id: node.props.value, label: text(node) })), manifest.output.entries.map(({ id, label }) => ({ id, label })));
+    assert.equal(h.calls.length, 0, "rendering a legacy setting does not save it");
+  } finally { h.cleanup(); }
+});
+
+
+test("an unknown advanced output value remains unresolved instead of selecting the first catalog language", () => {
+  const h = advancedProviderController(operation => operation(), {}, "unknown");
+  try {
+    const output = elements(h.tree).find(node => node.type === "select" && node.props.value === "");
+    assert.ok(output);
+    const placeholder = elements(output).find(node => node.type === "option" && node.props.value === "");
+    assert.equal(placeholder.props.disabled, true);
+    assert.equal(h.calls.length, 0);
+  } finally { h.cleanup(); }
 });

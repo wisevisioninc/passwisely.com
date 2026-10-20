@@ -14,22 +14,22 @@ const plain = value => JSON.parse(JSON.stringify(value));
 
 function harness() {
   let bounds = { x: 50, y: 90, width: 600, height: 600 };
-  let destroyed = false, available = true;
+  let destroyed = false, available = true, focused = false;
   let displays = [{ id: 1, label: 'Built-in Retina Display', workArea: { x: 0, y: 24, width: 1440, height: 876 } }, { id: 2, label: 'Studio Display', workArea: { x: -1920, y: 0, width: 1920, height: 1080 } }];
   const calls = [], handlers = new Map(), mainFrame = {};
   const win = {
-    isDestroyed: () => destroyed, getBounds: () => ({ ...bounds }),
+    isDestroyed: () => destroyed, isFocused: () => focused, getBounds: () => ({ ...bounds }),
     setBounds: value => { bounds = { ...value }; calls.push(['bounds', plain(value)]); },
     setMovable: value => calls.push(['movable', value]), setResizable: value => calls.push(['resizable', value]),
     setIgnoreMouseEvents: (value, options) => calls.push(['ignore', value, plain(options)]),
-    focus: () => calls.push(['focus']), blur: () => calls.push(['blur']),
+    focus: () => { focused = true; calls.push(['focus']); }, blur: () => { focused = false; calls.push(['blur']); },
     webContents: { mainFrame, send: (...args) => calls.push(['send', ...args]) },
   };
   const electron = { ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) }, screen: { getAllDisplays: () => displays, getPrimaryDisplay: () => displays[0], getDisplayMatching: rect => displays.find(display => rect.x >= display.workArea.x && rect.x < display.workArea.x + display.workArea.width) || displays[0] } };
   const { OverlayWindowController, initializeOverlayIpc } = load('live/OverlayWindow.ts', electron);
   const controller = new OverlayWindowController(() => available ? win : null);
   initializeOverlayIpc(controller, () => available ? win : null);
-  return { controller, calls, handlers, win, bounds: () => bounds, event: { sender: win.webContents, senderFrame: mainFrame }, setDisplays: value => { displays = value; }, setDestroyed: value => { destroyed = value; }, setAvailable: value => { available = value; } };
+  return { controller, calls, handlers, win, bounds: () => bounds, event: { sender: win.webContents, senderFrame: mainFrame }, setDisplays: value => { displays = value; }, setDestroyed: value => { destroyed = value; }, setAvailable: value => { available = value; }, setFocused: value => { focused = value; } };
 }
 
 test('live native geometry fills target workArea while renderer panels and click regions remain independent', () => {
@@ -129,6 +129,22 @@ test('non-live controls cannot make the login container click-through and new wi
   h.controller.setLive(true); h.controller.setInteractive(true); h.controller.reset();
   h.controller.setLive(true);
   assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', true, { forward: true }]);
+});
+
+test('only an overlay-owned keyboard lease may blur the native panel; ordinary toolbar release cannot hide or move it', () => {
+  const h = harness(); h.controller.setLive(true);
+  const bounds = plain(h.bounds()), geometry = plain(h.controller.getGeometry());
+  h.calls.length = 0;
+  h.handlers.get('overlay-set-focus')(h.event, false);
+  h.handlers.get('overlay-set-focus')(h.event, false);
+  assert.deepEqual(h.calls, [], 'a plain settings/toolbar click cannot deactivate a panel which never borrowed keyboard focus');
+  h.controller.setFocus(true); assert.deepEqual(h.calls.at(-1), ['focus']);
+  h.controller.setFocus(false); assert.deepEqual(h.calls.at(-1), ['blur']);
+  const released = h.calls.length; h.controller.setFocus(false); assert.equal(h.calls.length, released);
+  assert.deepEqual(plain(h.bounds()), bounds); assert.deepEqual(plain(h.controller.getGeometry()), geometry);
+  assert.ok(!h.calls.some(call => call[0] === 'bounds' || call[0] === 'send'));
+  h.controller.setFocus(true); h.controller.reset(); h.controller.setLive(true); h.calls.length = 0;
+  h.controller.setFocus(false); assert.deepEqual(h.calls, [], 'reset/new live ownership cannot inherit an earlier keyboard lease');
 });
 
 test('actual main resize and move entrypoints cannot shrink or displace the live native overlay', () => {
@@ -387,4 +403,38 @@ test('an asynchronous display move returns no old geometry and publishes only af
   assert.ok(!h.calls.slice(before).some(call => call[0] === 'send' && call[1] === 'overlay-geometry'));
   setBounds(pending); h.controller.publishGeometry();
   assert.deepEqual(plain(h.calls.at(-1)), ['send', 'overlay-geometry', { displayId: 2, width: 1920, height: 1080 }]);
+});
+
+
+test('failed native focus does not acquire a lease and failed blur retains its release ownership', () => {
+  const h = harness(); h.controller.setLive(true); h.calls.length = 0;
+  const focus = h.win.focus, blur = h.win.blur;
+  h.win.focus = () => { throw new Error('fixture focus failed'); };
+  assert.throws(() => h.controller.setFocus(true), /fixture focus failed/);
+  h.controller.setFocus(false); assert.deepEqual(h.calls, []);
+  h.win.focus = focus; h.controller.setFocus(true);
+  h.win.blur = () => { throw new Error('fixture blur failed'); };
+  assert.throws(() => h.controller.setFocus(false), /fixture blur failed/);
+  h.win.blur = blur; h.controller.setFocus(false); assert.deepEqual(h.calls.at(-1), ['blur']);
+  const released = h.calls.length; h.controller.setFocus(false); assert.equal(h.calls.length, released);
+});
+
+
+test('native keyboard focus is idempotent and an external focus loss clears ownership without another blur', () => {
+  const h = harness(); h.controller.setLive(true); h.calls.length = 0;
+  h.setFocused(true); // Mouse activation can focus the panel before renderer IPC.
+  h.controller.setFocus(true); h.controller.setFocus(true);
+  assert.deepEqual(h.calls, [], 'an already-focused panel must not be activated again');
+  h.controller.setFocus(false); h.controller.setFocus(false);
+  assert.deepEqual(h.calls, [['blur']], 'the acquired keyboard lease is released exactly once');
+
+  h.calls.length = 0;
+  h.controller.setFocus(true); h.controller.setFocus(true);
+  assert.deepEqual(h.calls, [['focus']], 'repeated keyboard requests use the current native focus state');
+  h.setFocused(false); // The user clicked another application underneath.
+  h.controller.setFocus(false); h.controller.setFocus(false);
+  assert.deepEqual(h.calls, [['focus']], 'external deactivation needs only logical lease release');
+  h.setFocused(true); // A later ordinary gear click may activate the panel.
+  h.controller.setFocus(false);
+  assert.deepEqual(h.calls, [['focus']], 'the old lease cannot blur a later ordinary toolbar activation');
 });

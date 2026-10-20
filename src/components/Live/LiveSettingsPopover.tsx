@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent, RefObject } from "react";
+import { CODE_LANGUAGES, OUTPUT_LANGUAGES, getCodeLanguage, getOutputLanguage } from "../../../electron/languages";
+import type { CodeLanguage, OutputLanguageId } from "../../../electron/languages";
 import type { CaptureStatus } from "../../../electron/live/types";
 import type { OverlayDisplay, OverlayGeometry } from "../../../electron/live/overlayTypes";
 import { getTranscriptionProfile, TRANSCRIPTION_PROFILES } from "../../../electron/live/transcription";
@@ -9,8 +11,8 @@ import { directSettingsWrite } from "../shared/settingsWrites";
 import type { SettingsWriteRunner } from "../shared/settingsWrites";
 import "./settingsPopover.css";
 
-type OutputLanguage = "zh-CN" | "en";
-export type LiveCodeLanguage = "python" | "cpp" | "java";
+type OutputLanguage = OutputLanguageId;
+export type LiveCodeLanguage = CodeLanguage;
 type SettingsApi = Pick<Window["electronAPI"], "getAiSettings" | "saveAiSettings" | "getTranscriptionSettings" | "saveTranscriptionSettings" | "accountOpenPortal"> & {
   getOverlayDisplays: () => Promise<OverlayDisplay[]>;
   selectOverlayDisplay: (id: number) => Promise<OverlayGeometry | null>;
@@ -40,8 +42,7 @@ export interface LiveSettingsPopoverProps {
 }
 
 const errorMessage = (reason: unknown, fallback: string) => reason instanceof Error ? reason.message : fallback;
-const outputLanguage = (value: unknown): OutputLanguage | null => value === "zh-CN" || value === "en" ? value : null;
-const codeLanguage = (value: unknown): value is LiveCodeLanguage => value === "python" || value === "cpp" || value === "java";
+const outputLanguage = (value: unknown): OutputLanguage | null => getOutputLanguage(value)?.id ?? null;
 export function isSpeechSelectionLocked(status: CaptureStatus, needsCleanup = false): boolean {
   return needsCleanup || !["idle", "ended", "error"].includes(status);
 }
@@ -207,13 +208,13 @@ export function LiveSettingsPopover({ currentLanguage, onLanguageChange, capture
     <div className="pw-settings-section pw-settings-languages">
       <label>Output Language<select data-settings-control aria-label="Output Language" aria-describedby={answerBusy ? outputHintId : undefined} value={output} disabled={!output || settingsWriteBusy || answerBusy}
         onChange={event => void changeOutput(event.target.value)}>
-        {!output && <option value="" disabled>Loading…</option>}<option value="zh-CN">中文</option><option value="en">English</option>
+        {!output && <option value="" disabled>Loading…</option>}{OUTPUT_LANGUAGES.map(language => <option key={language.id} value={language.id}>{language.label}</option>)}
       </select></label>{status("output")}
       {answerBusy && <p id={outputHintId} className="pw-settings-hint">回答生成完成后可更改回答语言。</p>}
-      <label>Code Language<select data-settings-control aria-label="Code Language" value={codeLanguage(currentLanguage) ? currentLanguage : ""}
-        onChange={event => { if (codeLanguage(event.target.value)) onLanguageChange(event.target.value); }}>
-        {!codeLanguage(currentLanguage) && <option value="" disabled>Select language</option>}
-        <option value="python">Python</option><option value="cpp">C++</option><option value="java">Java</option>
+      <label>Code Language<select data-settings-control aria-label="Code Language" value={getCodeLanguage(currentLanguage)?.id ?? ""}
+        onChange={event => { const language = getCodeLanguage(event.target.value); if (language) onLanguageChange(language.id); }}>
+        {!getCodeLanguage(currentLanguage) && <option value="" disabled>Select language</option>}
+        {CODE_LANGUAGES.map(language => <option key={language.id} value={language.id}>{language.label}</option>)}
       </select></label>
       <label>Meeting Audio Language<select data-settings-control aria-label="Meeting Audio Language" aria-describedby={speechHintId} value={speech}
         disabled={!speech || settingsWriteBusy || speechLocked} onChange={event => void changeSpeech(event.target.value)}>

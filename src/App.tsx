@@ -13,6 +13,8 @@ import { UpdateNotification } from "./components/UpdateNotification";
 import { ToastContext } from "./contexts/toast";
 import { WindowControls } from "./components/shared/WindowControls";
 import { CaptureRecovery } from "./components/Live/CaptureRecovery";
+import { readCodeLanguagePreference, saveCodeLanguage } from "./components/Live/livePreferences";
+import { getCodeLanguage } from "../electron/languages";
 
 // Create a React Query client
 const queryClient = new QueryClient({
@@ -48,7 +50,8 @@ function App() {
     variant: "neutral",
   });
   // Default language (can be updated from within SubscribedApp)
-  const [currentLanguage, setCurrentLanguage] = useState<string>("python");
+  const [languagePreference] = useState(() => readCodeLanguagePreference());
+  const [currentLanguage, setCurrentLanguage] = useState<string>(languagePreference.language ?? "");
   const [currentQuery, setQuery] = useState<string>("");
   const [account, setAccount] = useState<DesktopAccountUser | null>(null);
   const [credits, setCredits] = useState(0);
@@ -113,6 +116,20 @@ function App() {
     [],
   );
 
+  useEffect(() => {
+    if (languagePreference.error) showToast("代码语言设置", languagePreference.error, "error");
+  }, [languagePreference, showToast]);
+  const setLanguage = useCallback((value: string) => {
+    const language = getCodeLanguage(value);
+    if (!language) { showToast("代码语言设置", "请选择有效的代码语言。", "error"); return; }
+    const saved = saveCodeLanguage(language.id);
+    // This App owns both the active preference and the compatibility bridge.
+    // A blocked localStorage write does not prevent an explicit session choice.
+    window.__LANGUAGE__ = language.id;
+    setCurrentLanguage(language.id);
+    if (!saved.success) showToast("代码语言未保存", `本次会话已使用所选语言。${saved.error}重新打开后需再次选择。`, "error");
+  }, [showToast]);
+
   if (accountLoading) {
     return (
       <div className="h-screen relative grid place-items-center bg-[#111018] text-white rounded-2xl border border-white/10">
@@ -151,7 +168,7 @@ function App() {
           <SubscribedApp
             credits={credits}
             currentLanguage={currentLanguage}
-            setLanguage={setCurrentLanguage}
+            setLanguage={setLanguage}
             currentQuery={currentQuery}
             setQuery={setQuery}
           />

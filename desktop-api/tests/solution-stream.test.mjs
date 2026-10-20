@@ -1,12 +1,9 @@
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFile } from "node:fs/promises";
-import ts from "typescript";
 import { encodeSSE, readSSE } from "../../shared/sse.mjs";
-
-const source = await readFile(new URL("../../electron/solutionStream.ts", import.meta.url), "utf8");
-const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { partialSolution, solutionFormat } = await import(`data:text/javascript;base64,${Buffer.from(js).toString("base64")}`);
+import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
+const { partialSolution, solutionFormat } = createProductionTsLoader({ env: {} })(fileURLToPath(new URL("../../electron/solutionStream.ts", import.meta.url)));
 
 test("partial JSON preserves code escapes and Unicode at every split point", () => {
   const answer = { thoughts: ["使用哈希表😀"], time_complexity: "O(n)，遍历一次", space_complexity: "O(n)，存储下标", code: 'print("\\n")\nprint("你好😀")', alternatives: ["排序后使用双指针。"] };
@@ -27,7 +24,7 @@ test("prompt puts short Chinese explanation and complexity before complete code"
   const prompt = solutionFormat("python", true);
   const keys = ['"thoughts"', '"time_complexity"', '"space_complexity"', '"code"', '"alternatives"', '"problem_statement"'];
   assert.deepEqual(keys.map(k => prompt.indexOf(k)), keys.map(k => prompt.indexOf(k)).sort((a, b) => a - b));
-  assert.match(prompt, /完整 python 代码/);
+  assert.match(prompt, /完整 Python 代码/);
   assert.match(prompt, /最多两项/);
 });
 

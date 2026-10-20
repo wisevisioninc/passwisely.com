@@ -1,4 +1,5 @@
 import React, { useEffect } from "react"
+import { CODE_LANGUAGES, getCodeLanguage } from "../../../electron/languages"
 
 interface LanguageSelectorProps {
   currentLanguage: string
@@ -21,15 +22,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   }, []);
 
   const handleLanguageChange = (newLanguage: string) => {
-    window.__LANGUAGE__ = newLanguage
-    setLanguage(newLanguage)
+    const language = getCodeLanguage(newLanguage)
+    if (language) setLanguage(language.id)
   }
 
-  const languages = [
-    { value: 'python', label: 'Python', shortcut: 'Alt+P' },
-    { value: 'cpp', label: 'C++', shortcut: 'Alt+C' },
-    { value: 'java', label: 'Java', shortcut: 'Alt+J' }
-  ]
+  const shortcuts: Readonly<Record<string, string>> = { python: 'Alt+P', cpp: 'Alt+C', java: 'Alt+J' }
 
   return (
     <div className="mb-3 px-2 space-y-1">
@@ -37,13 +34,14 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         Solution language
       </label>
       <select
-        value={currentLanguage}
+        value={getCodeLanguage(currentLanguage)?.id ?? ""}
         onChange={(event) => handleLanguageChange(event.target.value)}
         className="w-full rounded bg-gray-900 px-2 py-1.5 text-[11px] outline-none"
       >
-        {languages.map(({ value, label, shortcut }) => (
-          <option key={value} value={value}>
-            {label} ({shortcut})
+        {!getCodeLanguage(currentLanguage) && <option value="" disabled>Select language</option>}
+        {CODE_LANGUAGES.map(({ id, label }) => (
+          <option key={id} value={id}>
+            {label}{shortcuts[id] ? ` (${shortcuts[id]})` : ""}
           </option>
         ))}
       </select>

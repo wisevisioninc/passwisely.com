@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "evidenceId": "ev_f0579ae07d723777fecc7a1fd7bf0fe355941fbfab0cec305d744cf259ddb0c1",
+    "analysisKind": "read-only static literal extraction; no target execution",
+    "installedAsar": "/Applications/systemcontainer.app/Contents/Resources/app.asar",
+    "installedAsarSha256": "528ea903d8dc6a1b42331ae7658689ab39e37fe63c09eef242475b2fa978fd78",
+    "installedAsarBytes": 206100163,
+    "version": "3.0.1",
+    "member": "out/renderer/assets/main-CLCIkAdW.js",
+    "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+    "offsetUnit": "zero-based UTF-8 bytes, end exclusive"
+  },
+  "output": {
+    "sourceSymbol": "xo",
+    "sourceRange": [
+      895514,
+      896495
+    ],
+    "fallbackId": "en-US",
+    "storageField": "session.user.displayLanguage",
+    "entries": [
+      {
+        "id": "ar-SA",
+        "label": "Arabic (العربية)",
+        "order": 1
+      },
+      {
+        "id": "bn-BD",
+        "label": "Bengali (বাংলা)",
+        "order": 2
+      },
+      {
+        "id": "yue-Hant-HK",
+        "label": "Cantonese (粵語)",
+        "order": 3
+      },
+      {
+        "id": "de-DE",
+        "label": "German (Deutsch)",
+        "order": 4
+      },
+      {
+        "id": "en-US",
+        "label": "English",
+        "order": 5
+      },
+      {
+        "id": "fa-IR",
+        "label": "Farsi (فارسی)",
+        "order": 6
+      },
+      {
+        "id": "fr-FR",
+        "label": "French (Français)",
+        "order": 7
+      },
+      {
+        "id": "hi-IN",
+        "label": "Hindi (हिन्दी)",
+        "order": 8
+      },
+      {
+        "id": "it-IT",
+        "label": "Italian (Italiano)",
+        "order": 9
+      },
+      {
+        "id": "ja-JP",
+        "label": "Japanese (日本語)",
+        "order": 10
+      },
+      {
+        "id": "ko-KR",
+        "label": "Korean (한국어)",
+        "order": 11
+      },
+      {
+        "id": "zh-CN",
+        "label": "Mandarin (普通话)",
+        "order": 12
+      },
+      {
+        "id": "nl-NL",
+        "label": "Dutch (Nederlands)",
+        "order": 13
+      },
+      {
+        "id": "pl-PL",
+        "label": "Polish (Polski)",
+        "order": 14
+      },
+      {
+        "id": "pt-PT",
+        "label": "Portuguese (Português)",
+        "order": 15
+      },
+      {
+        "id": "ru-RU",
+        "label": "Russian (Русский)",
+        "order": 16
+      },
+      {
+        "id": "es-ES",
+        "label": "Spanish (Español)",
+        "order": 17
+      },
+      {
+        "id": "ta-IN",
+        "label": "Tamil (தமிழ்)",
+        "order": 18
+      },
+      {
+        "id": "th-TH",
+        "label": "Thai (ไทย)",
+        "order": 19
+      },
+      {
+        "id": "tr-TR",
+        "label": "Turkish (Türkçe)",
+        "order": 20
+      },
+      {
+        "id": "ur-PK",
+        "label": "Urdu (اردو)",
+        "order": 21
+      },
+      {
+        "id": "vi-VN",
+        "label": "Vietnamese (Tiếng Việt)",
+        "order": 22
+      }
+    ],
+    "persistedField": "displayLanguage"
+  },
+  "code": {
+    "sourceSymbol": "ou",
+    "sourceRange": [
+      895041,
+      895510
+    ],
+    "fallbackId": "python",
+    "storageField": "session.user.programmingLanguage",
+    "entries": [
+      {
+        "id": "python",
+        "label": "Python",
+        "order": 1
+      },
+      {
+        "id": "javascript",
+        "label": "JavaScript",
+        "order": 2
+      },
+      {
+        "id": "typescript",
+        "label": "TypeScript",
+        "order": 3
+      },
+      {
+        "id": "java",
+        "label": "Java",
+        "order": 4
+      },
+      {
+        "id": "php",
+        "label": "PHP",
+        "order": 5
+      },
+      {
+        "id": "golang",
+        "label": "Golang",
+        "order": 6
+      },
+      {
+        "id": "r",
+        "label": "R",
+        "order": 7
+      },
+      {
+        "id": "ruby",
+        "label": "Ruby",
+        "order": 8
+      },
+      {
+        "id": "c",
+        "label": "C",
+        "order": 9
+      },
+      {
+        "id": "cpp",
+        "label": "C++",
+        "order": 10
+      },
+      {
+        "id": "csharp",
+        "label": "C#",
+        "order": 11
+      },
+      {
+        "id": "rust",
+        "label": "Rust",
+        "order": 12
+      },
+      {
+        "id": "kotlin",
+        "label": "Kotlin",
+        "order": 13
+      },
+      {
+        "id": "swift",
+        "label": "Swift",
+        "order": 14
+      },
+      {
+        "id": "dart",
+        "label": "Dart",
+        "order": 15
+      },
+      {
+        "id": "sql",
+        "label": "SQL",
+        "order": 16
+      }
+    ],
+    "persistedField": "programmingLanguage"
+  },
+  "limitations": [
+    "Fallback IDs are client nullish fallbacks, not verified server defaults or current saved selections.",
+    "Catalog extraction does not establish remote model language adherence or runtime visibility.",
+    "Meeting Audio multi does not imply an auto option in Output or Code.",
+    "This fixture covers Output Language and Code Language only. Meeting Audio Language is a separate capability and is not advertised by this fixture."
+  ]
+}

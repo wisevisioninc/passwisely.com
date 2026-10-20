@@ -1,3 +1,4 @@
+import type { CreditBalanceDetails } from "../../shared/billing"
 import type { AiProviderId } from "../../electron/aiProviders"
 import type { LiveSessionAPI } from "../../electron/live/types"
 import type { TranscriptionSettings } from "../../electron/live/transcription"
@@ -23,6 +24,7 @@ export interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
       email: string
       locale: "zh" | "en"
       credits: number
+      creditBalance?: CreditBalanceDetails
     }
     error?: string
   }>
@@ -36,6 +38,7 @@ export interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
       email: string
       locale: "zh" | "en"
       credits: number
+      creditBalance?: CreditBalanceDetails
     }
     error?: string
     errorCode?: string
@@ -51,6 +54,7 @@ export interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
       email: string
       locale: "zh" | "en"
       credits: number
+      creditBalance?: CreditBalanceDetails
     }
     error?: string
     errorCode?: string

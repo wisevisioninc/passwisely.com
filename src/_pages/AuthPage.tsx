@@ -1,4 +1,6 @@
+import type { CreditBalanceDetails } from "../../shared/billing";
 import { FormEvent, useState } from "react";
+import { TRIAL_CREDITS } from "../../shared/billing";
 import { WindowControls } from "../components/shared/WindowControls";
 
 export interface DesktopAccountUser {
@@ -6,6 +8,7 @@ export interface DesktopAccountUser {
   email: string;
   locale: "zh" | "en";
   credits: number;
+  creditBalance?: CreditBalanceDetails;
 }
 
 interface AuthPageProps {
@@ -141,9 +144,9 @@ export default function AuthPage({
               ? "登录后同步积分并继续使用。"
               : "Sign in to sync your credits and continue."
             : mode === "register" && isZh
-              ? "新账户立即获得 10 个体验积分。"
+              ? `新账户立即获得 ${TRIAL_CREDITS} 个体验积分。`
               : mode === "register"
-                ? "New accounts receive 10 trial credits."
+                ? `New accounts receive ${TRIAL_CREDITS} trial credits.`
                 : isZh
                   ? "输入注册邮箱，我们会发送安全的重置链接。"
                   : "Enter your account email and we’ll send a secure reset link."}
@@ -208,8 +211,8 @@ export default function AuthPage({
                   ? "登录"
                   : "Sign in"
                 : isZh
-                  ? "注册并领取 10 积分"
-                  : "Create account + 10 credits"}
+                  ? `注册并领取 ${TRIAL_CREDITS} 积分`
+                  : `Create account + ${TRIAL_CREDITS} credits`}
           </button>
         </form>
 

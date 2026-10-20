@@ -224,7 +224,17 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
   });
 
   ipcMain.handle("process-resume", async (_event, request: ResumeRequest) => {
-    return deps.accountService.runResumeAgent(request);
+    try { return await deps.accountService.runResumeAgent(request); }
+    finally {
+      // Resume tasks use their own response channel. Refresh the same database
+      // balance after both successful settlements and failed/refunded requests.
+      void deps.accountService.getAccount().then(result => {
+        const window = deps.getMainWindow();
+        if (result.success && result.user && window && !window.isDestroyed()) {
+          window.webContents.send("credits-updated", result.user.credits);
+        }
+      }).catch(() => {});
+    }
   });
   ipcMain.handle("get-resume-history", () =>
     deps.accountService.getLocalResumeHistory(),

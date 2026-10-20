@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import SubscribedApp from "./_pages/SubscribedApp";
+import { accountBalanceRefresh } from "./lib/accountBalanceRefresh";
 import AuthPage, { DesktopAccountUser } from "./_pages/AuthPage";
 import {
   Toast,
@@ -92,6 +93,48 @@ function App() {
       removeUnauthorizedListener();
     };
   }, []);
+
+  useEffect(() => {
+    if (!account) return;
+    const refresh = accountBalanceRefresh({ userId: account.id,
+      read: () => window.electronAPI.accountGet(),
+      accept: user => {
+        setCredits(user.credits);
+        setAccount(current => current?.id === user.id ? { ...current, ...user } : current);
+      },
+    });
+    refresh.observe(account);
+    const update = () => { void refresh.refresh(); };
+    const visible = () => { if (document.visibilityState === "visible") update(); };
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", visible);
+    const removeTasks = [
+      window.electronAPI.onSolutionSuccess(update), window.electronAPI.onDebugSuccess(update),
+      window.electronAPI.onSolutionError(update), window.electronAPI.onDebugError(update),
+      window.electronAPI.onProcessingCancelled(update),
+    ];
+    const terminalAnswers = new Set<string>();
+    const removeLive = window.electronAPI.onLiveSnapshot(snapshot => {
+      // Keep only the bounded current answer set; transcript revisions do not
+      // create repeated account requests.
+      const present = new Set(snapshot.answers.map(answer => answer.id));
+      for (const id of terminalAnswers) if (!present.has(id)) terminalAnswers.delete(id);
+      let changed = false;
+      for (const answer of snapshot.answers) {
+        if (["completed", "cancelled", "error"].includes(answer.status) && !terminalAnswers.has(answer.id)) {
+          terminalAnswers.add(answer.id); changed = true;
+        }
+      }
+      if (changed) update();
+    });
+    return () => {
+      refresh.dispose();
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", visible);
+      for (const remove of removeTasks) remove();
+      removeLive();
+    };
+  }, [account?.id]);
 
   useEffect(() => {
     window.__LANGUAGE__ = currentLanguage;

@@ -1,3 +1,4 @@
+import type { CreditBalanceDetails } from "../shared/billing";
 import { app, safeStorage } from "electron";
 import fs from "node:fs";
 import path from "node:path";
@@ -14,6 +15,7 @@ export interface AccountUser {
   email: string;
   locale: "zh" | "en";
   credits: number;
+  creditBalance?: CreditBalanceDetails;
 }
 
 export interface AccountResult {

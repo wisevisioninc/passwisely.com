@@ -1,0 +1,548 @@
+{
+  "schemaVersion": 1,
+  "kind": "selected-inert-artifact-and-source-derived-observations",
+  "version": "3.0.1",
+  "reaVersion": "6.4.0",
+  "evidenceId": "ev_f0579ae07d723777fecc7a1fd7bf0fe355941fbfab0cec305d744cf259ddb0c1",
+  "asarSha256": "528ea903d8dc6a1b42331ae7658689ab39e37fe63c09eef242475b2fa978fd78",
+  "selectedDirectorySha256": "30b25caa314c48e8c78dab1c37a0ff13b1fd167ea2f65db7eb0ed0179f699f26",
+  "selection": "All non-node_modules JS/CJS/MJS/CSS/HTML/JSON/map members; dependencies and native code outside scope",
+  "inventoryCount": 19276,
+  "members": [
+    {
+      "member": "/out/main/index.js",
+      "sha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "size": 86342
+    },
+    {
+      "member": "/out/preload/index.cjs",
+      "sha256": "3571b159a6ce2b411356e2f391034e3be89ad8796d06d1698f844b56d4519ad5",
+      "size": 357
+    },
+    {
+      "member": "/out/renderer/assets/browser-B9rWcikQ.js",
+      "sha256": "7a03c0e91a2258376bc2434ab10e5999063667831f657d2d9da79b6cbd374509",
+      "size": 387
+    },
+    {
+      "member": "/out/renderer/assets/globals-BRO2axAf.js",
+      "sha256": "71c7bb2ba18238b8b5276c6e06a78b66f28aa34284bcb133dbfe42bb50974d8e",
+      "size": 212605
+    },
+    {
+      "member": "/out/renderer/assets/globals-C9RRvlyx.css",
+      "sha256": "29b0e03583e922505820e664f2016825c602a4a10097cbe2331ddc8e72f71b46",
+      "size": 189149
+    },
+    {
+      "member": "/out/renderer/assets/main-B2IvZpU_.css",
+      "sha256": "87ce13a1d286b042fe0be700aab62cd21759d4af0b227f2e1282617bf749c804",
+      "size": 10563
+    },
+    {
+      "member": "/out/renderer/assets/main-CLCIkAdW.js",
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "size": 1193110
+    },
+    {
+      "member": "/out/renderer/assets/offline-yrsFBTEF.js",
+      "sha256": "01c043b8d1857a5efa7ebb402d5b3fe249978fe5b451cf1f9cf425a9be741267",
+      "size": 1545
+    },
+    {
+      "member": "/out/renderer/assets/overlay-XokQ2Bpy.js",
+      "sha256": "41f48217eec8ee60c2ee64a3a035240a87d2cbc305253f0fc6582f0c87be657c",
+      "size": 2474
+    },
+    {
+      "member": "/out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "size": 914284
+    },
+    {
+      "member": "/out/renderer/index.html",
+      "sha256": "9072ce16dedbb22000464fd1e839b2bd0a24adf36f8028c09c2cd9456b2317db",
+      "size": 1686
+    },
+    {
+      "member": "/out/renderer/offline.html",
+      "sha256": "6f9facd68e7ea02c1cb1e301786585a3963d4e5f6b4e76f8bdd713b39ec20f22",
+      "size": 1492
+    },
+    {
+      "member": "/out/renderer/overlay.html",
+      "sha256": "bcce9e984e4f4ab8ab67e9d9df666dbb0cc639ceb52036960592bfc29b86b47e",
+      "size": 842
+    },
+    {
+      "member": "/package.json",
+      "sha256": "cd10ab90e404ce194ba43150986646fc505f60ed907bb5118c4a156344b2c2d7",
+      "size": 1921
+    }
+  ],
+  "reaStatistics": {
+    "relevant_files": 12,
+    "nested_asar_containers": 0,
+    "text_bytes_read": 2417045,
+    "invalid_utf8_files": 0,
+    "parsed_javascript_files": 8,
+    "visited_ast_nodes": 585805,
+    "findings": 332,
+    "modules": 0,
+    "parse_failures": 0
+  },
+  "reaCoverage": {
+    "status": "partial",
+    "truncated": false,
+    "omitted_count": null,
+    "limits": [
+      {
+        "name": "javascript_analysis_parent_result_budget_bytes",
+        "value": 2068290816,
+        "unit": "bytes"
+      },
+      {
+        "name": "javascript_analysis_worker_heap_limit_bytes",
+        "value": 1098907648,
+        "unit": "bytes"
+      },
+      {
+        "name": "javascript_analysis_worker_timeout_ms",
+        "value": 300000,
+        "unit": "milliseconds"
+      }
+    ]
+  },
+  "reaLimitations": [
+    "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+    "Dynamic IPC channel expressions remain unresolved and are never paired by textual similarity.",
+    "Electron API identity follows proven lexical module aliases. Reassigned bindings, dynamic selections, and visibly overwritten namespace members are unresolved; missing findings do not establish absence. Arbitrary call side effects and runtime registration are not evaluated.",
+    "Electron relationships are derived from inert syntax; runtime registration, reachability, defaults, and enforcement remain unproven.",
+    "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+    "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+    "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+    "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+    "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code.",
+    "out/renderer/assets/globals-BRO2axAf.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing out/renderer/assets/globals-BRO2axAf.js during semantic",
+    "out/renderer/assets/main-CLCIkAdW.js: Resource constraint during analyze_javascript_application: Semantic graph for out/renderer/assets/main-CLCIkAdW.js exceeds the parent's remaining result budget; static and module facts were retained",
+    "out/renderer/assets/window-DsQ9GEov.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing out/renderer/assets/window-DsQ9GEov.js during semantic"
+  ],
+  "mouse": [
+    {
+      "path": "out/main/index.js",
+      "label": "default passthrough",
+      "byteOffset": 7903,
+      "line": 214,
+      "sha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742"
+    },
+    {
+      "path": "out/main/index.js",
+      "label": "forwarding wrapper",
+      "byteOffset": 10486,
+      "line": 284,
+      "sha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742"
+    },
+    {
+      "path": "out/main/index.js",
+      "label": "validated shape",
+      "byteOffset": 27858,
+      "line": 808,
+      "sha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742"
+    },
+    {
+      "path": "out/main/index.js",
+      "label": "IPC owner handler",
+      "byteOffset": 74229,
+      "line": 2110,
+      "sha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742"
+    },
+    {
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "label": "lease store",
+      "byteOffset": 908158,
+      "line": 132,
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4"
+    },
+    {
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "label": "region component",
+      "byteOffset": 908536,
+      "line": 132,
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4"
+    },
+    {
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "label": "glass capture defaults false",
+      "byteOffset": 909085,
+      "line": 132,
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4"
+    },
+    {
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "label": "shared import aliases",
+      "byteOffset": 589,
+      "line": 1,
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e"
+    },
+    {
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "label": "settings capture",
+      "byteOffset": 1011895,
+      "line": 527,
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e"
+    },
+    {
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "label": "settings icon region",
+      "byteOffset": 1016009,
+      "line": 527,
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e"
+    },
+    {
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "label": "input region",
+      "byteOffset": 983370,
+      "line": 527,
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e"
+    },
+    {
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "label": "drag lease",
+      "byteOffset": 1121613,
+      "line": 570,
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e"
+    },
+    {
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "label": "drag release",
+      "byteOffset": 1124965,
+      "line": 570,
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e"
+    },
+    {
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "label": "normal response container omits captureMouseEvents",
+      "byteOffset": 997765,
+      "line": 527,
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e"
+    },
+    {
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "label": "body scroll uses accelerators",
+      "byteOffset": 496737,
+      "line": 494,
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e"
+    },
+    {
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "label": "button blurs on mouse-up and leave",
+      "byteOffset": 901419,
+      "line": 132,
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4"
+    }
+  ],
+  "asr": [
+    {
+      "id": "paragraph-context-owner",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 704692,
+        "endExclusive": 706040
+      },
+      "interpretation": "Shared old context uses separate mic/system buffers; length>100 or explicit paragraph-break emits a paragraph. This does not prove active V2 bubbles consume paragraphs."
+    },
+    {
+      "id": "old-path-inactivity-marker",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 848401,
+        "endExclusive": 848901
+      },
+      "interpretation": "Old audio path attaches independent per-role inactivity markers with wy=2500; the constant is separately captured."
+    },
+    {
+      "id": "paragraph-inactivity-constant",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 704189,
+        "endExclusive": 704197
+      },
+      "interpretation": "2500 milliseconds constant used by old buffer reaction."
+    },
+    {
+      "id": "v2-defaults",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 855793,
+        "endExclusive": 856114
+      },
+      "interpretation": "V2 configuration contains paragraphTimeoutMs=2500 and paragraphLengthThreshold=100."
+    },
+    {
+      "id": "v2-source-adapter",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 850761,
+        "endExclusive": 851442
+      },
+      "interpretation": "audioTranscriptions getter maps raw visibleTranscriptions, while paragraphTranscripts comes from a separate baseContext."
+    },
+    {
+      "id": "v2-final-context-consumer",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 854165,
+        "endExclusive": 854615
+      },
+      "interpretation": "V2 context consumer appends final-only entries to baseContext; no paragraph.completed subscription in this method."
+    },
+    {
+      "id": "v2-transcript-service",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 884970,
+        "endExclusive": 889669
+      },
+      "interpretation": "V2 stores individual final rows and partial per role. visibleTranscriptions is raw ordered rows. Timeout emits paragraph.completed; separate paragraph getter groups by length."
+    },
+    {
+      "id": "v2-configuration-selection",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 890142,
+        "endExclusive": 892542
+      },
+      "interpretation": "USE_AUDIO_SERVICE_V2 feature flag selects Ky/V2 versus M3/old path. Actual flag state was not inspected."
+    },
+    {
+      "id": "new-overlay-individual-rows",
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteRange": {
+        "start": 995085,
+        "endExclusive": 996499
+      },
+      "interpretation": "New overlay maps fullContext.audioTranscriptions, giving each independent raw row a bubble. No paragraphTranscripts consumer here."
+    },
+    {
+      "id": "older-view-paragraph-consumer",
+      "path": "out/renderer/assets/main-CLCIkAdW.js",
+      "sha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteRange": {
+        "start": 507217,
+        "endExclusive": 509017
+      },
+      "interpretation": "A different UI component uses paragraphTranscripts and remaining per-role buffers. Existence does not establish actual runtime route selection."
+    },
+    {
+      "id": "recall-default-provider",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 860260,
+        "endExclusive": 860576
+      },
+      "interpretation": "Default deepgram_streaming and providerConfig empty object. Actual remote server configuration is outside this artifact evidence."
+    },
+    {
+      "id": "old-direct-deepgram-options",
+      "path": "out/renderer/assets/window-DsQ9GEov.js",
+      "sha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteRange": {
+        "start": 821749,
+        "endExclusive": 823199
+      },
+      "interpretation": "Old direct path selects nova-3-general for en-US/multi, otherwise nova-2-general; enables smart_format/vad_events/interim_results/punctuate. Not a guarantee of V2 options."
+    },
+    {
+      "id": "main-recall-transcript-forwarding",
+      "path": "out/main/index.js",
+      "sha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteRange": {
+        "start": 65497,
+        "endExclusive": 67178
+      },
+      "interpretation": "Main forwards normalized final/partial text/source/partialResult; no paragraph aggregation in this callback."
+    }
+  ],
+  "settings": [
+    {
+      "file": "out/renderer/assets/main-CLCIkAdW.js",
+      "fileSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "range": {
+        "startByte": 1011748,
+        "endByteExclusive": 1015059
+      },
+      "title": "modern compact Settings KN",
+      "facts": [
+        "Opaque inline glass panel; outer w-56 (14rem), inner w-48 (12rem).",
+        "Settings title; Output Language, Code Language, Meeting Audio Language; conditional multi-display Display.",
+        "Manage Prompts; Mac-only Key Display: icon/text; Core/Navigation shortcuts excluding scrolling; Window movement shortcuts.",
+        "Dashboard; Tutorial; account/version status; authenticated Log out and always Quit.",
+        "Gradient dark/amber background and 1px amber border; separators h-px my-3 mx-3 amber midpoint gradient.",
+        "This menu has no Auto Launch, Incognito or appearance sliders."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/main-CLCIkAdW.js",
+      "fileSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "range": {
+        "startByte": 898342,
+        "endByteExclusive": 902465
+      },
+      "title": "language G2 compact and save owner",
+      "facts": [
+        "Defaults en-US output, en-US audio, python code; auto-save on change via user.settings.put.",
+        "Audio select disabled when contextService.isInAudioSession.",
+        "Labels/selects text-xs; select rounded-lg white .12 -> .08 gradient, 1px white .15 border.",
+        "Save state Saving/Saved/error; successful status idles after 2000ms; code and language saves separate."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/main-CLCIkAdW.js",
+      "fileSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "range": {
+        "startByte": 1008693,
+        "endByteExclusive": 1011748
+      },
+      "title": "display YN and separator",
+      "facts": [
+        "Display selector absent for zero/one inventory display; current/primary/resolution/scale labels.",
+        "Button opens in-menu list; hover highlights display; selection move-window-to-display preservePosition false.",
+        "Switching display... status; current item opacity60 and Current amber sublabel."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/main-CLCIkAdW.js",
+      "fileSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "range": {
+        "startByte": 1015059,
+        "endByteExclusive": 1015351
+      },
+      "title": "account/version XN",
+      "facts": [
+        "Logged in as email or Not logged in; Alt-click toggles interviewcoder v3.0.1.",
+        "11px centered truncated status."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/main-CLCIkAdW.js",
+      "fileSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "range": {
+        "startByte": 1015351,
+        "endByteExclusive": 1016694
+      },
+      "title": "gear d9 state and entry",
+      "facts": [
+        "Hover opens; leaving closes after 500ms; click toggles with suppression of immediate hover reopen.",
+        "Tutorial can lock open using show-settings-and-highlight-tour broadcast; unlock-settings-window unlocks.",
+        "Gear entry is div data-tour=settings-icon, p-2 mr-1, icon size14; no accessible name/role/tabIndex/keydown in this node.",
+        "Popover right-aligned, top/bottom orientation with 21px bridge; opacity/y10 transition100ms.",
+        "No dedicated Settings accelerator in inspected d9 and default shortcut set; bounded source absence, not runtime assertion."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/main-CLCIkAdW.js",
+      "fileSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "range": {
+        "startByte": 868428,
+        "endByteExclusive": 869257
+      },
+      "title": "shortcut catalog Co",
+      "facts": [
+        "Catalog has Core Actions/Recording/Views/Navigation/Window categories.",
+        "KN filters yield Ask AI, Start Over, Screenshot, Show/Hide, then Move Up/Left/Down/Right."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/window-DsQ9GEov.js",
+      "fileSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "range": {
+        "startByte": 892628,
+        "endByteExclusive": 893283
+      },
+      "title": "default keybindings Tg",
+      "facts": [
+        "Ask AI CmdOrCtrl+Enter; Start Over +G; Screenshot +H; Show/Hide +B.",
+        "Movement CmdOrCtrl+arrows; scroll CmdOrCtrl+Shift+Up/Down; audio toggle CmdOrCtrl+Shift+backslash.",
+        "Response Alt+1; Transcripts Alt+2; defaults may be replaced by custom bindings feature."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/window-DsQ9GEov.js",
+      "fileSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "range": {
+        "startByte": 898900,
+        "endByteExclusive": 899648
+      },
+      "title": "shared kbd nb",
+      "facts": [
+        "Dark background gradient #2A2520 -> #1C1814, text #C9A962, border rgba(180,150,90,.3).",
+        "Black exterior shadow + amber top inset + black bottom inset; rounded-md.",
+        "LB nonlarge icon variant overrides base to 20px high/minwidth20, 11px font, 6px gaps."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/window-DsQ9GEov.js",
+      "fileSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "range": {
+        "startByte": 900700,
+        "endByteExclusive": 901601
+      },
+      "title": "key display persistence owner jB/UB",
+      "facts": [
+        "Mac shortcutDisplayMode defaults icon; nonMac text.",
+        "Mac selection writes user.settings.put clientMetadata through metadata owner."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/window-DsQ9GEov.js",
+      "fileSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "range": {
+        "startByte": 901665,
+        "endByteExclusive": 904106
+      },
+      "title": "shortcut LB",
+      "facts": [
+        "fullWidth makes justify-between; ordinary label11px; icon keycaps 11px and20px, text mode10px.",
+        "KN supplies no onTrigger callback to H.Shortcut; menu shortcut rows are reference displays, not action buttons."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/window-DsQ9GEov.js",
+      "fileSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "range": {
+        "startByte": 906051,
+        "endByteExclusive": 907609
+      },
+      "title": "button/title GB/qB",
+      "facts": [
+        "Default buttons12px with10px horizontal/4px vertical padding when16px root; rounded8px.",
+        "Title uses px4 py2 (1rem/.5rem),12px semibold white90.",
+        "Default buttons white gradient .12/.08, border white .15; hover .20/.16 borderwhite.25; pressed scale.98."
+      ]
+    },
+    {
+      "file": "out/renderer/assets/globals-C9RRvlyx.css",
+      "fileSha256": "29b0e03583e922505820e664f2016825c602a4a10097cbe2331ddc8e72f71b46",
+      "range": {
+        "startByte": 7195,
+        "endByteExclusive": 7345
+      },
+      "title": "Tailwind rem tokens",
+      "facts": [
+        "spacing .25rem; text-xs .75rem; text-sm .875rem. Pixel conversions conditional on root16px; no runtime scale measurement performed."
+      ]
+    }
+  ],
+  "offsetConvention": "Zero-based UTF-8 original member bytes; ends exclusive where present. Static observations are not runtime proof.",
+  "targetExecuted": false
+}

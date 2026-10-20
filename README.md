@@ -6,7 +6,7 @@ PassWisely is an Electron desktop assistant for live conversation transcription,
 
 The default workspace provides explicit **Start / Pause / Resume / End** controls. Starting requests microphone, system-audio and accessibility permissions on supported Macs, obtains a short-lived upload token from the authenticated website, then initializes `@recallai/desktop-sdk` 2.0.39. Recording is shown as active only after the SDK confirms it. Audio is sent and stored in your Recall project for real-time ASR; no audio starts automatically. SDK diagnostic telemetry is explicitly disabled (`telemetryMode: "off"`).
 
-This release uses Recall's built-in **English-only low-latency ASR**, with explicit `language_code: en`. Chinese real-time ASR is deferred; Recall's multilingual accuracy mode has minute-scale latency and is not substituted silently. System audio and microphone transcripts have separate source labels. Interim text updates in place, final text replaces it, and unknown sources remain unknown. Labels describe the audio source, not verified speaker identity. Pause retains the session; End retains its text for follow-up questions. A failed native shutdown retains ownership and offers cleanup retry instead of starting another capture process.
+Speech recognition is selected independently from the AI answer language in Settings → AI Settings · Language → Speech. The default remains Recall's built-in English low-latency ASR (`recall-en`). Chinese real-time transcription uses Deepgram Nova-3 with `language: zh` (`deepgram-zh`). Save the speech preference separately; it applies to the next new session, while pause/resume preserves the current session's configuration. A Chinese failure never silently falls back to English. Recall's built-in Chinese accuracy profile (`recall-zh`) is a minute-scale experimental option whose Desktop runtime output has not been verified. System audio and microphone transcripts have separate source labels. Interim text updates in place, final text replaces it, and unknown sources remain unknown. Labels describe the audio source, not verified speaker identity. Pause retains the session; End retains its text for follow-up questions. A failed native shutdown retains ownership and offers cleanup retry instead of starting another capture process.
 
 Ask AI combines a snapshot of final transcripts, the current typed question, selected queued screenshots, and up to four completed answer turns. Any of text, screenshots, or final transcript is sufficient. Responses stream as ordinary text and can include code; they do not require the programming workspace's JSON format. Stop generation preserves its preview and does not stop audio. New sessions reject late events from previous recordings or answers. Screenshot attachments remain queued until explicitly removed and can be reused.
 
@@ -19,7 +19,9 @@ RECALL_API_KEY=your-own-recall-project-key
 RECALL_API_REGION=ap-northeast-1
 ```
 
-Supported region values are `us-west-2`, `us-east-1`, `eu-central-1`, and `ap-northeast-1`. The region must match the key's project. The authenticated `POST /api/desktop/recall/upload-token` accepts only a session UUID; clients cannot choose a provider, server key, or arbitrary URL. Upload creation is bounded and retries for the same user/session reuse a short-lived result within one worker; this cache is not shared across instances or restarts.
+Supported region values are `us-west-2`, `us-east-1`, `eu-central-1`, and `ap-northeast-1`. The region must match the key's project. The authenticated `POST /api/desktop/recall/upload-token` accepts a session UUID and an optional `transcriptionProfile` chosen from `recall-en`, `deepgram-zh`, or `recall-zh`. Omission preserves the English default. Clients cannot supply arbitrary provider options, server keys, or URLs. The response echoes the profile, and Chinese sessions reject an omitted or mismatched profile before native capture. Reusing the same user/session with a different configuration conflicts within the cache lifetime. Upload creation is bounded and retries for the same user/session reuse a short-lived result within one worker; this cache is not shared across instances or restarts.
+
+For Chinese realtime ASR, add a Deepgram API Key and matching Project ID to the transcription dashboard of the **same Recall region and workspace** as the server key, and mark the saved credential as Default. Use a Member, Admin, or Owner key; leaving Host blank uses Recall's default Deepgram service. Merely placing `DEEPGRAM_API_KEY` / `DEEPGRAM_PROJECT_ID` in a Wise environment file does not register them with Recall. See [Recall Deepgram setup](https://docs.recall.ai/docs/deepgram).
 
 Audio travels from the native SDK to Recall and transcripts return through its callback; Wise does not proxy raw audio. Wise's authenticated route requests a short-lived upload token from Recall, which issues the token. Wise continues to relay model requests when using its default model key. A personal Kimi key retains direct model requests.
 
@@ -37,9 +39,11 @@ Official integration references: [audio-only](https://docs.recall.ai/docs/audio-
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
+
+Use the committed `package-lock.json` and npm dependency layout for desktop packaging. Mixing a pnpm virtual-store installation with npm lockfile detection in electron-builder can omit transitive SDK dependencies from the app. A signed app can still fail before capture if its packaged JavaScript dependencies are incomplete. Chinese replay and generated audio samples are documented in [test/audio/recall-chinese](test/audio/recall-chinese/README.md).
 
 The app opens as a transparent always-on-top window. Open the gear menu, select an AI provider, enter its API key, choose or type a model ID, and save. OpenAI, DeepSeek, Kimi/Moonshot, Doubao/Volcengine Ark, Qwen/DashScope, GLM/Zhipu, Google Gemini, and Anthropic Claude are included. Each provider keeps an independent API key, model, OpenAI-compatible Base URL, and vision setting.
 
@@ -90,10 +94,28 @@ The first screenshot request may prompt for Screen Recording access. If capture 
 ## Verification and builds
 
 ```bash
+npm ci
 npm run typecheck
 npm run build:assets
 npm run build:unpacked
 ```
+
+After packaging a Mac app, check its JavaScript runtime using the packaged
+Electron executable on a matching native macOS host:
+
+```bash
+node scripts/verify-recall-runtime.cjs "release/mac-arm64/PassWisely.app"
+# Substitute the exact .app path being tested.
+```
+
+The check resolves the Recall SDK and its `uuid` dependency inside that app's
+`app.asar` / `app.asar.unpacked`, rejects external dependency fallbacks, loads the
+SDK and checks its init/prepare/start interface without calling those methods.
+It uses a fresh minimal child environment, blocks network/native-process attempts
+during import and prints only a bounded JSON verdict; SDK logs and ambient
+credentials are not forwarded. A missing dependency returns a nonzero exit code.
+This manual native-host check is separate from signing, permissions and actual
+capture/ASR verification; it is not a cross-architecture afterPack hook.
 
 Platform installers should be created on their native operating system:
 

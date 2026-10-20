@@ -61,6 +61,45 @@ const event = (id, text = "hello", partial = false, participant = { id: 1, is_ho
   data: { data: { words: [{ text, start_timestamp: { relative: start }, end_timestamp: { relative: start + 0.5 } }], participant } },
 });
 
+test("startup diagnostics distinguish prepare from start while disclosing only fixed error categories and permission states", async () => {
+  for (const command of ["init", "prepareDesktopAudioRecording", "startRecording"]) {
+    const h = harness({ platform: "darwin", arch: "arm64" }); const capture = h.create();
+    h.sdk[command] = async () => { throw new Error("HTTP 403: token=fixture-upload-token bearer=fixture-deepgram-credential https://sensitive.example/path"); };
+    const phase = command === "init" ? "initializing" : command === "prepareDesktopAudioRecording" ? "preparing-source" : "start-command";
+    await assert.rejects(capture.start(input), error => {
+      assert.ok(error.message.includes(`phase=${phase}`));
+      assert.ok(error.message.includes("cause=http-auth; http=403"));
+      assert.ok(error.message.includes("commandAck=false; startedEvent=false"));
+      if (command !== "init") assert.ok(error.message.includes("accessibility=granted,microphone=granted,system-audio=granted"));
+      return !error.message.includes("fixture-") && !error.message.includes("sensitive.example");
+    });
+    assert.ok(h.errors.every(message => !message.includes("fixture-") && !message.includes("sensitive.example")));
+    await capture.dispose();
+  }
+});
+
+test("startup diagnostics do not forward unknown native errors or code fields", async () => {
+  for (const [native, expected] of [
+    [Object.assign(new Error("opaque fixture-upload-token fixture-deepgram-credential"), { code: "secret-code", type: "secret-type" }), "cause=unknown"],
+    [Object.assign(new Error("fixture-upload-token"), { code: "ECONNREFUSED" }), "cause=network-or-ipc; code=ECONNREFUSED"],
+    [Object.assign(new Error("fixture-deepgram-credential"), { code: "EPERM" }), "cause=reported-permission; code=EPERM"],
+  ]) {
+    const h = harness(); const capture = h.create();
+    h.sdk.startRecording = async () => { throw native; };
+    await assert.rejects(capture.start(input), error => error.message.includes(expected) && !/fixture-|secret-/.test(error.message));
+    await capture.dispose();
+  }
+});
+
+test("start acknowledgement without its event reports the confirmation phase without exposing the source or upload", async () => {
+  const h = harness(); const capture = h.create();
+  h.sdk.startRecording = async () => undefined;
+  const starting = capture.start(input);
+  const rejected = assert.rejects(starting, error => error.message.includes("phase=await-start-event") && error.message.includes("commandAck=true; startedEvent=false") && !error.message.includes("fixture-upload-token") && !error.message.includes("source-1"));
+  await tick(); h.expire(); await rejected;
+  await capture.dispose();
+});
+
 test("unsupported hosts never import the native SDK; macOS audio-only boundary is14.2", async () => {
   for (const options of [{ platform: "linux" }, { platform: "darwin", arch: "x64" }, { platform: "darwin", arch: "arm64", release: "23.1.0" }]) {
     const h = harness(options);
@@ -418,4 +457,94 @@ test("Chinese text truncation preserves the UTF-16 boundary and resource bounds"
   many.data.data.words = Array.from({ length: 100_000 }, () => ({ text: "中" }));
   const result = n.normalize(many);
   assert.equal(result.text, "中".repeat(1024) + "…");
+});
+
+// Authored event sequences model revised word timestamps. These are synthetic
+// regression inputs, not a raw Deepgram/Recall provider trace or ASR measurement.
+test("drifting word starts reuse one active ID through three partials and final while keeping timing facts", () => {
+  const n = harness().normalizer();
+  const inputs = [
+    event("source", "订单", true, { id: 1, is_host: true }, 1),
+    event("source", "订单金额", true, { id: 1, is_host: true }, 1.25),
+    event("source", "订单金额是128", true, { id: 1, is_host: true }, 1.125),
+    event("source", "订单金额是128.50元。", false, { id: 1, is_host: true }, 1.375),
+  ];
+  const updates = inputs.map((input, index) => n.normalize(input, 100 + index * 100));
+  assert.equal(new Set(updates.map(item => item.id)).size, 1);
+  assert.deepEqual(updates.map(item => item.startMs), [1000, 1250, 1125, 1375]);
+  assert.deepEqual(updates.map(item => item.endMs), [1500, 1750, 1625, 1875]);
+  assert.deepEqual(updates.map(item => item.isFinal), [false, false, false, true]);
+  assert.equal(updates.at(-1).text, "订单金额是128.50元。");
+  assert.equal(n.normalize(inputs.at(-1), 500), null, "same final timestamp/text remains deduplicated");
+  const latePartial = structuredClone(inputs.at(-1)); latePartial.event = "transcript.partial_data";
+  assert.equal(n.normalize(latePartial, 600), null, "finalized event key still suppresses a late partial");
+  const correctedFinal = structuredClone(inputs.at(-1)); correctedFinal.data.data.words[0].text = "订单金额是128.50元，已确认。";
+  const correction = n.normalize(correctedFinal, 700);
+  assert.equal(correction.id, updates[0].id, "existing timestamp final-correction identity remains unchanged");
+  const next = n.normalize(event("source", "下一个问题", true, { id: 1, is_host: true }, 3), 800);
+  assert.notEqual(next.id, updates[0].id, "final must release the previous active channel");
+});
+
+test("interleaved sources keep separate active IDs even with one participant and drifting coincident timestamps", () => {
+  const n = harness().normalizer();
+  const make = (source, text, partial, start) => {
+    const input = event("source", text, partial, { id: 7, name: "fixture same participant" }, start);
+    input.data.source = source;
+    return input;
+  };
+  const system = [], microphone = [];
+  const accept = (source, text, partial, start, receivedAt) => {
+    const result = n.normalize(make(source, text, partial, start), receivedAt);
+    (source === "system" ? system : microphone).push(result);
+    return result;
+  };
+  accept("system", "数组", true, 10, 100);
+  accept("microphone", "可以", true, 10, 110);
+  accept("system", "数组允许", true, 10.25, 200);
+  accept("microphone", "可以包含", true, 10.125, 210);
+  accept("system", "数组允许负数吗？", false, 10.125, 300);
+  accept("microphone", "可以包含负数。", false, 10.25, 310);
+  assert.equal(new Set(system.map(item => item.id)).size, 1);
+  assert.equal(new Set(microphone.map(item => item.id)).size, 1);
+  assert.notEqual(system[0].id, microphone[0].id);
+  assert.ok(system.every(item => item.source === "system"));
+  assert.ok(microphone.every(item => item.source === "microphone"));
+  assert.equal(system.at(-1).isFinal, true); assert.equal(microphone.at(-1).isFinal, true);
+});
+
+test("explicit utterance IDs still split a channel regardless of matching or drifting word starts", () => {
+  const n = harness().normalizer();
+  const make = (id, text, partial, start) => {
+    const input = event("source", text, partial, { id: 1, is_host: true }, start);
+    input.data.data.utterance_id = id;
+    return input;
+  };
+  const first = n.normalize(make("first", "第一句", true, 1), 100);
+  const revised = n.normalize(make("first", "第一句修订", true, 1.25), 200);
+  assert.equal(first.id, revised.id);
+  const second = n.normalize(make("second", "第二句", true, 1.25), 300);
+  assert.notEqual(second.id, first.id);
+  const final = n.normalize(make("second", "第二句完成。", false, 1.5), 400);
+  assert.equal(second.id, final.id);
+  assert.equal(n.normalize(make("second", "第二句完成。", false, 1.75), 500), null,
+    "explicit identity remains stronger than word timestamps for finalized deduplication");
+});
+
+test("a corrected or duplicate prior final keeps its own row and cannot retire a newer active partial", () => {
+  const n = harness().normalizer();
+  // Synthetic same-channel sequence: old final A, new active B, then late A.
+  const a = n.normalize(event("source", "alpha", false, { id: 1, is_host: true }, 1), 100);
+  const b = n.normalize(event("source", "brav", true, { id: 1, is_host: true }, 3), 200);
+  assert.notEqual(a.id, b.id);
+  const corrected = n.normalize(event("source", "alpha corrected", false, { id: 1, is_host: true }, 1), 300);
+  assert.equal(corrected.id, a.id);
+  assert.equal(corrected.text, "alpha corrected");
+  assert.equal(n.normalize(event("source", "alpha corrected", false, { id: 1, is_host: true }, 1), 400), null);
+  const bRevised = n.normalize(event("source", "bravo revised", true, { id: 1, is_host: true }, 3.125), 500);
+  assert.equal(bRevised.id, b.id, "neither old correction nor duplicate final may release B");
+  const bFinal = n.normalize(event("source", "bravo final", false, { id: 1, is_host: true }, 3.25), 600);
+  assert.equal(bFinal.id, b.id);
+  assert.equal(bFinal.isFinal, true);
+  const c = n.normalize(event("source", "charlie", true, { id: 1, is_host: true }, 5), 700);
+  assert.notEqual(c.id, b.id, "B's own final must still clear B's active ownership");
 });

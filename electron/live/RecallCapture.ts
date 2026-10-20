@@ -17,6 +17,32 @@ const REQUIRED_PERMISSIONS = ["accessibility", "microphone", "system-audio"] as 
 type RequiredPermission = typeof REQUIRED_PERMISSIONS[number];
 const PERMISSION_STATUSES = ["granted", "not_requested", "denied", "not_installed", "error"] as const;
 type PermissionStatus = typeof PERMISSION_STATUSES[number] | "unknown";
+type StartPhase = "initializing" | "permissions" | "preparing-source" | "start-command" | "await-start-event" | "recording";
+type StartProgress = { phase: StartPhase; commandAcknowledged: boolean; recordingStarted: boolean };
+
+/** Classify native errors into fixed values. Never return native messages,
+ * stacks, unknown event types, window IDs, upload tokens or provider credentials.
+ */
+function safeNativeFailure(value: unknown): { cause: string; httpStatus?: number; code?: string } {
+  const field = (key: string): string => {
+    if (!value || typeof value !== "object") return "";
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor && typeof descriptor.value === "string" ? descriptor.value.slice(0, 4096) : "";
+  };
+  const message = field("message");
+  const explicitStatus = /\b(?:HTTP(?:\/[12](?:\.\d)?)?[\s:]+|status(?:\s+code)?[=: ]+)(400|401|403|404|408|409|410|422|429|500|502|503|504)\b/i.exec(message);
+  if (explicitStatus) {
+    const httpStatus = Number(explicitStatus[1]);
+    return { cause: httpStatus === 401 || httpStatus === 403 ? "http-auth" : httpStatus === 429 ? "rate-limit" : httpStatus >= 500 ? "upstream" : "http-request", httpStatus };
+  }
+  const codes = ["EPIPE", "ENOTFOUND", "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT", "EHOSTUNREACH", "ENETUNREACH", "EACCES", "EPERM"];
+  const code = codes.find(code => field("code") === code || new RegExp(`\\b${code}\\b`).test(message));
+  if (code) return { cause: ["EACCES", "EPERM"].includes(code) ? "reported-permission" : "network-or-ipc", code };
+  if (/\b(?:permission denied|access denied|insufficient permissions)\b/i.test(message)) return { cause: "reported-permission" };
+  if (/\b(?:unknown source|unknown window|already recorded|invalid window)\b/i.test(message)) return { cause: "reported-source" };
+  if (field("type") === "process") return { cause: "sdk-process" };
+  return { cause: "unknown" };
+}
 
 export class RecallCapture {
   private static owner: RecallCapture | null = null;
@@ -40,6 +66,7 @@ export class RecallCapture {
   private retiredWindows = new Set<string>();
   private normalizer = createRecallTranscriptNormalizer();
   private finalDrainUntil = 0;
+  private startProgress?: StartProgress;
 
   constructor(private readonly callbacks: Callbacks) {}
 
@@ -97,6 +124,7 @@ export class RecallCapture {
         if (!matched(event) || this.disposed) return;
         const waiter = this.waiter;
         if (waiter && waiter.event === name && waiter.generation === this.generation && waiter.windowId === this.windowId) {
+          if (name === "recording-started" && this.startProgress) this.startProgress.recordingStarted = true;
           this.waiter = undefined;
           waiter.resolve();
           if (name === "recording-started" && this.status === "starting") this.setState("recording");
@@ -129,7 +157,7 @@ export class RecallCapture {
     });
     this.add("error", event => {
       if (RecallCapture.owner !== this || this.disposed || (event.window && !matched(event))) return;
-      const error = this.failure("Recall 音频进程发生错误，请停止会话后重试。");
+      const error = this.failure(`Recall 音频进程发生错误，请停止会话后重试。${this.startProgress ? this.startFailureDetails(event, this.startProgress) : ""}`);
       ++this.generation;
       this.rejectWaiter(error.message);
       this.permissionChanged?.();
@@ -167,6 +195,12 @@ export class RecallCapture {
     const missing = REQUIRED_PERMISSIONS.filter(permission => this.permissions.get(permission) !== "granted")
       .map(permission => `${permission}=${this.permissions.get(permission) || "unknown"}`).join("；");
     return new CaptureFailure(`Recall 权限${reason}：${missing || "unknown"}。请在系统设置中确认对应的 PassWisely 权限，停止后重试。`);
+  }
+
+  private startFailureDetails(error: unknown, progress: StartProgress): string {
+    const safe = safeNativeFailure(error);
+    const permissions = REQUIRED_PERMISSIONS.map(permission => `${permission}=${this.permissions.get(permission) || "unknown"}`).join(",");
+    return ` [phase=${progress.phase}; cause=${safe.cause}${safe.httpStatus ? `; http=${safe.httpStatus}` : ""}${safe.code ? `; code=${safe.code}` : ""}; commandAck=${progress.commandAcknowledged}; startedEvent=${progress.recordingStarted}; permissions=${permissions}]`;
   }
 
   private async ensurePermissions(generation: number): Promise<void> {
@@ -207,7 +241,8 @@ export class RecallCapture {
     const generation = ++this.generation;
     this.setState("starting");
     this.normalizer = createRecallTranscriptNormalizer();
-    const progress: { phase: "initializing" | "permissions" | "recording" } = { phase: "initializing" };
+    const progress: StartProgress = { phase: "initializing", commandAcknowledged: false, recordingStarted: false };
+    this.startProgress = progress;
     const work = (async () => {
       if (!this.sdk) {
         const module = require("@recallai/desktop-sdk") as { default?: Sdk } & Sdk;
@@ -225,14 +260,18 @@ export class RecallCapture {
       progress.phase = "permissions";
       await this.ensurePermissions(generation);
       this.assertGeneration(generation);
-      progress.phase = "recording";
+      progress.phase = "preparing-source";
       const id = await this.command(this.sdk.prepareDesktopAudioRecording());
       this.assertGeneration(generation);
       if (!id || this.retiredWindows.has(id)) throw new CaptureFailure("Recall 返回了无效或已使用的音频来源，请关闭后重试。");
       this.windowId = id;
+      progress.phase = "start-command";
       const started = this.waitFor("recording-started", generation);
       // Register the waiter before a native method can synchronously emit an event.
-      await Promise.all([Promise.resolve().then(() => this.command(this.sdk!.startRecording({ windowId: id, uploadToken: input.uploadToken }))), started]);
+      await Promise.all([Promise.resolve().then(() => this.command(this.sdk!.startRecording({ windowId: id, uploadToken: input.uploadToken }))).then(() => {
+        progress.commandAcknowledged = true;
+        progress.phase = progress.recordingStarted ? "recording" : "await-start-event";
+      }), started]);
       this.assertGeneration(generation);
       if (this.status !== "recording") this.setState("recording");
     })();
@@ -245,7 +284,8 @@ export class RecallCapture {
       this.permissionChanged?.();
       const message = error instanceof CaptureTimeout && progress.phase === "permissions"
         ? this.permissionFailure("检查超时（15 秒）").message
-        : error instanceof CaptureFailure ? error.message : "Recall 无法启动录音，请检查系统权限并停止后重试。";
+        : error instanceof CaptureFailure ? `${error.message}${error instanceof CaptureTimeout ? this.startFailureDetails(error, progress) : ""}`
+        : `Recall 无法启动录音，请停止后重试。${this.startFailureDetails(error, progress)}`;
       throw this.failure(message);
     } finally {
       // Keep an unfinished operation owned after timeout, until it actually settles.

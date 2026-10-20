@@ -58,7 +58,7 @@ function sourceOf(envelope: ObjectValue, data: ObjectValue, participant: ObjectV
 /** One normalizer belongs to one prepared SDK source. Never share speaker state. */
 export function createRecallTranscriptNormalizer() {
   let sequence = 0;
-  const active = new Map<string, { id: string; identity?: string }>();
+  const active = new Map<string, { id: string; utteranceIdentity?: string }>();
   const finalized = new Map<string, { id: string; textHash: string; receivedAt: number }>();
   return {
     normalize(event: unknown, receivedAt = Date.now()): TranscriptSegment | null {
@@ -96,27 +96,34 @@ export function createRecallTranscriptNormalizer() {
       const channel = JSON.stringify([source, rawParticipantId ? ["id", digest(rawParticipantId)] : rawSpeaker ? ["name", digest(rawSpeaker)] : null]);
       // transcript.id is an artifact ID, not an utterance ID. Do not use it here.
       const utterance = string(data.utterance_id) || string(data.utteranceId) || string(envelope.utterance_id);
-      const identity = utterance ? `utterance:${digest(utterance)}` : startMs !== undefined ? `start:${startMs}` : undefined;
+      // Interim word timestamps may drift as recognition is revised. Only an
+      // explicit utterance ID can split an active channel's partial updates.
+      const utteranceIdentity = utterance ? `utterance:${digest(utterance)}` : undefined;
       const partial = active.get(channel);
-      const compatible = partial && (!identity || !partial.identity || partial.identity === identity) ? partial : undefined;
-      const key = JSON.stringify([channel, identity || `text:${textHash}`]);
+      const compatible = partial && (!utteranceIdentity || !partial.utteranceIdentity || partial.utteranceIdentity === utteranceIdentity) ? partial : undefined;
+      // Keep timestamps as timing facts and the existing finalized-event key;
+      // they do not establish the identity of an in-progress utterance.
+      const dedupIdentity = utteranceIdentity || (startMs !== undefined ? `start:${startMs}` : undefined);
+      const key = JSON.stringify([channel, dedupIdentity || `text:${textHash}`]);
       const previous = finalized.get(key);
       const isFinal = outer.event === "transcript.data";
       // Without utterance IDs/timestamps, only suppress immediate duplicate finals.
-      const duplicate = previous && (identity || !compatible && receivedAt - previous.receivedAt < 2000);
+      const duplicate = previous && (dedupIdentity || !compatible && receivedAt - previous.receivedAt < 2000);
       if (!isFinal && duplicate) return null;
       if (duplicate && previous.textHash === textHash) {
-        if (isFinal) active.delete(channel);
+        if (isFinal && partial?.id === previous.id) active.delete(channel);
         return null;
       }
-      const id = compatible?.id || (duplicate ? previous.id : undefined) || `recall-${++sequence}`;
+      // A finalized key already owns its row, even while a newer utterance is
+      // active on the same channel. Corrections must not borrow that active ID.
+      const id = (duplicate ? previous.id : undefined) || compatible?.id || `recall-${++sequence}`;
       if (isFinal) {
-        active.delete(channel);
+        if (partial?.id === id) active.delete(channel);
         finalized.set(key, { id, textHash, receivedAt });
         // Bound deduplication history; older utterances remain in the session owner.
         if (finalized.size > 2048) finalized.delete(finalized.keys().next().value as string);
       } else {
-        active.set(channel, { id, identity: identity || compatible?.identity });
+        active.set(channel, { id, utteranceIdentity: utteranceIdentity || compatible?.utteranceIdentity });
         if (active.size > 256) active.delete(active.keys().next().value as string);
       }
       return { id, text, source, speaker, participantId, isFinal, receivedAt, startMs, endMs };

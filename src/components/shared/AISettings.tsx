@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import type {
   AiProviderId,
   ResponseLanguage,
@@ -10,11 +10,14 @@ import type {
 } from "../../../electron/settings";
 import { useToast } from "../../contexts/toast";
 import { SpeechSettings } from "./SpeechSettings";
+import { directSettingsWrite } from "./settingsWrites";
+import type { SettingsWriteProps } from "./settingsWrites";
 
-const AIProviderSettings: React.FC = () => {
+const AIProviderSettings: React.FC<SettingsWriteProps> = ({ runSettingsWrite = directSettingsWrite }) => {
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
+  const writeLocked = useRef(false);
   const modelListId = useId();
   const { showToast } = useToast();
 
@@ -87,7 +90,7 @@ const AIProviderSettings: React.FC = () => {
   };
 
   const save = async () => {
-    if (!settings || !activeProvider) return;
+    if (!settings || !activeProvider || writeLocked.current) return;
     if (
       !activeProvider.hasApiKey &&
       !activeProvider.usesWiseDefaultKey &&
@@ -102,16 +105,16 @@ const AIProviderSettings: React.FC = () => {
       );
       return;
     }
-    setSaving(true);
+    writeLocked.current = true; setSaving(true);
     try {
-      const result = await window.electronAPI.saveAiSettings({
+      const result = await runSettingsWrite(() => window.electronAPI.saveAiSettings({
         provider: settings.provider,
         responseLanguage: settings.responseLanguage,
         apiKey: apiKey || undefined,
         model: activeProvider.model,
         baseUrl: activeProvider.baseUrl,
         supportsVision: activeProvider.supportsVision,
-      });
+      }));
       if (!result.success || !result.settings) {
         throw new Error(result.error || "Save failed");
       }
@@ -129,24 +132,21 @@ const AIProviderSettings: React.FC = () => {
         "error",
       );
     } finally {
-      setSaving(false);
+      writeLocked.current = false; setSaving(false);
     }
   };
 
   const clear = async () => {
-    if (!settings) return;
-    const result = await window.electronAPI.clearApiKey(settings.provider);
-    if (result.success && result.settings) {
-      setSettings(result.settings);
-      setApiKey("");
-      showToast(
-        "API key cleared",
-        "Add a new key before using this provider.",
-        "neutral",
-      );
-    } else {
-      showToast("Settings error", result.error || "Clear failed", "error");
-    }
+    if (!settings || writeLocked.current) return;
+    writeLocked.current = true; setSaving(true);
+    try {
+      const result = await runSettingsWrite(() => window.electronAPI.clearApiKey(settings.provider));
+      if (!result.success || !result.settings) throw new Error(result.error || "Clear failed");
+      setSettings(result.settings); setApiKey("");
+      showToast("API key cleared", "Add a new key before using this provider.", "neutral");
+    } catch (error) {
+      showToast("Settings error", error instanceof Error ? error.message : "Could not clear key.", "error");
+    } finally { writeLocked.current = false; setSaving(false); }
   };
 
   if (!settings || !activeProvider) {
@@ -303,6 +303,7 @@ const AIProviderSettings: React.FC = () => {
           <button
             type="button"
             onClick={clear}
+            disabled={saving}
             className="rounded bg-white/10 px-2 py-1 text-[10px] hover:bg-white/20"
           >
             Clear key
@@ -331,7 +332,7 @@ const AIProviderSettings: React.FC = () => {
 };
 
 // Keep each settings owner mounted, including when the other section is loading.
-export const AISettings: React.FC = () => <div className="space-y-4">
-  <AIProviderSettings />
-  <div className="border-t border-white/10 pt-3"><SpeechSettings /></div>
+export const AISettings: React.FC<SettingsWriteProps> = ({ runSettingsWrite = directSettingsWrite }) => <div className="space-y-4">
+  <AIProviderSettings runSettingsWrite={runSettingsWrite} />
+  <div className="border-t border-white/10 pt-3"><SpeechSettings runSettingsWrite={runSettingsWrite} /></div>
 </div>;

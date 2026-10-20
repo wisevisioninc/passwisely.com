@@ -49,3 +49,7 @@ Deepgram 凭据需要在与服务端 Recall Key 相同的日本区 workspace 中
 ## Mac 实测记录
 
 [2026-10-20 Mac 中文实时转录验证](reports/mac-2026-10-20.md) 保留本轮系统声音、默认 AirPods 麦克风、临时文本替换和暂停恢复的实际结果。金额、中英技术词及真人标准句仍有错误；该记录不等于准确率验收通过。
+
+## 转录归段与后续复测
+
+[归段合成样本](paragraphs.README.md)覆盖短 final 聚合、来源/身份切换、partial 更新和暂停恢复；[SystemContainer 对齐与 Mac 验证](../../reports/systemcontainer-parity-2026-10-20.md)区分静态依据、真实固定 WAV 结果和未通过的准确率项目。归段回归不能替代识别质量评估。

@@ -6,7 +6,16 @@ export interface OverlayGeometry {
   height: number;
 }
 
+export interface OverlayDisplay {
+  id: number;
+  label: string;
+  isPrimary: boolean;
+  selected: boolean;
+}
+
 export interface OverlayWindowAPI {
+  getOverlayDisplays: () => Promise<OverlayDisplay[]>;
+  selectOverlayDisplay: (displayId: number) => Promise<OverlayGeometry | null>;
   getOverlayGeometry: () => Promise<OverlayGeometry | null>;
   onOverlayGeometryChanged: (callback: (geometry: OverlayGeometry) => void) => () => void;
   setOverlayInteractive: (interactive: boolean) => Promise<void>;

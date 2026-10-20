@@ -17,7 +17,7 @@ const MAX_RESPONSE_BYTES = 64 * 1024;
 const DEEPGRAM_CREDENTIALS_ERROR_PREFIX = "Unable to get temporary credentials for deepgram_streaming.";
 // Bump when the recording/transcription semantics change, so a cached token
 // cannot silently represent an older profile configuration in this process.
-const PROFILE_CONFIGURATION_VERSION = 1;
+const PROFILE_CONFIGURATION_VERSION = 2;
 
 export interface RecallUpload {
   uploadToken: string;

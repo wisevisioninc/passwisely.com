@@ -47,6 +47,7 @@ const message = (error: unknown) => error instanceof Error ? error.message : "�
 export class LiveSessionService {
   private revision = 0;
   private generation = 0;
+  private captureEpoch = 0;
   private capture: AudioCapture | null = null;
   private starting: AbortController | null = null;
   private answer: AbortController | null = null;
@@ -71,12 +72,14 @@ export class LiveSessionService {
     else if (!this.timer) this.timer = setTimeout(() => { this.timer = null; this.deps.publish(this.getSnapshot()); }, 50);
   }
   private receive(segment: TranscriptSegment): void {
-    const item = { ...segment, text: limitedText(segment.text, MAX_SEGMENT_BYTES) };
+    const i = this.state.transcripts.findIndex(x => x.id === segment.id);
+    const existing = i >= 0 ? this.state.transcripts[i] : undefined;
+    // Revisions stay with the original capture interval, including late finals.
+    const item = { ...segment, captureEpoch: existing?.captureEpoch ?? this.captureEpoch, text: limitedText(segment.text, MAX_SEGMENT_BYTES) };
     if (item.text !== segment.text) this.state.transcriptTruncated = true;
     const itemBytes = Buffer.byteLength(JSON.stringify(item));
     if (itemBytes > MAX_SEGMENT_BYTES + 2048) { this.state.transcriptTruncated = true; this.emit(); return; }
     if (!item.text.trim()) return;
-    const i = this.state.transcripts.findIndex(x => x.id === item.id);
     if (i >= 0) {
       const previous = this.state.transcripts[i];
       if (previous.isFinal && (!item.isFinal || previous.text === item.text || previous.receivedAt > item.receivedAt)) return;
@@ -97,6 +100,7 @@ export class LiveSessionService {
     this.cancelAnswer();
     this.cancelClear();
     this.state = this.empty();
+    this.captureEpoch = 0;
     this.state.captureStatus = "starting";
     this.emit(true);
     const sessionId = this.state.sessionId, generation = ++this.generation;
@@ -156,6 +160,9 @@ export class LiveSessionService {
     }
     if (action === "pause" && this.state.captureStatus !== "recording") return { success: false, error: "仅录制中可以暂停。" };
     if (action === "resume" && this.state.captureStatus !== "paused") return { success: false, error: "当前采集没有暂停。" };
+    // Set the barrier before resume can synchronously deliver new transcript.
+    // A failed resume attempt remains a conservative presentation boundary.
+    if (action === "resume") this.captureEpoch++;
     this.state.captureStatus = action === "pause" ? "pausing" : action === "resume" ? "resuming" : "stopping";
     this.emit(true);
     try {

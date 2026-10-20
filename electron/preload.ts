@@ -149,6 +149,8 @@ export const PROCESSING_EVENTS = {
 console.log("Preload script is running");
 
 const electronAPI = {
+  getOverlayDisplays: () => ipcRenderer.invoke("overlay-get-displays"),
+  selectOverlayDisplay: (displayId: number) => ipcRenderer.invoke("overlay-select-display", displayId),
   getOverlayGeometry: () => ipcRenderer.invoke("overlay-get-geometry"),
   onOverlayGeometryChanged: (callback: (geometry: OverlayGeometry) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, geometry: OverlayGeometry) => callback(geometry);

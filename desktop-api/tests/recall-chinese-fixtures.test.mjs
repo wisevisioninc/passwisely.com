@@ -1,21 +1,14 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import ts from "typescript";
+import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
 
-const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const fixture = JSON.parse(readFileSync(path.join(root, "test/audio/recall-chinese/transcripts.zh-CN.json"), "utf8"));
-const normalizerFile = path.join(root, "electron/live/recallTranscript.ts");
-const javascript = ts.transpileModule(readFileSync(normalizerFile, "utf8"), {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-}).outputText;
-const module = { exports: {} };
-new Function("require", "module", "exports", javascript)(require, module, module.exports);
-const { createRecallTranscriptNormalizer } = module.exports;
+const loadProduction = createProductionTsLoader();
+const { createRecallTranscriptNormalizer } = loadProduction(path.join(root, "electron/live/recallTranscript.ts"));
 
 test("Chinese event corpus states synthetic provenance and covers at least four utterances across both sources", () => {
   assert.equal(fixture.schemaVersion, 1);

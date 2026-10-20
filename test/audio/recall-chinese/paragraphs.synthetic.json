@@ -1,0 +1,507 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "kind": "authored-post-normalizer-fixture",
+    "realCaptureVerified": false,
+    "containsRealUserAudio": false,
+    "note": "Synthetic display paragraph tests. These do not prove ASR text accuracy or provider endpoint behavior."
+  },
+  "cases": [
+    {
+      "id": "continuous-chinese-final-fragments",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "请先",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 1100,
+            "startMs": 0,
+            "endMs": 600,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "b",
+            "text": "处理空数组，",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 2100,
+            "startMs": 700,
+            "endMs": 1600,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "c",
+            "text": "再检查左右边界。",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 3500,
+            "startMs": 1700,
+            "endMs": 3000,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a",
+            "b",
+            "c"
+          ]
+        ]
+      ],
+      "expectedTexts": [
+        [
+          "请先处理空数组，再检查左右边界。"
+        ]
+      ]
+    },
+    {
+      "id": "punctuation-is-not-guaranteed-turn-end",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "可以。",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 1000,
+            "startMs": 0,
+            "endMs": 500,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "b",
+            "text": "先检查边界。",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 2200,
+            "startMs": 900,
+            "endMs": 1800,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a",
+            "b"
+          ]
+        ]
+      ],
+      "expectedTexts": [
+        [
+          "可以。先检查边界。"
+        ]
+      ]
+    },
+    {
+      "id": "long-gap-breaks-paragraph",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "先看输入。",
+            "source": "system",
+            "participantId": "remote",
+            "isFinal": true,
+            "receivedAt": 1000,
+            "startMs": 0,
+            "endMs": 600,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:f09d309216d988540fa849b5cad3bc9fc8a0333a82882bc687ed1f9323547c76"
+          },
+          {
+            "id": "b",
+            "text": "现在开始。",
+            "source": "system",
+            "participantId": "remote",
+            "isFinal": true,
+            "receivedAt": 4600,
+            "startMs": 3500,
+            "endMs": 4100,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:f09d309216d988540fa849b5cad3bc9fc8a0333a82882bc687ed1f9323547c76"
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a"
+          ],
+          [
+            "b"
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "interleaved-source-and-participant-break",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "数组含负数吗？",
+            "source": "system",
+            "participantId": "remote-1",
+            "isFinal": true,
+            "receivedAt": 1000,
+            "startMs": 0,
+            "endMs": 700,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:95e8075712724d80642fab46b5b9a7e88d8583fa3ae845247359f8c608f50235"
+          },
+          {
+            "id": "b",
+            "text": "可以。",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 1900,
+            "startMs": 800,
+            "endMs": 1400,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "c",
+            "text": "再说明复杂度。",
+            "source": "system",
+            "participantId": "remote-2",
+            "isFinal": true,
+            "receivedAt": 2800,
+            "startMs": 1500,
+            "endMs": 2300,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:ecd631ec03f84688e0758188c5c0f81af43d69267d44943390ea0b9f57f58339"
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a"
+          ],
+          [
+            "b"
+          ],
+          [
+            "c"
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "missing-or-overlapping-time-is-not-continuity-proof",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "先看输入",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 1000,
+            "startMs": 0,
+            "endMs": 900,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "b",
+            "text": "再看输出",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 1800,
+            "startMs": 700,
+            "endMs": 1400,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "c",
+            "text": "缺少音频时钟",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 2500,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a"
+          ],
+          [
+            "b"
+          ],
+          [
+            "c"
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "unknown-without-participant-never-asserts-common-channel",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "第一段",
+            "source": "unknown",
+            "isFinal": true,
+            "receivedAt": 1000,
+            "startMs": 0,
+            "endMs": 500,
+            "captureEpoch": 0
+          },
+          {
+            "id": "b",
+            "text": "第二段",
+            "source": "unknown",
+            "isFinal": true,
+            "receivedAt": 1800,
+            "startMs": 600,
+            "endMs": 1300,
+            "captureEpoch": 0
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a"
+          ],
+          [
+            "b"
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "partial-revisions-recompute-without-duplicating-final-prefix",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "请用 Python",
+            "source": "system",
+            "participantId": "remote",
+            "isFinal": true,
+            "receivedAt": 1600,
+            "startMs": 0,
+            "endMs": 1000,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:f09d309216d988540fa849b5cad3bc9fc8a0333a82882bc687ed1f9323547c76"
+          },
+          {
+            "id": "b",
+            "text": "实现二",
+            "source": "system",
+            "participantId": "remote",
+            "isFinal": false,
+            "receivedAt": 2300,
+            "startMs": 1100,
+            "endMs": 1800,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:f09d309216d988540fa849b5cad3bc9fc8a0333a82882bc687ed1f9323547c76"
+          }
+        ],
+        [
+          {
+            "id": "a",
+            "text": "请用 Python",
+            "source": "system",
+            "participantId": "remote",
+            "isFinal": true,
+            "receivedAt": 1600,
+            "startMs": 0,
+            "endMs": 1000,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:f09d309216d988540fa849b5cad3bc9fc8a0333a82882bc687ed1f9323547c76"
+          },
+          {
+            "id": "b",
+            "text": "实现二分查找。",
+            "source": "system",
+            "participantId": "remote",
+            "isFinal": true,
+            "receivedAt": 3200,
+            "startMs": 1100,
+            "endMs": 2700,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:f09d309216d988540fa849b5cad3bc9fc8a0333a82882bc687ed1f9323547c76"
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a",
+            "b"
+          ]
+        ],
+        [
+          [
+            "a",
+            "b"
+          ]
+        ]
+      ],
+      "expectedTexts": [
+        [
+          "请用 Python 实现二"
+        ],
+        [
+          "请用 Python 实现二分查找。"
+        ]
+      ],
+      "expectedFinal": [
+        [
+          false
+        ],
+        [
+          true
+        ]
+      ]
+    },
+    {
+      "id": "final-correction-keeps-array-order-and-other-active-row",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "边界检查",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 1400,
+            "startMs": 0,
+            "endMs": 900,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "b",
+            "text": "再处理",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": false,
+            "receivedAt": 2500,
+            "startMs": 1700,
+            "endMs": 2200,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          }
+        ],
+        [
+          {
+            "id": "a",
+            "text": "先做边界检查，",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 2700,
+            "startMs": 0,
+            "endMs": 900,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "b",
+            "text": "再处理空数组。",
+            "source": "microphone",
+            "participantId": "local",
+            "isFinal": true,
+            "receivedAt": 3600,
+            "startMs": 1700,
+            "endMs": 3100,
+            "captureEpoch": 0,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a",
+            "b"
+          ]
+        ],
+        [
+          [
+            "a",
+            "b"
+          ]
+        ]
+      ],
+      "expectedTexts": [
+        [
+          "边界检查再处理"
+        ],
+        [
+          "先做边界检查，再处理空数组。"
+        ]
+      ]
+    },
+    {
+      "id": "short-pause-resume-epoch-break",
+      "snapshots": [
+        [
+          {
+            "id": "a",
+            "text": "先检查输入。",
+            "source": "microphone",
+            "participantId": "local",
+            "captureEpoch": 0,
+            "isFinal": true,
+            "receivedAt": 1000,
+            "startMs": 0,
+            "endMs": 500,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          },
+          {
+            "id": "b",
+            "text": "现在继续。",
+            "source": "microphone",
+            "participantId": "local",
+            "captureEpoch": 1,
+            "isFinal": true,
+            "receivedAt": 2000,
+            "startMs": 600,
+            "endMs": 1500,
+            "channelId": "recall-channel:038487f573b99d14cc42e5b2a78b9ba2724b8701673977f422ac4234fd0d2751"
+          }
+        ]
+      ],
+      "expectedMemberIds": [
+        [
+          [
+            "a"
+          ],
+          [
+            "b"
+          ]
+        ]
+      ]
+    }
+  ]
+}

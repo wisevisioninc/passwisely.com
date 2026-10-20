@@ -174,7 +174,8 @@
             "speaker": "测试本地发言者",
             "startMs": 0,
             "endMs": 3250,
-            "receivedAt": 1000
+            "receivedAt": 1000,
+            "channelId": "recall-channel:93f321c0ec61230de0fe2d6aeccd5715e29418dbe560ea7dda85f76f812df41d"
           }
         },
         {
@@ -343,7 +344,8 @@
             "speaker": "测试本地发言者",
             "startMs": 0,
             "endMs": 3750,
-            "receivedAt": 2000
+            "receivedAt": 2000,
+            "channelId": "recall-channel:93f321c0ec61230de0fe2d6aeccd5715e29418dbe560ea7dda85f76f812df41d"
           }
         }
       ]
@@ -435,7 +437,8 @@
             "speaker": "测试远端发言者",
             "startMs": 0,
             "endMs": 1250,
-            "receivedAt": 3000
+            "receivedAt": 3000,
+            "channelId": "recall-channel:a6faa0a9b3d4ee708c5d8855945dcf1f06ba62d5c30a2611d16cb7a9ae28e0a1"
           }
         },
         {
@@ -577,7 +580,8 @@
             "speaker": "测试远端发言者",
             "startMs": 0,
             "endMs": 3000,
-            "receivedAt": 4000
+            "receivedAt": 4000,
+            "channelId": "recall-channel:a6faa0a9b3d4ee708c5d8855945dcf1f06ba62d5c30a2611d16cb7a9ae28e0a1"
           }
         }
       ]
@@ -686,7 +690,8 @@
             "speaker": "测试远端发言者",
             "startMs": 10000,
             "endMs": 11250,
-            "receivedAt": 5000
+            "receivedAt": 5000,
+            "channelId": "recall-channel:a6faa0a9b3d4ee708c5d8855945dcf1f06ba62d5c30a2611d16cb7a9ae28e0a1"
           }
         },
         {
@@ -765,7 +770,8 @@
             "speaker": "测试本地发言者",
             "startMs": 10000,
             "endMs": 11250,
-            "receivedAt": 5100
+            "receivedAt": 5100,
+            "channelId": "recall-channel:93f321c0ec61230de0fe2d6aeccd5715e29418dbe560ea7dda85f76f812df41d"
           }
         },
         {
@@ -880,7 +886,8 @@
             "speaker": "测试远端发言者",
             "startMs": 10000,
             "endMs": 12250,
-            "receivedAt": 6000
+            "receivedAt": 6000,
+            "channelId": "recall-channel:a6faa0a9b3d4ee708c5d8855945dcf1f06ba62d5c30a2611d16cb7a9ae28e0a1"
           }
         },
         {
@@ -1022,7 +1029,8 @@
             "speaker": "测试本地发言者",
             "startMs": 10000,
             "endMs": 13000,
-            "receivedAt": 6100
+            "receivedAt": 6100,
+            "channelId": "recall-channel:93f321c0ec61230de0fe2d6aeccd5715e29418dbe560ea7dda85f76f812df41d"
           }
         },
         {
@@ -1360,7 +1368,8 @@
             "speaker": "测试远端发言者",
             "startMs": 0,
             "endMs": 2500,
-            "receivedAt": 7000
+            "receivedAt": 7000,
+            "channelId": "recall-channel:a6faa0a9b3d4ee708c5d8855945dcf1f06ba62d5c30a2611d16cb7a9ae28e0a1"
           }
         },
         {
@@ -1538,7 +1547,8 @@
             "speaker": "测试远端发言者",
             "startMs": 0,
             "endMs": 4000,
-            "receivedAt": 8000
+            "receivedAt": 8000,
+            "channelId": "recall-channel:a6faa0a9b3d4ee708c5d8855945dcf1f06ba62d5c30a2611d16cb7a9ae28e0a1"
           }
         }
       ]

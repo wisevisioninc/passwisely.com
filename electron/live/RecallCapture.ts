@@ -298,6 +298,9 @@ export class RecallCapture {
     if (this.status !== (pausing ? "recording" : "paused")) throw new Error("音频会话状态已变化，请稍后重试。");
     const id = this.windowId;
     const generation = this.generation;
+    // A provider may deliver a result synchronously from resumeRecording.
+    // Its unfinished rows belong to a fresh application capture interval.
+    if (!pausing) this.normalizer.beginCaptureEpoch();
     this.setState(pausing ? "pausing" : "resuming");
     if (pausing) this.finalDrainUntil = Date.now() + 2000;
     const work = Promise.resolve().then(() => this.command(pausing ? this.sdk!.pauseRecording({ windowId: id }) : this.sdk!.resumeRecording({ windowId: id }))).then(() => undefined);

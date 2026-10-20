@@ -1,0 +1,9 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>PassWisely 鼠标穿透测试</title>
+<style>body{margin:0;background:#fafafa;color:#17202a;font:18px/1.7 system-ui}header{padding:12px 28px;background:#e9eef8}main{padding:30px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.target{padding:18px;border:2px solid #8a9db8;border-radius:10px;background:white}label{display:block;font-weight:600}textarea{box-sizing:border-box;width:100%;height:82px;font:18px system-ui}button{font:16px system-ui;padding:8px 16px}output{position:fixed;bottom:8px;left:12px;right:12px;min-height:28px;background:#142a43;color:white;padding:10px;font:14px/1.5 monospace;white-space:pre-wrap}p{user-select:text}h1{font-size:22px;margin:0}</style>
+<header><h1>PassWisely 鼠标穿透测试</h1>只含合成文本；先让浮层正文覆盖中间测试区，再通过原生鼠标操作底层页面。</header><main id="targets"></main><output id="status" aria-live="polite">等待测试</output>
+<script>
+const root=document.getElementById('targets'),status=document.getElementById('status');let clicks=0;
+function update(extra){status.textContent=JSON.stringify({clicks,...extra});}
+for(let n=1;n<=9;n++){const section=document.createElement('section');section.className='target';section.innerHTML=`<strong>测试区域 ${n}</strong><p id="select-${n}">透明浮层下可以选取这段合成测试文字。Selection target ${n}: blue notebook.</p><label for="input-${n}">底层输入 ${n}</label><textarea id="input-${n}" placeholder="输入：穿透测试 123"></textarea><button id="button-${n}">底层按钮 ${n}</button>`;root.append(section);section.querySelector('textarea').addEventListener('input',e=>update({target:e.target.id,value:e.target.value}));section.querySelector('button').addEventListener('click',e=>{clicks++;update({target:e.target.id});});}
+document.addEventListener('selectionchange',()=>{const s=String(document.getSelection());if(s)update({selection:s});});
+</script></html>

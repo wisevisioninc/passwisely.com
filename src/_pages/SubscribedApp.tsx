@@ -183,7 +183,8 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
         <button type="button" onClick={() => setWorkspace("live")}><Radio size={13} aria-hidden="true" />Back to conversation / 返回会话</button>
         <CaptureStatusNotice snapshot={liveSnapshot} onReturn={() => setWorkspace("live")} />
       </nav>}
-      <LiveWorkspace visible={workspace === "live"} onSnapshot={setLiveSnapshot} onProgramming={() => setWorkspace("code")} credits={credits} />
+      <LiveWorkspace visible={workspace === "live"} onSnapshot={setLiveSnapshot} onProgramming={() => setWorkspace("code")} credits={credits}
+        currentLanguage={currentLanguage} onLanguageChange={setLanguage} />
       {workspace === "code" && view === "queue" && processingError && (
         <div
           role="alert"

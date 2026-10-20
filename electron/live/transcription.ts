@@ -28,7 +28,7 @@ export function getTranscriptionProfile(value: unknown): TranscriptionProfile | 
 export function createTranscriptionProvider(id: TranscriptionProfileId) {
   switch (id) {
     case "recall-en": return { recallai_streaming: { mode: "prioritize_low_latency", language_code: "en" } };
-    case "deepgram-zh": return { deepgram_streaming: { model: "nova-3", language: "zh", interim_results: true, punctuate: true } };
+    case "deepgram-zh": return { deepgram_streaming: { model: "nova-3", language: "zh", interim_results: true, punctuate: true, endpointing: 500 } };
     // Recall's generic docs permit this, while Desktop-specific docs still
     // state low-latency-only. Treat acceptance/real output as runtime evidence.
     case "recall-zh": return { recallai_streaming: { mode: "prioritize_accuracy", language_code: "zh" } };

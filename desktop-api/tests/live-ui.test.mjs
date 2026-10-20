@@ -1,27 +1,15 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { load as parseHtml } from "cheerio";
-import ts from "typescript";
 import Markdown from "react-markdown";
+import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
 
-const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const filename = path.join(root, "src/components/Live/LiveWorkspace.tsx");
-const javascript = ts.transpileModule(readFileSync(filename, "utf8"), {
-  compilerOptions: {
-    module: ts.ModuleKind.CommonJS,
-    target: ts.ScriptTarget.ES2020,
-    jsx: ts.JsxEmit.ReactJSX,
-    esModuleInterop: true,
-  },
-}).outputText;
-
 // Run the shipped component and its exported control/ordering logic, not a
 // second implementation. Only IPC, CSS and unrelated settings panels are mocked.
 function production(initialSnapshot, reactOverride) {
@@ -38,26 +26,16 @@ function production(initialSnapshot, reactOverride) {
       return React.useState(initial);
     },
   });
-  const module = { exports: {} };
-  new Function("require", "module", "exports", javascript)((id) => {
-    if (id === "react") return react;
-    if (id.endsWith(".css")) return {};
-    if (id === "../shared/AISettings") return { AISettings: () => null };
-    if (id === "../shared/ResumePanel") return { ResumePanel: () => null };
-    if (id === "./AnswerMarkdown") return markdownProduction();
-    return require(id);
-  }, module, module.exports);
-  return module.exports;
+  return createProductionTsLoader({ mocks: {
+    react,
+    "../shared/AISettings": { AISettings: () => null },
+    "../shared/ResumePanel": { ResumePanel: () => null },
+    "react-markdown": { __esModule: true, default: Markdown },
+  } })(filename);
 }
 
 function markdownProduction() {
-  const filename = path.join(root, "src/components/Live/AnswerMarkdown.tsx");
-  const js = ts.transpileModule(readFileSync(filename, "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
-  }).outputText;
-  const module = { exports: {} };
-  new Function("require", "module", "exports", js)(id => id === "react-markdown" ? { __esModule: true, default: Markdown } : require(id), module, module.exports);
-  return module.exports;
+  return createProductionTsLoader({ mocks: { "react-markdown": { __esModule: true, default: Markdown } } })(path.join(root, "src/components/Live/AnswerMarkdown.tsx"));
 }
 
 function snapshot(patch = {}) {
@@ -145,6 +123,24 @@ test("initial and hidden renders contain no invented transcripts or render-time 
     assert.equal(startCalls, 0);
     assert.equal(askCalls, 0);
   }
+});
+
+test("the production transcript projector renders three continuous final ASR rows as one complete bubble without changing raw input", () => {
+  const channelId = createProductionTsLoader()(path.join(root, "electron/live/recallTranscript.ts")).createRecallTranscriptNormalizer().normalize({ event: "transcript.data", data: { source: "system", data: { participant: { id: "synthetic-remote", name: "Guest" }, words: [{ text: "fixture" }] } } }).channelId;
+  const segments = [
+    { id: "short-1", text: "先处理", startMs: 0, endMs: 500, receivedAt: 1000 },
+    { id: "short-2", text: "空数组，", startMs: 600, endMs: 1200, receivedAt: 2000 },
+    { id: "short-3", text: "再检查左右边界。", startMs: 1300, endMs: 2500, receivedAt: 3000 },
+  ].map(segment => ({ ...segment, source: "system", participantId: "synthetic-remote", speaker: "Guest", channelId, captureEpoch: 0, isFinal: true }));
+  const state = snapshot({ captureStatus: "ended", transcripts: segments });
+  const original = JSON.stringify(state);
+  const { dom: $ } = renderWorkspace(state);
+  assert.equal($(".pw-live-segment").length, 1);
+  assert.equal($(".pw-live-segment.source-system.final p").text(), "先处理空数组，再检查左右边界。");
+  assert.equal($(".pw-live-segment.source-microphone").length, 0);
+  assert.equal($(".pw-live-segment .pw-live-caret").length, 0);
+  assert.equal(state.transcripts.length, 3);
+  assert.equal(JSON.stringify(state), original);
 });
 
 test("sending requires usable context; partial ASR alone is not final context", () => {
@@ -323,13 +319,16 @@ test("safe Markdown links use Electron's existing external handler and Copy keep
 // testing or pixel verification, which require the signed Mac application.
 async function clientWorkspace(initial, overrides = {}, initialBounds = { width: 1200, height: 800 }) {
   const previous = Object.fromEntries(["window", "document", "Element", "HTMLElement"].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
-  const listeners = new Map(), effects = [], states = [], refs = [], cleanups = [], interactions = [];
+  const listeners = new Map(), effects = [], layouts = [], states = [], refs = [], cleanups = [], interactions = [];
   let si = 0, ri = 0, mounting = true, receive, shortcut, queueChanged, screenshotError, visibilityChanged, geometryChanged, point = null;
   let currentGeometry = { displayId: 1, width: 1200, height: 800 };
   class ElementBoundary {
-    constructor(interactive = false) { this.interactive = interactive; }
-    closest() { return this.interactive ? this : null; }
-    matches() { return false; }
+    constructor(interactive = false, field = false, dialog = false) { this.interactive = interactive; this.field = field; this.dialog = dialog; this.isConnected = true; }
+    closest(selector) {
+      if (selector === '[role="dialog"],[role="alertdialog"]') return this.dialog ? this : null;
+      return this.interactive ? this : null;
+    }
+    matches() { return this.field; }
     setPointerCapture() { this.captured = true; }
     hasPointerCapture() { return !!this.captured; }
     releasePointerCapture() { this.captured = false; }
@@ -359,14 +358,14 @@ async function clientWorkspace(initial, overrides = {}, initialBounds = { width:
       return [states[index], value => { states[index] = typeof value === "function" ? value(states[index]) : value; }];
     },
     useRef(initialRef) { const index = ri++; if (!(index in refs)) refs[index] = { current: initialRef }; return refs[index]; },
-    useEffect(effect) { if (mounting) effects.push(effect); }, useLayoutEffect() {}, useCallback: fn => fn,
+    useEffect(effect) { if (mounting) effects.push(effect); }, useLayoutEffect(effect, dependencies) { if (dependencies === undefined) layouts.push(effect); }, useCallback: fn => fn,
   };
   Object.defineProperty(globalThis, "window", { configurable: true, value: { innerWidth: initialBounds.width, innerHeight: initialBounds.height, electronAPI: api, addEventListener: add, removeEventListener: remove } });
   Object.defineProperty(globalThis, "document", { configurable: true, value: { addEventListener: add, removeEventListener: remove, elementFromPoint: () => point, activeElement: null } });
   Object.defineProperty(globalThis, "Element", { configurable: true, value: ElementBoundary });
   Object.defineProperty(globalThis, "HTMLElement", { configurable: true, value: ElementBoundary });
   const Component = production(undefined, react).default;
-  const render = () => { si = 0; ri = 0; return Component({ visible: true }); };
+  const render = () => { si = 0; ri = 0; layouts.length = 0; const tree = Component({ visible: true }); for (const layout of layouts) layout(); return tree; };
   render(); mounting = false;
   for (const effect of effects) { const cleanup = effect(); if (typeof cleanup === "function") cleanups.push(cleanup); }
   await new Promise(resolve => setImmediate(resolve));
@@ -383,6 +382,7 @@ async function clientWorkspace(initial, overrides = {}, initialBounds = { width:
     resizeWindow(width, height) { window.innerWidth = width; window.innerHeight = height; for (const listener of listeners.get("resize") ?? []) listener(); },
     pointerMove(target, x = 600, y = 740) { for (const listener of listeners.get("pointermove") ?? []) listener({ target, clientX: x, clientY: y }); },
     setPoint(next) { point = next; },
+    focusIn(target) { for (const listener of listeners.get("focusin") ?? []) listener({ target }); },
     dispose() { for (const cleanup of cleanups.reverse()) cleanup(); for (const [key, descriptor] of Object.entries(previous)) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key]; } },
   };
 }
@@ -404,11 +404,10 @@ test("recording shows pause only; paused exposes resume and Done; cancellation a
 
 test("Start Over and its shortcut share one guarded request; late completion cannot erase or close a newer draft", async () => {
   let request = pendingResult(), clears = 0;
-  const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }), { liveStartOver() { clears++; return request.promise; } });
+  const h = await clientWorkspace(snapshot({ captureStatus: "ended", transcripts: [{ id: "retained", source: "system", text: "Retained transcript", isFinal: true, receivedAt: 1 }] }), { liveStartOver() { clears++; return request.promise; } });
   try {
     h.label("手动输入问题").props.onClick();
     h.textButton("Transcripts").props.onClick();
-    h.label("Settings / 设置").props.onClick();
     h.textButton("Start Over").props.onClick();
     h.label("会话提问").props.onChange({ target: { value: "newly typed while Trash waits" } });
     request.resolve({ success: true }); await h.tick();
@@ -495,11 +494,11 @@ test("the settings hover timer owns its 500ms close delay and can be cancelled w
   globalThis.clearTimeout = timer => { cancelled.push(timer); };
   try {
     const anchor = h.by(node => node.props.className === "pw-live-settings-anchor");
-    anchor.props.onPointerEnter(); assert.ok(h.by(node => node.props.role === "menu"));
+    anchor.props.onPointerEnter(); assert.ok(h.by(node => typeof node.type === "function" && node.type.name === "LiveSettingsPopover"));
     anchor.props.onPointerLeave(); assert.equal(timers.at(-1).delay, 500);
     anchor.props.onPointerEnter(); assert.ok(cancelled.includes(timers.at(-1)));
     anchor.props.onPointerLeave(); timers.at(-1).callback();
-    assert.equal(h.by(node => node.props.role === "menu"), undefined);
+    assert.equal(h.by(node => typeof node.type === "function" && node.type.name === "LiveSettingsPopover"), undefined);
   } finally { globalThis.setTimeout = originalSet; globalThis.clearTimeout = originalClear; h.dispose(); }
 });
 
@@ -507,18 +506,17 @@ test("the settings popover chooses available space and stays within the screen a
   const h = await clientWorkspace(snapshot({ captureStatus: "paused", captureNeedsCleanup: true }));
   try {
     h.label("Settings / 设置").props.onClick();
-    let menu = h.by(node => node.props.role === "menu");
-    assert.equal(menu.props["data-placement"], "below");
-    assert.ok(menu.props.style.maxHeight > 600);
+    let menu = h.by(node => typeof node.type === "function" && node.type.name === "LiveSettingsPopover");
+    assert.equal(menu.props.placement, "below");
+    assert.ok(menu.props.maxHeight > 600);
     const target = new h.ElementBoundary(true);
     const drag = h.label("移动浮条");
     drag.props.onPointerDown({ button: 0, pointerId: 1, clientX: 600, clientY: 20, currentTarget: target, preventDefault() {} });
     drag.props.onPointerMove({ pointerId: 1, clientX: 600, clientY: 1000 });
-    menu = h.by(node => node.props.role === "menu");
+    menu = h.by(node => typeof node.type === "function" && node.type.name === "LiveSettingsPopover");
     const bar = h.by(node => node.props.className === "pw-live-toolbar pw-glass");
-    assert.equal(menu.props["data-placement"], "above");
-    assert.equal(menu.props.style.top, "auto");
-    assert.ok(menu.props.style.maxHeight + 8 <= bar.props.style.top - 20);
+    assert.equal(menu.props.placement, "above");
+    assert.ok(menu.props.maxHeight + 8 <= bar.props.style.top - 20);
   } finally { h.dispose(); }
 });
 
@@ -592,4 +590,143 @@ test("the restored PassWisely logo is used in both surfaces, with complete scree
   const screenshot = $("button[aria-label='Take Screenshot / 截图']");
   assert.ok(screenshot.text().includes("Take Screenshot"));
   assert.deepEqual(screenshot.find("kbd").toArray().map(element => $(element).text()), ["⌘", "H"]);
+});
+
+
+test("the glass card and transcript/answer body pass through while explicit controls retain mouse ownership", () => {
+  const answer = { id: "pass-through", question: "A question", text: "A response with [a safe link](https://example.test/guide)", status: "completed", createdAt: 1, screenshotCount: 0 };
+  const { dom: $ } = renderWorkspace(snapshot({ captureStatus: "ended", answers: [answer] }));
+  for (const selector of [".pw-live-card", ".pw-live-scroll", ".pw-live-answer", ".pw-live-answer-text", ".pw-live-response-view", ".pw-live-transcript-view"]) {
+    assert.equal($(selector).attr("data-overlay-interactive"), undefined, `${selector} does not capture its whole background`);
+  }
+  for (const selector of [".pw-live-toolbar", ".pw-live-card-header", ".pw-live-resize", ".pw-live-answer-meta button", ".pw-live-answer-text a", ".pw-live-bottom-actions button"]) {
+    assert.ok($(selector).length > 0, `${selector} exists in the production render`);
+    for (const element of $(selector).toArray()) assert.ok($(element).is("[data-overlay-interactive]"), `${selector} is an explicit interactive region`);
+  }
+});
+
+test("committed content and scroll changes refresh stationary-pointer ownership without a pointermove", async () => {
+  const h = await clientWorkspace(snapshot({ captureStatus: "ended", answers: [{ id: "stationary", question: "q", text: "response", status: "completed", createdAt: 1, screenshotCount: 0 }] }));
+  try {
+    const control = new h.ElementBoundary(true);
+    h.setPoint(control); h.pointerMove(control);
+    assert.equal(h.interactions.at(-1), true);
+    h.setPoint(null); h.render();
+    assert.equal(h.interactions.at(-1), false, "a control removed or displaced beneath the cursor cannot retain native ownership");
+    h.setPoint(control); h.render();
+    assert.equal(h.interactions.at(-1), true, "a newly opened control beneath a stationary cursor is clickable");
+    const scroll = h.by(node => node.props.className === "pw-live-scroll");
+    h.setPoint(null);
+    scroll.props.onScroll({ currentTarget: { scrollHeight: 1000, scrollTop: 100, clientHeight: 300 } });
+    assert.equal(h.interactions.at(-1), false, "scrolling a control away releases ownership before another pointermove");
+  } finally { h.dispose(); }
+});
+
+test("closing an editable overlay surface releases native focus even when the DOM removal emitted no focusout", async () => {
+  const focuses = [];
+  const h = await clientWorkspace(snapshot(), { async setOverlayFocus(value) { focuses.push(value); } });
+  try {
+    const field = new h.ElementBoundary(true, true);
+    h.focusIn(field);
+    assert.equal(focuses.at(-1), true);
+    field.isConnected = false;
+    h.render();
+    assert.equal(focuses.at(-1), false);
+    const count = focuses.length;
+    h.render();
+    assert.equal(focuses.length, count, "the disposed field focus lease is released once");
+  } finally { h.dispose(); }
+});
+
+test("advanced settings have one editor owner across stale hover/click/keyboard entries and Back", async () => {
+  const h = await clientWorkspace(snapshot());
+  const popover = () => h.by(node => typeof node.type === "function" && node.type.name === "LiveSettingsPopover");
+  const advanced = () => h.by(node => typeof node.type === "function" && node.type.name === "AISettings");
+  try {
+    const staleClick = h.label("Settings / 设置").props.onClick;
+    const staleKeyboard = h.label("Settings / 设置").props.onKeyDown;
+    const staleHover = h.by(node => node.props.className === "pw-live-settings-anchor").props.onPointerEnter;
+    staleClick();
+    const first = popover();
+    assert.equal(first.props.returnFocusRef, h.label("Settings / 设置").ref);
+    first.props.onOpenAdvanced();
+    // Before a new render, these closures still captured panel=null/open=false.
+    staleClick(); staleHover(); staleKeyboard({ key: "ArrowDown", preventDefault() {}, stopPropagation() {} });
+    assert.ok(advanced()); assert.equal(popover(), undefined);
+    assert.equal(h.label("Settings / 设置").props["aria-expanded"], false);
+    assert.equal(h.label("Settings / 设置").props["aria-disabled"], true);
+    h.textButton("Back").props.onClick();
+    assert.equal(advanced(), undefined); assert.equal(popover(), undefined, "Back must not revive an older compact open intent");
+    h.label("Settings / 设置").props.onClick();
+    assert.ok(popover()); assert.equal(advanced(), undefined);
+  } finally { h.dispose(); }
+});
+
+test("workspace owns pending output and speech writes across popover close/reopen before admitting an advanced editor", async () => {
+  for (const method of ["saveAiSettings", "saveTranscriptionSettings"]) {
+    const pending = pendingResult(); let saves = 0;
+    const h = await clientWorkspace(snapshot(), { [method]() { saves++; return pending.promise; } });
+    const popover = () => h.by(node => typeof node.type === "function" && node.type.name === "LiveSettingsPopover");
+    const advanced = () => h.by(node => typeof node.type === "function" && node.type.name === "AISettings");
+    try {
+      h.label("Settings / 设置").props.onClick(); const first = popover();
+      const writing = first.props.runSettingsWrite(() => h.api[method]({}));
+      assert.equal(saves, 1); assert.equal(popover().props.writeBusy, true);
+      first.props.onOpenAdvanced(); assert.equal(advanced(), undefined);
+      await assert.rejects(first.props.runSettingsWrite(() => { throw new Error("second write must not be entered"); }), /已有设置/);
+      first.props.onClose(); assert.equal(popover(), undefined);
+      h.by(node => node.props.className === "pw-live-settings-anchor").props.onPointerEnter();
+      assert.equal(popover().props.writeBusy, true, "closing the original component cannot release a native write");
+      first.props.onOpenAdvanced(); popover().props.onOpenAdvanced(); assert.equal(advanced(), undefined);
+      pending.resolve({ success: true }); await writing; await h.tick();
+      assert.equal(popover().props.writeBusy, false);
+      popover().props.onOpenAdvanced(); assert.ok(advanced()); assert.equal(popover(), undefined);
+    } finally { h.dispose(); }
+  }
+});
+
+test("advanced Save, Speech Save and Clear key retain the same workspace gate after Back and reject stale editor writes", async () => {
+  for (const method of ["saveAiSettings", "saveTranscriptionSettings", "clearApiKey"]) {
+    const pending = pendingResult(); let saves = 0;
+    const h = await clientWorkspace(snapshot(), { [method]() { saves++; return pending.promise; } });
+    const popover = () => h.by(node => typeof node.type === "function" && node.type.name === "LiveSettingsPopover");
+    const advanced = () => h.by(node => typeof node.type === "function" && node.type.name === "AISettings");
+    try {
+      h.label("Settings / 设置").props.onClick(); const compactRunner = popover().props.runSettingsWrite;
+      popover().props.onOpenAdvanced();
+      const advancedRunner = advanced().props.runSettingsWrite;
+      assert.equal(typeof advancedRunner, "function", "the production advanced panel must receive the workspace gate");
+      await assert.rejects(compactRunner(() => { throw new Error("stale compact operation must not execute"); }), /已有设置/);
+      const writing = advancedRunner(() => h.api[method]({}));
+      assert.equal(saves, 1);
+      assert.notEqual(h.textButton("Back").props.disabled, true, "leaving a pending advanced panel remains allowed");
+      h.textButton("Back").props.onClick(); assert.equal(advanced(), undefined);
+      h.label("Settings / 设置").props.onClick();
+      assert.equal(popover().props.writeBusy, true, "the advanced component's removal cannot release its write");
+      await assert.rejects(popover().props.runSettingsWrite(() => { throw new Error("overlapping write must not execute"); }), /已有设置/);
+      pending.resolve({ success: true }); await writing; await h.tick();
+      assert.equal(popover().props.writeBusy, false);
+      await assert.rejects(advancedRunner(() => { throw new Error("stale advanced operation must not execute"); }), /已有设置/);
+      assert.equal(await popover().props.runSettingsWrite(async () => "compact write allowed"), "compact write allowed");
+    } finally { h.dispose(); }
+  }
+});
+
+test("dialog button clicks keep native keyboard ownership for Escape; hover stays passive and removal releases it", async () => {
+  const focuses = [];
+  const h = await clientWorkspace(snapshot(), { async setOverlayFocus(value) { focuses.push(value); } });
+  try {
+    h.by(node => node.props.className === "pw-live-settings-anchor").props.onPointerEnter();
+    assert.equal(focuses.some(Boolean), false, "hovering a settings icon must not steal the foreground app's keyboard");
+    const button = new h.ElementBoundary(true, false, true);
+    let focusCalls = 0;
+    button.focus = () => { focusCalls++; document.activeElement = button; h.focusIn(button); };
+    h.render().props.onClickCapture({ target: button }); await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(focusCalls, 1, "a direct dialog-button click deliberately focuses that control on macOS");
+    assert.equal(focuses.at(-1), true, "the post-click policy must keep Escape reachable from a mode button");
+    button.isConnected = false; document.activeElement = null;
+    h.render(); assert.equal(focuses.at(-1), false, "removing the dialog returns its native keyboard lease");
+    const before = focuses.length; h.render(); assert.equal(focuses.length, before);
+    assert.equal(h.interactions.at(-1), false, "keyboard focus does not claim pass-through card/body mouse input");
+  } finally { h.dispose(); }
 });

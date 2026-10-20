@@ -8,6 +8,10 @@ export interface TranscriptSegment {
   source: AudioSource;
   speaker?: string;
   participantId?: string;
+  /** Opaque source/participant identity owned by the transcript boundary. */
+  channelId?: string;
+  /** Session-owned boundary. New capture after resume has a distinct epoch. */
+  captureEpoch?: number;
   isFinal: boolean;
   receivedAt: number;
   startMs?: number;

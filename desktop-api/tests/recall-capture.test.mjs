@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import ts from "typescript";
+import { fileURLToPath } from "node:url";
+import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
 
 const [captureSource, transcriptSource] = await Promise.all([
   readFile(new URL("../../electron/live/RecallCapture.ts", import.meta.url), "utf8"),
@@ -46,9 +49,14 @@ function harness({ platform = "win32", arch = "x64", release = "23.2.0" } = {}) 
     });
     return exports;
   }
+  dependencies["./TranscriptText"] = load(readFileSync(new URL("../../electron/live/TranscriptText.ts", import.meta.url), "utf8"));
   dependencies["./recallTranscript"] = load(transcriptSource);
   const { RecallCapture } = load(captureSource);
-  const create = () => new RecallCapture({ onState: s => states.push(s), onTranscript: s => transcripts.push(s), onError: e => errors.push(e) });
+  const create = (extra = {}) => new RecallCapture({
+    onState: s => { states.push(s); extra.onState?.(s); },
+    onTranscript: s => { transcripts.push(s); extra.onTranscript?.(s); },
+    onError: e => { errors.push(e); extra.onError?.(e); },
+  });
   return { sdk, calls, states, transcripts, errors, emit, create, RecallCapture, imports: () => imports,
     expire() { for (const timer of [...timers]) { assert.equal(timer.ms, 15_000); timers.delete(timer); timer.fn(); } },
     listenerCount: () => [...callbacks.values()].reduce((n, set) => n + set.size, 0),
@@ -547,4 +555,128 @@ test("a corrected or duplicate prior final keeps its own row and cannot retire a
   assert.equal(bFinal.isFinal, true);
   const c = n.normalize(event("source", "charlie", true, { id: 1, is_host: true }, 5), 700);
   assert.notEqual(c.id, b.id, "B's own final must still clear B's active ownership");
+});
+
+
+test("beginning a capture epoch retires unfinished IDs but preserves final correction ownership", () => {
+  const normalizer = harness().normalizer();
+  const a = normalizer.normalize(event("owned", "A final", false, { id: 1, is_host: true }, 0), 1000);
+  const b = normalizer.normalize(event("owned", "B interim", true, { id: 1, is_host: true }, 0.6), 2000);
+  normalizer.beginCaptureEpoch();
+  const c = normalizer.normalize(event("owned", "C interim", true, { id: 1, is_host: true }, 1.2), 3000);
+  assert.notEqual(c.id, b.id);
+  assert.equal(c.channelId, b.channelId);
+  const correction = normalizer.normalize(event("owned", "A corrected", false, { id: 1, is_host: true }, 0), 4000);
+  assert.equal(correction.id, a.id);
+  assert.equal(normalizer.normalize(event("owned", "C updated", true, { id: 1, is_host: true }, 1.3), 5000).id, c.id);
+  assert.equal(normalizer.normalize(event("owned", "C final", false, { id: 1, is_host: true }, 1.4), 6000).id, c.id);
+});
+
+const productionModules = createProductionTsLoader();
+function captureSession(context, h) {
+  const { LiveSessionService } = productionModules(fileURLToPath(new URL("../../electron/live/LiveSessionService.ts", import.meta.url)));
+  const service = new LiveSessionService({
+    support: { supported: true }, createCapture: callbacks => h.create(callbacks),
+    async createUpload() { return input; }, pendingScreenshots: () => [], images: async () => [],
+    consumeScreenshots: async () => ({ success: true }), language: () => "zh-CN", publish() {},
+    stream: async () => assert.fail("capture boundary test must not request a model"),
+  });
+  context.after(() => service.dispose());
+  return service;
+}
+
+test("real Capture and Session keep a pre-pause pending row while resumed partial gets a fresh ID/epoch and old final correction stays owned", async context => {
+  const h = harness(); const service = captureSession(context, h);
+  await service.start();
+  h.emit("realtime-event", event("source-1", "A final", false, { id: 1, is_host: true }, 0));
+  h.emit("realtime-event", event("source-1", "B unfinished", true, { id: 1, is_host: true }, 0.6));
+  const [a, b] = service.getSnapshot().transcripts;
+  await service.pause(); await service.resume();
+  h.emit("realtime-event", event("source-1", "C interim", true, { id: 1, is_host: true }, 1.2));
+  const c = service.getSnapshot().transcripts[2];
+  assert.notEqual(c.id, b.id); assert.equal(c.captureEpoch, 1);
+  h.emit("realtime-event", event("source-1", "A corrected", false, { id: 1, is_host: true }, 0));
+  h.emit("realtime-event", event("source-1", "C updated", true, { id: 1, is_host: true }, 1.3));
+  h.emit("realtime-event", event("source-1", "C final", false, { id: 1, is_host: true }, 1.4));
+  const rows = service.getSnapshot().transcripts;
+  assert.deepEqual(rows.map(row => [row.id, row.text, row.isFinal, row.captureEpoch]), [
+    [a.id, "A corrected", true, 0], [b.id, "B unfinished", false, 0], [c.id, "C final", true, 1],
+  ]);
+  const { projectTranscriptParagraphs } = productionModules(fileURLToPath(new URL("../../electron/live/TranscriptParagraphs.ts", import.meta.url)));
+  assert.deepEqual(projectTranscriptParagraphs(rows).map(row => row.memberIds), [[a.id, b.id], [c.id]]);
+});
+
+test("Capture retires unfinished identities before native resume can synchronously emit a new final", async context => {
+  const h = harness(); const service = captureSession(context, h);
+  await service.start();
+  h.emit("realtime-event", event("source-1", "A final", false, { id: 1, is_host: true }, 0));
+  h.emit("realtime-event", event("source-1", "B unfinished", true, { id: 1, is_host: true }, 0.6));
+  const b = service.getSnapshot().transcripts[1];
+  await service.pause();
+  h.sdk.resumeRecording = async ({ windowId }) => {
+    h.calls.push(["resume", { windowId }]);
+    h.emit("realtime-event", event(windowId, "C synchronous final", false, { id: 1, is_host: true }, 1.2));
+  };
+  await service.resume();
+  const rows = service.getSnapshot().transcripts;
+  assert.equal(rows.length, 3);
+  assert.equal(rows[1].id, b.id); assert.equal(rows[1].isFinal, false);
+  assert.notEqual(rows[2].id, b.id); assert.equal(rows[2].captureEpoch, 1);
+});
+
+
+test("a post-gap orphan final wholly before current audio gets an independent row without claiming the retired partial or stealing current active", () => {
+  const normalizer = harness().normalizer();
+  const a = normalizer.normalize(event("owned", "A final", false, { id: 1 }, 0), 1000);
+  const b = normalizer.normalize(event("owned", "B unfinished", true, { id: 1 }, 0.6), 2000);
+  normalizer.beginCaptureEpoch();
+  const c = normalizer.normalize(event("owned", "C interim", true, { id: 1 }, 1.5), 3000);
+  const late = normalizer.normalize(event("owned", "B orphan final", false, { id: 1 }, 0.6), 4000);
+  assert.notEqual(late.id, b.id, "word timing does not prove the retired B identity");
+  assert.notEqual(late.id, c.id, "audio ending before C cannot finalize C");
+  const correction = normalizer.normalize(event("owned", "A corrected", false, { id: 1 }, 0), 5000);
+  assert.equal(correction.id, a.id, "known final keys retain ownership");
+  assert.equal(normalizer.normalize(event("owned", "C update", true, { id: 1 }, 1.6), 6000).id, c.id);
+  assert.equal(normalizer.normalize(event("owned", "C final", false, { id: 1 }, 1.7), 7000).id, c.id);
+  assert.equal(normalizer.normalize(event("owned", "B orphan corrected", false, { id: 1 }, 0.6), 8000).id, late.id);
+});
+
+test("an explicit matching utterance ID takes precedence over the post-gap timing exclusion", () => {
+  const normalizer = harness().normalizer();
+  normalizer.normalize(event("owned", "old unfinished", true, { id: 1 }, 0), 1000);
+  normalizer.beginCaptureEpoch();
+  const identified = (text, partial, start) => {
+    const value = event("owned", text, partial, { id: 1 }, start);
+    value.data.data.utterance_id = "synthetic-current-explicit-id";
+    return value;
+  };
+  const current = normalizer.normalize(identified("current interim", true, 2), 2000);
+  assert.equal(normalizer.normalize(identified("same explicit final", false, 0.5), 3000).id, current.id);
+});
+
+test("post-gap exclusion uses finite owner timing and retains its observed envelope when partial starts drift", () => {
+  const run = next => {
+    const normalizer = harness().normalizer();
+    normalizer.normalize(event("owned", "old unfinished", true, { id: 1 }, 0), 1000);
+    normalizer.beginCaptureEpoch();
+    const c = normalizer.normalize(event("owned", "current interim", true, { id: 1 }, 2), 2000);
+    next(normalizer, c);
+  };
+  run((normalizer, current) => {
+    // A later interim expanded earlier; a final overlapping that evidence must
+    // not be excluded merely by the first or latest display timestamp.
+    assert.equal(normalizer.normalize(event("owned", "current expanded", true, { id: 1 }, 0.5), 3000).id, current.id);
+    assert.equal(normalizer.normalize(event("owned", "current drifted", true, { id: 1 }, 2.1), 4000).id, current.id);
+    assert.equal(normalizer.normalize(event("owned", "overlapping final", false, { id: 1 }, 1), 5000).id, current.id);
+  });
+  for (const changed of [
+    value => { delete value.data.data.words[0].end_timestamp; },
+    value => { value.data.data.words[0].end_timestamp.relative = -1; },
+    value => { value.data.data.words[0].end_timestamp.relative = Number.POSITIVE_INFINITY; },
+    value => { value.data.data.words[0].end_timestamp.relative = 0.1; },
+  ]) run((normalizer, current) => {
+    const unknown = event("owned", "timing cannot exclude current", false, { id: 1 }, 0.5);
+    changed(unknown);
+    assert.equal(normalizer.normalize(unknown, 3000).id, current.id, "missing/nonfinite/inverted intervals are not exclusion evidence");
+  });
 });

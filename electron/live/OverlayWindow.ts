@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain, screen } from "electron";
-import type { OverlayGeometry } from "./overlayTypes";
+import type { OverlayDisplay, OverlayGeometry } from "./overlayTypes";
 
 /** Native geometry owns the display; the live renderer owns its visible panels. */
 export class OverlayWindowController {
@@ -14,6 +14,32 @@ export class OverlayWindowController {
   isLive(): boolean { return this.live; }
   getDisplay(): Electron.Display {
     return screen.getAllDisplays().find(display => display.id === this.displayId) || screen.getPrimaryDisplay();
+  }
+
+  getDisplays(): OverlayDisplay[] {
+    const win = this.getWindow();
+    const selectedId = this.live && win && !win.isDestroyed() ? this.getDisplay().id : undefined;
+    const primaryId = screen.getPrimaryDisplay().id;
+    return screen.getAllDisplays().map((display, index) => ({
+      id: display.id,
+      label: display.label || `Display ${index + 1}`,
+      isPrimary: display.id === primaryId,
+      selected: display.id === selectedId,
+    }));
+  }
+
+  selectDisplay(displayId: number): OverlayGeometry | null {
+    if (typeof displayId !== "number" || !Number.isSafeInteger(displayId)) throw new Error("Invalid overlay display ID.");
+    const display = screen.getAllDisplays().find(candidate => candidate.id === displayId);
+    if (!display) throw new Error("Unknown overlay display.");
+    const win = this.getWindow();
+    if (!this.live || !win || win.isDestroyed()) return null;
+    this.displayId = display.id;
+    win.setBounds(display.workArea);
+    win.webContents.send("overlay-recenter");
+    this.restoreMousePolicy();
+    this.publishGeometry(true);
+    return this.getGeometry();
   }
 
   getGeometry(): OverlayGeometry | null {
@@ -90,6 +116,7 @@ export class OverlayWindowController {
   reset(): void {
     this.live = false;
     this.interactive = false;
+    this.displayId = undefined;
     this.normalBounds = undefined;
     this.lastGeometryKey = undefined;
   }
@@ -103,6 +130,15 @@ export function initializeOverlayIpc(controller: OverlayWindowController, getWin
   ipcMain.handle("overlay-get-geometry", event => {
     requireOwner(event);
     return controller.getGeometry();
+  });
+  ipcMain.handle("overlay-get-displays", event => {
+    requireOwner(event);
+    return controller.getDisplays();
+  });
+  ipcMain.handle("overlay-select-display", (event, displayId: unknown) => {
+    requireOwner(event);
+    if (typeof displayId !== "number" || !Number.isSafeInteger(displayId)) throw new Error("Invalid overlay display ID.");
+    return controller.selectDisplay(displayId);
   });
   const booleanCommand = (channel: string, operation: (value: boolean) => void) => {
     ipcMain.handle(channel, (event, value: unknown) => {

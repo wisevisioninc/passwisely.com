@@ -5,11 +5,14 @@ import {
 } from "../../../electron/live/transcription";
 import type { TranscriptionProfileId, TranscriptionSettings } from "../../../electron/live/transcription";
 
+import { directSettingsWrite } from "./settingsWrites";
+import type { SettingsWriteProps } from "./settingsWrites";
+
 const RECALL_JAPAN_CREDENTIALS = "https://ap-northeast-1.recall.ai/dashboard/transcription";
 const message = (error: unknown) => error instanceof Error ? error.message : "语音设置操作失败，请重试。";
 
 /** Speech settings have their own draft and save boundary, independent of AI. */
-export function SpeechSettings() {
+export function SpeechSettings({ runSettingsWrite = directSettingsWrite }: SettingsWriteProps = {}) {
   const [settings, setSettings] = useState<TranscriptionSettings | null>(null);
   const [profileId, setProfileId] = useState<TranscriptionProfileId | "">("");
   const [loading, setLoading] = useState(true);
@@ -46,7 +49,7 @@ export function SpeechSettings() {
     if (!settings || !requested || saveLocked.current) return;
     saveLocked.current = true; setSaving(true); setError(""); setNotice("");
     try {
-      const result = await window.electronAPI.saveTranscriptionSettings({ profileId: requested.id });
+      const result = await runSettingsWrite(() => window.electronAPI.saveTranscriptionSettings({ profileId: requested.id }));
       if (!result.success) throw new Error(result.error || "无法保存语音设置，请重试。");
       const saved = getTranscriptionProfile(result.settings?.profileId);
       if (!saved || saved.id !== requested.id) throw new Error("服务返回了不同的语音设置，请重新加载确认。");

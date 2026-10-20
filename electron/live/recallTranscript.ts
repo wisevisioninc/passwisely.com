@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { AudioSource, TranscriptSegment } from "./types";
+import { transcriptTextSeparator } from "./TranscriptText";
 
 type ObjectValue = Record<string, unknown>;
 const object = (value: unknown): ObjectValue | undefined =>
@@ -9,25 +10,6 @@ const digest = (value: string): string => createHash("sha256").update(value).dig
 const MAX_WORDS = 1024;
 const MAX_TEXT = 16_384;
 const MAX_SPEAKER = 120;
-const han = /\p{Script=Han}/u;
-
-/** Recall words are lexical tokens, not necessarily space-delimited words. Keep
- * provider whitespace; only choose separators for boundaries it left implicit. */
-function wordSeparator(previous: string, next: string): string {
-  if (!previous || /\s$/u.test(previous) || /^\s/u.test(next)) return "";
-  const last = previous.slice(-2).match(/.$/u)?.[0] || "";
-  const first = next.match(/^./u)?.[0] || "";
-  if (/^[,.;:!?，。；：！？、)）\]】》」』’”%％…]/u.test(first)) return "";
-  if (/[（(\[【《「『‘“]$/u.test(last)) return "";
-  if (han.test(last) && /^[“‘「『（【《]/u.test(first)) return "";
-  if (/[”’」』）】》]/u.test(last) && han.test(first)) return "";
-  // Han words and numeric dates/amounts do not need inter-word spaces. Keep
-  // Latin technical terms readable at a Chinese/Latin boundary.
-  if (han.test(last) && (han.test(first) || /\d/u.test(first))) return "";
-  if (/\d/u.test(last) && han.test(first)) return "";
-  if (/[，。；：！？、]/u.test(last)) return "";
-  return " ";
-}
 
 function display(value: string, limit: number): string {
   if (value.length <= limit) return value;
@@ -55,12 +37,24 @@ function sourceOf(envelope: ObjectValue, data: ObjectValue, participant: ObjectV
   return "unknown";
 }
 
+type AudioInterval = { startMs: number; endMs: number };
+const intervalOf = (startMs: number | undefined, endMs: number | undefined): AudioInterval | undefined =>
+  Number.isFinite(startMs) && Number.isFinite(endMs) && startMs! >= 0 && endMs! >= startMs!
+    ? { startMs: startMs!, endMs: endMs! } : undefined;
+
 /** One normalizer belongs to one prepared SDK source. Never share speaker state. */
 export function createRecallTranscriptNormalizer() {
   let sequence = 0;
-  const active = new Map<string, { id: string; utteranceIdentity?: string }>();
+  const active = new Map<string, { id: string; utteranceIdentity?: string; timing?: AudioInterval }>();
+  let hasRetiredPartial = false;
   const finalized = new Map<string, { id: string; textHash: string; receivedAt: number }>();
   return {
+    /** Retire only unfinished row identities across an explicit capture gap.
+     * Existing final keys still own later corrections and deduplication. */
+    beginCaptureEpoch(): void {
+      hasRetiredPartial ||= active.size > 0;
+      active.clear();
+    },
     normalize(event: unknown, receivedAt = Date.now()): TranscriptSegment | null {
       const outer = object(event);
       if (outer?.event !== "transcript.data" && outer?.event !== "transcript.partial_data") return null;
@@ -72,7 +66,7 @@ export function createRecallTranscriptNormalizer() {
       let truncated = data.words.length > MAX_WORDS;
       for (const word of words) {
         if (typeof word.text !== "string" || !word.text) continue;
-        text += wordSeparator(text, word.text);
+        text += transcriptTextSeparator(text, word.text);
         const available = Math.max(0, MAX_TEXT - text.length);
         text += word.text.slice(0, available);
         if (word.text.length > available) { truncated = true; break; }
@@ -94,6 +88,8 @@ export function createRecallTranscriptNormalizer() {
       const endMs = ends.length ? ends.reduce((a, b) => Math.max(a, b)) : undefined;
       // Use original identity hashes, never truncated display names, for grouping.
       const channel = JSON.stringify([source, rawParticipantId ? ["id", digest(rawParticipantId)] : rawSpeaker ? ["name", digest(rawSpeaker)] : null]);
+      const channelId = source === "unknown" && !rawParticipantId && !rawSpeaker
+        ? undefined : `recall-channel:${digest(channel)}`;
       // transcript.id is an artifact ID, not an utterance ID. Do not use it here.
       const utterance = string(data.utterance_id) || string(data.utteranceId) || string(envelope.utterance_id);
       // Interim word timestamps may drift as recognition is revised. Only an
@@ -107,6 +103,13 @@ export function createRecallTranscriptNormalizer() {
       const key = JSON.stringify([channel, dedupIdentity || `text:${textHash}`]);
       const previous = finalized.get(key);
       const isFinal = outer.event === "transcript.data";
+      const timing = intervalOf(startMs, endMs);
+      const sameExplicitUtterance = utteranceIdentity && compatible?.utteranceIdentity === utteranceIdentity;
+      // Across a capture gap, an orphan final wholly before the current active
+      // audio cannot borrow that row. Timing does not identify its old owner:
+      // give it a separate row, retaining any known finalized key below.
+      const beforeActive = isFinal && hasRetiredPartial && !sameExplicitUtterance &&
+        timing && compatible?.timing && timing.endMs < compatible.timing.startMs;
       // Without utterance IDs/timestamps, only suppress immediate duplicate finals.
       const duplicate = previous && (dedupIdentity || !compatible && receivedAt - previous.receivedAt < 2000);
       if (!isFinal && duplicate) return null;
@@ -116,17 +119,22 @@ export function createRecallTranscriptNormalizer() {
       }
       // A finalized key already owns its row, even while a newer utterance is
       // active on the same channel. Corrections must not borrow that active ID.
-      const id = (duplicate ? previous.id : undefined) || compatible?.id || `recall-${++sequence}`;
+      const id = (duplicate ? previous.id : undefined) || (!beforeActive ? compatible?.id : undefined) || `recall-${++sequence}`;
       if (isFinal) {
         if (partial?.id === id) active.delete(channel);
         finalized.set(key, { id, textHash, receivedAt });
         // Bound deduplication history; older utterances remain in the session owner.
         if (finalized.size > 2048) finalized.delete(finalized.keys().next().value as string);
       } else {
-        active.set(channel, { id, utteranceIdentity: utteranceIdentity || compatible?.utteranceIdentity });
+        // Retain the observed timing envelope as partial word starts drift;
+        // it is evidence for exclusion only, never a strong utterance identity.
+        const observedTiming = timing && compatible?.timing
+          ? { startMs: Math.min(timing.startMs, compatible.timing.startMs), endMs: Math.max(timing.endMs, compatible.timing.endMs) }
+          : compatible?.timing || timing;
+        active.set(channel, { id, utteranceIdentity: utteranceIdentity || compatible?.utteranceIdentity, timing: observedTiming });
         if (active.size > 256) active.delete(active.keys().next().value as string);
       }
-      return { id, text, source, speaker, participantId, isFinal, receivedAt, startMs, endMs };
+      return { id, text, source, speaker, participantId, ...(channelId ? { channelId } : {}), isFinal, receivedAt, startMs, endMs };
     },
   };
 }

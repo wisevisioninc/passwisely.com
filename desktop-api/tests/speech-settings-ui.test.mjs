@@ -54,7 +54,7 @@ function deferred() { let resolve, reject; const promise = new Promise((yes, no)
 // Hook-controller tests execute production component handlers and effects. They
 // mock the native API and hook scheduling, not a second settings implementation.
 // They do not establish native hit testing, rendering, permissions or ASR quality.
-function controller(overrides = {}) {
+function controller(overrides = {}, props = {}) {
   const previousWindow = globalThis.window;
   const states = [], refs = [], effects = [], dependencies = [], cleanups = [], calls = [];
   let stateIndex = 0, refIndex = 0, effectIndex = 0, tree;
@@ -81,7 +81,7 @@ function controller(overrides = {}) {
     },
   };
   const { SpeechSettings } = productionLoader({ react })("src/components/shared/SpeechSettings.tsx");
-  const render = () => { stateIndex = refIndex = effectIndex = 0; tree = SpeechSettings(); return tree; };
+  const render = () => { stateIndex = refIndex = effectIndex = 0; tree = SpeechSettings(props); return tree; };
   const nodes = () => elements(render());
   return {
     calls, api, render, nodes,
@@ -182,6 +182,75 @@ test("AI settings keep the independent speech section mounted while AI settings 
   assert.equal($("section[aria-label='语音识别设置']").length, 1);
   assert.equal($("button").filter((_i, element) => $(element).text() === "保存语音设置").length, 1);
   assert.equal($("form").length, 0, "speech save must not submit the AI provider form");
+});
+
+test("advanced speech Save uses its supplied workspace gate and a rejected gate never reaches native persistence", async () => {
+  for (const reject of [false, true]) {
+    let gated = 0;
+    const h = controller({}, { runSettingsWrite: async operation => { gated++; if (reject) throw new Error("fixture workspace gate busy"); return operation(); } });
+    try {
+      await h.settle(); h.select().props.onChange({ target: { value: "deepgram-zh" } });
+      h.save().props.onClick(); await h.settle();
+      assert.equal(gated, 1);
+      assert.equal(h.calls.filter(([name]) => name === "save").length, reject ? 0 : 1);
+      if (reject) assert.match(h.message(), /fixture workspace gate busy/);
+    } finally { h.cleanup(); }
+  }
+});
+
+function advancedProviderController(runSettingsWrite, apiOverrides = {}) {
+  const previousWindow = globalThis.window, toasts = [], calls = [];
+  const provider = { id: "kimi", label: "Kimi", hasApiKey: true, model: "kimi-k3", baseUrl: "https://api.example.test", supportsVision: false, supportsJsonMode: false, models: [], route: "direct", usesWiseDefaultKey: false };
+  const settings = { provider: "kimi", responseLanguage: "en", hasApiKey: true, model: provider.model, baseUrl: provider.baseUrl, supportsVision: false, supportsJsonMode: false, storageSecure: true, providers: [provider] };
+  const api = {
+    async saveAiSettings(input) { calls.push(["save", input]); return { success: true, settings }; },
+    async clearApiKey(input) { calls.push(["clear", input]); return { success: true, settings }; }, ...apiOverrides,
+  };
+  globalThis.window = { electronAPI: api };
+  let state = 0;
+  const react = { ...React,
+    useState(initial) { return [state++ === 0 ? settings : initial, () => {}]; },
+    useRef: initial => ({ current: initial }), useId: () => "advanced-provider-fixture", useEffect() {},
+  };
+  const { AISettings } = productionLoader({ react, "../../contexts/toast": { useToast: () => ({ showToast: (...args) => toasts.push(args) }) } })("src/components/shared/AISettings.tsx");
+  const wrapper = AISettings({ runSettingsWrite });
+  const providerNode = elements(wrapper).find(node => node.type?.name === "AIProviderSettings");
+  const speechNode = elements(wrapper).find(node => node.type?.name === "SpeechSettings");
+  assert.equal(providerNode.props.runSettingsWrite, runSettingsWrite);
+  assert.equal(speechNode.props.runSettingsWrite, runSettingsWrite);
+  const tree = providerNode.type(providerNode.props);
+  return { calls, toasts,
+    button: label => elements(tree).find(node => node.type === "button" && text(node) === label),
+    cleanup() { globalThis.window = previousWindow; },
+  };
+}
+
+test("the real advanced AI Save and Clear key both use the forwarded workspace gate, including rejected Clear", async () => {
+  for (const reject of [false, true]) {
+    let gated = 0;
+    const h = advancedProviderController(async operation => { gated++; if (reject) throw new Error("fixture workspace gate busy"); return operation(); });
+    try {
+      await h.button("Save").props.onClick(); await h.button("Clear key").props.onClick();
+      assert.equal(gated, 2);
+      assert.deepEqual(h.calls.map(([name]) => name), reject ? [] : ["save", "clear"]);
+      if (reject) {
+        assert.equal(h.toasts.filter(args => args[2] === "error").length, 2);
+        assert.ok(h.toasts.every(args => args[1] === "fixture workspace gate busy"));
+      }
+    } finally { h.cleanup(); }
+  }
+});
+
+test("advanced Save and Clear share the local in-flight control lock without releasing each other's native write", async () => {
+  const pending = deferred(); let gated = 0;
+  const h = advancedProviderController(operation => { gated++; return operation(); }, { saveAiSettings: () => pending.promise });
+  try {
+    const saving = h.button("Save").props.onClick(); await h.button("Clear key").props.onClick();
+    assert.equal(gated, 1); assert.deepEqual(h.calls, []);
+    pending.resolve({ success: false, error: "fixture save rejected" }); await saving;
+    await h.button("Clear key").props.onClick();
+    assert.equal(gated, 2); assert.deepEqual(h.calls.map(([name]) => name), ["clear"]);
+  } finally { h.cleanup(); }
 });
 
 test("live overlay describes saved speech settings generically and displays the frozen session profile", () => {

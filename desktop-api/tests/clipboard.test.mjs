@@ -1,26 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import React from "react";
-import ts from "typescript";
+import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
 
-const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
 function production(relative, mocks = {}) {
-  const filename = path.join(root, relative);
-  const javascript = ts.transpileModule(readFileSync(filename, "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
-  }).outputText;
-  const module = { exports: {} };
-  new Function("require", "module", "exports", "console", javascript)(id => {
-    if (id in mocks) return mocks[id];
-    if (id.startsWith(".")) return production(path.relative(root, path.resolve(path.dirname(filename), `${id}.ts`)), mocks);
-    return require(id);
-  }, module, module.exports, { log() {}, warn() {}, error() {} });
-  return module.exports;
+  return createProductionTsLoader({ mocks, console: { log() {}, warn() {}, error() {} } })(path.join(root, relative));
 }
 
 function clipboardBoundary() {

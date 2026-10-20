@@ -13,7 +13,7 @@ const components: Components = {
   a: ({ href, children }) => {
     const url = answerExternalUrl(href);
     if (!url) return <span>{children}</span>;
-    return <a href={url} target="_blank" rel="noopener noreferrer" onClick={event => {
+    return <a data-overlay-interactive href={url} target="_blank" rel="noopener noreferrer" onClick={event => {
       event.preventDefault();
       window.electronAPI.openExternal(url);
     }}>{children}</a>;

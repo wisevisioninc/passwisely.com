@@ -1,0 +1,295 @@
+.pw-settings-popover {
+  position: absolute;
+  right: 0;
+  z-index: 40;
+  box-sizing: border-box;
+  width: 224px;
+  max-width: calc(100vw - 24px);
+  color: rgba(255, 255, 255, .95);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.35;
+  border: 1px solid rgba(234, 179, 8, .15);
+  border-radius: 12px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(38, 38, 38, .75) 0%,
+      rgba(32, 32, 32, .78) 50%,
+      rgba(42, 39, 30, .70) 100%);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, .4),
+    0 1px 3px rgba(234, 179, 8, .1),
+    inset 0 .5px 0 rgba(234, 179, 8, .08);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 169, 98, .5) transparent;
+  outline: none;
+}
+.pw-settings-title {
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: rgba(255, 255, 255, .9);
+}
+.pw-settings-section {
+  width: 192px;
+  max-width: calc(100% - 30px);
+  margin-left: auto;
+  margin-right: auto;
+}
+.pw-settings-languages {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.pw-settings-languages label {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: #fff;
+}
+.pw-settings-languages label + label {
+  margin-top: 2px;
+}
+.pw-settings-languages select {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 0;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 8px;
+  outline: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, .12),
+      rgba(255, 255, 255, .08));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  color-scheme: dark;
+}
+.pw-settings-languages select option {
+  background: #18181b;
+  color: #fff;
+}
+.pw-settings-languages select:disabled,
+.pw-settings-popover button:disabled {
+  opacity: .5;
+  cursor: default;
+}
+.pw-settings-popover button {
+  font-family: inherit;
+}
+.pw-settings-popover button:focus-visible,
+.pw-settings-languages select:focus-visible {
+  outline: 2px solid rgba(201, 169, 98, .9);
+  outline-offset: 2px;
+}
+.pw-settings-status,
+.pw-settings-error,
+.pw-settings-hint {
+  margin: 3px 0;
+  font-size: 10px;
+  line-height: 14px;
+  overflow-wrap: anywhere;
+}
+.pw-settings-status {
+  color: rgba(255, 255, 255, .65);
+}
+.pw-settings-error {
+  color: #fca5a5;
+}
+.pw-settings-hint {
+  color: rgba(255, 255, 255, .5);
+}
+.pw-settings-advanced {
+  margin-top: 8px;
+}
+.pw-settings-button {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 4px 10px;
+  min-height: 26px;
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 8px;
+  color: #fafafa;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, .12),
+      rgba(255, 255, 255, .08));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  cursor: pointer;
+  transition:
+    background .2s,
+    border-color .2s,
+    transform .2s;
+}
+.pw-settings-button:hover:not(:disabled) {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, .20),
+      rgba(255, 255, 255, .16));
+  border-color: rgba(255, 255, 255, .25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .4);
+}
+.pw-settings-button:active:not(:disabled) {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, .08),
+      rgba(255, 255, 255, .05));
+  transform: scale(.98);
+}
+.pw-settings-open {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  text-align: left;
+}
+.pw-settings-open strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+.pw-settings-open small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 15px;
+  color: rgba(212, 212, 212, .8);
+}
+.pw-settings-open > span:last-child {
+  font-size: 11px;
+  color: rgba(253, 230, 138, .9);
+}
+.pw-settings-separator {
+  height: 1px;
+  border: 0;
+  margin: 12px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(234, 179, 8, .2) 50%,
+      transparent);
+}
+.pw-settings-key-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 160px;
+  max-width: calc(100% - 30px);
+  margin: 0 auto 12px;
+  color: rgba(163, 163, 163, .7);
+  font-size: 10px;
+}
+.pw-settings-key-mode > div {
+  display: flex;
+  gap: 4px;
+}
+.pw-settings-key-mode button {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 4px;
+  color: rgba(163, 163, 163, .8);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  cursor: pointer;
+}
+.pw-settings-key-mode button[aria-pressed=true] {
+  color: rgba(253, 230, 138, .95);
+  background: rgba(255, 255, 255, .1);
+}
+.pw-settings-key-mode button:hover {
+  color: #d4d4d4;
+  background: rgba(255, 255, 255, .05);
+}
+.pw-settings-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pw-settings-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 20px;
+  color: rgba(229, 229, 229, .95);
+  font-size: 11px;
+  font-weight: 500;
+}
+.pw-settings-shortcut .pw-live-keycaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  flex: none;
+}
+.pw-settings-shortcut .pw-live-keycaps kbd {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 18px;
+}
+.pw-settings-shortcut .pw-live-keycaps[data-key-display=text] kbd {
+  padding: 0 6px;
+  font-size: 10px;
+}
+.pw-settings-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding-bottom: 12px;
+}
+.pw-settings-secondary {
+  display: flex;
+  gap: 6px;
+}
+.pw-settings-secondary .pw-settings-button {
+  min-width: 0;
+  flex: 1;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.pw-settings-account {
+  margin: 0;
+  padding: 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(212, 212, 212, .8);
+}
+.pw-settings-reload {
+  margin-top: 4px;
+}

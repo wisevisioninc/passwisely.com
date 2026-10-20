@@ -507,3 +507,50 @@ test("Start Over joins an accepted image cleanup and never consumes a screenshot
   assert.deepEqual(pending, ["later.png"]);
   assert.deepEqual(f.service.getSnapshot().answers, []);
 });
+
+
+test("capture epoch creates a resume paragraph barrier while late revisions retain their original owner and array slot", async context => {
+  const f = fixture(context);
+  await f.service.start();
+  const callbacks = f.captures[0].callbacks;
+  const channelId = load("recallTranscript").createRecallTranscriptNormalizer().normalize({ event: "transcript.data", data: { source: "system", data: { participant: { id: "remote" }, words: [{ text: "fixture" }] } } }).channelId;
+  const a = segment("a", "先检查输入", { participantId: "remote", channelId, receivedAt: 1000, startMs: 0, endMs: 500, captureEpoch: 999 });
+  const b = segment("b", "再检查边界。", { participantId: "remote", channelId, receivedAt: 2000, startMs: 600, endMs: 1500, isFinal: false });
+  callbacks.onTranscript(a); callbacks.onTranscript(b);
+  await f.service.pause();
+  callbacks.onTranscript({ ...b, isFinal: true, receivedAt: 2200 });
+  // Resuming may synchronously deliver transcript, before its command resolves.
+  f.captures[0].resume = async () => {
+    callbacks.onTranscript(segment("c", "现在继续。", { participantId: "remote", channelId, receivedAt: 3000, startMs: 1600, endMs: 2500, isFinal: false }));
+    callbacks.onState("recording");
+  };
+  await f.service.resume();
+  callbacks.onTranscript({ ...a, text: "先检查全部输入，", receivedAt: 4000 });
+  const rows = f.service.getSnapshot().transcripts;
+  assert.deepEqual(rows.map(row => [row.id, row.captureEpoch]), [["a", 0], ["b", 0], ["c", 1]]);
+  const { projectTranscriptParagraphs } = load("TranscriptParagraphs");
+  assert.deepEqual(projectTranscriptParagraphs(rows).map(row => row.memberIds), [["a", "b"], ["c"]]);
+  // The model continues to consume raw final rows; the display partial is excluded.
+  await f.service.ask({ question: "解释边界", includeScreenshots: false });
+  await settled(() => f.streams.length > 0);
+  const input = f.streams[0].messages.at(-1).content[0].text;
+  assert.match(input, /先检查全部输入/); assert.match(input, /再检查边界/);
+  assert.doesNotMatch(input, /现在继续/);
+});
+
+test("a failed resume attempt is a conservative epoch barrier and the next session resets its epoch", async context => {
+  const f = fixture(context);
+  await f.service.start();
+  const callbacks = f.captures[0].callbacks;
+  callbacks.onTranscript(segment("old", "旧采集区间"));
+  await f.service.pause();
+  f.captures[0].resume = async () => {
+    callbacks.onTranscript(segment("new", "新恢复区间"));
+    throw new Error("synthetic resume failure");
+  };
+  assert.equal((await f.service.resume()).success, false);
+  assert.deepEqual(f.service.getSnapshot().transcripts.map(row => row.captureEpoch), [0, 1]);
+  await f.service.stop(); await f.service.start();
+  f.captures[1].callbacks.onTranscript(segment("fresh", "新会话"));
+  assert.equal(f.service.getSnapshot().transcripts[0].captureEpoch, 0);
+});

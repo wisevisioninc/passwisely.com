@@ -14,10 +14,11 @@ const plain = value => JSON.parse(JSON.stringify(value));
 
 function harness() {
   let bounds = { x: 50, y: 90, width: 600, height: 600 };
-  let displays = [{ id: 1, workArea: { x: 0, y: 24, width: 1440, height: 876 } }, { id: 2, workArea: { x: -1920, y: 0, width: 1920, height: 1080 } }];
+  let destroyed = false, available = true;
+  let displays = [{ id: 1, label: 'Built-in Retina Display', workArea: { x: 0, y: 24, width: 1440, height: 876 } }, { id: 2, label: 'Studio Display', workArea: { x: -1920, y: 0, width: 1920, height: 1080 } }];
   const calls = [], handlers = new Map(), mainFrame = {};
   const win = {
-    isDestroyed: () => false, getBounds: () => ({ ...bounds }),
+    isDestroyed: () => destroyed, getBounds: () => ({ ...bounds }),
     setBounds: value => { bounds = { ...value }; calls.push(['bounds', plain(value)]); },
     setMovable: value => calls.push(['movable', value]), setResizable: value => calls.push(['resizable', value]),
     setIgnoreMouseEvents: (value, options) => calls.push(['ignore', value, plain(options)]),
@@ -26,9 +27,9 @@ function harness() {
   };
   const electron = { ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) }, screen: { getAllDisplays: () => displays, getPrimaryDisplay: () => displays[0], getDisplayMatching: rect => displays.find(display => rect.x >= display.workArea.x && rect.x < display.workArea.x + display.workArea.width) || displays[0] } };
   const { OverlayWindowController, initializeOverlayIpc } = load('live/OverlayWindow.ts', electron);
-  const controller = new OverlayWindowController(() => win);
-  initializeOverlayIpc(controller, () => win);
-  return { controller, calls, handlers, win, bounds: () => bounds, event: { sender: win.webContents, senderFrame: mainFrame }, setDisplays: value => { displays = value; } };
+  const controller = new OverlayWindowController(() => available ? win : null);
+  initializeOverlayIpc(controller, () => available ? win : null);
+  return { controller, calls, handlers, win, bounds: () => bounds, event: { sender: win.webContents, senderFrame: mainFrame }, setDisplays: value => { displays = value; }, setDestroyed: value => { destroyed = value; }, setAvailable: value => { available = value; } };
 }
 
 test('live native geometry fills target workArea while renderer panels and click regions remain independent', () => {
@@ -201,6 +202,10 @@ test('preload overlay and screenshot subscriptions release exactly their own lis
   const api = exposed.electronAPI, received = [];
   void api.getOverlayGeometry();
   assert.deepEqual(invocations.at(-1), ['overlay-get-geometry']);
+  void api.getOverlayDisplays();
+  assert.deepEqual(invocations.at(-1), ['overlay-get-displays']);
+  void api.selectOverlayDisplay(2);
+  assert.deepEqual(invocations.at(-1), ['overlay-select-display', 2]);
   const removeAction = api.onLiveShortcut(value => received.push(value));
   const removeRecenter = api.onOverlayRecenter(() => received.push('recenter'));
   const removeQueue = api.onScreenshotQueueChanged(() => received.push('queue'));
@@ -292,4 +297,94 @@ test('programming keeps its established controls while auth never captures or mu
   assert.equal(h.registered.size, 0);
   await lateCapture();
   assert.deepEqual(h.calls, ['solve', 'native-left']);
+});
+
+
+test('display selection enumerates native identities and moves only the live overlay while retaining mouse policy', () => {
+  const h = harness();
+  assert.deepEqual(plain(h.handlers.get('overlay-get-displays')(h.event)), [
+    { id: 1, label: 'Built-in Retina Display', isPrimary: true, selected: false },
+    { id: 2, label: 'Studio Display', isPrimary: false, selected: false },
+  ]);
+  h.controller.setLive(true);
+  assert.deepEqual(plain(h.controller.getDisplays()).map(display => [display.id, display.selected]), [[1, true], [2, false]]);
+  for (const interactive of [false, true]) {
+    h.controller.setInteractive(interactive);
+    const before = h.calls.length;
+    assert.deepEqual(plain(h.handlers.get('overlay-select-display')(h.event, 2)), { displayId: 2, width: 1920, height: 1080 });
+    assert.deepEqual(h.bounds(), { x: -1920, y: 0, width: 1920, height: 1080 });
+    assert.deepEqual(plain(h.controller.getDisplays()).map(display => [display.id, display.selected]), [[1, false], [2, true]]);
+    assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', !interactive, { forward: true }]);
+    assert.ok(h.calls.slice(before).some(call => call[0] === 'send' && call[1] === 'overlay-recenter'));
+    assert.deepEqual(plain(h.calls.at(-1)), ['send', 'overlay-geometry', { displayId: 2, width: 1920, height: 1080 }]);
+    assert.ok(!h.calls.slice(before).some(call => call[0] === 'focus'), 'selecting a screen does not steal keyboard focus');
+    h.controller.setLive(true);
+    assert.equal(h.controller.getDisplay().id, 2, 'reasserting the same Live workspace retains the selected display');
+  }
+  h.controller.setLive(false);
+  assert.equal(h.bounds().width, 600);
+  assert.ok(h.controller.getDisplays().every(display => !display.selected));
+  const before = h.calls.length;
+  assert.equal(h.controller.selectDisplay(2), null);
+  assert.equal(h.calls.length, before, 'Auth/programming windows cannot be moved by the Live display control');
+  h.controller.setLive(true);
+  assert.equal(h.controller.getDisplay().id, 1, 'a new Live workspace starts on the normal-window matching display');
+});
+
+test('display IPC rejects noninteger or stale IDs and foreign/iframe callers before native mutation', () => {
+  const h = harness(); h.controller.setLive(true);
+  const select = h.handlers.get('overlay-select-display');
+  const get = h.handlers.get('overlay-get-displays');
+  const before = h.calls.length;
+  for (const value of [undefined, null, '2', true, NaN, Infinity, -Infinity, 1.5, Number.MAX_SAFE_INTEGER + 1, {}, []]) {
+    assert.throws(() => select(h.event, value), /Invalid overlay display ID/);
+  }
+  for (const value of [-1, 3, 999]) assert.throws(() => select(h.event, value), /Unknown overlay display/);
+  for (const event of [{ sender: {}, senderFrame: h.win.webContents.mainFrame }, { sender: h.win.webContents, senderFrame: {} }]) {
+    assert.throws(() => select(event, 2), /Untrusted/);
+    assert.throws(() => get(event), /Untrusted/);
+  }
+  assert.equal(h.calls.length, before);
+  assert.equal(h.controller.getDisplay().id, 1);
+});
+
+test('display controls retain no selected window lease when the owner is missing or destroyed', () => {
+  const h = harness(); h.controller.setLive(true);
+  const before = h.calls.length;
+  for (const unavailable of ['missing', 'destroyed']) {
+    h.setAvailable(unavailable !== 'missing'); h.setDestroyed(unavailable === 'destroyed');
+    assert.equal(h.controller.selectDisplay(2), null);
+    assert.ok(h.controller.getDisplays().every(display => !display.selected));
+    assert.throws(() => h.handlers.get('overlay-select-display')(h.event, 2), /Untrusted/);
+    assert.throws(() => h.handlers.get('overlay-get-displays')(h.event), /Untrusted/);
+  }
+  assert.equal(h.calls.length, before);
+});
+
+test('a disconnected selected display falls back to the primary identity and stale selection is rejected', () => {
+  const h = harness(); h.controller.setLive(true); h.controller.setInteractive(true); h.controller.selectDisplay(2);
+  h.setDisplays([{ id: 1, label: '', workArea: { x: 0, y: 24, width: 1280, height: 776 } }]);
+  h.controller.refreshDisplay();
+  assert.deepEqual(plain(h.controller.getDisplays()), [{ id: 1, label: 'Display 1', isPrimary: true, selected: true }]);
+  assert.deepEqual(h.bounds(), { x: 0, y: 24, width: 1280, height: 776 });
+  assert.deepEqual(plain(h.controller.getGeometry()), { displayId: 1, width: 1280, height: 776 });
+  const before = h.calls.length;
+  assert.throws(() => h.handlers.get('overlay-select-display')(h.event, 2), /Unknown overlay display/);
+  assert.equal(h.calls.length, before);
+  h.controller.restoreMousePolicy();
+  assert.deepEqual(h.calls.at(-1), ['ignore', false, { forward: true }]);
+});
+
+test('an asynchronous display move returns no old geometry and publishes only after native bounds settle', () => {
+  const h = harness(); h.controller.setLive(true);
+  const setBounds = h.win.setBounds;
+  let pending;
+  h.win.setBounds = bounds => { pending = bounds; };
+  const before = h.calls.length;
+  assert.equal(h.handlers.get('overlay-select-display')(h.event, 2), null);
+  assert.equal(h.controller.getGeometry(), null);
+  assert.deepEqual(plain(h.controller.getDisplays()).map(display => [display.id, display.selected]), [[1, false], [2, true]]);
+  assert.ok(!h.calls.slice(before).some(call => call[0] === 'send' && call[1] === 'overlay-geometry'));
+  setBounds(pending); h.controller.publishGeometry();
+  assert.deepEqual(plain(h.calls.at(-1)), ['send', 'overlay-geometry', { displayId: 2, width: 1920, height: 1080 }]);
 });

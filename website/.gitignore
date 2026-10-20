@@ -45,3 +45,8 @@ next-env.d.ts
 /outputs/
 /work/
 /payment/
+
+# Private production deployment state (never source artifacts)
+/.release-candidates/
+/.release-backups/
+/.release-activation.lock

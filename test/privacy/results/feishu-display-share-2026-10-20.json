@@ -78,15 +78,90 @@
       },
       "scope": "This one Feishu entire-display receiver observation reported by the user. No independent review of raw receiver frames or recordings; not a guarantee for all frames, settings, versions, platforms or application detection.",
       "restoreOutcome": null
+    },
+    {
+      "runId": "feishu-display-systemcontainer-01",
+      "timestamp": null,
+      "platformId": "feishu",
+      "dimension": "display_share",
+      "variant": "systemcontainer",
+      "bundlePath": "/Applications/systemcontainer.app",
+      "bundleVersion": "3.0.1",
+      "asarSha256": "528ea903d8dc6a1b42331ae7658689ab39e37fe63c09eef242475b2fa978fd78",
+      "sourceCommitOrUnknown": null,
+      "osVersion": "26.6.2",
+      "osBuild": "25G83",
+      "arch": "arm64",
+      "displays": null,
+      "platformProductMode": "Feishu native meeting; entire-display sharing, per the user test question and reply",
+      "clientOrBrowserVersion": null,
+      "platformConfiguration": null,
+      "sourceKindAndId": {
+        "kind": "display",
+        "id": null
+      },
+      "capturePipelineOrUnknown": null,
+      "neutralFixtureSha256": "7f8340fb032cf56edce0881721611d95df12cd46d58a5c6fd5953a12bde537c1",
+      "actionTimeline": [
+        {
+          "kind": "tool_confirmation",
+          "action": "Read installed SystemContainer bundle version and ASAR digest; digest matches the bounded REA artifact. This does not independently observe the sender UI or receiver.",
+          "timestamp": null
+        },
+        {
+          "kind": "test_instruction",
+          "action": "Keep the same Feishu meeting, receiver and entire-display sharing; hide PassWisely and display SystemContainer toolbar/body on sender without starting audio.",
+          "timestamp": null
+        },
+        {
+          "kind": "human_report",
+          "action": "User reports SystemContainer absent and underlying page/clock normal on receiver.",
+          "timestamp": null
+        }
+      ],
+      "repetition": 1,
+      "status": "observed_excluded",
+      "observation": "User confirmed that SystemContainer was not visible on the receiving device while the underlying page and clock remained normal under the same instructed Feishu entire-display configuration.",
+      "evidence": [
+        {
+          "kind": "human_report",
+          "source": "user_message",
+          "quote": "看不到 SystemContainer，底层页面和时钟正常",
+          "path": null,
+          "sha256": null,
+          "timeRangeOrFrame": null
+        }
+      ],
+      "scope": "This one same-configuration Feishu entire-display comparison reported by the user. No independent review of raw receiver frames or recordings; not a guarantee for all frames, settings, versions, platforms or application detection.",
+      "restoreOutcome": null,
+      "recordedAt": "2026-10-20T10:28:34.161624+00:00",
+      "evidenceLevel": "human_report_only",
+      "receiverOrRecorder": {
+        "kind": "separate_receiving_device",
+        "device": null,
+        "clientVersion": null,
+        "observer": "user"
+      },
+      "freshnessEvidence": {
+        "kind": "human_report",
+        "quote": "底层页面和时钟正常",
+        "artifact": null
+      }
     }
   ],
   "notMeasured": [
     "baseline_no_overlay",
-    "systemcontainer",
     "other sharing modes",
     "local or platform recording",
     "platform focus reporting",
     "system/application detection",
     "other platforms"
-  ]
+  ],
+  "comparison": {
+    "kind": "human_report_only",
+    "sameConfigurationBasis": "User answered the explicit same-meeting, same-receiver, same-entire-display test question. Unread client/settings metadata remain unknown.",
+    "conclusion": "Both overlays were reported absent; underlying synthetic page and clock were reported normal. This qualitative observation establishes parity only in this one reported configuration.",
+    "noOverlayBaselinePerformed": false,
+    "rawReceiverArtifactsAvailable": false
+  }
 }

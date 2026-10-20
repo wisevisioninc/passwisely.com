@@ -383,6 +383,7 @@ async function clientWorkspace(initial, overrides = {}, initialBounds = { width:
     pointerMove(target, x = 600, y = 740) { for (const listener of listeners.get("pointermove") ?? []) listener({ target, clientX: x, clientY: y }); },
     setPoint(next) { point = next; },
     focusIn(target) { for (const listener of listeners.get("focusin") ?? []) listener({ target }); },
+    focusOut(target, relatedTarget) { for (const listener of listeners.get("focusout") ?? []) listener({ target, relatedTarget }); },
     dispose() { for (const cleanup of cleanups.reverse()) cleanup(); for (const [key, descriptor] of Object.entries(previous)) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key]; } },
   };
 }
@@ -728,5 +729,44 @@ test("dialog button clicks keep native keyboard ownership for Escape; hover stay
     h.render(); assert.equal(focuses.at(-1), false, "removing the dialog returns its native keyboard lease");
     const before = focuses.length; h.render(); assert.equal(focuses.length, before);
     assert.equal(h.interactions.at(-1), false, "keyboard focus does not claim pass-through card/body mouse input");
+  } finally { h.dispose(); }
+});
+
+
+test("an owned native select keeps an unknown focus transfer but releases on known exit, removal and hide", async () => {
+  const focuses = [];
+  const h = await clientWorkspace(snapshot(), { async setOverlayFocus(value) { focuses.push(value); } });
+  const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+  try {
+    const select = new h.ElementBoundary(true, true, true); select.tagName = "SELECT";
+    const outside = new h.ElementBoundary(false); outside.tagName = "BODY";
+    document.activeElement = select; h.focusIn(select); assert.equal(focuses.at(-1), true);
+    document.activeElement = outside;
+    const before = focuses.length;
+    h.focusOut(select, null); await tick();
+    assert.equal(focuses.length, before, "a native popup's unknown DOM destination must send neither focus nor blur");
+    h.label("Settings / 设置").props.onClick();
+    const anchor = h.by(node => node.props.className === "pw-live-settings-anchor");
+    anchor.ref.current = { contains: node => node === select };
+    const originalSetTimeout = globalThis.setTimeout; let dismiss;
+    try {
+      globalThis.setTimeout = (callback, delay, ...args) => delay === 500 ? (dismiss = callback, {}) : originalSetTimeout(callback, delay, ...args);
+      anchor.props.onPointerLeave();
+    } finally { globalThis.setTimeout = originalSetTimeout; }
+    dismiss();
+    assert.ok(h.by(node => node.type?.name === "LiveSettingsPopover"), "the hover timer must consume the retained keyboard owner instead of dismissing its native popup");
+    select.isConnected = false; h.render();
+    assert.equal(focuses.at(-1), false, "the retained lease must still be owned and released if its select is removed");
+    const select2 = new h.ElementBoundary(true, true, true); select2.tagName = "SELECT";
+    document.activeElement = select2; h.focusIn(select2);
+    document.activeElement = outside; h.focusOut(select2, outside); await tick();
+    assert.equal(focuses.at(-1), false, "a known DOM transfer outside the overlay still releases focus");
+    document.activeElement = select2; h.focusIn(select2);
+    document.activeElement = outside; h.focusOut(select2, null); await tick();
+    assert.equal(focuses.at(-1), true);
+    h.visibilityChanged(false); assert.equal(focuses.at(-1), false, "an explicit native hide releases even a connected select");
+    const hiddenCount = focuses.length;
+    select2.isConnected = false; h.render(); await tick();
+    assert.equal(focuses.length, hiddenCount, "hide clears the lease and pending focus work rather than leaving a stale owner");
   } finally { h.dispose(); }
 });

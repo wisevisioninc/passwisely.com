@@ -212,6 +212,10 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
       }
     };
     const blur = (event: FocusEvent) => {
+      // A native select popup may temporarily remove DOM focus without a DOM
+      // destination. Unknown transfer alone does not release its live lease.
+      if (event.relatedTarget === null && visibleRef.current && event.target instanceof HTMLElement &&
+          event.target.tagName === "SELECT" && event.target.isConnected && isOverlayKeyboardTarget(event.target)) return;
       if (event.target === focusedOverlayControl.current) focusedOverlayControl.current = null;
       // Let the destination control receive its click/focus before returning
       // keyboard ownership. Dialog buttons need Escape and arrow navigation.
@@ -251,7 +255,12 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     const off = api.onOverlayRecenter(recenter);
     const offVisibility = api.onOverlayVisibilityChanged(shown => {
       hit.current = null;
-      if (!shown) { drag.current = null; setInteractive(false); }
+      if (!shown) {
+        drag.current = null; focusedOverlayControl.current = null;
+        if (focusTimer) { clearTimeout(focusTimer); focusTimer = null; }
+        if (clickFocusTimer.current) { clearTimeout(clickFocusTimer.current); clickFocusTimer.current = null; }
+        setInteractive(false); void api.setOverlayFocus(false).catch(() => {});
+      }
       else {
         resize();
         if (visibleRef.current && pointer.current) setInteractive(isOverlayInteractiveTarget(document.elementFromPoint(pointer.current.x, pointer.current.y)));
@@ -259,7 +268,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     });
     return () => { mounted = false; if (focusTimer) clearTimeout(focusTimer); document.removeEventListener("pointermove", move); document.removeEventListener("pointerleave", leave); document.removeEventListener("focusin", focus); document.removeEventListener("focusout", blur); window.removeEventListener("resize", resize); off(); offGeometry(); offVisibility(); setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); };
   }, [setInteractive]);
-  useEffect(() => { if (!visible) { nativeGeometry.current = null; userWidth.current = false; userPosition.current = false; setViewport(null); setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); } }, [visible, setInteractive]);
+  useEffect(() => { if (!visible) { focusedOverlayControl.current = null; nativeGeometry.current = null; userWidth.current = false; userPosition.current = false; setViewport(null); setInteractive(false); void api.setOverlayFocus(false).catch(() => {}); } }, [visible, setInteractive]);
 
   const transcripts = snapshot?.transcripts ?? [];
   const transcriptParagraphs = projectTranscriptParagraphs(transcripts);
@@ -381,7 +390,9 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
     if (settingsTimer.current) clearTimeout(settingsTimer.current);
     settingsTimer.current = setTimeout(() => {
       // Keep native selects and keyboard navigation alive after pointer leave.
-      if (!settingsAnchor.current?.contains(document.activeElement)) closeSettingsNow();
+      const keyboardOwner = focusedOverlayControl.current;
+      const ownsKeyboard = !!keyboardOwner?.isConnected && settingsAnchor.current?.contains(keyboardOwner);
+      if (!ownsKeyboard && !settingsAnchor.current?.contains(document.activeElement)) closeSettingsNow();
     }, 500);
   };
   const openSettingsPanel = (next: "settings" | "resume" | "shortcuts") => {

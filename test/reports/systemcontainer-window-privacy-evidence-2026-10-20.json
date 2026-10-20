@@ -1,0 +1,335 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "ev_f0579ae07d723777fecc7a1fd7bf0fe355941fbfab0cec305d744cf259ddb0c1",
+  "artifact": {
+    "path": "/Applications/systemcontainer.app/Contents/Resources/app.asar",
+    "version": "3.0.1",
+    "bytes": 206100163,
+    "sha256": "528ea903d8dc6a1b42331ae7658689ab39e37fe63c09eef242475b2fa978fd78",
+    "currentAsarMatchesManifest": true
+  },
+  "scope": {
+    "method": "Read-only original source/AST inspection; target not executed; existing REA evidence reused.",
+    "selectedFirstPartyFiles": 14,
+    "mainBytes": 86342,
+    "mainSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+    "offsetUnit": "zero-based original UTF-8 bytes, end exclusive",
+    "excluded": [
+      "dependency/native implementation bodies",
+      "runtime platform capture/monitoring tests",
+      "network target execution",
+      "target/PW mutations",
+      "injection/hooks/process disguise/anti-monitoring changes"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "platform-bindings",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 1142,
+      "byteEndExclusive": 1389,
+      "rangeSha256": "e1e311c90b75691d63d9df7048ac3abc31fd91846c15b232ea570910c8dfb793",
+      "classification": "observed static source",
+      "description": "B=darwin, S=win32, _e=linux."
+    },
+    {
+      "id": "window-constructor",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 6304,
+      "byteEndExclusive": 7950,
+      "rangeSha256": "afc95e45bd41b7cd5e1192dd846d9df896a6048c696c6918b4587d844bd2cf4c",
+      "classification": "observed static source",
+      "description": "Default overlay uses BrowserWindow type panel, transparent/frameless, alwaysOnTop, hiddenInMissionControl, initial skipTaskbar. Constructor reasserts restoreUndetectability on show/restore/focus. Mac-only branch polls focus every100ms and invokes showInactive on unfocused transition. Windows-only branch uses screen-saver level and disables background throttling."
+    },
+    {
+      "id": "protection-direct-setter",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 12067,
+      "byteEndExclusive": 12137,
+      "rangeSha256": "22cce69eb2a69e3329e0870d2d0505537ea7d5a706a6b89641d63d5620b0692e",
+      "classification": "observed static source",
+      "description": "Delegates only to this.window.setContentProtection."
+    },
+    {
+      "id": "protection-reassert-owner",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 12140,
+      "byteEndExclusive": 12344,
+      "rangeSha256": "89b2edb29287b10c05e1889c554edfbb2b6690a823509a8180aeab76950d4411",
+      "classification": "observed static source",
+      "description": "Reads getUndetectabilityEnabled callback, calls window.setContentProtection; Windows-only setSkipTaskbar uses the preference or forceSkipTaskbar. No local helper is called by this method."
+    },
+    {
+      "id": "overlay-factory",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 15222,
+      "byteEndExclusive": 15758,
+      "rangeSha256": "b0714f2c726eff7edec32fd2a470e8fcd74022130714e3df78be991a4fb83baa",
+      "classification": "observed static source",
+      "description": "Post-onboarding current overlay uses Ie with getUndetectabilityEnabled=fe; onboarding le uses false callback. The same factory makes a dashboard. Actual onboarding file state was not read."
+    },
+    {
+      "id": "constant-protection-preference",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 17278,
+      "byteEndExclusive": 17308,
+      "rangeSha256": "d29d854e536ebf77d75d7305c3862c882a6b14b644a6b7a8a2bd0e3830888ba0",
+      "classification": "observed static source",
+      "description": "fe returns true."
+    },
+    {
+      "id": "dashboard-protection-owner",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 13113,
+      "byteEndExclusive": 14993,
+      "rangeSha256": "e86fcdce5cf5c9ff8ed15f4aacab3f902ca8dfc4a504d2fc58f20428a2fdd611",
+      "classification": "observed static source",
+      "description": "Dashboard subclass supplies getUndetectabilityEnabled=fe and no special platform detection adapter."
+    },
+    {
+      "id": "manager-protection-forwarder",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 16518,
+      "byteEndExclusive": 16774,
+      "rangeSha256": "09e3bfc061e1a63269ac55cd6cfb1255f7826616a048edd532ed1e6f9347743a",
+      "classification": "observed static source",
+      "description": "Manager forwards setContentProtection and restoration to its own current and dashboard windows."
+    },
+    {
+      "id": "dock-presentation",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 15081,
+      "byteEndExclusive": 15219,
+      "rangeSha256": "4af9122075201555e7bb2b656e6064a9a1de9c5ea0bbc7614db63a9a889069de",
+      "classification": "observed static source",
+      "description": "On macOS, handleDockIcon shows Dock for onboarding le, hides it for normal overlay, then requests app focus."
+    },
+    {
+      "id": "startup-dock-hide",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 83631,
+      "byteEndExclusive": 83651,
+      "rangeSha256": "081e2208a75e6d1e43c83d2f776830362f2d44b329d744b4a5e713d16a0c5b41",
+      "classification": "observed static source",
+      "description": "macOS startup hides its Dock entry."
+    },
+    {
+      "id": "focus-release",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 10638,
+      "byteEndExclusive": 10813,
+      "rangeSha256": "fe8fd8c5be696f181de2dfc1ac1f17050e7897ac5541badab6dc6418a521114c",
+      "classification": "observed static source",
+      "description": "focus calls window.focus; blur restores protection then blurs. The setFocusable workaround is Windows-only."
+    },
+    {
+      "id": "capture-wrapper",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 67227,
+      "byteEndExclusive": 67430,
+      "rangeSha256": "6f96dd4d8b4f8e90a72af2c01645d42d6d256596156eb7d529365b3b75dcebe4",
+      "classification": "observed static source",
+      "description": "Own screenshot capture sets contentProtection true, calls own capture ys, restores owner preference in finally; Mac error resets onboarding and rethrows, non-Mac may use fallback vs."
+    },
+    {
+      "id": "capture-direct-consumer",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 70626,
+      "byteEndExclusive": 71266,
+      "rangeSha256": "27891f42d67649480181b5e4414437cdc78b19cebe7604e5bf5ff30b20f599d6",
+      "classification": "observed static source",
+      "description": "Own capture ys enumerates screen sources through Electron desktopCapturer.getSources(types=[screen]) and selects its target display thumbnail. This is not a platform-specific protection adapter."
+    },
+    {
+      "id": "mac-mic-app-map-v1",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 38175,
+      "byteEndExclusive": 39792,
+      "rangeSha256": "e9b3f3d178e6757c0d9cf948a3b1476cd16386ed66c5f919f5c89e3d169ed7a3",
+      "classification": "observed static source",
+      "description": "Includes zoom.us and GoogleMeet among microphone-activity process-name mappings, alongside browsers and other apps."
+    },
+    {
+      "id": "mac-mic-app-map-v2",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 50092,
+      "byteEndExclusive": 51757,
+      "rangeSha256": "0d3b4fce5f2608e3761bdb119c1981b7ae299b73d314ba48ef92fb0dc8227a3e",
+      "classification": "observed static source",
+      "description": "Includes Zoom and Google Meet in a microphone-activity session-name map."
+    },
+    {
+      "id": "mac-mic-monitor-v2",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 51759,
+      "byteEndExclusive": 53595,
+      "rangeSha256": "d5c9eca074550e54ef94fa15cdb402559f5b185d81a081a4768f9b2dc1b519e4",
+      "classification": "observed static source",
+      "description": "Uses macOS log stream to parse coreaudio audiomxd input_running activity and emits mic-used/mic-off."
+    },
+    {
+      "id": "mac-mic-monitor-consumer",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 53643,
+      "byteEndExclusive": 53935,
+      "rangeSha256": "75aa2c8827305b69b6610a77fd66d8200b92d97e79e4968ea3fabe47077465b2",
+      "classification": "observed static source",
+      "description": "mic-used causes unhide-window(reason=mic_detected) and a UI mic-used message; mic-off broadcasts state. These platform names support activity UX, not a proven capture/detection bypass."
+    },
+    {
+      "id": "native-imports",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 0,
+      "byteEndExclusive": 1142,
+      "rangeSha256": "6d732c3b0c84ec1b7894f5bd67462bb45b3404cabb644f4884d8eb8294cf4eef",
+      "classification": "observed static source",
+      "description": "Imports Electron APIs, Recall Desktop SDK and screenshot-desktop. Main also imports child_process spawn/execSync and creates a require function. Dependencies/native internals were not reanalyzed."
+    },
+    {
+      "id": "helper-owner-Zt",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 34120,
+      "byteEndExclusive": 34334,
+      "rangeSha256": "8630db81916d55a3f2d1b8d2430bd622388ff92cb7e93a4db3b7919f267c2187",
+      "classification": "observed static source",
+      "description": "Runs sw_vers -productVersion for supported macOS version check."
+    },
+    {
+      "id": "helper-owner-ts",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 34559,
+      "byteEndExclusive": 34601,
+      "rangeSha256": "6eeda15f2fb547d5d6f1769d49192fcbd0a70a2ba3d554d5e28c8a75b2b43ca8",
+      "classification": "observed static source",
+      "description": "Resolves the packaged macExtraResources helper path."
+    },
+    {
+      "id": "audiotee-process-consumer",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 36243,
+      "byteEndExclusive": 37011,
+      "rangeSha256": "8c47edae42e26d1b5b342c3c5f7b6949711db260fe8094f2690a8f013260386e",
+      "classification": "observed static source",
+      "description": "Spawns macExtraResources/audiotee with audio sample-rate/chunk/process include-exclude options, sends stdout as audio bytes. No window protection call appears in this method."
+    },
+    {
+      "id": "helper-owner-os",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 37519,
+      "byteEndExclusive": 38105,
+      "rangeSha256": "b2331b337589d7aecd68e373fb9bfbe04067282748c4dce0723fcbd8cc06f204",
+      "classification": "observed static source",
+      "description": "Creates AudioTee and broadcasts system PCM recorder data."
+    },
+    {
+      "id": "capture-fallback",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 71267,
+      "byteEndExclusive": 71420,
+      "rangeSha256": "4863a8aada29bb32afb58c2da150aa29d05b31f4c339b0c36819bc819b634955",
+      "classification": "observed static source",
+      "description": "Delegates fallback screenshot acquisition to screenshot-desktop. Its dependency implementation is outside the selected first-party source; capture fallback does not establish a protection helper."
+    }
+  ],
+  "childProcessAndRequireCallsites": [
+    {
+      "binding": "Ee",
+      "owner": "Zt",
+      "byteStart": 34154,
+      "byteEndExclusive": 34188,
+      "argument0": "sw_vers"
+    },
+    {
+      "binding": "vt",
+      "owner": "start",
+      "byteStart": 36473,
+      "byteEndExclusive": 36481,
+      "argument0": "n"
+    },
+    {
+      "binding": "Ee",
+      "owner": "start",
+      "byteStart": 43589,
+      "byteEndExclusive": 43601,
+      "argument0": "log"
+    },
+    {
+      "binding": "Ee",
+      "owner": "start",
+      "byteStart": 51917,
+      "byteEndExclusive": 52100,
+      "argument0": "log"
+    },
+    {
+      "binding": "Ye",
+      "owner": "hs",
+      "byteStart": 54746,
+      "byteEndExclusive": 54760,
+      "argument0": "electron"
+    },
+    {
+      "binding": "Ye",
+      "owner": "fs",
+      "byteStart": 64820,
+      "byteEndExclusive": 64834,
+      "argument0": "electron"
+    },
+    {
+      "binding": "Le",
+      "owner": "bs",
+      "byteStart": 67835,
+      "byteEndExclusive": 67909,
+      "argument0": "interpolated-template"
+    },
+    {
+      "binding": "Le",
+      "owner": "bs",
+      "byteStart": 68412,
+      "byteEndExclusive": 68464,
+      "argument0": "interpolated-template"
+    }
+  ],
+  "nativeHelperCandidate": {
+    "path": "/Applications/systemcontainer.app/Contents/Resources/macExtraResources/audiotee",
+    "bytes": 657008,
+    "sha256": "86c54a100a370d78f54e0429acda6370e600c4304197d5361f64f708e0cfac5a",
+    "reachability": "main ts(audiotee) -> AudioTee.start -> child_process.spawn; direct producer is system audio capture",
+    "binaryAnalysisPerformed": false,
+    "observedRole": "System audio recording helper in the examined first-party callsite.",
+    "protectionHelperReachability": "Not observed from the examined window protection owners; native binary behavior remains unexamined."
+  },
+  "directProtectionHelperConclusion": "Examined first-party main protection setter/restorer/constructors call Electron window APIs directly. No protection-related local helper is visible in these direct bodies. This does not establish the absence of mechanisms inside Electron, Recall SDK, screenshot-desktop, other native dependencies, excluded members, or remote code.",
+  "officialApiContext": {
+    "url": "https://www.electronjs.org/docs/latest/api/browser-window#winsetcontentprotectionenable-macos-windows",
+    "summary": "Electron documents setContentProtection as capture protection using macOS NSWindowSharingNone / Windows display affinity, with an explicit macOS ScreenCaptureKit limitation. This is API context, not runtime proof for this shipped build or any named platform."
+  },
+  "unknowns": [
+    "Whether any named current Zoom/Meet/Chime/Webex/Feishu/HackerRank/CoderPad/Codility version detects or captures the app under any particular capture/permission mode.",
+    "Third-party/native dependency internals and OS behavior for the shipped Electron build.",
+    "Remote platform/browser extension/proctor features and active configuration.",
+    "Actual post-onboarding state, current native window properties, and current platform capture results."
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Mac capture/privacy compatibility; not an undetectability certification",
+  "defaultStatus": "unknown",
+  "variants": [
+    "baseline_no_overlay",
+    "passwisely",
+    "systemcontainer"
+  ],
+  "dimensions": [
+    "window_share",
+    "display_share",
+    "application_share",
+    "tab_share",
+    "local_recording",
+    "platform_recording",
+    "focus",
+    "system_identity"
+  ],
+  "platforms": [
+    {
+      "id": "zoom",
+      "label": "Zoom",
+      "modesToRecord": [
+        "native_or_browser",
+        "capture_mode",
+        "one_or_all_application_windows",
+        "account_policy"
+      ]
+    },
+    {
+      "id": "meet",
+      "label": "Google Meet",
+      "modesToRecord": [
+        "browser",
+        "tab_window_or_display",
+        "meeting_policy"
+      ]
+    },
+    {
+      "id": "chime",
+      "label": "Amazon Chime",
+      "modesToRecord": [
+        "legacy_special_join_or_chime_sdk_application"
+      ],
+      "note": "Legacy support ended 2026-02-20; SDK separate; establish actual route."
+    },
+    {
+      "id": "webex",
+      "label": "Cisco Webex",
+      "modesToRecord": [
+        "native_or_browser",
+        "one_or_all_application_windows",
+        "recording_type"
+      ]
+    },
+    {
+      "id": "feishu",
+      "label": "飞书 / Lark",
+      "modesToRecord": [
+        "product_version",
+        "meeting_policy",
+        "window_or_display",
+        "recording_type"
+      ]
+    },
+    {
+      "id": "hackerrank",
+      "label": "HackerRank",
+      "modesToRecord": [
+        "browser_secure_proctor_or_desktop_app",
+        "assessment_configuration"
+      ]
+    },
+    {
+      "id": "coderpad",
+      "label": "CoderPad",
+      "modesToRecord": [
+        "interview_or_screen",
+        "session_configuration",
+        "focus_and_paste_reporting"
+      ]
+    },
+    {
+      "id": "codility",
+      "label": "Codility",
+      "modesToRecord": [
+        "screen_or_interview",
+        "browser_or_device_integrity_app",
+        "assessment_configuration"
+      ]
+    }
+  ],
+  "statuses": [
+    "unknown",
+    "observed_excluded",
+    "observed_visible",
+    "partially_visible",
+    "observed_behavior",
+    "blocked",
+    "not_offered"
+  ],
+  "runFields": {
+    "required": [
+      "runId",
+      "timestamp",
+      "platformId",
+      "dimension",
+      "variant",
+      "bundlePath",
+      "bundleVersion",
+      "asarSha256",
+      "sourceCommitOrUnknown",
+      "osVersion",
+      "osBuild",
+      "arch",
+      "displays",
+      "platformProductMode",
+      "clientOrBrowserVersion",
+      "platformConfiguration",
+      "sourceKindAndId",
+      "capturePipelineOrUnknown",
+      "neutralFixtureSha256",
+      "actionTimeline",
+      "repetition",
+      "status",
+      "observation",
+      "evidence",
+      "scope",
+      "restoreOutcome"
+    ],
+    "captureRequired": [
+      "receiverOrRecorder",
+      "freshnessEvidence"
+    ],
+    "displays": [
+      "id",
+      "layout",
+      "scale"
+    ],
+    "evidence": [
+      "path",
+      "sha256",
+      "timeRangeOrFrame"
+    ],
+    "unknownValue": null
+  },
+  "sources": {
+    "electron": "https://github.com/electron/electron/blob/v29.4.6/docs/api/browser-window.md#winsetcontentprotectionenable-macos-windows",
+    "appleIndicators": "https://support.apple.com/en-au/guide/mac-help/mchl50f94f8f/mac",
+    "appleRecording": "https://support.apple.com/en-au/102618",
+    "zoom": "https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0060596",
+    "zoomCaptureMode": "https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0063824",
+    "meet": "https://support.google.com/meet/answer/9308856?hl=en-CA",
+    "webex": "https://help.webex.com/en-US/article/i62jfl/Webex-%7C-Share-Your-Screen-or-Application-in-a-Meeting",
+    "feishu": "https://www.feishu.cn/hc/en-US/articles/360046586533-share-your-screen",
+    "chime": "https://docs.aws.amazon.com/chime/latest/ag/amazon-chime-transition-features.html",
+    "chimeJoining": "https://aws.amazon.com/chime/download-chime/",
+    "hackerrank": "https://support.hackerrank.com/articles/1079706165-proctoring-hackerrank-tests",
+    "coderpad": "https://coderpad.io/resources/docs/interview/pads/playback-mode/",
+    "codility": "https://support.codility.com/hc/en-us/articles/46432701207569-Introducing-Device-Integrity",
+    "electronCaptureLimitation": "https://github.com/electron/electron/issues/48258"
+  },
+  "runs": []
+}

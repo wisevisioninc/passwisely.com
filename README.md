@@ -44,6 +44,12 @@ Official integration references: [audio-only](https://docs.recall.ai/docs/audio-
 - An API key for at least one supported AI provider
 - macOS: Screen Recording permission for PassWisely
 
+## Mac window content protection
+
+The native window starts hidden and requests Electron content protection before loading UI. A single owner reapplies it on show, restore and focus. Persistent Show/Hide intent is separate from temporary screenshot suppression: completing or failing a capture releases only its own hold and cannot reveal an explicitly hidden or replacement window. Native restoration failures retain their cleanup owner for retry.
+
+This matches the bounded SystemContainer window-policy evidence; it is not a guarantee of undetectability. ScreenCaptureKit capture, platform focus reports and native application checks are separate behaviors. See [Electron’s documented limitation](https://github.com/electron/electron/issues/48258) and the [versioned privacy test matrix and synthetic fixture](test/privacy/README.md). Each remote platform/configuration requires its own receiver-side evidence.
+
 ## Development
 
 ```bash

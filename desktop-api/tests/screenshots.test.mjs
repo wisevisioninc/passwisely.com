@@ -28,7 +28,7 @@ function fixture(context, { main = 0, extra = 0, capture, trash, fileSystem = fs
       const filename = path.join(folder, "seed-" + index + ".png"); fs.writeFileSync(filename, "fixture-png-" + index); fs.utimesSync(filename, 100 + index, 100 + index); seeded[kind].push(filename);
     }
   }
-  const captures = [], trashed = [], visibility = [];
+  const captures = [], trashed = [];
   const target = { id: 22, scaleFactor: 2, size: { width: 1280, height: 720 } };
   const electron = {
     app: { getPath: () => directory }, screen: { getPrimaryDisplay: () => ({ id: 11, scaleFactor: 1, size: { width: 800, height: 600 } }) },
@@ -39,13 +39,13 @@ function fixture(context, { main = 0, extra = 0, capture, trash, fileSystem = fs
   const javascript = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   new Function("require", "module", "exports", javascript)(id => id === "electron" ? electron : id === "node:fs" ? fileSystem : id === "./screenshotLimits" ? limits : require(id), module, module.exports);
   const helper = new module.exports.ScreenshotHelper("queue", () => target);
-  return { helper, target, directory, seeded, captures, trashed, trashDirectory, visibility, hide: () => visibility.push("hide"), show: () => visibility.push("show") };
+  return { helper, target, directory, seeded, captures, trashed, trashDirectory };
 }
 
 test("Live capture freezes the selected display and always uses the normal queue after code view switches", async context => {
   const f = fixture(context, { extra: 1 });
   f.helper.setView("debug");
-  const captured = f.helper.takeLiveScreenshot(f.hide, f.show);
+  const captured = f.helper.takeLiveScreenshot();
   f.target.id = 99; f.target.size.width = 999;
   f.helper.setView("solutions");
   const filename = await captured;
@@ -54,13 +54,12 @@ test("Live capture freezes the selected display and always uses the normal queue
   assert.deepEqual(f.helper.getExtraScreenshotQueue(), f.seeded.extra);
   const external = f.helper.getPendingScreenshots(); external.length = 0;
   assert.deepEqual(f.helper.getPendingScreenshots(), [filename]);
-  assert.deepEqual(f.visibility, ["hide", "show"]);
 });
 
 test("legacy capture selects its queue at invocation while Live ignores the legacy getView state", async context => {
   const f = fixture(context);
   f.helper.setView("solutions");
-  const capture = f.helper.takeScreenshot(f.hide, f.show);
+  const capture = f.helper.takeScreenshot();
   f.helper.setView("queue");
   const filename = await capture;
   assert.deepEqual(f.helper.getScreenshotQueue(), []);
@@ -70,7 +69,7 @@ test("legacy capture selects its queue at invocation while Live ignores the lega
 test("clear snapshots cannot remove a capture that finishes while the clear waits for serialized ownership", async context => {
   const captured = deferred();
   const f = fixture(context, { main: 1, capture: () => captured.promise });
-  const taking = f.helper.takeLiveScreenshot(f.hide, f.show);
+  const taking = f.helper.takeLiveScreenshot();
   await settled(() => f.captures.length === 1);
   const clearing = f.helper.clearPendingScreenshots();
   captured.resolve([{ display_id: "22", thumbnail: { isEmpty: () => false, toPNG: () => Buffer.from("new-image") } }]);
@@ -125,17 +124,15 @@ test("unowned paths and replaced symlinks are never handed to Trash or read as p
 
 test("full queue capacity does not discard a failed cleanup owner or save an untracked sixth image", async context => {
   const f = fixture(context, { main: 5, trash: async () => { throw new Error("fixture Trash blocked"); } });
-  await assert.rejects(() => f.helper.takeLiveScreenshot(f.hide, f.show), /queue is full.*Trash blocked/);
+  await assert.rejects(() => f.helper.takeLiveScreenshot(), /queue is full.*Trash blocked/);
   assert.deepEqual(f.helper.getPendingScreenshots(), f.seeded.main);
   assert.equal(fs.readdirSync(path.join(f.directory, "screenshots")).length, 5);
-  assert.deepEqual(f.visibility, ["hide", "show"]);
 });
 
 test("a missing selected display fails instead of silently capturing another display", async context => {
   const f = fixture(context, { capture: async () => [{ display_id: "11", thumbnail: { isEmpty: () => false, toPNG: () => Buffer.from("wrong-display") } }] });
-  await assert.rejects(() => f.helper.takeLiveScreenshot(f.hide, f.show), /selected display/);
+  await assert.rejects(() => f.helper.takeLiveScreenshot(), /selected display/);
   assert.deepEqual(f.helper.getPendingScreenshots(), []);
-  assert.deepEqual(f.visibility, ["hide", "show"]);
 });
 
 test("a partial file write remains owned when recoverable cleanup also fails", async context => {
@@ -149,10 +146,9 @@ test("a partial file write remains owned when recoverable cleanup also fails", a
     },
   } };
   const f = fixture(context, { fileSystem, trash: async () => { throw new Error("fixture Trash blocked"); } });
-  await assert.rejects(() => f.helper.takeLiveScreenshot(f.hide, f.show), /write failed.*Trash blocked/);
+  await assert.rejects(() => f.helper.takeLiveScreenshot(), /write failed.*Trash blocked/);
   const pending = f.helper.getPendingScreenshots();
   assert.equal(pending.length, 1);
   assert.equal(fs.readFileSync(pending[0], "utf8"), "partial fixture image");
   assert.equal(fs.readdirSync(path.join(f.directory, "screenshots")).length, 1);
-  assert.deepEqual(f.visibility, ["hide", "show"]);
 });

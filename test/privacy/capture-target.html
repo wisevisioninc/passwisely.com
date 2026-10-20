@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PW / SC 合成共享测试</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#163047;background:#edf5fc}
+body{margin:0;padding:36px;background-image:linear-gradient(45deg,#d9e9f6 25%,transparent 25%),linear-gradient(-45deg,#d9e9f6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#d9e9f6 75%),linear-gradient(-45deg,transparent 75%,#d9e9f6 75%);background-size:48px 48px;background-position:0 0,0 24px,24px -24px,-24px 0}
+main{max-width:1100px;margin:auto}header,section,footer{background:#ffffffeb;border:2px solid #83b4d8;border-radius:16px;padding:24px;margin:0 0 24px}h1{font-size:32px;margin:0 0 14px}h2{font-size:22px}.clock{display:flex;gap:24px;flex-wrap:wrap;font:600 26px ui-monospace,monospace;color:#075ca2}.clock b{color:#aa3105}p,label{font-size:20px;line-height:1.6}button,input{font:inherit;padding:12px 16px;border:2px solid #6594bd;border-radius:8px}input{width:min(90%,700px);display:block;margin:12px 0}button{background:#e2effa;color:#123c5b;cursor:pointer}output{margin-left:16px;font-size:22px}.sample{font-size:26px;line-height:1.8;border-left:6px solid #d07618;padding-left:20px}.note{font-size:17px;color:#456079}pre{white-space:pre-wrap;font-size:16px}
+</style>
+</head>
+<body><main>
+<header><h1>PW / SC · 合成共享测试 · 01</h1><div class="clock"><span data-clock></span><span>新鲜帧 <b data-tick>0</b></span></div><p>请在接收设备核对时钟持续前进、页面可读，以及浮层是否完整或短暂出现在共享画面中。</p></header>
+<section><h2>文字选择与输入</h2><p class="sample">The blue notebook costs twenty dollars. 先处理空数组，再检查左右边界。测试编号：PW-SC-PRIVACY-01。</p><label for="sample">输入合成文本</label><input id="sample" autocomplete="off" placeholder="例如：privacy sample 123"><button id="count">增加按钮计数</button><output id="total">0</output><p class="note">只选择浏览器窗口、共享整个屏幕和共享标签页是不同测试模式，应分别记录。</p></section>
+<section><h2>焦点事件（仅此测试页）</h2><p id="focus"></p><pre id="events"></pre><p class="note">此处如实显示本页的焦点变化，不修改或抑制事件。它不代表任何测评平台的检测报告。</p></section>
+<footer><div class="clock"><span data-clock></span><span>新鲜帧 <b data-tick>0</b></span></div><p class="note">本页只含合成样本，不联网提交数据。浮层在某组画面中未出现，不等于应用对所有平台不可检测。</p></footer>
+</main>
+<script>
+let ticks=0, clicks=0; const events=[];
+function clock(){document.querySelectorAll('[data-clock]').forEach(node=>node.textContent=new Date().toLocaleTimeString('en-GB',{hour12:false}));document.querySelectorAll('[data-tick]').forEach(node=>node.textContent=String(ticks));}
+function focusEvent(kind){events.unshift(new Date().toLocaleTimeString('en-GB',{hour12:false})+' '+kind);events.length=Math.min(events.length,8);document.querySelector('#events').textContent=events.join('\n');document.querySelector('#focus').textContent='document.hasFocus(): '+document.hasFocus()+' · visibility: '+document.visibilityState;}
+window.addEventListener('focus',()=>focusEvent('focus'));window.addEventListener('blur',()=>focusEvent('blur'));document.addEventListener('visibilitychange',()=>focusEvent('visibilitychange'));
+document.querySelector('#count').addEventListener('click',()=>document.querySelector('#total').textContent=String(++clicks));
+clock();focusEvent('loaded');setInterval(()=>{ticks++;clock();},1000);
+</script></body></html>

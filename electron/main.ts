@@ -17,6 +17,8 @@ import { createCaptureCloseGuard } from "./live/WindowCloseGuard";
 import { createAuthenticationLossHandler } from "./live/AuthenticationLoss";
 import { AccountService } from "./account";
 import { initializeWindowControls, isAuthWindow } from "./windowControls";
+import { WindowCaptureProtection } from "./WindowCaptureProtection";
+import { WindowVisibilityController, WindowVisibilityCleanupError } from "./WindowVisibility";
 import { LiveSessionService } from "./live/LiveSessionService";
 import { RecallCapture } from "./live/RecallCapture";
 import { initializeLiveIpc } from "./live/ipc";
@@ -32,7 +34,7 @@ const PROTOCOL = "passwisely";
 const state = {
   // Window management properties
   mainWindow: null as BrowserWindow | null,
-  isWindowVisible: false,
+  windowVisibility: null as WindowVisibilityController | null,
   windowPosition: null as { x: number; y: number } | null,
   windowSize: null as { width: number; height: number } | null,
   screenWidth: 0,
@@ -250,7 +252,7 @@ function initializeHelpers() {
     processingHelper: state.processingHelper,
     clearQueues,
     setView,
-    isVisible: () => state.isWindowVisible,
+    isVisible: () => state.windowVisibility?.canPresent() ?? false,
     toggleMainWindow,
     moveWindowLeft: () =>
       moveWindowHorizontal((x) =>
@@ -303,11 +305,25 @@ async function handleAuthCallback(url: string, win: BrowserWindow | null) {
   }
 }
 
+// A failed initial protection request never publishes a usable main window.
+// Keep native resource ownership here until destruction is confirmed.
+let mainWindowAwaitingCleanup: BrowserWindow | null = null;
+function cleanupFailedMainWindow(): void {
+  const window = mainWindowAwaitingCleanup;
+  if (!window) return;
+  try {
+    if (!window.isDestroyed()) window.destroy();
+  } finally {
+    if (window.isDestroyed() && mainWindowAwaitingCleanup === window) mainWindowAwaitingCleanup = null;
+  }
+  if (mainWindowAwaitingCleanup === window) throw new Error("Failed main-window cleanup is incomplete; retry before creating another window.");
+}
+
 // Window management functions
 async function createWindow(): Promise<void> {
+  cleanupFailedMainWindow();
   if (state.mainWindow) {
-    if (state.mainWindow.isMinimized()) state.mainWindow.restore();
-    state.mainWindow.focus();
+    revealMainWindow();
     return;
   }
 
@@ -333,7 +349,7 @@ async function createWindow(): Promise<void> {
         : path.join(__dirname, "preload.js"),
       scrollBounce: true,
     },
-    show: true,
+    show: false,
     frame: false,
     transparent: true,
     fullscreenable: false,
@@ -365,8 +381,24 @@ async function createWindow(): Promise<void> {
   //   return false
   // }
 
-  state.mainWindow = new BrowserWindow(windowSettings);
-  const ownedWindow = state.mainWindow;
+  const ownedWindow = new BrowserWindow(windowSettings);
+  try {
+    // Request capture exclusion before publishing, loading or showing this window.
+    new WindowCaptureProtection(ownedWindow);
+  } catch (error) {
+    mainWindowAwaitingCleanup = ownedWindow;
+    ownedWindow.once("closed", () => {
+      if (mainWindowAwaitingCleanup === ownedWindow) mainWindowAwaitingCleanup = null;
+    });
+    try {
+      cleanupFailedMainWindow();
+    } catch (cleanupError) {
+      throw Object.assign(new Error("Capture protection failed; the hidden native window is retained until cleanup succeeds."), { cause: error, cleanupError });
+    }
+    throw error;
+  }
+  state.mainWindow = ownedWindow;
+  state.windowVisibility = createWindowVisibility(ownedWindow);
   ownedWindow.on("close", createCaptureCloseGuard({
     needsCleanup: () => {
       const session = state.liveSession?.getSnapshot();
@@ -386,7 +418,7 @@ async function createWindow(): Promise<void> {
   //   }
   // })
 
-  // Ensure window does not appear in Alt+Tab (Windows) and similar task switchers
+  // Configure taskbar/Dock presentation where supported.
   if (process.platform === "win32") {
     // For Windows, we can only use setSkipTaskbar
     state.mainWindow.setSkipTaskbar(true);
@@ -482,29 +514,26 @@ async function createWindow(): Promise<void> {
     if (!allowedUrl) event.preventDefault();
   });
 
-  // Enhanced screen capture resistance
-  state.mainWindow.setContentProtection(true);
-
   state.mainWindow.setVisibleOnAllWorkspaces(true, {
     visibleOnFullScreen: true,
   });
   state.mainWindow.setAlwaysOnTop(true, "floating", 1);
 
-  // Additional screen capture resistance settings
+  // macOS presentation and window-switching behavior
   if (process.platform === "darwin") {
-    // Prevent window from being captured in screenshots
+    // Hide the panel from Mission Control; this does not exclude captures.
     state.mainWindow.setHiddenInMissionControl(true);
     state.mainWindow.setWindowButtonVisibility(false);
     state.mainWindow.setBackgroundColor("#00000000");
 
-    // Prevent window from being included in window switcher
+    // Configure Dock/taskbar presentation; this is separate from capture exclusion.
     state.mainWindow.setSkipTaskbar(true);
 
     // Disable window shadow
     state.mainWindow.setHasShadow(false);
   }
 
-  // Prevent the window from being captured by screen recording
+  // Keep the live renderer updating while its panel is inactive.
   state.mainWindow.webContents.setBackgroundThrottling(false);
   state.mainWindow.webContents.setFrameRate(60);
 
@@ -519,8 +548,8 @@ async function createWindow(): Promise<void> {
   state.windowSize = { width: bounds.width, height: bounds.height };
   state.currentX = bounds.x;
   state.currentY = bounds.y;
-  state.isWindowVisible = true;
   applyWorkspaceWindow();
+  showMainWindow();
 }
 
 function handleWindowMove(): void {
@@ -541,16 +570,27 @@ function handleWindowResize(): void {
 
 function handleWindowClosed(): void {
   overlayWindow.reset();
+  state.windowVisibility?.dispose();
+  state.windowVisibility = null;
   state.mainWindow = null;
-  state.isWindowVisible = false;
   state.windowPosition = null;
   state.windowSize = null;
 }
 
-// Window visibility functions
-function hideMainWindow(): void {
-  const mainWindow = state.mainWindow;
-  if (!mainWindow || mainWindow.isDestroyed()) return;
+// One owner separates durable Show / Hide intent from temporary capture holds.
+function createWindowVisibility(window: BrowserWindow): WindowVisibilityController {
+  return new WindowVisibilityController(window, {
+    show: () => applyNativeShowMainWindow(window),
+    hide: () => applyNativeHideMainWindow(window),
+    changed: () => state.shortcutsHelper?.refreshGlobalShortcuts(),
+  });
+}
+
+function hideMainWindow(): void { state.windowVisibility?.setRequestedVisible(false); }
+function showMainWindow(): void { state.windowVisibility?.setRequestedVisible(true); }
+
+function applyNativeHideMainWindow(mainWindow: BrowserWindow): void {
+  if (state.mainWindow !== mainWindow || mainWindow.isDestroyed()) return;
   const bounds = mainWindow.getBounds();
   state.windowPosition = { x: bounds.x, y: bounds.y };
   state.windowSize = { width: bounds.width, height: bounds.height };
@@ -558,13 +598,11 @@ function hideMainWindow(): void {
   if (overlayWindow.isLive()) overlayWindow.setInteractive(false);
   mainWindow.hide();
   mainWindow.webContents.send("overlay-visibility", false);
-  state.isWindowVisible = false;
-  state.shortcutsHelper?.refreshGlobalShortcuts();
 }
 
-function showMainWindow(): void {
-  const mainWindow = state.mainWindow;
-  if (!mainWindow || mainWindow.isDestroyed()) return;
+function applyNativeShowMainWindow(mainWindow: BrowserWindow): void {
+  if (state.mainWindow !== mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
   if (!overlayWindow.isLive() && state.windowPosition && state.windowSize) {
     mainWindow.setBounds({ ...state.windowPosition, ...state.windowSize });
   }
@@ -573,33 +611,25 @@ function showMainWindow(): void {
     visibleOnFullScreen: true,
     skipTransformProcessType: true,
   });
-  mainWindow.setContentProtection(true);
   mainWindow.showInactive();
   overlayWindow.publishGeometry(true);
   mainWindow.webContents.send("overlay-visibility", true);
-  state.isWindowVisible = true;
-  state.shortcutsHelper?.refreshGlobalShortcuts();
 }
 
 function revealMainWindow(): void {
   const window = state.mainWindow;
   if (!window || window.isDestroyed()) {
     if (window) handleWindowClosed();
-    void createWindow();
+    void createWindow().catch(error => console.error("Failed to reveal protected window:", error));
     return;
   }
-  if (window.isMinimized()) window.restore();
   showMainWindow();
-  if (isAuthWindow()) window.focus();
+  if (isAuthWindow() && state.windowVisibility?.canPresent()) window.focus();
 }
 
 function toggleMainWindow(): void {
-  if (state.mainWindow?.isMinimized()) {
-    state.mainWindow.restore();
-    state.mainWindow.focus();
-    return;
-  }
-  state.isWindowVisible ? hideMainWindow() : showMainWindow();
+  if (state.mainWindow?.isMinimized()) { revealMainWindow(); return; }
+  state.windowVisibility?.isRequestedVisible() ? hideMainWindow() : showMainWindow();
 }
 
 // Window movement functions
@@ -852,12 +882,21 @@ async function clearQueues(): Promise<{ success: boolean; error?: string }> {
 }
 
 async function takeScreenshot(): Promise<string> {
-  if (!state.mainWindow) throw new Error("No main window available");
+  const visibility = state.windowVisibility;
+  if (!state.mainWindow || !visibility) throw new Error("No main window available");
+  // Acquire before queueing: concurrent pending captures all retain suppression.
+  const lease = visibility.suppressForCapture();
+  let captureFailed = false, captureError: unknown;
   try {
-    return await (state.screenshotHelper?.[overlayWindow.isLive() ? "takeLiveScreenshot" : "takeScreenshot"](
-      () => hideMainWindow(), () => showMainWindow(),
-    ) || "");
-  } finally { notifyScreenshotQueueChanged(); }
+    return await (state.screenshotHelper?.[overlayWindow.isLive() ? "takeLiveScreenshot" : "takeScreenshot"]() || "");
+  } catch (error) { captureFailed = true; captureError = error; throw error; }
+  finally {
+    try { lease.release(); }
+    catch (cleanupError) {
+      if (captureFailed) throw new WindowVisibilityCleanupError("Screenshot capture and visibility restoration failed.", captureError, cleanupError);
+      throw cleanupError;
+    } finally { notifyScreenshotQueueChanged(); }
+  }
 }
 
 async function getImagePreview(filepath: string): Promise<string> {

@@ -117,11 +117,10 @@ export class ScreenshotHelper {
     }
     return source.thumbnail.toPNG();
   }
-  private takeIntoQueue(queue: "main" | "extra", hideMainWindow: () => void, showMainWindow: () => void): Promise<string> {
+  private takeIntoQueue(queue: "main" | "extra"): Promise<string> {
     const selectedDisplay = this.getDisplay();
     const display = { ...selectedDisplay, size: { ...selectedDisplay.size } };
     return this.serialize(async () => {
-      hideMainWindow();
       try {
         await new Promise(resolve => setTimeout(resolve, 100));
         const screenshotBuffer = await this.captureScreenshot(display);
@@ -143,16 +142,15 @@ export class ScreenshotHelper {
         return filePath;
       } finally {
         await new Promise(resolve => setTimeout(resolve, 50));
-        showMainWindow();
       }
     });
   }
-  takeScreenshot(hideMainWindow: () => void, showMainWindow: () => void): Promise<string> {
+  takeScreenshot(): Promise<string> {
     // Select once before the asynchronous capture, rather than re-reading view later.
-    return this.takeIntoQueue(this.view === "queue" ? "main" : "extra", hideMainWindow, showMainWindow);
+    return this.takeIntoQueue(this.view === "queue" ? "main" : "extra");
   }
-  takeLiveScreenshot(hideMainWindow: () => void, showMainWindow: () => void): Promise<string> {
-    return this.takeIntoQueue("main", hideMainWindow, showMainWindow);
+  takeLiveScreenshot(): Promise<string> {
+    return this.takeIntoQueue("main");
   }
   async getImagePreview(filePath: string): Promise<string> {
     await this.verifyOwnedFile(filePath);

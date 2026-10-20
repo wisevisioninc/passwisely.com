@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import vm from 'node:vm'
+import { EventEmitter } from 'node:events'
 import ts from 'typescript'
 
 function load(relative, electron) {
@@ -165,33 +166,34 @@ test('actual activate and second-instance entrypoints reveal hidden windows and 
   const source = fs.readFileSync(new URL('../../electron/main.ts', import.meta.url), 'utf8');
   const ast = ts.createSourceFile('main.ts', source, ts.ScriptTarget.Latest, true);
   const selected = ast.statements.filter(node => {
-    if (ts.isFunctionDeclaration(node)) return ['showMainWindow', 'revealMainWindow'].includes(node.name?.text);
+    if (ts.isFunctionDeclaration(node)) return ['createWindowVisibility', 'applyNativeShowMainWindow', 'applyNativeHideMainWindow', 'showMainWindow', 'revealMainWindow'].includes(node.name?.text);
     if (!ts.isExpressionStatement(node) || !ts.isCallExpression(node.expression)) return false;
     const call = node.expression;
     return call.expression.getText(ast) === 'app.on' && ts.isStringLiteral(call.arguments[0]) && ['activate', 'second-instance'].includes(call.arguments[0].text);
   }).map(node => node.getText(ast)).join('\n');
-  const code = ts.transpileModule(selected, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const code = ts.transpileModule(`${selected}\nstate.windowVisibility = createWindowVisibility(state.mainWindow);`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
+  const { WindowVisibilityController } = load('WindowVisibility.ts', {});
   for (const name of ['activate', 'second-instance']) {
     for (const auth of [false, true]) {
       for (const initiallyMinimized of [false, true]) {
         const handlers = new Map(), calls = [];
         let minimized = initiallyMinimized, visible = false, destroyed = false;
-        const win = { isDestroyed: () => destroyed, isMinimized: () => minimized,
+        const win = Object.assign(new EventEmitter(), { isDestroyed: () => destroyed, isMinimized: () => minimized,
           restore: () => { minimized = false; calls.push('restore'); },
           showInactive: () => { visible = true; calls.push('showInactive'); }, focus: () => calls.push('focus'),
           setVisibleOnAllWorkspaces() {}, setContentProtection() {},
           webContents: { send: (...args) => calls.push(args) },
-        };
-        const state = { mainWindow: win, isWindowVisible: false, shortcutsHelper: { refreshGlobalShortcuts: () => calls.push('shortcuts') } };
-        vm.runInNewContext(code, { state, console: { log() {} }, PROTOCOL: 'passwisely', handleAuthCallback() {},
+        });
+        const state = { mainWindow: win, shortcutsHelper: { refreshGlobalShortcuts: () => calls.push('shortcuts') } };
+        vm.runInNewContext(code, { state, WindowVisibilityController, console: { log() {} }, PROTOCOL: 'passwisely', handleAuthCallback() {},
           app: { on: (event, callback) => handlers.set(event, callback) }, isAuthWindow: () => auth,
           overlayWindow: { isLive: () => !auth, restoreMousePolicy: () => calls.push('mouse-policy'), publishGeometry: () => calls.push('geometry') },
-          createWindow: () => calls.push('create'), handleWindowClosed: () => { state.mainWindow = null; calls.push('release-destroyed-window'); },
+          createWindow: async () => { calls.push('create'); }, handleWindowClosed: () => { state.mainWindow = null; calls.push('release-destroyed-window'); },
         });
         const activate = () => name === 'second-instance' ? handlers.get(name)({}, []) : handlers.get(name)();
         activate();
         assert.equal(visible, true, `${name} must reveal a hidden ${auth ? 'Auth' : 'Live'} window`);
-        assert.equal(state.isWindowVisible, true);
+        assert.equal(state.windowVisibility.isRequestedVisible(), true);
         assert.equal(minimized, false);
         assert.equal(calls.includes('restore'), initiallyMinimized);
         assert.equal(calls.includes('focus'), auth);

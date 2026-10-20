@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "id": "1443",
+  "slug": "minimum-time-to-collect-all-apples-in-a-tree",
+  "title": "收集树上所有苹果的最少时间",
+  "difficulty": "Medium",
+  "source": {
+    "url": "https://leetcode.cn/problems/minimum-time-to-collect-all-apples-in-a-tree/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "6cd37d7d1319415debbc3557e4577419d5f7c94c139938d438e9a8b54650e71a"
+  },
+  "statement": "无向树有n个编号0到n-1的节点，hasApple标记苹果所在点，每条边往返单次各耗时1。由0出发收集全部苹果后必须回到0，求最短总时间。1≤n≤10^5，edges含n-1条边，hasApple长度n；0上的苹果无需移动。",
+  "python": {
+    "method": "minTime",
+    "params": [
+      {
+        "name": "n",
+        "type": "integer"
+      },
+      {
+        "type": "integer[][]",
+        "name": "edges"
+      },
+      {
+        "type": "list<boolean>",
+        "name": "hasApple"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def minTime(self, n: int, edges: List[List[int]], hasApple: List[bool]) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "root-alone-empty",
+      "args": [
+        1,
+        [],
+        [
+          false
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "root-alone-has-apple",
+      "args": [
+        1,
+        [],
+        [
+          true
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "apple-only-at-chain-end",
+      "args": [
+        5,
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        [
+          false,
+          false,
+          false,
+          false,
+          true
+        ]
+      ],
+      "expected": 8,
+      "kind": "normal"
+    },
+    {
+      "name": "shared-prefix-for-two-apples",
+      "args": [
+        5,
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        [
+          false,
+          false,
+          true,
+          false,
+          true
+        ]
+      ],
+      "expected": 8,
+      "kind": "normal"
+    },
+    {
+      "name": "star-with-root-and-leaves",
+      "args": [
+        5,
+        [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            4
+          ]
+        ],
+        [
+          true,
+          true,
+          false,
+          true,
+          false
+        ]
+      ],
+      "expected": 4,
+      "kind": "normal"
+    },
+    {
+      "name": "all-nodes-have-apples",
+      "args": [
+        4,
+        [
+          [
+            0,
+            3
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        [
+          true,
+          true,
+          true,
+          true
+        ]
+      ],
+      "expected": 6,
+      "kind": "normal"
+    },
+    {
+      "name": "tree-with-no-apples",
+      "args": [
+        4,
+        [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        [
+          false,
+          false,
+          false,
+          false
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "unneeded-deep-subtree",
+      "args": [
+        6,
+        [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        [
+          false,
+          false,
+          true,
+          false,
+          false,
+          false
+        ]
+      ],
+      "expected": 4,
+      "kind": "normal"
+    }
+  ]
+}

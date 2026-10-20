@@ -13,7 +13,12 @@
     "dist:win": "npm run typecheck && npm run clean && npm run build:assets && electron-builder --win",
     "notarize:mac": "node scripts/manual-notarize.js",
     "desktop-api:start": "node desktop-api/server.mjs",
-    "test:desktop-api": "node --test desktop-api/tests/*.test.mjs"
+    "test:desktop-api": "node --test desktop-api/tests/*.test.mjs",
+    "test:leetcode": "python3 test/leetcode/scripts/verify.py && node --test test/leetcode/scripts/run-live.test.mjs",
+    "test:leetcode:oracles": "python3 test/leetcode/oracles/part1/selfcheck.py && python3 test/leetcode/oracles/part2/verify_oracles.py",
+    "test:leetcode:fixtures": "python3 test/leetcode/scripts/serve.py",
+    "test:leetcode:live": "node test/leetcode/scripts/run-live.mjs",
+    "test:leetcode:sandbox": "python3.12 test/leetcode/scripts/sandbox_selftest.py"
   },
   "build": {
     "appId": "com.passwisely.desktop",

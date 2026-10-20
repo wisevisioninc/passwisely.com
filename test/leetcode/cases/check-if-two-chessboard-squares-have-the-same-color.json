@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "id": "3274",
+  "slug": "check-if-two-chessboard-squares-have-the-same-color",
+  "title": "检查棋盘方格颜色是否相同",
+  "difficulty": "Easy",
+  "source": {
+    "url": "https://leetcode.cn/problems/check-if-two-chessboard-squares-have-the-same-color/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "80e0a9dcf4a3f0338b1a3965d6d59a24bdd7aaa33ae633adadce7fc4baedb45a"
+  },
+  "statement": "给出标准8×8棋盘上的两个合法坐标，首字符a至h表示列，末字符1至8表示行。棋盘相邻格颜色交替，判断两格是否同色，返回布尔值。坐标均恰好2字符；无需返回具体颜色。",
+  "python": {
+    "method": "checkTwoChessboards",
+    "params": [
+      {
+        "name": "coordinate1",
+        "type": "string"
+      },
+      {
+        "type": "string",
+        "name": "coordinate2"
+      }
+    ],
+    "return": {
+      "type": "boolean"
+    },
+    "template": "class Solution:\n    def checkTwoChessboards(self, coordinate1: str, coordinate2: str) -> bool:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "same-corner",
+      "args": [
+        "h8",
+        "h8"
+      ],
+      "expected": true,
+      "kind": "boundary"
+    },
+    {
+      "name": "opposite-corners",
+      "args": [
+        "a1",
+        "h8"
+      ],
+      "expected": true,
+      "kind": "boundary"
+    },
+    {
+      "name": "vertical-neighbors",
+      "args": [
+        "d4",
+        "d5"
+      ],
+      "expected": false,
+      "kind": "normal"
+    },
+    {
+      "name": "horizontal-neighbors",
+      "args": [
+        "h1",
+        "g1"
+      ],
+      "expected": false,
+      "kind": "normal"
+    },
+    {
+      "name": "diagonal-neighbors",
+      "args": [
+        "c6",
+        "d7"
+      ],
+      "expected": true,
+      "kind": "normal"
+    },
+    {
+      "name": "same-color-distant",
+      "args": [
+        "b7",
+        "g2"
+      ],
+      "expected": true,
+      "kind": "normal"
+    },
+    {
+      "name": "opposite-color-distant",
+      "args": [
+        "a8",
+        "h6"
+      ],
+      "expected": false,
+      "kind": "normal"
+    },
+    {
+      "name": "same-column-even-distance",
+      "args": [
+        "f2",
+        "f8"
+      ],
+      "expected": true,
+      "kind": "normal"
+    }
+  ]
+}

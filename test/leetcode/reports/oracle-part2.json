@@ -1,0 +1,15 @@
+{
+  "graph_random_exhaustive_assignments": 100,
+  "permutations_exhaustive_through_n7": 5913,
+  "apple_random_state_space_walks": 200,
+  "parentheses_exhaustive_through_length7": 3279,
+  "accounts_random_set_merging": 200,
+  "bit_count_all_valid_inputs": 1000,
+  "ab_strings_exhaustive_through_length10": 2046,
+  "frequencies_random_materialized_multiset": 300,
+  "frequencies_64bit_stress": 1,
+  "majority_random_median": 300,
+  "matrices_random_sorted_column_oracle": 300,
+  "validator_property_checks": 15,
+  "authored_fixture_cases": 80
+}

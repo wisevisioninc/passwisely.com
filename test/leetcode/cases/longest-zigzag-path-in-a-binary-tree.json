@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "id": "1372",
+  "slug": "longest-zigzag-path-in-a-binary-tree",
+  "title": "二叉树中的最长交错路径",
+  "difficulty": "Medium",
+  "source": {
+    "url": "https://leetcode.cn/problems/longest-zigzag-path-in-a-binary-tree/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "23feed9f623fab770af8257a06699136ea1cac17228ad14d5d2f2efd8fd911c7"
+  },
+  "statement": "给定非空二叉树，可以从任意节点向下行走，第一步左右任选，之后每一步必须与上一步方向相反。返回最长合法路径的边数，单个节点长度为0。约束：节点数1至5×10^4，节点值1至100。测试输入按LeetCode层序数组编码，null为缺失孩子，只给实际节点继续分配孩子位置。",
+  "python": {
+    "method": "longestZigZag",
+    "params": [
+      {
+        "name": "root",
+        "type": "TreeNode"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "# Definition for a binary tree node.\n# class TreeNode:\n#     def __init__(self, val=0, left=None, right=None):\n#         self.val = val\n#         self.left = left\n#         self.right = right\nclass Solution:\n    def longestZigZag(self, root: TreeNode | None) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "single-node",
+      "args": [
+        [
+          8
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "only-left-child",
+      "args": [
+        [
+          1,
+          2
+        ]
+      ],
+      "expected": 1,
+      "kind": "boundary"
+    },
+    {
+      "name": "only-right-child",
+      "args": [
+        [
+          1,
+          null,
+          2
+        ]
+      ],
+      "expected": 1,
+      "kind": "boundary"
+    },
+    {
+      "name": "same-direction-chain",
+      "args": [
+        [
+          1,
+          2,
+          null,
+          3,
+          null,
+          4
+        ]
+      ],
+      "expected": 1,
+      "kind": "normal"
+    },
+    {
+      "name": "alternating-chain",
+      "args": [
+        [
+          1,
+          null,
+          2,
+          3,
+          null,
+          null,
+          4,
+          5
+        ]
+      ],
+      "expected": 4,
+      "kind": "normal"
+    },
+    {
+      "name": "complete-three-level-tree",
+      "args": [
+        [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "optimal-path-begins-below-root",
+      "args": [
+        [
+          1,
+          2,
+          null,
+          3,
+          null,
+          null,
+          4,
+          5
+        ]
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "two-equal-best-branches",
+      "args": [
+        [
+          50,
+          30,
+          80,
+          null,
+          40,
+          70,
+          null,
+          35,
+          null,
+          null,
+          75
+        ]
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "repeated-values-do-not-matter",
+      "args": [
+        [
+          1,
+          1,
+          1,
+          null,
+          null,
+          1,
+          null,
+          null,
+          1,
+          null,
+          1
+        ]
+      ],
+      "expected": 3,
+      "kind": "normal"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "1249",
+  "slug": "minimum-remove-to-make-valid-parentheses",
+  "title": "移除无效的括号",
+  "difficulty": "Medium",
+  "source": {
+    "url": "https://leetcode.cn/problems/minimum-remove-to-make-valid-parentheses/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "a6e3f73b61a0551bef250f09492d87de34c0411915a08a9e768a12fa173beb57"
+  },
+  "statement": "字符串s只含小写英文字母及左右圆括号。只能删除括号，保留字符的原顺序；使剩余括号合法匹配，并最小化删除数量，返回任一最优字符串。字母无需匹配，结果可为空。1≤len(s)≤10^5。",
+  "python": {
+    "method": "minRemoveToMakeValid",
+    "params": [
+      {
+        "name": "s",
+        "type": "string"
+      }
+    ],
+    "return": {
+      "type": "string"
+    },
+    "template": "class Solution:\n    def minRemoveToMakeValid(self, s: str) -> str:\n        "
+  },
+  "compare": "minimum-valid-parentheses",
+  "cases": [
+    {
+      "name": "single-open",
+      "args": [
+        "("
+      ],
+      "expected": "",
+      "kind": "boundary"
+    },
+    {
+      "name": "single-close",
+      "args": [
+        ")"
+      ],
+      "expected": "",
+      "kind": "boundary"
+    },
+    {
+      "name": "letters-remain",
+      "args": [
+        "alpha"
+      ],
+      "expected": "alpha",
+      "kind": "boundary"
+    },
+    {
+      "name": "balanced-nested",
+      "args": [
+        "a(b(c)d)e"
+      ],
+      "expected": "a(b(c)d)e",
+      "kind": "normal"
+    },
+    {
+      "name": "many-valid-minimal-answers",
+      "args": [
+        "(a(b)"
+      ],
+      "expected": "a(b)",
+      "kind": "normal"
+    },
+    {
+      "name": "stray-close-before-open",
+      "args": [
+        ")(ab))(c("
+      ],
+      "expected": "(ab)c",
+      "kind": "normal"
+    },
+    {
+      "name": "only-one-parenthesis-type",
+      "args": [
+        "(((x(("
+      ],
+      "expected": "x",
+      "kind": "boundary"
+    },
+    {
+      "name": "mixed-islands",
+      "args": [
+        "a))b((c)d)e)f("
+      ],
+      "expected": "ab((c)d)ef",
+      "kind": "normal"
+    }
+  ]
+}

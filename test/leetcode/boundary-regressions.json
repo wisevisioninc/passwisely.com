@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Additional compact boundary regressions discovered while statically reviewing the saved real Mac model answers; original frozen cases remain unchanged.",
+  "recursionContext": "The local Python 3.9.6 interpreter reports a default recursion limit of 1000. The saved judge driver does not raise that limit. No assertion is made about LeetCode's runtime configuration. Recursive solutions may be mathematically valid yet fail under the local judge's finite recursion limit.",
+  "cases": [
+    {
+      "slug": "longest-zigzag-path-in-a-binary-tree",
+      "name": "deep-alternating-chain-2000",
+      "generator": {
+        "type": "alternating-binary-chain",
+        "nodes": 2000,
+        "firstDirection": "left",
+        "value": 1
+      },
+      "expected": 1999,
+      "kind": "boundary",
+      "purpose": "A valid 2000-node tree within the 50000-node problem bound; exercises depth independently of the small fixed examples. Every edge alternates direction, so the longest path has nodes-1 edges."
+    },
+    {
+      "slug": "minimum-time-to-collect-all-apples-in-a-tree",
+      "name": "deep-chain-last-apple-2000",
+      "generator": {
+        "type": "apple-chain",
+        "nodes": 2000,
+        "appleAt": "last"
+      },
+      "expected": 3998,
+      "kind": "boundary",
+      "purpose": "A valid 2000-node path within the 100000-node problem bound, with an apple only at node 1999; all 1999 edges must be traversed twice."
+    },
+    {
+      "slug": "maximum-number-of-non-overlapping-palindrome-substrings",
+      "name": "repeated-characters-k-one",
+      "generator": {
+        "type": "literal",
+        "args": ["aa", 1]
+      },
+      "expected": 2,
+      "kind": "boundary",
+      "purpose": "Two adjacent single-character palindromes beat the longer palindrome. Retaining only the minimum left endpoint for each right endpoint discards the optimal prefix state."
+    }
+  ]
+}

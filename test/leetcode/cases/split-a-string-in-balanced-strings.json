@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "id": "1221",
+  "slug": "split-a-string-in-balanced-strings",
+  "title": "分割平衡字符串",
+  "difficulty": "Easy",
+  "source": {
+    "url": "https://leetcode.cn/problems/split-a-string-in-balanced-strings/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "4c4eff9bb129e33d59e41f49cafafd703565d4d2c210477bb73e513fad4e6657"
+  },
+  "statement": "字符串s只含L、R，且二者总数相等。把整个字符串依次切成若干非空连续片段，每片段中的L和R也须等量。返回可切出的最多片段数。约束：2≤长度≤1000，输入已保证整体平衡。",
+  "python": {
+    "method": "balancedStringSplit",
+    "params": [
+      {
+        "name": "s",
+        "type": "string"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def balancedStringSplit(self, s: str) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "smallest-left-first",
+      "args": [
+        "LR"
+      ],
+      "expected": 1,
+      "kind": "boundary"
+    },
+    {
+      "name": "smallest-right-first",
+      "args": [
+        "RL"
+      ],
+      "expected": 1,
+      "kind": "boundary"
+    },
+    {
+      "name": "single-long-excursion",
+      "args": [
+        "LLRR"
+      ],
+      "expected": 1,
+      "kind": "normal"
+    },
+    {
+      "name": "alternating-three",
+      "args": [
+        "LRLRLR"
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "mixed-excursion-sizes",
+      "args": [
+        "LLRRRLLR"
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "right-heavy-then-short",
+      "args": [
+        "RRRLLLRL"
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "alternating-return-directions",
+      "args": [
+        "LRRLLR"
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "five-then-five",
+      "args": [
+        "LLLLLRRRRR"
+      ],
+      "expected": 1,
+      "kind": "normal"
+    },
+    {
+      "name": "right-left-pairs",
+      "args": [
+        "RLLRRL"
+      ],
+      "expected": 3,
+      "kind": "normal"
+    }
+  ]
+}

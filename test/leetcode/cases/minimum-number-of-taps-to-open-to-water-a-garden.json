@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "id": "1326",
+  "slug": "minimum-number-of-taps-to-open-to-water-a-garden",
+  "title": "灌溉花园的最少水龙头数目",
+  "difficulty": "Hard",
+  "source": {
+    "url": "https://leetcode.cn/problems/minimum-number-of-taps-to-open-to-water-a-garden/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "30e0f057aad8883d2b9097991df435062fae62eba12b4fdea40c69574cb57e0f"
+  },
+  "statement": "给定长度为n的连续线段[0,n]，整数位置i处可选一个覆盖[i-ranges[i],i+ranges[i]]的水龙头。求完整覆盖线段所需开启的最少个数，存在无法覆盖的间隙则返回-1；只覆盖整数点不够，相邻闭区间可以在端点相接。约束：1≤n≤10^4，ranges长度为n+1，0≤ranges[i]≤100。",
+  "python": {
+    "method": "minTaps",
+    "params": [
+      {
+        "name": "n",
+        "type": "integer"
+      },
+      {
+        "type": "integer[]",
+        "name": "ranges"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def minTaps(self, n: int, ranges: list[int]) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "unit-uncovered",
+      "args": [
+        1,
+        [
+          0,
+          0
+        ]
+      ],
+      "expected": -1,
+      "kind": "boundary"
+    },
+    {
+      "name": "unit-covered-from-right",
+      "args": [
+        1,
+        [
+          0,
+          1
+        ]
+      ],
+      "expected": 1,
+      "kind": "boundary"
+    },
+    {
+      "name": "middle-gap",
+      "args": [
+        4,
+        [
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "expected": -1,
+      "kind": "normal"
+    },
+    {
+      "name": "three-touching-intervals",
+      "args": [
+        4,
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ]
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "two-overlapping-intervals",
+      "args": [
+        6,
+        [
+          0,
+          2,
+          0,
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "touching-then-overlap",
+      "args": [
+        7,
+        [
+          1,
+          0,
+          0,
+          2,
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "single-center-covers-all",
+      "args": [
+        8,
+        [
+          0,
+          0,
+          0,
+          0,
+          4,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "expected": 1,
+      "kind": "normal"
+    },
+    {
+      "name": "two-disjoint-components",
+      "args": [
+        6,
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      ],
+      "expected": -1,
+      "kind": "normal"
+    },
+    {
+      "name": "closed-endpoint-is-sufficient",
+      "args": [
+        2,
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      "expected": 2,
+      "kind": "boundary"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "seed": 20261020,
+  "fixtures": 10,
+  "authoredCases": 89,
+  "checksIncludingCases": 6977,
+  "perSlug": {
+    "maximum-number-of-non-overlapping-palindrome-substrings": 361,
+    "delete-and-earn": 260,
+    "count-square-sum-triples": 44,
+    "reducing-dishes": 160,
+    "pass-the-pillow": 1108,
+    "longest-zigzag-path-in-a-binary-tree": 260,
+    "split-a-string-in-balanced-strings": 160,
+    "minimum-number-of-taps-to-open-to-water-a-garden": 260,
+    "maximum-number-of-jumps-to-reach-the-last-index": 260,
+    "check-if-two-chessboard-squares-have-the-same-color": 4104
+  },
+  "limitations": [
+    "No generated/model code executed.",
+    "Small-input exhaustive/random comparisons do not prove all inputs.",
+    "No ASR, screenshot OCR, transport, or model quality is exercised."
+  ]
+}

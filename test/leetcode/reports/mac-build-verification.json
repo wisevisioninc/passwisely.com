@@ -1,0 +1,244 @@
+{
+  "purpose": "Local Mac development and LeetCode benchmark only; not a notarized public release.",
+  "createdAt": "2026-10-20T02:29:37.866Z",
+  "sourceRoot": "/Users/chenyejin/codebase/passwisely",
+  "sourceCommit": "b88d606d3fa7f285e4dcd19d8b3695b4826b7c47",
+  "trackedSourceDirty": true,
+  "appVersion": "1.3.0",
+  "appPath": "/private/tmp/passwisely-leetcode-mac-native/mac-arm64/PassWisely.app",
+  "apiUrl": "http://127.0.0.1:3014/api",
+  "architecture": "arm64",
+  "sourceAssetsRebuilt": false,
+  "sourceAssetsUnchanged": true,
+  "packagedAssetsMatched": 42,
+  "assets": [
+    {
+      "path": "dist/assets/index-B74m4i8m.css",
+      "sha256": "921e3969c33aa9949b99698e0fa897805cc7bdb380ca533351284a216cea115b",
+      "size": 42004
+    },
+    {
+      "path": "dist/assets/index-mOeG3dBt.js",
+      "sha256": "d61acd4ee00d6a5db86231e69560bd7cbb4fbab52f6135ba0f8e36e91c9c9ccb",
+      "size": 1115928
+    },
+    {
+      "path": "dist/favicon.ico",
+      "sha256": "c0fbb20ca9df072a524ebe810b617a584d11238e1f0b9be6bf97e0894778a113",
+      "size": 19603
+    },
+    {
+      "path": "dist/fonts/Inter.ttf",
+      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+      "size": 876576
+    },
+    {
+      "path": "dist/fonts/OFL-Inter.txt",
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57",
+      "size": 4377
+    },
+    {
+      "path": "dist/fonts/SOURCE.json",
+      "sha256": "ac8d71d9f0290502bcd5db712d0d6fe04b1b5a4b12f1f9f0182a06cb78fdd230",
+      "size": 401
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "3f51dafbe6f3e8d3729f5fc64ef372d715c1c010ce7746a3231be35e9b520aba",
+      "size": 653
+    },
+    {
+      "path": "dist/logo192.png",
+      "sha256": "c4dc37b969e1e2d0fdbe276b5d58e0fcc176a760c1af5de6c860704465999dbd",
+      "size": 24382
+    },
+    {
+      "path": "dist/logo512.png",
+      "sha256": "63376bcd0e3c82e60d482be68577a5d73a26ebc088dd72827783376e68a66273",
+      "size": 102448
+    },
+    {
+      "path": "dist-electron/ProcessingHelper.js",
+      "sha256": "54361ab229088a4e496f83a6de5842f3bda3e1cd4c8b23a86af8dae1f55ee1df",
+      "size": 68076
+    },
+    {
+      "path": "dist-electron/ResumeHelper.js",
+      "sha256": "c1bdd56a82e60218b00c2c8ba708777218d897b5f7560a65c21ec63b15106784",
+      "size": 11981
+    },
+    {
+      "path": "dist-electron/ScreenshotHelper.js",
+      "sha256": "6781cfe8c6d3fff183c71eb065f0cb121b1f9ae029edaf2e19b1d95d0ec8a674",
+      "size": 8946
+    },
+    {
+      "path": "dist-electron/WiseGrpcClient.js",
+      "sha256": "0432e73ae4ec28306711cf02787cf8072a4fc1d5011c6449b7271874dba916d1",
+      "size": 10608
+    },
+    {
+      "path": "dist-electron/account.js",
+      "sha256": "b1140019edac66337ca056713abad869d1851faa95ba4b8b1068a7318281a14b",
+      "size": 9859
+    },
+    {
+      "path": "dist-electron/aiProviders.js",
+      "sha256": "56130aae619f5ce88c97a14d1c134c0663180cd5b710bf511c6a8f68dcc9bf1d",
+      "size": 5240
+    },
+    {
+      "path": "dist-electron/autoUpdater.js",
+      "sha256": "fabfa457b1381a18677d04ac54bb03eba69d37c6f99f96bf9b04976c31f16fc0",
+      "size": 4390
+    },
+    {
+      "path": "dist-electron/fileFromPath-7gjnKF4K.js",
+      "sha256": "e44097a7ba616265e908d25932ba627eb38f141cde66fbc66f063e177e900585",
+      "size": 4425
+    },
+    {
+      "path": "dist-electron/fileFromPath-BDs8anv1.js",
+      "sha256": "5289346900e996c2fd1f1aafa276fd77da31ddf353c9ce95b4c015fb77f67e67",
+      "size": 4425
+    },
+    {
+      "path": "dist-electron/fileFromPath-Ca1hAYUH.js",
+      "sha256": "4cad5ee01f189d6ed1ec1c6b5dbedae5215f1a4ba1d5a179b49599a6872afe2f",
+      "size": 4425
+    },
+    {
+      "path": "dist-electron/ipcHandlers.js",
+      "sha256": "b37fb5700c76adc7d214d9d229e91a5f44bcb888d66bdd24d317646344368613",
+      "size": 16372
+    },
+    {
+      "path": "dist-electron/live/AuthenticationLoss.js",
+      "sha256": "4febd30a271a2019066d59c75b7e1637c924204099de6eb0561d20faa383e4f7",
+      "size": 872
+    },
+    {
+      "path": "dist-electron/live/ConversationContext.js",
+      "sha256": "34f981f0d76f18fe9f6ea7dcb9d97abc9f74c373269bba8a3e99f5b4b7cc6977",
+      "size": 8382
+    },
+    {
+      "path": "dist-electron/live/LiveSessionService.js",
+      "sha256": "8df1e3c66d570f94199ebc904ae4520f59c67378bbe1d710786115af6316da92",
+      "size": 20058
+    },
+    {
+      "path": "dist-electron/live/OverlayWindow.js",
+      "sha256": "6e07c8d679bb88f01e9b2bbaea1c03aa2f5021eba88acc7b81f8fd055b226b96",
+      "size": 5171
+    },
+    {
+      "path": "dist-electron/live/RecallCapture.js",
+      "sha256": "c5e444829bd66b3fa65b3752c76b04a54d92036046c337e8dd87cd5d53470352",
+      "size": 18062
+    },
+    {
+      "path": "dist-electron/live/WindowCloseGuard.js",
+      "sha256": "8d9cc5b1fd597fc0c503583505071a6e3b574d170f67f8528a18b2ccbc84f7fd",
+      "size": 1173
+    },
+    {
+      "path": "dist-electron/live/ipc.js",
+      "sha256": "6733f40a0e58e6e9757b09c79638706e534c8b507b0ba33bb67907b26eaa27d5",
+      "size": 2028
+    },
+    {
+      "path": "dist-electron/live/overlayTypes.js",
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230",
+      "size": 77
+    },
+    {
+      "path": "dist-electron/live/recallTranscript.js",
+      "sha256": "13e73bd77cb12f453a7e721bd5c869c4dc844099515c3231666b0a93fcf0251c",
+      "size": 6558
+    },
+    {
+      "path": "dist-electron/live/types.js",
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230",
+      "size": 77
+    },
+    {
+      "path": "dist-electron/main-10hktzp_.js",
+      "sha256": "e123c5d92fbefbc1bccc19c49b61dffb421f60058b861b013718deccba709573",
+      "size": 4434045
+    },
+    {
+      "path": "dist-electron/main-D6hEW3mo.js",
+      "sha256": "e48dd03862d9678f1b72d5eb50f566ae93c8c0ca6a30d8ca12777ec0ad2b6939",
+      "size": 4511200
+    },
+    {
+      "path": "dist-electron/main-DHe9bKJH.js",
+      "sha256": "a7958a4a27bb46a1f55642aa4e6ca9215abcd6cce95715e84d83fca59e78132a",
+      "size": 4436308
+    },
+    {
+      "path": "dist-electron/main.js",
+      "sha256": "dbaac8c405695efa267fea9ec6ae148f3686c29f0f766224ec73a7f82b732ddd",
+      "size": 33058
+    },
+    {
+      "path": "dist-electron/preload.js",
+      "sha256": "c94fb72af9ea72aefb3cb953233a71eea9d5ce7ccc9389f047fe3653397a9095",
+      "size": 16123
+    },
+    {
+      "path": "dist-electron/resumeTypes.js",
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230",
+      "size": 77
+    },
+    {
+      "path": "dist-electron/screenshotLimits.js",
+      "sha256": "ad0e7741a78241ed7bc356d8a80a1e2080d9a4f94b22a82b3f4745c9ec4bef7c",
+      "size": 140
+    },
+    {
+      "path": "dist-electron/settings.js",
+      "sha256": "78d07ff00461b96c9d6b6f464158d8499764aa10951f6b0ec1607bd5bf27d77a",
+      "size": 12094
+    },
+    {
+      "path": "dist-electron/shortcuts.js",
+      "sha256": "5f89050efe15465439abc4af4f8251be40cd4679b3b632e1e0a3915554161e9c",
+      "size": 5745
+    },
+    {
+      "path": "dist-electron/solutionStream.js",
+      "sha256": "0bcfa3737108e6e142a81e296045527adf2d0173c62ae00d3297cf4906cc11b2",
+      "size": 5490
+    },
+    {
+      "path": "dist-electron/windowControls.js",
+      "sha256": "d9d6ad71b5ef695c77fa43e96af2b01bf5bb1842ae8dc13639a7aaf8771e3b48",
+      "size": 2625
+    },
+    {
+      "path": "proto/desktop_ai.proto",
+      "sha256": "f6980436b7fff958eb4637376922735fdf8672c9995a1f70bc90e76f3f8d8c1c",
+      "size": 1226
+    }
+  ],
+  "asarSha256": "bc8c38eeabdb3509811b5e811fb49728b702bb4158ea817b91dab0af08eec323",
+  "signing": {
+    "identityHash": "9432E36F20C14D5EF7475C443BB8DB704A931E35",
+    "team": "VFF94RK9TN",
+    "hardenedRuntime": true,
+    "trustedTimestamp": false,
+    "notarized": false,
+    "stapled": false,
+    "recallLeaves": 107,
+    "signedLeaves": 122,
+    "signedBundles": 10,
+    "verifiedTargets": 132,
+    "deepStrictVerified": true
+  },
+  "publishing": {
+    "uploaded": false,
+    "releaseHooksOverriddenOnlyInThisScript": true
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Reusable Mac Live question and screenshot benchmark; independent Chinese paraphrases and authored cases, not copied full statements",
+  "selection": {
+    "schemaVersion": 1,
+    "seed": 20261020,
+    "rng": "Python random.Random / MT19937",
+    "algorithm": "sort numeric public non-hidden IDs; shuffle each difficulty; accept first 8 easy, 8 medium, 4 hard with single Python3 method; shuffle selected",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "catalogUrl": "https://leetcode.cn/api/problems/all/",
+    "catalogSha256": "643ad85f9257d2d5a0a629ecb124ba8de90529ba9bd07102d0429d99f092b0b3",
+    "catalogTotal": 4474,
+    "catalogFetched": 4474,
+    "numericFreeCandidates": 3300,
+    "skipped": [],
+    "poolSha256": "b44a15b9fe3ee857ed7337ab9aa537d1cf7c07d11980b02f3f9357c7689d8ef2"
+  },
+  "sourceCommit": "b88d606d3fa7f285e4dcd19d8b3695b4826b7c47",
+  "problems": [
+    {
+      "id": "1326",
+      "slug": "minimum-number-of-taps-to-open-to-water-a-garden",
+      "title": "灌溉花园的最少水龙头数目",
+      "difficulty": "Hard",
+      "url": "https://leetcode.cn/problems/minimum-number-of-taps-to-open-to-water-a-garden/",
+      "sha256": "4df5546a96a87c4e0115553834e02dbfc34276f0b6133cf195f242e0e154820c"
+    },
+    {
+      "id": "2582",
+      "slug": "pass-the-pillow",
+      "title": "递枕头",
+      "difficulty": "Easy",
+      "url": "https://leetcode.cn/problems/pass-the-pillow/",
+      "sha256": "c7a735ff777d6fd060c4da82cb31eb1caaecfe0ab706ba532b457b1d20a74b9d"
+    },
+    {
+      "id": "1402",
+      "slug": "reducing-dishes",
+      "title": "做菜顺序",
+      "difficulty": "Hard",
+      "url": "https://leetcode.cn/problems/reducing-dishes/",
+      "sha256": "8c17c122b679c6bcb32833af5ded919b8038777d3102ed94fa9b8d18632bc6a3"
+    },
+    {
+      "id": "3274",
+      "slug": "check-if-two-chessboard-squares-have-the-same-color",
+      "title": "检查棋盘方格颜色是否相同",
+      "difficulty": "Easy",
+      "url": "https://leetcode.cn/problems/check-if-two-chessboard-squares-have-the-same-color/",
+      "sha256": "671268aef08a451f8b83d883df8ab3cc4f0572213343f6bf195735bee373c884"
+    },
+    {
+      "id": "2770",
+      "slug": "maximum-number-of-jumps-to-reach-the-last-index",
+      "title": "达到末尾下标所需的最大跳跃次数",
+      "difficulty": "Medium",
+      "url": "https://leetcode.cn/problems/maximum-number-of-jumps-to-reach-the-last-index/",
+      "sha256": "78bb2513ab6e3ecdf8952d50eb60078c41b188b530df09c501b928a8186affe1"
+    },
+    {
+      "id": "740",
+      "slug": "delete-and-earn",
+      "title": "删除并获得点数",
+      "difficulty": "Medium",
+      "url": "https://leetcode.cn/problems/delete-and-earn/",
+      "sha256": "d7a4f5e52a292e4ead3ce2dc09132f5e96095babe96d227d34090e350e1bc8d7"
+    },
+    {
+      "id": "1221",
+      "slug": "split-a-string-in-balanced-strings",
+      "title": "分割平衡字符串",
+      "difficulty": "Easy",
+      "url": "https://leetcode.cn/problems/split-a-string-in-balanced-strings/",
+      "sha256": "d7e17fe60e9af1cbcd63e240aee6d4c40333158b5f611f3e63c072fcd896d4d8"
+    },
+    {
+      "id": "1925",
+      "slug": "count-square-sum-triples",
+      "title": "统计平方和三元组的数目",
+      "difficulty": "Easy",
+      "url": "https://leetcode.cn/problems/count-square-sum-triples/",
+      "sha256": "6c08a7a190ce74a223133f79e4382680ca2b1d11f16e0f5560d7844a9ffb7fe1"
+    },
+    {
+      "id": "1372",
+      "slug": "longest-zigzag-path-in-a-binary-tree",
+      "title": "二叉树中的最长交错路径",
+      "difficulty": "Medium",
+      "url": "https://leetcode.cn/problems/longest-zigzag-path-in-a-binary-tree/",
+      "sha256": "7f37e21a76306505f85c1a0e09c677cdf9ef4301fb840e27dc65e7d3684e1a3b"
+    },
+    {
+      "id": "2472",
+      "slug": "maximum-number-of-non-overlapping-palindrome-substrings",
+      "title": "不重叠回文子字符串的最大数目",
+      "difficulty": "Hard",
+      "url": "https://leetcode.cn/problems/maximum-number-of-non-overlapping-palindrome-substrings/",
+      "sha256": "6d7758bb72bc2ae853d9654b063302159efc7c70e48bf82d010f28395cc57939"
+    },
+    {
+      "id": "2699",
+      "slug": "modify-graph-edge-weights",
+      "title": "修改图中的边权",
+      "difficulty": "Hard",
+      "url": "https://leetcode.cn/problems/modify-graph-edge-weights/",
+      "sha256": "5d2cbbf29eee52290315c6aaf35cca3882fbfaac4d747b33da886382dd9b063e"
+    },
+    {
+      "id": "3644",
+      "slug": "maximum-k-to-sort-a-permutation",
+      "title": "排序排列",
+      "difficulty": "Medium",
+      "url": "https://leetcode.cn/problems/maximum-k-to-sort-a-permutation/",
+      "sha256": "82bf9417dbd04b483815f672585561c9eee5950e2ffc0bd994cc2e5bc97c75b1"
+    },
+    {
+      "id": "1443",
+      "slug": "minimum-time-to-collect-all-apples-in-a-tree",
+      "title": "收集树上所有苹果的最少时间",
+      "difficulty": "Medium",
+      "url": "https://leetcode.cn/problems/minimum-time-to-collect-all-apples-in-a-tree/",
+      "sha256": "b13cb2f5f72adaa3f23320e2b6a7bc12e4c90a22e53d4c126e9a16334bc69639"
+    },
+    {
+      "id": "1249",
+      "slug": "minimum-remove-to-make-valid-parentheses",
+      "title": "移除无效的括号",
+      "difficulty": "Medium",
+      "url": "https://leetcode.cn/problems/minimum-remove-to-make-valid-parentheses/",
+      "sha256": "f27e06878b4964492c34993ee71ce4268f5976ccf2f5ef87482933fe0e149fd1"
+    },
+    {
+      "id": "721",
+      "slug": "accounts-merge",
+      "title": "账户合并",
+      "difficulty": "Medium",
+      "url": "https://leetcode.cn/problems/accounts-merge/",
+      "sha256": "c341045cc6d8ea45ce720f1a2843e29e627334773ea5dbe7d7b423ac764e6369"
+    },
+    {
+      "id": "2595",
+      "slug": "number-of-even-and-odd-bits",
+      "title": "奇偶位数",
+      "difficulty": "Easy",
+      "url": "https://leetcode.cn/problems/number-of-even-and-odd-bits/",
+      "sha256": "b3a81da92ea3e47157f38ffa6625aa24f0572539d12d734d2f34e3987fda340d"
+    },
+    {
+      "id": "2124",
+      "slug": "check-if-all-as-appears-before-all-bs",
+      "title": "检查是否所有 A 都在 B 之前",
+      "difficulty": "Easy",
+      "url": "https://leetcode.cn/problems/check-if-all-as-appears-before-all-bs/",
+      "sha256": "746a9e649b288b00875b4e5bccd9b1203258b181740e1379a455aaace37fa1e4"
+    },
+    {
+      "id": "3092",
+      "slug": "most-frequent-ids",
+      "title": "最高频率的 ID",
+      "difficulty": "Medium",
+      "url": "https://leetcode.cn/problems/most-frequent-ids/",
+      "sha256": "653344e2ad30265da82d7cfcca4920386fc3878172b88ee042fe7de19a802bb7"
+    },
+    {
+      "id": "169",
+      "slug": "majority-element",
+      "title": "多数元素",
+      "difficulty": "Easy",
+      "url": "https://leetcode.cn/problems/majority-element/",
+      "sha256": "72289a93c4e142e204b4b3ba21270e76f61c7091044ef801c9068a2365acd5e2"
+    },
+    {
+      "id": "3033",
+      "slug": "modify-the-matrix",
+      "title": "修改矩阵",
+      "difficulty": "Easy",
+      "url": "https://leetcode.cn/problems/modify-the-matrix/",
+      "sha256": "11a6b7e0870eb6cd9e9bc4dcafe3f2425fd8b0f597139a5c096c3ff6a7262edb"
+    }
+  ],
+  "coverageLimits": [
+    "Static fixture/reference checks do not verify ASR, model, transport or native UI.",
+    "Saved code is evaluated only with explicit opt-in in a deny-by-default OS sandbox.",
+    "Difficulty-stratified public numeric single-method Python3 problems; not uniform across all problem types."
+  ],
+  "judgeRuntime": {
+    "language": "Python",
+    "minimumVersion": "3.10",
+    "testedVersion": "3.12.14",
+    "policy": "execute original answer unchanged; do not rewrite type annotations to hide compatibility issues"
+  }
+}

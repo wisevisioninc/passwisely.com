@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "2124",
+  "slug": "check-if-all-as-appears-before-all-bs",
+  "title": "检查是否所有 A 都在 B 之前",
+  "difficulty": "Easy",
+  "source": {
+    "url": "https://leetcode.cn/problems/check-if-all-as-appears-before-all-bs/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "f8a689c8c53de43561e1d568e4f0bb84f1a04b38d20138dec890603318a53de7"
+  },
+  "statement": "s只含a和b。当所有a的位置都在所有b之前时返回true，否则返回false；只含一种字母也符合条件。1≤len(s)≤100。",
+  "python": {
+    "method": "checkString",
+    "params": [
+      {
+        "name": "s",
+        "type": "string"
+      }
+    ],
+    "return": {
+      "type": "boolean"
+    },
+    "template": "class Solution:\n    def checkString(self, s: str) -> bool:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "single-a",
+      "args": [
+        "a"
+      ],
+      "expected": true,
+      "kind": "boundary"
+    },
+    {
+      "name": "single-b",
+      "args": [
+        "b"
+      ],
+      "expected": true,
+      "kind": "boundary"
+    },
+    {
+      "name": "smallest-valid-mix",
+      "args": [
+        "ab"
+      ],
+      "expected": true,
+      "kind": "normal"
+    },
+    {
+      "name": "smallest-invalid-mix",
+      "args": [
+        "ba"
+      ],
+      "expected": false,
+      "kind": "normal"
+    },
+    {
+      "name": "late-a-after-long-run",
+      "args": [
+        "aaaaabbbbbba"
+      ],
+      "expected": false,
+      "kind": "normal"
+    },
+    {
+      "name": "all-a-at-length-bound",
+      "args": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "expected": true,
+      "kind": "boundary"
+    },
+    {
+      "name": "ordered-at-length-bound",
+      "args": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ],
+      "expected": true,
+      "kind": "boundary"
+    },
+    {
+      "name": "starts-with-b-and-later-a",
+      "args": [
+        "bbbaaa"
+      ],
+      "expected": false,
+      "kind": "normal"
+    }
+  ]
+}

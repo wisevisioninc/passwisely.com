@@ -1,0 +1,30 @@
+{
+  "scope": "trusted oracles only; no generated/model source executed",
+  "localPython": "3.9.6",
+  "localDefaultRecursionLimit": 1000,
+  "cases": [
+    {
+      "slug": "longest-zigzag-path-in-a-binary-tree",
+      "name": "deep-alternating-chain-2000",
+      "actual": 1999,
+      "expected": 1999,
+      "status": "passed",
+      "nonNullNodes": 2000,
+      "compactLevelOrderLength": 3998
+    },
+    {
+      "slug": "minimum-time-to-collect-all-apples-in-a-tree",
+      "name": "deep-chain-last-apple-2000",
+      "actual": 3998,
+      "expected": 3998,
+      "status": "passed"
+    },
+    {
+      "slug": "maximum-number-of-non-overlapping-palindrome-substrings",
+      "name": "repeated-characters-k-one",
+      "actual": 2,
+      "expected": 2,
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "id": "2699",
+  "slug": "modify-graph-edge-weights",
+  "title": "修改图中的边权",
+  "difficulty": "Hard",
+  "source": {
+    "url": "https://leetcode.cn/problems/modify-graph-edge-weights/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "81f689d513c2336c3a3c6cf74e060c10b41c4d40a533910a70c95fde5f11cb06"
+  },
+  "statement": "给定n个点的连通无向简单图，edges中的正权边不可改，-1边须全部换成1到2×10^9的整数。返回让source到destination最短距离恰为target的完整边表，边顺序任意；无解返回[]。n≤100，正权≤10^7，1≤target≤10^9，起终点不同。",
+  "python": {
+    "method": "modifiedGraphEdges",
+    "params": [
+      {
+        "name": "n",
+        "type": "integer"
+      },
+      {
+        "type": "integer[][]",
+        "name": "edges"
+      },
+      {
+        "type": "integer",
+        "name": "source"
+      },
+      {
+        "type": "integer",
+        "name": "destination"
+      },
+      {
+        "type": "integer",
+        "name": "target"
+      }
+    ],
+    "return": {
+      "type": "integer[][]"
+    },
+    "template": "class Solution:\n    def modifiedGraphEdges(self, n: int, edges: List[List[int]], source: int, destination: int, target: int) -> List[List[int]]:\n        "
+  },
+  "compare": "graph-target-distance",
+  "cases": [
+    {
+      "name": "single-edge-minimum-weight",
+      "args": [
+        2,
+        [
+          [
+            0,
+            1,
+            -1
+          ]
+        ],
+        0,
+        1,
+        1
+      ],
+      "expected": [
+        [
+          0,
+          1,
+          1
+        ]
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "target-upper-bound",
+      "args": [
+        2,
+        [
+          [
+            0,
+            1,
+            -1
+          ]
+        ],
+        1,
+        0,
+        1000000000
+      ],
+      "expected": [
+        [
+          0,
+          1,
+          1000000000
+        ]
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "fixed-edges-already-match",
+      "args": [
+        3,
+        [
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            1,
+            2,
+            4
+          ]
+        ],
+        0,
+        2,
+        7
+      ],
+      "expected": [
+        [
+          0,
+          1,
+          3
+        ],
+        [
+          1,
+          2,
+          4
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "fixed-shortcut-makes-target-impossible",
+      "args": [
+        3,
+        [
+          [
+            0,
+            2,
+            4
+          ],
+          [
+            0,
+            1,
+            -1
+          ],
+          [
+            1,
+            2,
+            -1
+          ]
+        ],
+        0,
+        2,
+        8
+      ],
+      "expected": [],
+      "kind": "normal"
+    },
+    {
+      "name": "minimum-distance-exceeds-target",
+      "args": [
+        3,
+        [
+          [
+            0,
+            1,
+            -1
+          ],
+          [
+            1,
+            2,
+            -1
+          ]
+        ],
+        0,
+        2,
+        1
+      ],
+      "expected": [],
+      "kind": "boundary"
+    },
+    {
+      "name": "two-alternate-unknown-paths",
+      "args": [
+        4,
+        [
+          [
+            0,
+            1,
+            -1
+          ],
+          [
+            1,
+            3,
+            -1
+          ],
+          [
+            0,
+            2,
+            -1
+          ],
+          [
+            2,
+            3,
+            -1
+          ],
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        0,
+        3,
+        7
+      ],
+      "expected": [
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          3,
+          6
+        ],
+        [
+          0,
+          2,
+          2000000000
+        ],
+        [
+          2,
+          3,
+          2000000000
+        ],
+        [
+          1,
+          2,
+          2
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "fixed-route-and-unused-unknown",
+      "args": [
+        4,
+        [
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            2,
+            3,
+            1
+          ],
+          [
+            0,
+            2,
+            -1
+          ]
+        ],
+        0,
+        3,
+        3
+      ],
+      "expected": [
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          0,
+          2,
+          2000000000
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "no-modifiable-edge-and-distance-too-long",
+      "args": [
+        2,
+        [
+          [
+            1,
+            0,
+            8
+          ]
+        ],
+        1,
+        0,
+        7
+      ],
+      "expected": [],
+      "kind": "boundary"
+    }
+  ]
+}

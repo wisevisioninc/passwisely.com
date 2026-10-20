@@ -1,0 +1,97 @@
+{
+  "sourceBaseCommit": "b88d606d3fa7f285e4dcd19d8b3695b4826b7c47",
+  "sourceModified": true,
+  "applicationVersion": "1.3.0",
+  "modelObservedInNativeUI": "kimi-k3",
+  "pythonVersion": "3.12.14",
+  "testMode": "native Mac typed question → live stream → rendered answer → native clipboard → paste verification",
+  "requests": 20,
+  "completed": 20,
+  "copySucceeded": 20,
+  "fixedCases": 169,
+  "fixedCasesPassed": 166,
+  "fixedProblemsPassed": 19,
+  "withBoundaryCases": 172,
+  "withBoundaryCasesPassed": 166,
+  "withBoundaryProblemsPassed": 17,
+  "desktopRegression": {
+    "tests": 172,
+    "passed": 172,
+    "failed": 0,
+    "skipped": 0
+  },
+  "fixturePage": {
+    "problems": 20,
+    "passed": 20
+  },
+  "sourceIntegrity": "20 unique fixture hashes, frozen fixed cases and candidate-pool hash checked",
+  "failures": [
+    {
+      "slug": "longest-zigzag-path-in-a-binary-tree",
+      "cases": [
+        {
+          "name": "deep-alternating-chain-2000",
+          "error": "RecursionError: maximum recursion depth exceeded",
+          "passed": false,
+          "expected": 1999
+        }
+      ]
+    },
+    {
+      "slug": "maximum-number-of-non-overlapping-palindrome-substrings",
+      "cases": [
+        {
+          "name": "two-adjacent-even-palindromes",
+          "actual": 1,
+          "passed": false,
+          "expected": 2
+        },
+        {
+          "name": "odd-remainder-unused",
+          "actual": 1,
+          "passed": false,
+          "expected": 2
+        },
+        {
+          "name": "three-adjacent-odd-palindromes",
+          "actual": 2,
+          "passed": false,
+          "expected": 3
+        },
+        {
+          "name": "repeated-characters-k-one",
+          "actual": 1,
+          "passed": false,
+          "expected": 2
+        }
+      ]
+    },
+    {
+      "slug": "minimum-time-to-collect-all-apples-in-a-tree",
+      "cases": [
+        {
+          "name": "deep-chain-last-apple-2000",
+          "error": "RecursionError: maximum recursion depth exceeded",
+          "passed": false,
+          "expected": 3998
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Functional tests do not prove all inputs or asymptotic complexity.",
+    "Native UI polling timings include automation and one lock-screen delay; no network TTFT/speed claim.",
+    "No model retry or answer replacement. Python3.9 compatibility diagnostic retained separately; same answers graded under3.12.14.",
+    "This run did not activate Recall or audio and did not submit screenshots to AI. Twenty public fixture pages were browser-tested.",
+    "Final native-complete package has the same42 compiled resource hashes as the text-tested package; Recall native assets restored to107 Mach-O. Actual audio capture not rerun.",
+    "DeveloperID local debug build lacks trusted timestamp and notarization."
+  ],
+  "nativeClipboardFixCommit": "c29615c",
+  "finalNativeObservation": {
+    "package": "release/1.3.0-mac-leetcode-native/PassWisely.app",
+    "loggedIn": true,
+    "screenshotControl": true,
+    "connecting": false,
+    "networkError": false
+  }
+}

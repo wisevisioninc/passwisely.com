@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "id": "2595",
+  "slug": "number-of-even-and-odd-bits",
+  "title": "奇偶位数",
+  "difficulty": "Easy",
+  "source": {
+    "url": "https://leetcode.cn/problems/number-of-even-and-odd-bits/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "a10db3d828d17b6a33047f0c23bfa58e1aa3bad9ec89ca92280b7aa78aabe596"
+  },
+  "statement": "将正整数n写成二进制，从最低位开始以0编号。分别统计值为1且位号为偶数、奇数的数量，按[偶数位数量,奇数位数量]返回。1≤n≤1000。",
+  "python": {
+    "method": "evenOddBit",
+    "params": [
+      {
+        "name": "n",
+        "type": "integer"
+      }
+    ],
+    "return": {
+      "type": "integer[]"
+    },
+    "template": "class Solution:\n    def evenOddBit(self, n: int) -> List[int]:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "minimum-positive",
+      "args": [
+        1
+      ],
+      "expected": [
+        1,
+        0
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "only-even-index-two",
+      "args": [
+        4
+      ],
+      "expected": [
+        1,
+        0
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "only-odd-index-three",
+      "args": [
+        8
+      ],
+      "expected": [
+        0,
+        1
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "alternating-even-bits",
+      "args": [
+        341
+      ],
+      "expected": [
+        5,
+        0
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "alternating-odd-bits",
+      "args": [
+        682
+      ],
+      "expected": [
+        0,
+        5
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "nine-low-bits",
+      "args": [
+        511
+      ],
+      "expected": [
+        5,
+        4
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "highest-single-bit",
+      "args": [
+        512
+      ],
+      "expected": [
+        0,
+        1
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "maximum-n",
+      "args": [
+        1000
+      ],
+      "expected": [
+        2,
+        4
+      ],
+      "kind": "boundary"
+    }
+  ]
+}

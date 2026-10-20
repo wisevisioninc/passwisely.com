@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "id": "169",
+  "slug": "majority-element",
+  "title": "多数元素",
+  "difficulty": "Easy",
+  "source": {
+    "url": "https://leetcode.cn/problems/majority-element/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "5f3d519528552f51ceb26f56d849350f83fc39a0c25db8ceb89efca46d79273b"
+  },
+  "statement": "返回非空数组nums中出现次数严格超过数组长度一半的整数；输入保证该整数存在。数组长度1到5×10^4，元素范围[-10^9,10^9]。可进一步考虑线性时间、常数额外空间的做法。",
+  "python": {
+    "method": "majorityElement",
+    "params": [
+      {
+        "name": "nums",
+        "type": "integer[]"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def majorityElement(self, nums: list[int]) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "single-element",
+      "args": [
+        [
+          42
+        ]
+      ],
+      "expected": 42,
+      "kind": "boundary"
+    },
+    {
+      "name": "two-equal-elements",
+      "args": [
+        [
+          -7,
+          -7
+        ]
+      ],
+      "expected": -7,
+      "kind": "boundary"
+    },
+    {
+      "name": "zero-majority",
+      "args": [
+        [
+          0,
+          3,
+          0,
+          0,
+          8
+        ]
+      ],
+      "expected": 0,
+      "kind": "normal"
+    },
+    {
+      "name": "negative-majority",
+      "args": [
+        [
+          -4,
+          2,
+          -4,
+          9,
+          -4,
+          -4
+        ]
+      ],
+      "expected": -4,
+      "kind": "normal"
+    },
+    {
+      "name": "maximum-value-majority",
+      "args": [
+        [
+          1000000000,
+          -1000000000,
+          1000000000
+        ]
+      ],
+      "expected": 1000000000,
+      "kind": "boundary"
+    },
+    {
+      "name": "minimum-value-majority",
+      "args": [
+        [
+          -1000000000,
+          5,
+          -1000000000,
+          7,
+          -1000000000
+        ]
+      ],
+      "expected": -1000000000,
+      "kind": "boundary"
+    },
+    {
+      "name": "majority-appears-late",
+      "args": [
+        [
+          1,
+          2,
+          3,
+          6,
+          6,
+          6,
+          6
+        ]
+      ],
+      "expected": 6,
+      "kind": "normal"
+    },
+    {
+      "name": "alternating-bare-majority",
+      "args": [
+        [
+          8,
+          1,
+          8,
+          2,
+          8,
+          3,
+          8,
+          4,
+          8
+        ]
+      ],
+      "expected": 8,
+      "kind": "normal"
+    }
+  ]
+}

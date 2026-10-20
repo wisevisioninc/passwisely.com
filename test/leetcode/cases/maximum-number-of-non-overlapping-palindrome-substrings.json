@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "id": "2472",
+  "slug": "maximum-number-of-non-overlapping-palindrome-substrings",
+  "title": "不重叠回文子字符串的最大数目",
+  "difficulty": "Hard",
+  "source": {
+    "url": "https://leetcode.cn/problems/maximum-number-of-non-overlapping-palindrome-substrings/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "c182dafa83a492e7f0a87511ca69b73c4b334b94dc5e09aa77d3dd8acd451bfb"
+  },
+  "statement": "在小写字母串s中挑选若干连续子串，每个长度至少k且正反读取相同；不同子串不能共用任何字符，允许相邻和留下未选字符。求最多能选多少个。约束：1≤k≤s长度≤2000。",
+  "python": {
+    "method": "maxPalindromes",
+    "params": [
+      {
+        "name": "s",
+        "type": "string"
+      },
+      {
+        "type": "integer",
+        "name": "k"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def maxPalindromes(self, s: str, k: int) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "single-character",
+      "args": [
+        "x",
+        1
+      ],
+      "expected": 1,
+      "kind": "boundary"
+    },
+    {
+      "name": "no-long-enough-palindrome",
+      "args": [
+        "xyz",
+        2
+      ],
+      "expected": 0,
+      "kind": "normal"
+    },
+    {
+      "name": "minimum-length-one",
+      "args": [
+        "abcde",
+        1
+      ],
+      "expected": 5,
+      "kind": "boundary"
+    },
+    {
+      "name": "two-adjacent-even-palindromes",
+      "args": [
+        "abbaabba",
+        4
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "whole-string-required",
+      "args": [
+        "racecar",
+        7
+      ],
+      "expected": 1,
+      "kind": "boundary"
+    },
+    {
+      "name": "odd-remainder-unused",
+      "args": [
+        "aaaaa",
+        2
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "different-length-palindromes",
+      "args": [
+        "abaxyzzyxf",
+        3
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "overlapping-candidates-count-once",
+      "args": [
+        "aabccbaa",
+        3
+      ],
+      "expected": 1,
+      "kind": "normal"
+    },
+    {
+      "name": "three-adjacent-odd-palindromes",
+      "args": [
+        "abacdcaba",
+        3
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "whole-string-not-palindrome",
+      "args": [
+        "abcdef",
+        6
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    }
+  ]
+}

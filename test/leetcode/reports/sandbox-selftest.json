@@ -1,0 +1,12 @@
+{
+  "python": "/Users/chenyejin/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+  "sandboxExecutable": "/Users/chenyejin/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+  "authorWrittenPillowCases": 4,
+  "securityChecks": {
+    "external_sentinel_read_denied": true,
+    "network_denied": true,
+    "child_process_denied": true,
+    "external_write_denied": true
+  },
+  "scope": "Author-written code only; no saved model answers or credentials read/executed."
+}

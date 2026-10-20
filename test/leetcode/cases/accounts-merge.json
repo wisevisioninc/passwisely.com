@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "id": "721",
+  "slug": "accounts-merge",
+  "title": "账户合并",
+  "difficulty": "Medium",
+  "source": {
+    "url": "https://leetcode.cn/problems/accounts-merge/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "d89d120371e8ee88acd68ca0207c487b2af11c9ac0a2725e20d97d6df6b92b7d"
+  },
+  "statement": "每个账户为[姓名,邮箱...]。共享邮箱的账户属于同一人，并按此关系传递合并；仅姓名相同不能判为同一人。返回每人的姓名及去重后按ASCII升序排列的邮箱，账户之间顺序任意。关联账户姓名一致。账户数1到1000，每项2到10个字符串，每串长度1到30。",
+  "python": {
+    "method": "accountsMerge",
+    "params": [
+      {
+        "name": "accounts",
+        "type": "list<list<string>>"
+      }
+    ],
+    "return": {
+      "type": "list<list<string>>"
+    },
+    "template": "class Solution:\n    def accountsMerge(self, accounts: list[list[str]]) -> list[list[str]]:\n        "
+  },
+  "compare": "accounts-unordered",
+  "cases": [
+    {
+      "name": "single-account",
+      "args": [
+        [
+          [
+            "Ada",
+            "ada@a.co"
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          "Ada",
+          "ada@a.co"
+        ]
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "same-name-separate-people",
+      "args": [
+        [
+          [
+            "Lin",
+            "one@a.co"
+          ],
+          [
+            "Lin",
+            "two@a.co"
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          "Lin",
+          "one@a.co"
+        ],
+        [
+          "Lin",
+          "two@a.co"
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "transitive-chain",
+      "args": [
+        [
+          [
+            "Kai",
+            "a@k.co",
+            "b@k.co"
+          ],
+          [
+            "Kai",
+            "c@k.co",
+            "d@k.co"
+          ],
+          [
+            "Kai",
+            "b@k.co",
+            "c@k.co"
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          "Kai",
+          "a@k.co",
+          "b@k.co",
+          "c@k.co",
+          "d@k.co"
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "duplicate-email-in-one-account",
+      "args": [
+        [
+          [
+            "Uma",
+            "z@u.co",
+            "z@u.co",
+            "a@u.co"
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          "Uma",
+          "a@u.co",
+          "z@u.co"
+        ]
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "multiple-independent-groups",
+      "args": [
+        [
+          [
+            "Bo",
+            "b@b.co"
+          ],
+          [
+            "Amy",
+            "z@a.co",
+            "a@a.co"
+          ],
+          [
+            "Amy",
+            "a@a.co",
+            "m@a.co"
+          ],
+          [
+            "Bo",
+            "x@b.co"
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          "Amy",
+          "a@a.co",
+          "m@a.co",
+          "z@a.co"
+        ],
+        [
+          "Bo",
+          "b@b.co"
+        ],
+        [
+          "Bo",
+          "x@b.co"
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "identical-accounts-collapse",
+      "args": [
+        [
+          [
+            "Ivy",
+            "i@i.co"
+          ],
+          [
+            "Ivy",
+            "i@i.co"
+          ],
+          [
+            "Ivy",
+            "i@i.co"
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          "Ivy",
+          "i@i.co"
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "ascii-email-sort",
+      "args": [
+        [
+          [
+            "Eve",
+            "z@e.co",
+            "A@e.co",
+            "a@e.co",
+            "Z@e.co"
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          "Eve",
+          "A@e.co",
+          "Z@e.co",
+          "a@e.co",
+          "z@e.co"
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "disconnected-branches-join-later",
+      "args": [
+        [
+          [
+            "Neo",
+            "p@n.co",
+            "q@n.co"
+          ],
+          [
+            "Neo",
+            "r@n.co",
+            "s@n.co"
+          ],
+          [
+            "Neo",
+            "t@n.co",
+            "u@n.co"
+          ],
+          [
+            "Neo",
+            "q@n.co",
+            "r@n.co"
+          ],
+          [
+            "Neo",
+            "s@n.co",
+            "t@n.co"
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          "Neo",
+          "p@n.co",
+          "q@n.co",
+          "r@n.co",
+          "s@n.co",
+          "t@n.co",
+          "u@n.co"
+        ]
+      ],
+      "kind": "normal"
+    }
+  ]
+}

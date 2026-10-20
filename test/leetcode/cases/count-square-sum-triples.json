@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "id": "1925",
+  "slug": "count-square-sum-triples",
+  "title": "统计平方和三元组的数目",
+  "difficulty": "Easy",
+  "source": {
+    "url": "https://leetcode.cn/problems/count-square-sum-triples/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "e4d50b28e7aa8d1df083bb6a056dd8de41ebe5f4dfd0848cdd4d576d5075c00e"
+  },
+  "statement": "给定正整数n，统计有序整数三元组(a,b,c)的数量，要求1≤a,b,c≤n且a²+b²=c²。交换a、b得到不同三元组，要分别计数；不要求三者互质。约束：1≤n≤250。",
+  "python": {
+    "method": "countTriples",
+    "params": [
+      {
+        "name": "n",
+        "type": "integer"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def countTriples(self, n: int) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "smallest-no-triple",
+      "args": [
+        1
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "before-first-hypotenuse",
+      "args": [
+        4
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "after-first-hypotenuse",
+      "args": [
+        6
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "no-new-hypotenuse",
+      "args": [
+        9
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "two-scaled-triples",
+      "args": [
+        12
+      ],
+      "expected": 4,
+      "kind": "normal"
+    },
+    {
+      "name": "primitive-five-twelve-thirteen",
+      "args": [
+        13
+      ],
+      "expected": 6,
+      "kind": "normal"
+    },
+    {
+      "name": "nine-twelve-fifteen",
+      "args": [
+        15
+      ],
+      "expected": 8,
+      "kind": "normal"
+    },
+    {
+      "name": "include-hypotenuse-twenty",
+      "args": [
+        20
+      ],
+      "expected": 12,
+      "kind": "normal"
+    },
+    {
+      "name": "two-triples-same-hypotenuse",
+      "args": [
+        25
+      ],
+      "expected": 16,
+      "kind": "normal"
+    }
+  ]
+}

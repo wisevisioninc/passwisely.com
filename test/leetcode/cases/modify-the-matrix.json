@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 1,
+  "id": "3033",
+  "slug": "modify-the-matrix",
+  "title": "修改矩阵",
+  "difficulty": "Easy",
+  "source": {
+    "url": "https://leetcode.cn/problems/modify-the-matrix/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "9555e96290b1de79cde0b6cd3ecbab7985d39dca4b2ebc14579eefc05b139d09"
+  },
+  "statement": "给定m×n整数矩阵，返回一个矩阵：原值为-1的格子替换为原矩阵同列最大值，其余保持原值。2≤m,n≤50，元素范围[-1,100]，每列至少有一个非负值。注意按列取最大值。",
+  "python": {
+    "method": "modifiedMatrix",
+    "params": [
+      {
+        "name": "matrix",
+        "type": "integer[][]"
+      }
+    ],
+    "return": {
+      "type": "integer[][]"
+    },
+    "template": "class Solution:\n    def modifiedMatrix(self, matrix: List[List[int]]) -> List[List[int]]:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "smallest-with-no-replacements",
+      "args": [
+        [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "opposite-corners-missing",
+      "args": [
+        [
+          [
+            -1,
+            4
+          ],
+          [
+            8,
+            -1
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          8,
+          4
+        ],
+        [
+          8,
+          4
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "column-maximum-is-zero",
+      "args": [
+        [
+          [
+            -1,
+            0
+          ],
+          [
+            0,
+            -1
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "entire-row-missing",
+      "args": [
+        [
+          [
+            5,
+            3,
+            8
+          ],
+          [
+            -1,
+            -1,
+            -1
+          ],
+          [
+            2,
+            9,
+            6
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          5,
+          3,
+          8
+        ],
+        [
+          5,
+          9,
+          8
+        ],
+        [
+          2,
+          9,
+          6
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "one-known-value-per-column",
+      "args": [
+        [
+          [
+            -1,
+            -1,
+            6
+          ],
+          [
+            7,
+            -1,
+            -1
+          ],
+          [
+            -1,
+            9,
+            -1
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          7,
+          9,
+          6
+        ],
+        [
+          7,
+          9,
+          6
+        ],
+        [
+          7,
+          9,
+          6
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "maximum-value-bound",
+      "args": [
+        [
+          [
+            100,
+            -1
+          ],
+          [
+            -1,
+            100
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          100,
+          100
+        ],
+        [
+          100,
+          100
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "non-square-matrix",
+      "args": [
+        [
+          [
+            3,
+            -1,
+            4,
+            -1
+          ],
+          [
+            -1,
+            8,
+            2,
+            6
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          3,
+          8,
+          4,
+          6
+        ],
+        [
+          3,
+          8,
+          2,
+          6
+        ]
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "maximum-not-in-same-row",
+      "args": [
+        [
+          [
+            10,
+            2
+          ],
+          [
+            -1,
+            90
+          ],
+          [
+            6,
+            -1
+          ],
+          [
+            7,
+            5
+          ]
+        ]
+      ],
+      "expected": [
+        [
+          10,
+          2
+        ],
+        [
+          10,
+          90
+        ],
+        [
+          6,
+          90
+        ],
+        [
+          7,
+          5
+        ]
+      ],
+      "kind": "normal"
+    }
+  ]
+}

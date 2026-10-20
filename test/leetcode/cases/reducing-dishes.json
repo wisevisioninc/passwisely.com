@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "id": "1402",
+  "slug": "reducing-dishes",
+  "title": "做菜顺序",
+  "difficulty": "Hard",
+  "source": {
+    "url": "https://leetcode.cn/problems/reducing-dishes/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "d49621b4d26bda55945df62dc681d64af3507068bd26c8f65372236c72147019"
+  },
+  "statement": "每道菜耗时1，满意度为satisfaction[i]。可任意挑选一些菜并重排；从时间0开始，某道菜完成于t时，得分为t乘它的满意度。求所有选中菜得分之和的最大值，允许一道也不做。约束：1≤菜数≤500，-1000≤满意度≤1000。",
+  "python": {
+    "method": "maxSatisfaction",
+    "params": [
+      {
+        "name": "satisfaction",
+        "type": "integer[]"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def maxSatisfaction(self, satisfaction: List[int]) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "single-negative",
+      "args": [
+        [
+          -2
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "single-positive",
+      "args": [
+        [
+          7
+        ]
+      ],
+      "expected": 7,
+      "kind": "boundary"
+    },
+    {
+      "name": "single-zero",
+      "args": [
+        [
+          0
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "negative-can-increase-later-weight",
+      "args": [
+        [
+          -3,
+          0,
+          4
+        ]
+      ],
+      "expected": 9,
+      "kind": "normal"
+    },
+    {
+      "name": "sort-and-keep-all",
+      "args": [
+        [
+          6,
+          -1,
+          -2
+        ]
+      ],
+      "expected": 14,
+      "kind": "normal"
+    },
+    {
+      "name": "discard-costly-negative",
+      "args": [
+        [
+          -5,
+          2
+        ]
+      ],
+      "expected": 2,
+      "kind": "normal"
+    },
+    {
+      "name": "repeated-positive",
+      "args": [
+        [
+          2,
+          2,
+          2
+        ]
+      ],
+      "expected": 12,
+      "kind": "normal"
+    },
+    {
+      "name": "multiple-optimal-subsets",
+      "args": [
+        [
+          -1,
+          -1,
+          1,
+          1
+        ]
+      ],
+      "expected": 4,
+      "kind": "normal"
+    },
+    {
+      "name": "extreme-satisfaction-values",
+      "args": [
+        [
+          -1000,
+          1000
+        ]
+      ],
+      "expected": 1000,
+      "kind": "boundary"
+    }
+  ]
+}

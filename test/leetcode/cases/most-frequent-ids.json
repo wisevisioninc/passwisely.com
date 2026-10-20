@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "id": "3092",
+  "slug": "most-frequent-ids",
+  "title": "最高频率的 ID",
+  "difficulty": "Medium",
+  "source": {
+    "url": "https://leetcode.cn/problems/most-frequent-ids/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "f2b997f8266a98fa51379e05fe31ac2c4dd11b397fc508a5ed7c742be869b5ee"
+  },
+  "statement": "初始各ID计数为0。依次将ID nums[i]的计数加上freq[i]，正数增加、负数减少；记录每步结束时全部ID计数的最大值，空集合记0。返回这些最大值。数组等长，长度1到10^5；ID为1到10^5，增量绝对值1到10^5；输入保证计数从不为负，累计量可能超过32位整数。",
+  "python": {
+    "method": "mostFrequentIDs",
+    "params": [
+      {
+        "name": "nums",
+        "type": "integer[]"
+      },
+      {
+        "type": "integer[]",
+        "name": "freq"
+      }
+    ],
+    "return": {
+      "type": "long[]"
+    },
+    "template": "class Solution:\n    def mostFrequentIDs(self, nums: List[int], freq: List[int]) -> List[int]:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "single-minimum-id",
+      "args": [
+        [
+          1
+        ],
+        [
+          1
+        ]
+      ],
+      "expected": [
+        1
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "maximum-id-and-step-count",
+      "args": [
+        [
+          100000
+        ],
+        [
+          100000
+        ]
+      ],
+      "expected": [
+        100000
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "empty-then-reinsert",
+      "args": [
+        [
+          4,
+          4,
+          4,
+          4
+        ],
+        [
+          7,
+          -7,
+          2,
+          3
+        ]
+      ],
+      "expected": [
+        7,
+        0,
+        2,
+        5
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "tied-leaders-then-decrease",
+      "args": [
+        [
+          7,
+          8,
+          7,
+          8,
+          7
+        ],
+        [
+          5,
+          5,
+          -3,
+          -5,
+          4
+        ]
+      ],
+      "expected": [
+        5,
+        5,
+        5,
+        2,
+        6
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "multiple-stale-maximum-values",
+      "args": [
+        [
+          3,
+          1,
+          3,
+          1,
+          2,
+          3
+        ],
+        [
+          8,
+          6,
+          -7,
+          -4,
+          9,
+          10
+        ]
+      ],
+      "expected": [
+        8,
+        8,
+        6,
+        2,
+        9,
+        11
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "all-identifiers-removed",
+      "args": [
+        [
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          2,
+          3,
+          -2,
+          -3
+        ]
+      ],
+      "expected": [
+        2,
+        3,
+        3,
+        0
+      ],
+      "kind": "boundary"
+    },
+    {
+      "name": "leader-repeatedly-loses-and-recovers",
+      "args": [
+        [
+          9,
+          2,
+          9,
+          2,
+          9,
+          2
+        ],
+        [
+          4,
+          8,
+          7,
+          -6,
+          -10,
+          -2
+        ]
+      ],
+      "expected": [
+        4,
+        8,
+        11,
+        11,
+        2,
+        1
+      ],
+      "kind": "normal"
+    },
+    {
+      "name": "large-cumulative-count",
+      "args": [
+        [
+          10,
+          10,
+          20,
+          10,
+          20
+        ],
+        [
+          100000,
+          100000,
+          100000,
+          100000,
+          -99999
+        ]
+      ],
+      "expected": [
+        100000,
+        200000,
+        200000,
+        300000,
+        300000
+      ],
+      "kind": "normal"
+    }
+  ]
+}

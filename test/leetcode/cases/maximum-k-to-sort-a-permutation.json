@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "id": "3644",
+  "slug": "maximum-k-to-sort-a-permutation",
+  "title": "排序排列",
+  "difficulty": "Medium",
+  "source": {
+    "url": "https://leetcode.cn/problems/maximum-k-to-sort-a-permutation/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "d2e8ed68a7a824c73f274c4c9cf042b0611a4372c038b90a86592823f208c36b"
+  },
+  "statement": "nums是0到n-1的排列。先固定一个非负整数k，此后仅可交换数值按位与等于k的两个元素，可进行多次交换。求能将整个排列升序排列的最大k；初始已有序时返回0。1≤n≤10^5。",
+  "python": {
+    "method": "sortPermutation",
+    "params": [
+      {
+        "name": "nums",
+        "type": "integer[]"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def sortPermutation(self, nums: List[int]) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "single-element",
+      "args": [
+        [
+          0
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "smallest-unsorted",
+      "args": [
+        [
+          1,
+          0
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    },
+    {
+      "name": "unequal-low-bits",
+      "args": [
+        [
+          0,
+          2,
+          1
+        ]
+      ],
+      "expected": 0,
+      "kind": "normal"
+    },
+    {
+      "name": "high-bit-pair",
+      "args": [
+        [
+          0,
+          1,
+          2,
+          3,
+          5,
+          4
+        ]
+      ],
+      "expected": 4,
+      "kind": "normal"
+    },
+    {
+      "name": "nonzero-low-bit-pair",
+      "args": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          7,
+          6,
+          5
+        ]
+      ],
+      "expected": 5,
+      "kind": "normal"
+    },
+    {
+      "name": "three-cycle",
+      "args": [
+        [
+          0,
+          1,
+          2,
+          3,
+          6,
+          4,
+          5,
+          7
+        ]
+      ],
+      "expected": 4,
+      "kind": "normal"
+    },
+    {
+      "name": "separate-cycles-share-bit",
+      "args": [
+        [
+          0,
+          1,
+          2,
+          3,
+          5,
+          4,
+          7,
+          6
+        ]
+      ],
+      "expected": 4,
+      "kind": "normal"
+    },
+    {
+      "name": "longer-already-sorted",
+      "args": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63
+        ]
+      ],
+      "expected": 0,
+      "kind": "boundary"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PassWisely · LeetCode 回归题面</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f6f8;color:#17202c;font:18px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}header{padding:20px 36px;background:#fff;border-bottom:1px solid #ddd;display:flex;gap:18px;align-items:center}select,button{font:inherit;padding:6px 10px}main{max-width:1120px;padding:24px 40px;margin:auto}h1{font-size:30px;margin:0 0 12px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#fff;padding:18px;border:1px solid #dbe0e8;border-radius:10px;font:15px/1.65 ui-monospace,monospace}.source{font-size:13px;color:#617080}article{white-space:pre-wrap}footer{font-size:13px;color:#617080;margin-top:20px}.controls{display:flex;gap:12px;align-items:center}#captureHint{padding:8px 16px;background:#e9eef8;font-size:14px}
+</style>
+<header><strong>PassWisely 回归样本</strong><select id="problem" aria-label="测试题目"></select><button id="prev">上一题</button><button id="next">下一题</button></header>
+<div id="captureHint">公开题目改写测试样本，仅显示一组演示输入。完整边界答案保存在源代码测试目录，不进入模型上下文。</div>
+<main><h1 id="title"></h1><div class="source" id="source"></div><article id="statement"></article><h3>Python3 接口</h3><pre id="template"></pre><h3>演示输入</h3><pre id="example"></pre><footer>回答要求：解释关键约束，给出完整 Python3 Solution 代码、思路和时间／空间复杂度。</footer></main>
+<script type="module">
+const manifest=await fetch('../manifest.json').then(r=>r.json()), select=document.querySelector('#problem');
+manifest.problems.forEach((p,i)=>{const option=document.createElement('option');option.value=String(i);option.textContent=`${i+1}/20 · ${p.id} ${p.title} · ${p.difficulty}`;select.append(option)});
+async function render(index){index=(index+20)%20;select.value=String(index);const item=manifest.problems[index];const p=await fetch(`../cases/${item.slug}.json`).then(r=>r.json());document.querySelector('#title').textContent=`${p.id}. ${p.title}`;document.querySelector('#source').textContent=`来源：${p.source.url} · ${p.difficulty} · 固定抽样 ${manifest.selection.seed}`;document.querySelector('#statement').textContent=p.statement;document.querySelector('#template').textContent=p.python.template;document.querySelector('#example').textContent=JSON.stringify(p.cases[0].args,null,2);location.hash=p.slug;}
+select.addEventListener('change',()=>render(Number(select.value)));document.querySelector('#prev').onclick=()=>render(Number(select.value)-1);document.querySelector('#next').onclick=()=>render(Number(select.value)+1);
+await render(Math.max(0,manifest.problems.findIndex(p=>p.slug===location.hash.slice(1))));
+</script></html>

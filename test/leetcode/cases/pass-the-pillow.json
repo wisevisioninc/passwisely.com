@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "id": "2582",
+  "slug": "pass-the-pillow",
+  "title": "递枕头",
+  "difficulty": "Easy",
+  "source": {
+    "url": "https://leetcode.cn/problems/pass-the-pillow/",
+    "fetchedAt": "2026-10-20T02:08:48.237325+00:00",
+    "originalStatementSha256": "d5ed1457c1874b47be6eb632086fcae2daafa46d94027b4797ad56b401f31b6a"
+  },
+  "statement": "n个人按1至n排成一列，起始由1号持枕头。每经过一秒交给相邻下一人；抵达任一端点后，下一次改向队伍内部传递。返回time秒后持有者的编号。约束：2≤n≤1000，1≤time≤1000。",
+  "python": {
+    "method": "passThePillow",
+    "params": [
+      {
+        "name": "n",
+        "type": "integer"
+      },
+      {
+        "type": "integer",
+        "name": "time"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    },
+    "template": "class Solution:\n    def passThePillow(self, n: int, time: int) -> int:\n        "
+  },
+  "compare": "exact",
+  "cases": [
+    {
+      "name": "smallest-line-one-second",
+      "args": [
+        2,
+        1
+      ],
+      "expected": 2,
+      "kind": "boundary"
+    },
+    {
+      "name": "smallest-line-long-time",
+      "args": [
+        2,
+        1000
+      ],
+      "expected": 1,
+      "kind": "boundary"
+    },
+    {
+      "name": "arrive-right-endpoint",
+      "args": [
+        7,
+        6
+      ],
+      "expected": 7,
+      "kind": "normal"
+    },
+    {
+      "name": "first-backward-step",
+      "args": [
+        7,
+        7
+      ],
+      "expected": 6,
+      "kind": "normal"
+    },
+    {
+      "name": "complete-round-trip",
+      "args": [
+        7,
+        12
+      ],
+      "expected": 1,
+      "kind": "normal"
+    },
+    {
+      "name": "second-forward-trip",
+      "args": [
+        5,
+        10
+      ],
+      "expected": 3,
+      "kind": "normal"
+    },
+    {
+      "name": "largest-line-right-endpoint",
+      "args": [
+        1000,
+        999
+      ],
+      "expected": 1000,
+      "kind": "boundary"
+    },
+    {
+      "name": "largest-line-first-return",
+      "args": [
+        1000,
+        1000
+      ],
+      "expected": 999,
+      "kind": "boundary"
+    }
+  ]
+}

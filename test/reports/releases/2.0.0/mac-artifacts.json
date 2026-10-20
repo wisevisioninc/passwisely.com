@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "appSourceCommit": "b0fccf06c82cf18258e08509642e8298fac88b25",
+  "teamId": "VFF94RK9TN",
+  "developerId": true,
+  "secureTimestamp": true,
+  "appNotarized": true,
+  "dmgNotarized": true,
+  "mountedAppGatekeeperAccepted": true,
+  "mountedAsarMatches": true,
+  "artifacts": [
+    {
+      "filename": "PassWisely-macOS-arm64.dmg",
+      "bytes": 159715773,
+      "sha256": "dcff124dcbf13c9e8583cae138185bb9f44261987e42d820ca8684f3ec08ead7"
+    },
+    {
+      "filename": "PassWisely-macOS-arm64.zip",
+      "bytes": 165472617,
+      "sha256": "d96e3f0cde24c002ea3b16570754804625dc63cf6f125b2fa1e3ba2015256048"
+    }
+  ],
+  "unpublishedSidecars": "DMG blockmap/update metadata was generated before final notarization; publish finalized installers only."
+}

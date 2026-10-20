@@ -134,15 +134,15 @@ capture/ASR verification; it is not a cross-architecture afterPack hook.
 Platform installers should be created on their native operating system:
 
 ```bash
-# Run on macOS; produces x64 and arm64 DMG/ZIP artifacts.
+# Run on Apple silicon macOS; Recall SDK 2.0.39 native runtime is arm64-only.
 export APPLE_TEAM_ID=VFF94RK9TN
 export APPLE_KEYCHAIN_PROFILE=passwisely-notary
 export CSC_NAME="<installed Developer ID Application certificate SHA-1>"
 export MACOS_SIGNING_IDENTITY="$CSC_NAME"
-npm run dist:mac -- --publish never -c.forceCodeSigning=true -c.dmg.writeUpdateInfo=false
+npm run dist:mac -- --arm64 --publish never -c.forceCodeSigning=true -c.dmg.writeUpdateInfo=false
 
 # Run on Windows; produces the x64 NSIS installer.
-npm run dist:win
+npm run dist:win -- --x64 --publish never -c.win.signAndEditExecutable=true
 ```
 
 macOS packaging normalizes all nested Mach-O signatures, including the Recall
@@ -185,16 +185,17 @@ it is considered finished:
 
 1. Run desktop, website, and live account regression tests.
 2. Increment the desktop version; never overwrite an existing release path.
-3. Build the Windows x64 installer and both macOS architectures.
+3. Build the Windows x64 installer and Mac ARM64 release on native hosts. The current Recall native Mac runtime is arm64-only; retain Intel v1.2.6 with its no-live-audio limitation until an x64 runtime is verified.
 4. Sign macOS artifacts with Developer ID, notarize them, staple the Apple
    tickets, and verify them with `codesign`, `spctl`, and `stapler`.
-5. Upload the three installers to
+5. Upload the two v2 installers to
    `oss://passwisely-releases-prod/releases/<version>/` and set only those
    installer objects to `public-read`.
-6. Update both the application download route and the Nginx fallback redirects
-   to the new immutable OSS version path.
+6. Update the shared artifact catalog with each verified version, size and SHA-256. Remove the obsolete Nginx download redirects so website links and API routes consume the same owner; retain the honest Intel legacy entry.
 7. Synchronize local, GitHub, and wise, deploy the website, then verify each
    public download URL, checksum, size, and installer signature.
+
+Windows signing requires its own Authenticode certificate; Mac Developer ID does not sign Windows. See [Windows native validation](test/windows/README.zh-CN.md) and [v2.0.0 release evidence](test/reports/release-v2.0.0.md).
 
 A source change without the packaged artifacts, OSS upload, download mapping,
 and production verification is not a completed PassWisely release.

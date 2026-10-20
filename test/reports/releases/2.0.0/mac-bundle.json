@@ -1,0 +1,79 @@
+{
+  "checkedAt": "2026-10-20T11:01:54.392Z",
+  "app": "/Users/chenyejin/codebase/passwisely/release/2.0.0/mac-arm64/PassWisely.app",
+  "appSourceCommit": "b0fccf0",
+  "sourceProvenance": "Build owner reported assets compiled at this commit; compared against current dist files and tracked changes below",
+  "scope": "Read-only bundle checks; no GUI, SDK initialization, recording or final artifact digest.",
+  "status": "verified",
+  "outerSignature": {
+    "commandSucceeded": true,
+    "developerId": true,
+    "team": "VFF94RK9TN",
+    "timestampPresent": true,
+    "runtime": true
+  },
+  "currentHead": "cb062a8",
+  "sourceChangesSinceAppBuild": [
+    ".github/workflows/build-windows.yml"
+  ],
+  "sourceEquivalence": {
+    "relevantAppSourceUnchanged": true,
+    "boundary": "Only the Windows build workflow changed since the build-owner-pinned app source commit; packaged renderer and Electron assets are byte-compared below."
+  },
+  "metadata": {
+    "bundleId": "com.passwisely.desktop",
+    "shortVersion": "2.0.0",
+    "version": "2.0.0",
+    "lsEnvironmentPresent": true,
+    "lsEnvironmentIsOnlyElectronDefault": true,
+    "loopbackApiInLsEnvironment": false,
+    "packageVersion": "2.0.0",
+    "sdkVersion": "2.0.39"
+  },
+  "assets": {
+    "comparison": "byte-for-byte against current dist and dist-electron, excluding source maps according to package files policy",
+    "files": 42,
+    "matched": true,
+    "mismatched": [],
+    "missing": [],
+    "unexpected": []
+  },
+  "architecture": {
+    "main": [
+      "arm64"
+    ],
+    "nativeLeaves": 122,
+    "architectureCounts": {
+      "arm64": 122,
+      "x86_64": 2
+    },
+    "errors": []
+  },
+  "signatures": {
+    "expectedTeam": "VFF94RK9TN",
+    "targets": 132,
+    "nativeLeaves": 122,
+    "codeContainers": 10,
+    "strictDeepValid": true,
+    "errors": []
+  },
+  "runtime": {
+    "success": true,
+    "code": "RECALL_RUNTIME_OK",
+    "stage": "complete",
+    "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+    "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+    "methods": [
+      "init",
+      "prepareDesktopAudioRecording",
+      "startRecording"
+    ]
+  },
+  "notarization": {
+    "staplerValid": true,
+    "staplerExitCode": 0,
+    "gatekeeperAccepted": true,
+    "notarizedDeveloperId": true
+  },
+  "success": true
+}

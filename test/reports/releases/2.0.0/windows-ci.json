@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "sourceCommit": "23d2c68592ed88d9d944056af0623572e4f29943",
+  "runUrl": "https://github.com/yejinchen-ai/passwisely/actions/runs/39412354088",
+  "archiveSha256": "efc99ac7db9a2b2ffe18a82526276aad5688e806266518fca9e68d1d6e207153",
+  "filename": "PassWisely-Windows-x64.exe",
+  "bytes": 123193124,
+  "sha256": "0623c1728224396c84c5d05276ebfa07233924c983c290ec07b16f468fdc211a",
+  "runtime": {
+    "success": true,
+    "code": "WINDOWS_IMPORT_OK",
+    "stage": "complete",
+    "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+    "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+    "methods": [
+      "init",
+      "prepareDesktopAudioRecording",
+      "startRecording",
+      "pauseRecording",
+      "resumeRecording",
+      "stopRecording",
+      "shutdown"
+    ],
+    "native": [
+      "agent-windows.exe:PE-x64-header",
+      "gstreamer-1.0:unpacked-DLLs"
+    ],
+    "scope": "Package resources and SDK JavaScript import only; no native agent initialization, capture, upload or ASR."
+  },
+  "install": {
+    "success": true,
+    "scope": "Actual per-user silent NSIS install, installed-package import/resources, and uninstall. No normal GUI startup, login, native agent init, recording, upload or ASR.",
+    "installExit": 0,
+    "installedRuntime": {
+      "success": true,
+      "code": "WINDOWS_IMPORT_OK",
+      "stage": "complete",
+      "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+      "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+      "methods": [
+        "init",
+        "prepareDesktopAudioRecording",
+        "startRecording",
+        "pauseRecording",
+        "resumeRecording",
+        "stopRecording",
+        "shutdown"
+      ],
+      "native": [
+        "agent-windows.exe:PE-x64-header",
+        "gstreamer-1.0:unpacked-DLLs"
+      ],
+      "scope": "Package resources and SDK JavaScript import only; no native agent initialization, capture, upload or ASR."
+    },
+    "uninstallExit": 0,
+    "installedPayloadRemoved": true
+  },
+  "signatures": [
+    {
+      "file": "PassWisely.exe",
+      "status": "NotSigned",
+      "signedBuildRequested": false
+    },
+    {
+      "file": "PassWisely-Windows-x64.exe",
+      "status": "NotSigned",
+      "signedBuildRequested": false
+    }
+  ],
+  "interactiveAudioAndOverlay": "Not verified: no Windows device available."
+}

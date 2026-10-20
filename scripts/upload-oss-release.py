@@ -9,6 +9,8 @@ import hashlib
 import hmac
 import http.client
 import mimetypes
+import json
+import re
 import os
 from pathlib import Path
 from urllib.parse import quote
@@ -16,11 +18,11 @@ from urllib.request import Request, urlopen
 from email.utils import formatdate
 
 
-INSTALLERS = (
-    "PassWisely-macOS-arm64.dmg",
-    "PassWisely-macOS-x64.dmg",
-    "PassWisely-Windows-x64.exe",
-)
+INSTALLERS = {
+    "mac-arm64": "PassWisely-macOS-arm64.dmg",
+    "mac-x64": "PassWisely-macOS-x64.dmg",
+    "windows-x64": "PassWisely-Windows-x64.exe",
+}
 
 
 def load_env(path: Path) -> None:
@@ -39,7 +41,7 @@ def upload(
     endpoint: str,
     access_key_id: str,
     access_key_secret: str,
-) -> None:
+) -> bool:
     content_type = mimetypes.guess_type(source.name)[0] or "application/octet-stream"
     date = formatdate(usegmt=True)
     resource = f"/{bucket}/{key}"
@@ -73,24 +75,43 @@ def upload(
         while chunk := stream.read(8 * 1024 * 1024):
             connection.send(chunk)
     response = connection.getresponse()
-    detail = response.read().decode("utf-8", errors="replace")
+    response.read(4096)  # Authentication error bodies are not safe to print.
     connection.close()
-    if response.status not in (200, 201):
+    if response.status not in (200, 201, 409):
         raise RuntimeError(
-            f"OSS upload failed for {key}: HTTP {response.status} {detail[:500]}"
+            f"OSS upload failed for {key}: HTTP {response.status}"
         )
+    # A conflict is only provisionally reusable: main verifies the public bytes
+    # against the local digest before accepting it or emitting a receipt.
+    return response.status != 409
 
 
-def verify_public(source: Path, key: str, bucket: str, endpoint: str) -> None:
+def sha256_file(source: Path) -> str:
+    digest = hashlib.sha256()
+    with source.open("rb") as stream:
+        while chunk := stream.read(8 * 1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_public(source: Path, key: str, bucket: str, endpoint: str, digest: str) -> str:
     url = f"https://{bucket}.{endpoint}/{quote(key, safe='/')}"
-    request = Request(url, method="HEAD")
-    with urlopen(request, timeout=30) as response:
-        remote_size = int(response.headers.get("Content-Length", "-1"))
-        if response.status != 200 or remote_size != source.stat().st_size:
-            raise RuntimeError(
-                f"OSS verification failed for {key}: HTTP {response.status}, "
-                f"expected {source.stat().st_size} bytes, received {remote_size}"
-            )
+    expected = source.stat().st_size
+    with urlopen(Request(url, method="HEAD"), timeout=30) as response:
+        if response.status != 200 or int(response.headers.get("Content-Length", "-1")) != expected:
+            raise RuntimeError(f"OSS size verification failed for {key}.")
+    actual, received = hashlib.sha256(), 0
+    with urlopen(url, timeout=180) as response:
+        if response.status != 200:
+            raise RuntimeError(f"OSS public verification failed for {key}.")
+        while chunk := response.read(8 * 1024 * 1024):
+            received += len(chunk)
+            if received > expected:
+                raise RuntimeError(f"OSS public verification exceeded expected size for {key}.")
+            actual.update(chunk)
+    if received != expected or actual.hexdigest() != digest:
+        raise RuntimeError(f"OSS public digest verification failed for {key}.")
+    return url
 
 
 def main() -> None:
@@ -100,7 +121,20 @@ def main() -> None:
     parser.add_argument("--version", required=True)
     parser.add_argument("--bucket", default="passwisely-releases-prod")
     parser.add_argument("--endpoint", default="oss-cn-beijing.aliyuncs.com")
+    parser.add_argument("--platform", action="append", choices=tuple(INSTALLERS))
+    parser.add_argument("--manifest-out", type=Path)
     args = parser.parse_args()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", args.version):
+        raise SystemExit("Version must be major.minor.patch.")
+    platforms = args.platform or list(INSTALLERS)
+    if len(set(platforms)) != len(platforms):
+        raise SystemExit("Duplicate platform selection.")
+    if args.manifest_out and args.manifest_out.exists():
+        raise SystemExit("Manifest output already exists.")
+    sources = [(platform, args.release_dir / INSTALLERS[platform]) for platform in platforms]
+    for _, source in sources:
+        if not source.is_file():
+            raise SystemExit(f"Missing installer: {source}")
 
     load_env(args.env_file.expanduser())
     access_key_id = os.environ.get("ALIYUN_ACCESS_KEY_ID", "").strip()
@@ -108,22 +142,23 @@ def main() -> None:
     if not access_key_id or not access_key_secret:
         raise SystemExit("ALIYUN_ACCESS_KEY_ID and ALIYUN_ACCESS_KEY_SECRET are required.")
 
-    for filename in INSTALLERS:
-        source = args.release_dir / filename
-        if not source.is_file():
-            raise SystemExit(f"Missing installer: {source}")
-        key = f"releases/v{args.version}/{filename}"
-        upload(
-            source,
-            key,
-            args.bucket,
-            args.endpoint,
-            access_key_id,
-            access_key_secret,
-        )
-        verify_public(source, key, args.bucket, args.endpoint)
-        digest = hashlib.sha256(source.read_bytes()).hexdigest()
-        print(f"uploaded={key} bytes={source.stat().st_size} sha256={digest}")
+    artifacts = []
+    for platform, source in sources:
+        key = f"releases/v{args.version}/{source.name}"
+        before, digest = source.stat(), sha256_file(source)
+        created = upload(source, key, args.bucket, args.endpoint, access_key_id, access_key_secret)
+        after = source.stat()
+        if (before.st_ino, before.st_size, before.st_mtime_ns) != (after.st_ino, after.st_size, after.st_mtime_ns):
+            raise RuntimeError(f"Installer changed during upload: {source}")
+        url = verify_public(source, key, args.bucket, args.endpoint, digest)
+        artifacts.append({"platform": platform, "filename": source.name, "url": url,
+                          "sha256": digest, "bytes": after.st_size, "publicSha256Verified": True, "created": created})
+        print(f"verified={key} created={created} bytes={after.st_size} sha256={digest}")
+    if args.manifest_out:
+        with args.manifest_out.open("x", encoding="utf-8") as stream:
+            json.dump({"version": args.version, "artifacts": artifacts}, stream, indent=2)
+            stream.write("\n")
+
 
 
 if __name__ == "__main__":

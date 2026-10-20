@@ -71,7 +71,15 @@ export class RecallCapture {
   constructor(private readonly callbacks: Callbacks) {}
 
   static support(): { supported: boolean; message?: string } {
-    if (process.platform === "win32" && process.arch === "x64") return { supported: true };
+    if (process.platform === "win32" && process.arch === "x64") {
+      // Recall requires Windows 10 1803+, whose OS build is 17134. Windows 11
+      // also reports kernel 10.0; compare the actual build rather than a label.
+      const version = /^(\d+)\.(\d+)\.(\d+)(?:\.\d+)?$/.exec(release());
+      const parts = version?.slice(1).map(Number);
+      if (!parts || !parts.every(Number.isSafeInteger)) return { supported: false, message: "无法确认 Windows 系统版本。Recall 音频采集需要 x64 Windows 10 1803（内部版本 17134）或更新版本，请检查系统版本后重试。" };
+      if (parts[0] > 10 || parts[0] === 10 && (parts[1] > 0 || parts[2] >= 17134)) return { supported: true };
+      return { supported: false, message: "Recall 音频采集需要 x64 Windows 10 1803（内部版本 17134）或更新版本。" };
+    }
     if (process.platform === "darwin" && process.arch === "arm64") {
       const [major, minor] = release().split(".").map(Number);
       if (major > 23 || (major === 23 && minor >= 2)) return { supported: true };
@@ -199,7 +207,8 @@ export class RecallCapture {
 
   private startFailureDetails(error: unknown, progress: StartProgress): string {
     const safe = safeNativeFailure(error);
-    const permissions = REQUIRED_PERMISSIONS.map(permission => `${permission}=${this.permissions.get(permission) || "unknown"}`).join(",");
+    const permissions = process.platform === "win32" ? "macos-consent-not-required-on-windows"
+      : REQUIRED_PERMISSIONS.map(permission => `${permission}=${this.permissions.get(permission) || "unknown"}`).join(",");
     return ` [phase=${progress.phase}; cause=${safe.cause}${safe.httpStatus ? `; http=${safe.httpStatus}` : ""}${safe.code ? `; code=${safe.code}` : ""}; commandAck=${progress.commandAcknowledged}; startedEvent=${progress.recordingStarted}; permissions=${permissions}]`;
   }
 

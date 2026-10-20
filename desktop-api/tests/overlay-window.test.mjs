@@ -5,15 +5,15 @@ import vm from 'node:vm'
 import { EventEmitter } from 'node:events'
 import ts from 'typescript'
 
-function load(relative, electron) {
+function load(relative, electron, platform = "darwin") {
   const exports = {};
   const code = ts.transpileModule(fs.readFileSync(new URL(`../../electron/${relative}`, import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  vm.runInNewContext(code, { exports, require: name => { assert.equal(name, 'electron'); return electron; }, console: { log() {}, error() {} }, process: { platform: 'darwin' } });
+  vm.runInNewContext(code, { exports, require: name => { assert.equal(name, 'electron'); return electron; }, console: { log() {}, error() {} }, process: { platform } });
   return exports;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
 
-function harness() {
+function harness({ platform = "darwin" } = {}) {
   let bounds = { x: 50, y: 90, width: 600, height: 600 };
   let destroyed = false, available = true, focused = false;
   let displays = [{ id: 1, label: 'Built-in Retina Display', workArea: { x: 0, y: 24, width: 1440, height: 876 } }, { id: 2, label: 'Studio Display', workArea: { x: -1920, y: 0, width: 1920, height: 1080 } }];
@@ -27,7 +27,7 @@ function harness() {
     webContents: { mainFrame, send: (...args) => calls.push(['send', ...args]) },
   };
   const electron = { ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) }, screen: { getAllDisplays: () => displays, getPrimaryDisplay: () => displays[0], getDisplayMatching: rect => displays.find(display => rect.x >= display.workArea.x && rect.x < display.workArea.x + display.workArea.width) || displays[0] } };
-  const { OverlayWindowController, initializeOverlayIpc } = load('live/OverlayWindow.ts', electron);
+  const { OverlayWindowController, initializeOverlayIpc } = load('live/OverlayWindow.ts', electron, platform);
   const controller = new OverlayWindowController(() => available ? win : null);
   initializeOverlayIpc(controller, () => available ? win : null);
   return { controller, calls, handlers, win, bounds: () => bounds, event: { sender: win.webContents, senderFrame: mainFrame }, setDisplays: value => { displays = value; }, setDestroyed: value => { destroyed = value; }, setAvailable: value => { available = value; }, setFocused: value => { focused = value; } };
@@ -46,6 +46,20 @@ test('live native geometry fills target workArea while renderer panels and click
   h.controller.setLive(false);
   assert.deepEqual(h.bounds(), original);
   assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', false, { forward: true }]);
+});
+
+test('Windows production controller issues forwarded click-through and owned focus commands using the same trusted live boundary (mock native)', () => {
+  const h = harness({ platform: 'win32' }); h.controller.setLive(true);
+  assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', true, { forward: true }]);
+  h.handlers.get('overlay-set-interactive')(h.event, true);
+  assert.deepEqual(h.calls.findLast(call => call[0] === 'ignore'), ['ignore', false, { forward: true }]);
+  const bounds = plain(h.bounds());
+  h.handlers.get('overlay-set-focus')(h.event, true); h.handlers.get('overlay-set-focus')(h.event, true);
+  assert.equal(h.calls.filter(call => call[0] === 'focus').length, 1);
+  h.setFocused(false); h.handlers.get('overlay-set-focus')(h.event, false);
+  assert.equal(h.calls.filter(call => call[0] === 'blur').length, 0);
+  assert.deepEqual(plain(h.bounds()), bounds);
+  assert.throws(() => h.handlers.get('overlay-set-interactive')({ sender: h.win.webContents, senderFrame: {} }, false), /Untrusted/);
 });
 
 test('overlay IPC rejects iframe, foreign renderer and malformed controls before window mutation', () => {

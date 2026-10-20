@@ -49,7 +49,7 @@ test('initial protection failure propagates without retaining a half-installed e
   for (const event of ['show', 'restore', 'focus', 'closed']) assert.equal(f.win.listenerCount(event), 0);
 });
 
-function mainWindowFixture({ failProtection = false, failDestroy = false } = {}) {
+function mainWindowFixture({ failProtection = false, failDestroy = false, platform = "darwin" } = {}) {
   const source = fs.readFileSync(new URL('../../electron/main.ts', import.meta.url), 'utf8');
   const ast = ts.createSourceFile('main.ts', source, ts.ScriptTarget.Latest, true);
   const functions = ['cleanupFailedMainWindow', 'createWindow', 'createWindowVisibility', 'applyNativeShowMainWindow', 'applyNativeHideMainWindow', 'showMainWindow', 'revealMainWindow', 'getMainWindow'];
@@ -79,18 +79,18 @@ function mainWindowFixture({ failProtection = false, failDestroy = false } = {})
       loadURL() { assert.equal(visible, false); assert.deepEqual(calls.at(-1), ['protection', true]); calls.push(['loadURL']); return Promise.resolve(); },
     });
     // Native APIs are inert here; actual first-show ordering comes from main.ts.
-    for (const name of ['setSkipTaskbar', 'setVisibleOnAllWorkspaces', 'setWindowButtonVisibility', 'setAlwaysOnTop', 'moveTop', 'setHiddenInMissionControl', 'setBackgroundColor', 'setHasShadow']) f.win[name] = () => {};
+    for (const name of ['setSkipTaskbar', 'setVisibleOnAllWorkspaces', 'setWindowButtonVisibility', 'setAlwaysOnTop', 'moveTop', 'setHiddenInMissionControl', 'setBackgroundColor', 'setHasShadow']) f.win[name] = () => { if (platform === 'win32' && ['setWindowButtonVisibility', 'setHiddenInMissionControl'].includes(name)) assert.fail(`macOS-only presentation API called on Windows: ${name}`); };
     f.win.webContents = Object.assign(new EventEmitter(), {
       setZoomFactor() {}, setWindowOpenHandler() {}, setBackgroundThrottling() {}, setFrameRate() {},
       send: (...args) => calls.push(['send', ...args]),
     });
-    windows.push({ ...f, visible: () => visible }); calls.push(['construct-hidden']);
+    windows.push({ ...f, options, visible: () => visible }); calls.push(['construct-hidden']);
     return f.win;
   }
   const context = {
-    exports, state, BrowserWindow, WindowCaptureProtection, WindowVisibilityController, process: { platform: 'darwin' }, isDev: false, __dirname: '/fixture',
+    exports, state, BrowserWindow, WindowCaptureProtection, WindowVisibilityController, process: { platform }, isDev: false, __dirname: '/fixture',
     path: { join: (...parts) => parts.join('/') },
-    app: { dock: { hide() {} } }, screen: { getPrimaryDisplay: () => ({ workArea: { x: 0, y: 24, width: 1440, height: 876 } }) },
+    app: { dock: { hide() { assert.equal(platform, 'darwin', 'Windows has no macOS Dock'); } } }, screen: { getPrimaryDisplay: () => ({ workArea: { x: 0, y: 24, width: 1440, height: 876 } }) },
     console: { log() {}, error: (...args) => errors.push(args) }, createCaptureCloseGuard: () => () => {},
     isAuthWindow: () => false,
     handleWindowMove() {}, handleWindowResize() {}, handleWindowClosed() {},
@@ -111,6 +111,18 @@ test('actual main window producer installs capture exclusion before loading UI a
   assert.ok(f.calls.some(call => call[0] === 'send' && call[1] === 'overlay-visibility' && call[2] === true));
   f.win.restore(); f.win.focus(); f.showMainWindow();
   assert.equal(f.calls.filter(call => call[0] === 'protection').length, 5, 'restore, focus and subsequent show all reassert through the same owner');
+});
+
+test('Windows main producer protects before UI load, passively shows and retains protection on restore/focus without macOS APIs (mock native)', async () => {
+  const f = mainWindowFixture({ platform: 'win32' }); await f.createWindow();
+  assert.deepEqual(f.calls.slice(0, 3), [['construct-hidden'], ['protection', true], ['loadFile']]);
+  const options = f.windows[0].options;
+  assert.equal(options.transparent, true); assert.equal(options.frame, false); assert.equal(options.focusable, true);
+  assert.equal(options.skipTaskbar, true); assert.equal(f.visible(), true);
+  assert.equal(f.calls.some(call => call[0] === 'focus'), false);
+  f.win.restore(); f.win.focus(); f.showMainWindow();
+  assert.equal(f.calls.filter(call => call[0] === 'protection').length, 5);
+  assert.ok(f.calls.filter(call => call[0] === 'protection').every(call => call[1] === true));
 });
 
 test('actual producer destroys a failed hidden window before reveal retries a fresh protected native window', async () => {

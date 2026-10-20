@@ -5,6 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { load as parseHtml } from "cheerio";
 import ts from "typescript";
 
 const require = createRequire(import.meta.url);
@@ -49,8 +51,8 @@ test("key-display owner preserves unknown preferences and makes one immutable ba
   assert.equal(storage.writes.filter(([name]) => name === backup).length, 1);
   assert.equal(storage.data.get("unrelated"), "untouched");
   assert.equal(readKeyDisplayMode(storage), "text");
-  assert.deepEqual(formatShortcutKeys(["⌘", "⇧", "↑", "MysteryKey"], "text"), ["Cmd", "Shift", "Up", "MysteryKey"]);
-  assert.deepEqual(formatShortcutKeys(["Option", "Enter", "H"], "icon"), ["⌥", "⏎", "H"]);
+  assert.deepEqual(formatShortcutKeys(["⌘", "⇧", "↑", "MysteryKey"], "text", "darwin"), ["Cmd", "Shift", "Up", "MysteryKey"]);
+  assert.deepEqual(formatShortcutKeys(["Option", "Enter", "H"], "icon", "darwin"), ["⌥", "⏎", "H"]);
 });
 
 test("malformed preferences and blocked storage fail without overwriting the source or backup", () => {
@@ -66,6 +68,31 @@ test("malformed preferences and blocked storage fail without overwriting the sou
   assert.equal(saveKeyDisplayMode("unknown", storage).success, false);
   const blocked = { getItem() { return '{"future":1}'; }, setItem() { throw new Error("quota"); } };
   assert.equal(saveKeyDisplayMode("text", blocked).success, false);
+});
+
+test("the real preload platform owns shortcut presentation across keycaps, compact settings and both display modes", () => {
+  const previous = globalThis.window;
+  try {
+    for (const platform of ["darwin", "win32"]) for (const mode of ["icon", "text"]) {
+      const storage = memoryStorage({ [key]: JSON.stringify({ keyDisplayMode: mode }) });
+      globalThis.window = { localStorage: storage, electronAPI: { getPlatform: () => platform } };
+      const { LiveKeycaps, LiveSettingsPopover } = productionLoader()("src/components/Live/LiveSettingsPopover.tsx");
+      const caps = parseHtml(renderToStaticMarkup(React.createElement(LiveKeycaps, { keys: ["CommandOrControl", "Alt", "Shift", "Enter", "H"] })));
+      const values = caps("kbd").toArray().map(node => caps(node).text());
+      assert.deepEqual(values.slice(0, 2), platform === "darwin" ? (mode === "icon" ? ["⌘", "⌥"] : ["Cmd", "Option"]) : ["Ctrl", "Alt"]);
+      const action = () => {};
+      const props = { currentLanguage: "python", onLanguageChange: action, captureStatus: "idle", credits: 1, onClose: action,
+        onOpenAdvanced: action, onOpenResume: action, onOpenProgramming: action, onOpenShortcuts: action, onLogout: action, onQuit: action };
+      const menu = parseHtml(renderToStaticMarkup(React.createElement(LiveSettingsPopover, props)));
+      assert.equal(menu('.pw-settings-shortcut kbd:first-child').length, 8);
+      assert.ok(menu('.pw-settings-shortcut kbd:first-child').toArray().every(node => menu(node).text() === (platform === "win32" ? "Ctrl" : mode === "icon" ? "⌘" : "Cmd")));
+      assert.equal(menu('button[aria-label="Icon mode"]').text(), platform === "win32" ? "Ctrl" : "⌘");
+      assert.equal(menu('button[aria-label="Text mode"]').text(), platform === "win32" ? "Ctrl" : "Cmd");
+      if (platform === "win32") assert.doesNotMatch(menu.text(), /⌘|⌥|\bCmd\b|\bOption\b/);
+    }
+    assert.deepEqual(formatShortcutKeys(["CommandOrControl", "MysteryKey"], "text", "win32"), ["Ctrl", "MysteryKey"]);
+    assert.deepEqual(formatShortcutKeys(["Command", "MysteryKey"], "text", "win32"), ["Cmd", "MysteryKey"], "an explicit Command token is not silently rewritten as a different binding");
+  } finally { if (previous === undefined) delete globalThis.window; else globalThis.window = previous; }
 });
 
 function elements(node, out = []) {
@@ -92,6 +119,7 @@ function controller(overrides = {}, propOverrides = {}) {
   let stateIndex = 0, refIndex = 0, effectIndex = 0, idIndex = 0, focusControls = [];
   const storage = memoryStorage();
   const api = {
+    getPlatform: () => "darwin",
     async getAiSettings() { calls.push(["get-ai"]); return { responseLanguage: "en" }; },
     async saveAiSettings(input) { calls.push(["save-ai", input]); return { success: true, settings: input }; },
     async getTranscriptionSettings() { calls.push(["get-speech"]); return { profileId: "recall-en" }; },

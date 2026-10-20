@@ -235,18 +235,18 @@ export function LiveSettingsPopover({ currentLanguage, onLanguageChange, capture
       {settingsWriteBusy && <p className="pw-settings-hint">设置正在保存，完成后可打开高级设置。</p>}</div>
     <hr className="pw-settings-separator" />
     <div className="pw-settings-key-mode"><span>Key Display:</span><div role="group" aria-label="Key Display">
-      <button data-settings-control type="button" aria-label="Icon mode" aria-pressed={mode === "icon"} onClick={() => { const result = saveKeyDisplayMode("icon"); setErrors(previous => ({ ...previous, preferences: result.success ? "" : result.error })); }}>⌘</button>
-      <button data-settings-control type="button" aria-label="Text mode" aria-pressed={mode === "text"} onClick={() => { const result = saveKeyDisplayMode("text"); setErrors(previous => ({ ...previous, preferences: result.success ? "" : result.error })); }}>Cmd</button>
+      <button data-settings-control type="button" aria-label="Icon mode" aria-pressed={mode === "icon"} onClick={() => { const result = saveKeyDisplayMode("icon"); setErrors(previous => ({ ...previous, preferences: result.success ? "" : result.error })); }}>{formatShortcutKeys(["CommandOrControl"], "icon")[0]}</button>
+      <button data-settings-control type="button" aria-label="Text mode" aria-pressed={mode === "text"} onClick={() => { const result = saveKeyDisplayMode("text"); setErrors(previous => ({ ...previous, preferences: result.success ? "" : result.error })); }}>{formatShortcutKeys(["CommandOrControl"], "text")[0]}</button>
     </div></div>{errors.preferences && <p className="pw-settings-error pw-settings-section" role="alert">{errors.preferences}</p>}
     <hr className="pw-settings-separator" />
     <div className="pw-settings-section pw-settings-shortcuts" role="group" aria-label="Core actions and navigation shortcuts">
-      <ShortcutRow label="Ask AI" keys={["⌘", "Enter"]} /><ShortcutRow label="Start Over" keys={["⌘", "G"]} />
-      <ShortcutRow label="Screenshot" keys={["⌘", "H"]} /><ShortcutRow label="Show/Hide" keys={["⌘", "B"]} />
+      <ShortcutRow label="Ask AI" keys={["CommandOrControl", "Enter"]} /><ShortcutRow label="Start Over" keys={["CommandOrControl", "G"]} />
+      <ShortcutRow label="Screenshot" keys={["CommandOrControl", "H"]} /><ShortcutRow label="Show/Hide" keys={["CommandOrControl", "B"]} />
     </div>
     <hr className="pw-settings-separator" />
     <div className="pw-settings-section pw-settings-shortcuts" role="group" aria-label="Window movement shortcuts">
-      <ShortcutRow label="Move Up" keys={["⌘", "Up"]} /><ShortcutRow label="Move Left" keys={["⌘", "Left"]} />
-      <ShortcutRow label="Move Down" keys={["⌘", "Down"]} /><ShortcutRow label="Move Right" keys={["⌘", "Right"]} />
+      <ShortcutRow label="Move Up" keys={["CommandOrControl", "Up"]} /><ShortcutRow label="Move Left" keys={["CommandOrControl", "Left"]} />
+      <ShortcutRow label="Move Down" keys={["CommandOrControl", "Down"]} /><ShortcutRow label="Move Right" keys={["CommandOrControl", "Right"]} />
     </div>
     <hr className="pw-settings-separator" />
     <div className="pw-settings-section pw-settings-footer">

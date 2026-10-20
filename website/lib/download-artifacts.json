@@ -1,0 +1,29 @@
+{
+  "releaseVersion": "2.0.0",
+  "artifacts": {
+    "mac-arm64": {
+      "version": "2.0.0",
+      "filename": "PassWisely-macOS-arm64.dmg",
+      "sha256": null,
+      "bytes": null,
+      "legacy": false,
+      "liveAudio": "included"
+    },
+    "mac-x64": {
+      "version": "1.2.6",
+      "filename": "PassWisely-macOS-x64.dmg",
+      "sha256": null,
+      "bytes": null,
+      "legacy": true,
+      "liveAudio": "not_included"
+    },
+    "windows-x64": {
+      "version": "2.0.0",
+      "filename": "PassWisely-Windows-x64.exe",
+      "sha256": null,
+      "bytes": null,
+      "legacy": false,
+      "liveAudio": "included"
+    }
+  }
+}

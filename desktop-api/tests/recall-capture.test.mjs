@@ -15,7 +15,7 @@ const [captureSource, transcriptSource] = await Promise.all([
 const compile = source => ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-function harness({ platform = "win32", arch = "x64", release = "23.2.0" } = {}) {
+function harness({ platform = "win32", arch = "x64", release = platform === "win32" ? "10.0.22631" : "23.2.0" } = {}) {
   const callbacks = new Map();
   const calls = [];
   const states = [], transcripts = [], errors = [];
@@ -116,6 +116,28 @@ test("unsupported hosts never import the native SDK; macOS audio-only boundary i
     assert.equal(h.imports(), 0);
   }
   assert.equal(harness({ platform: "darwin", arch: "arm64" }).RecallCapture.support().supported, true);
+});
+
+test("Windows support follows vendor Windows 10 1803 OS build 17134 and unknown versions fail before native import", async () => {
+  for (const release of ["10.0.17134", "10.0.19045", "10.0.22631", "10.0.26100.1"]) {
+    assert.equal(harness({ release }).RecallCapture.support().supported, true, release);
+  }
+  for (const release of ["6.1.7601", "6.3.9600", "10.0.10240", "10.0.17133", "", "unknown", "10.0", "10.0.build", "999999999999999999999999.0.1"]) {
+    const h = harness({ release });
+    assert.equal(h.RecallCapture.support().supported, false, release);
+    assert.match(h.RecallCapture.support().message, /17134/);
+    await assert.rejects(h.create().start(input), /17134/); assert.equal(h.imports(), 0);
+  }
+  const arm = harness({ platform: "win32", arch: "arm64" });
+  assert.equal(arm.RecallCapture.support().supported, false); assert.equal(arm.imports(), 0);
+});
+
+test("Windows native startup failure does not report macOS permission states as an unconfirmed Windows requirement", async () => {
+  const h = harness(); const capture = h.create();
+  h.sdk.startRecording = async () => { throw new Error("fixture-upload-token"); };
+  await assert.rejects(capture.start(input), error => error.message.includes("permissions=macos-consent-not-required-on-windows") && !error.message.includes("accessibility=unknown") && !error.message.includes("fixture-upload-token"));
+  assert.equal(h.calls.filter(call => call[0] === "permission").length, 0);
+  await capture.dispose();
 });
 
 test("permissions are requested only during explicit start and listeners precede native init", async () => {
@@ -584,6 +606,27 @@ function captureSession(context, h) {
   context.after(() => service.dispose());
   return service;
 }
+
+test("Windows uses vendor whole-desktop recording without Mac permissions and preserves Host/Guest partial-final source identity", async context => {
+  const h = harness({ platform: "win32", arch: "x64", release: "10.0.22631" });
+  const prepare = h.sdk.prepareDesktopAudioRecording;
+  h.sdk.prepareDesktopAudioRecording = async (...args) => { assert.deepEqual(args, [], "vendor recommends default whole-desktop configuration"); return prepare(); };
+  const service = captureSession(context, h);
+  assert.equal((await service.start()).success, true);
+  assert.equal(h.calls.filter(call => call[0] === "permission").length, 0);
+  const host = { id: "local", name: "Host" }, guest = { id: "remote", name: "Guest" };
+  for (const [person, text, partial] of [[host, "microphone interim", true], [guest, "system interim", true], [host, "microphone final", false], [guest, "system final", false]]) h.emit("realtime-event", event("source-1", text, partial, person));
+  assert.deepEqual(service.getSnapshot().transcripts.map(row => [row.source, row.text, row.isFinal]), [["microphone", "microphone final", true], ["system", "system final", true]]);
+  await service.pause();
+  h.emit("realtime-event", event("source-1", "paused interim must not appear", true, host, 2));
+  assert.equal(service.getSnapshot().transcripts.length, 2);
+  await service.resume();
+  h.emit("realtime-event", event("source-1", "resumed system", false, guest, 3));
+  assert.equal(service.getSnapshot().transcripts.at(-1).source, "system");
+  assert.equal(service.getSnapshot().transcripts.at(-1).captureEpoch, 1);
+  assert.equal((await service.stop()).success, true); assert.equal(service.getSnapshot().captureStatus, "ended");
+  assert.equal(h.calls.filter(call => call[0] === "permission").length, 0);
+});
 
 test("real Capture and Session keep a pre-pause pending row while resumed partial gets a fresh ID/epoch and old final correction stays owned", async context => {
   const h = harness(); const service = captureSession(context, h);

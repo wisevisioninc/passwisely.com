@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DEFAULT_CODE_LANGUAGE, getCodeLanguage } from "../../../electron/languages";
 import type { CodeLanguage } from "../../../electron/languages";
+import { getPlatform } from "../../utils/platform";
 
 export type KeyDisplayMode = "icon" | "text";
 export const LIVE_UI_PREFERENCES_KEY = "passwisely.liveUi.preferences.v1";
@@ -103,7 +104,15 @@ const KEY_NAMES: Readonly<Record<string, readonly [string, string]>> = {
   Escape: ["Esc", "Esc"], Esc: ["Esc", "Esc"],
 };
 
-/** Presentation only: unknown key labels and the caller's actual binding stay unchanged. */
-export function formatShortcutKeys(keys: readonly string[], mode: KeyDisplayMode): string[] {
-  return keys.map(key => KEY_NAMES[key]?.[mode === "text" ? 1 : 0] ?? key);
+/** Presentation only. Producers pass the actual accelerator token, including
+ * CommandOrControl; explicit Command and unknown labels retain their meaning.
+ */
+export function formatShortcutKeys(keys: readonly string[], mode: KeyDisplayMode, platform = getPlatform()): string[] {
+  return keys.map(key => {
+    if (platform !== "darwin") {
+      if (["CommandOrControl", "Control", "Ctrl", "⌃"].includes(key)) return "Ctrl";
+      if (key === "Alt") return "Alt";
+    }
+    return KEY_NAMES[key]?.[mode === "text" ? 1 : 0] ?? key;
+  });
 }

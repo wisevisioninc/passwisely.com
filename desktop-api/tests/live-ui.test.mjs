@@ -87,11 +87,12 @@ test("a pending start can be cancelled while repeated stop remains blocked", () 
   assert.equal(liveCaptureControls(null, false).stopDisabled, true);
 });
 
-function renderWorkspace(state, visible = true) {
+function renderWorkspace(state, visible = true, platform = "darwin") {
   const previousWindow = globalThis.window;
   const previousError = console.error;
   let startCalls = 0, askCalls = 0;
   globalThis.window = { electronAPI: {
+    getPlatform: () => platform,
     liveStart: async () => { startCalls++; return { success: true }; },
     liveAsk: async () => { askCalls++; return { success: true }; },
   } };
@@ -336,6 +337,7 @@ async function clientWorkspace(initial, overrides = {}, initialBounds = { width:
   const add = (name, fn) => { if (!listeners.has(name)) listeners.set(name, new Set()); listeners.get(name).add(fn); };
   const remove = (name, fn) => listeners.get(name)?.delete(fn);
   const api = {
+    getPlatform: () => "darwin",
     onLiveSnapshot(fn) { receive = fn; return () => {}; }, async liveGetSnapshot() { return initial; },
     async liveSetWorkspace() {}, onLiveShortcut(fn) { shortcut = fn; return () => {}; },
     async getScreenshots() { return []; }, onScreenshotTaken() { return () => {}; },
@@ -591,6 +593,23 @@ test("the restored PassWisely logo is used in both surfaces, with complete scree
   const screenshot = $("button[aria-label='Take Screenshot / 截图']");
   assert.ok(screenshot.text().includes("Take Screenshot"));
   assert.deepEqual(screenshot.find("kbd").toArray().map(element => $(element).text()), ["⌘", "H"]);
+});
+
+test("Windows toolbar and Quick Guide consume platform-neutral accelerator tokens without changing real actions", async () => {
+  const { dom: $ } = renderWorkspace(snapshot({ captureStatus: "recording", captureNeedsCleanup: true }), true, "win32");
+  const screenshot = $("button").filter((_index, element) => $(element).attr("aria-label") === "Take Screenshot / 截图");
+  assert.deepEqual(screenshot.find("kbd").toArray().map(element => $(element).text()), ["Ctrl", "H"]);
+  assert.ok($("kbd").toArray().some(element => $(element).text() === "Alt"));
+  assert.doesNotMatch($("kbd").text(), /⌘|⌥/);
+  const h = await clientWorkspace(snapshot(), { getPlatform: () => "win32" });
+  try {
+    h.label("Settings / 设置").props.onClick();
+    h.by(node => node.type?.name === "LiveSettingsPopover").props.onOpenShortcuts();
+    const guides = h.nodes().filter(node => node.type?.name === "LiveKeycaps").map(node => node.props.keys);
+    assert.ok(guides.some(keys => keys.join('+') === 'CommandOrControl+Shift+\\'));
+    assert.ok(guides.some(keys => keys.join('+') === 'Alt+1+/+Alt+2'));
+    assert.ok(guides.every(keys => !keys.includes('⌘') && !keys.includes('⌥')));
+  } finally { h.dispose(); }
 });
 
 

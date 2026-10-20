@@ -18,6 +18,15 @@ const CAPTURE_LABELS: Record<CaptureStatus, string> = {
 };
 const SOURCE_LABELS = { microphone: "麦克风", system: "系统声音", unknown: "来源未知" };
 
+const QUICK_GUIDE_SHORTCUTS: readonly (readonly [label: string, keys: readonly string[]])[] = [
+  ["Solve", ["CommandOrControl", "Enter"]], ["Screenshot", ["CommandOrControl", "H"]],
+  ["Show / Hide", ["CommandOrControl", "B"]], ["Start Over", ["CommandOrControl", "G"]],
+  ["Start / Stop Listening", ["CommandOrControl", "Shift", "\\"]],
+  ["Response / Transcripts", ["Alt", "1", "/", "Alt", "2"]],
+  ["Scroll", ["CommandOrControl", "Shift", "Up", "/", "Down"]],
+  ["Move", ["CommandOrControl", "Left", "Up", "Down", "Right"]],
+];
+
 // Revisions are globally monotonic in the main process, including across sessions.
 export function isNewerLiveSnapshot(previous: LiveSnapshot | null, next: LiveSnapshot): boolean {
   return !previous || next.revision > previous.revision;
@@ -454,8 +463,8 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
       <header className="pw-live-card-header" data-overlay-interactive {...dragEvents} onPointerDown={event => { if (!(event.target as Element).closest("button,input,textarea,a")) beginDrag(event, "move"); }}>
         <img className="pw-live-brand" src="./logo512.png" alt="PassWisely" width={24} height={24} draggable={false} />
         <nav className="pw-live-tabs" aria-label="会话内容">
-          <button type="button" aria-pressed={tab === "answers"} onClick={() => switchTab("answers")}>Response <LiveKeycaps keys={["⌥", "1"]} /></button>
-          <button type="button" aria-pressed={tab === "transcript"} onClick={() => switchTab("transcript")}>Transcripts <LiveKeycaps keys={["⌥", "2"]} /></button>
+          <button type="button" aria-pressed={tab === "answers"} onClick={() => switchTab("answers")}>Response <LiveKeycaps keys={["Alt", "1"]} /></button>
+          <button type="button" aria-pressed={tab === "transcript"} onClick={() => switchTab("transcript")}>Transcripts <LiveKeycaps keys={["Alt", "2"]} /></button>
         </nav>
         <span className="pw-live-title" role="status">{loading ? "Connecting…" : title}</span>
         {generating && <button type="button" className="pw-live-icon" title="Stop generation / 停止生成" aria-label="停止生成" onClick={() => void answerAction(api.liveCancelAnswer)}><Square size={12} /></button>}
@@ -463,7 +472,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
       {(error || snapshot?.error || snapshot?.platformMessage || snapshot?.screenshotError) && <div className="pw-live-alert" role="alert"><span>{error || snapshot?.error || snapshot?.platformMessage || snapshot?.screenshotError}</span><button type="button" className="pw-live-icon" data-overlay-interactive aria-label="关闭操作提示" onClick={() => setError("")}><X size={12} /></button></div>}
       {panel ? <div className="pw-live-settings-view" data-overlay-interactive>
         <button type="button" className="pw-live-back" onClick={() => setPanel(null)}><ChevronLeft size={13} />Back · {panel === "settings" ? "AI Settings / 语言" : panel === "resume" ? "Resume / 简历" : "Shortcuts"}</button>
-        <div className="pw-live-settings-content">{panel === "settings" ? <AISettings runSettingsWrite={runAdvancedSettingsWrite} /> : panel === "resume" ? <ResumePanel /> : <dl className="pw-live-shortcuts">{[["Solve", "⌘ ↵"], ["Screenshot", "⌘ H"], ["Show / Hide", "⌘ B"], ["Start Over", "⌘ G"], ["Start / Stop Listening", "⌘ ⇧ \\"], ["Response / Transcripts", "⌥ 1 / ⌥ 2"], ["Scroll", "⌘ ⇧ ↑ / ↓"], ["Move", "⌘ arrows"]].map(([label, key]) => <div key={label}><dt>{label}</dt><dd>{key}</dd></div>)}</dl>}</div>
+        <div className="pw-live-settings-content">{panel === "settings" ? <AISettings runSettingsWrite={runAdvancedSettingsWrite} /> : panel === "resume" ? <ResumePanel /> : <dl className="pw-live-shortcuts">{QUICK_GUIDE_SHORTCUTS.map(([label, keys]) => <div key={label}><dt>{label}</dt><dd><LiveKeycaps keys={keys} /></dd></div>)}</dl>}</div>
       </div> : <>
         <div className="pw-live-scroll" ref={scroll} style={{ maxHeight: viewport.height * 2 / 3 }} onScroll={event => { const element = event.currentTarget; const nearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 50; setPinned(nearBottom); scrollOffsets.current[tab] = element.scrollTop; refreshPointerHit(); }}>
           <section className="pw-live-response-view" aria-label="AI 回答" hidden={tab !== "answers"}>
@@ -484,7 +493,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
           </section>
         </div>
         {!pinned && <button type="button" className="pw-live-follow" data-overlay-interactive onClick={() => setPinned(true)}><ArrowDown size={12} />View Latest</button>}
-        {(tab === "answers" && answers.length > 0 && !generating || tab === "transcript" && !active && transcripts.length > 0) && <footer className="pw-live-bottom-actions">{tab === "answers" && <button type="button" data-overlay-interactive aria-label="Scroll Up" onClick={() => scroll.current?.scrollBy({ top: -300, behavior: "smooth" })}>Scroll Up <LiveKeycaps keys={["⌘", "⇧", "↑"]} /></button>}<button type="button" data-overlay-interactive disabled={clearing} onClick={() => void startOver()}>Start Over <LiveKeycaps keys={["⌘", "G"]} /></button></footer>}
+        {(tab === "answers" && answers.length > 0 && !generating || tab === "transcript" && !active && transcripts.length > 0) && <footer className="pw-live-bottom-actions">{tab === "answers" && <button type="button" data-overlay-interactive aria-label="Scroll Up" onClick={() => scroll.current?.scrollBy({ top: -300, behavior: "smooth" })}>Scroll Up <LiveKeycaps keys={["CommandOrControl", "Shift", "↑"]} /></button>}<button type="button" data-overlay-interactive disabled={clearing} onClick={() => void startOver()}>Start Over <LiveKeycaps keys={["CommandOrControl", "G"]} /></button></footer>}
       </>}
       <div className="pw-live-resize" data-overlay-interactive role="separator" aria-label="调整内容宽度" aria-orientation="vertical" {...dragEvents} onPointerDown={event => beginDrag(event, "resize")} />
     </section>}
@@ -510,10 +519,10 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
         </> : <button type="button" className="pw-live-done" disabled={controls.stopDisabled} onClick={() => void runCapture(api.liveStop, "stop")}>{captureStatus === "starting" ? "Cancel" : snapshot?.captureNeedsCleanup && ["ended", "error"].includes(captureStatus) ? "Release audio" : CAPTURE_LABELS[captureStatus]}</button>}
       </div>
       <span className="pw-live-divider" />
-      <button type="button" className="pw-live-command" disabled={screenshotBusy || clearing} aria-label="Take Screenshot / 截图" onClick={() => void captureScreenshot()}>{screenshotBusy && <Loader2 className="pw-live-spinning" size={16} />}Take Screenshot <LiveKeycaps keys={["⌘", "H"]} /></button>
-      <button type="button" className="pw-live-command" disabled={!canAsk} aria-label="Solve / 生成回答" onClick={() => void submitQuestion()}>Solve <LiveKeycaps keys={["⌘", "↵"]} /></button>
+      <button type="button" className="pw-live-command" disabled={screenshotBusy || clearing} aria-label="Take Screenshot / 截图" onClick={() => void captureScreenshot()}>{screenshotBusy && <Loader2 className="pw-live-spinning" size={16} />}Take Screenshot <LiveKeycaps keys={["CommandOrControl", "H"]} /></button>
+      <button type="button" className="pw-live-command" disabled={!canAsk} aria-label="Solve / 生成回答" onClick={() => void submitQuestion()}>Solve <LiveKeycaps keys={["CommandOrControl", "↵"]} /></button>
       <button type="button" className={`pw-live-command ${manualInput ? "selected" : ""}`} title="Ask a question / 手动输入" aria-label="手动输入问题" aria-pressed={manualInput} onClick={() => { setManualInput(!manualInput); setPanel(null); }}><MessageSquare size={14} /></button>
-      <button type="button" className="pw-live-command" onClick={() => { void api.toggleMainWindow(); }}>Show / Hide <LiveKeycaps keys={["⌘", "B"]} /></button>
+      <button type="button" className="pw-live-command" onClick={() => { void api.toggleMainWindow(); }}>Show / Hide <LiveKeycaps keys={["CommandOrControl", "B"]} /></button>
       </div>
       <div ref={settingsAnchor} className="pw-live-settings-anchor" onPointerEnter={openSettings} onPointerLeave={closeSettings}
         onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) closeSettings(); }}>

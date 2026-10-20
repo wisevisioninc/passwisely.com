@@ -58,6 +58,10 @@ jobs:
           if ($env:REQUIRE_WINDOWS_SIGNING -eq 'true') {
             if ([string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)) { throw 'Configure the WIN_CSC_LINK signing secret before requesting a signed build.' }
             $builderFlags += '-c.forceCodeSigning=true'
+          } else {
+            # electron-builder treats a present empty WIN_CSC_LINK as a path.
+            Remove-Item Env:WIN_CSC_LINK -ErrorAction SilentlyContinue
+            Remove-Item Env:WIN_CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
           }
           npm run dist:win -- @builderFlags
           if ($LASTEXITCODE -ne 0) { throw 'Windows build failed.' }

@@ -67,3 +67,12 @@ test("both landing download locations consume the same version and digest owner"
   assert.match(site, /旧版（不含实时音频）/); assert.match(site, /no live audio/);
   assert.match(site, /aria-disabled/);
 });
+
+
+test("Windows download notice preserves unsigned/native-acceptance scope in both locales", () => {
+  const app = application(verified());
+  assert.match(app.downloadArtifact("windows-x64").notice.zh, /未签名.*实机验证/);
+  assert.match(app.downloadArtifact("windows-x64").notice.en, /Unsigned.*await testing/);
+  assert.equal(app.downloadArtifact("mac-x64").notice, null);
+  assert.throws(() => app.versionedArtifact("windows-x64", { ...verified().artifacts["windows-x64"], notice: "invalid" }), /notice/);
+});

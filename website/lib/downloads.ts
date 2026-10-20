@@ -11,6 +11,7 @@ export interface DownloadArtifact {
   legacy: boolean;
   liveAudio: "included" | "not_included";
   available: boolean;
+  notice: Readonly<{ zh: string; en: string }> | null;
   url: string;
 }
 
@@ -34,10 +35,17 @@ export function versionedArtifact(platform: DownloadPlatform, input: unknown): D
   if (value.legacy && !(platform === "mac-x64" && value.version === "1.2.6" && value.liveAudio === "not_included")) {
     throw new Error("Unsupported legacy release artifact.");
   }
+  const rawNotice = value.notice;
+  if (rawNotice !== undefined && rawNotice !== null &&
+      (typeof rawNotice !== "object" || Array.isArray(rawNotice) ||
+       typeof (rawNotice as Record<string, unknown>).zh !== "string" || typeof (rawNotice as Record<string, unknown>).en !== "string")) {
+    throw new Error("Invalid release artifact notice.");
+  }
+  const notice = rawNotice ? Object.freeze({ zh: (rawNotice as { zh: string }).zh, en: (rawNotice as { en: string }).en }) : null;
   const available = value.legacy || (value.sha256 !== null && value.bytes !== null);
   return Object.freeze({ platform, version: value.version, filename: value.filename as string,
     sha256: value.sha256 as string | null, bytes: value.bytes as number | null,
-    legacy: value.legacy, liveAudio: value.liveAudio as DownloadArtifact["liveAudio"], available,
+    legacy: value.legacy, notice, liveAudio: value.liveAudio as DownloadArtifact["liveAudio"], available,
     url: `${OSS_RELEASE_ORIGIN}/releases/v${value.version}/${encodeURIComponent(value.filename as string)}` });
 }
 

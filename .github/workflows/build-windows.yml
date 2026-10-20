@@ -82,6 +82,71 @@ jobs:
             [pscustomobject]@{ file = (Split-Path $_ -Leaf); status = [string]$signature.Status; signedBuildRequested = ($env:REQUIRE_WINDOWS_SIGNING -eq 'true') }
           }
           $report | ConvertTo-Json | Set-Content -Encoding utf8NoBOM release/windows-signature.json
+      - name: Smoke test per-user NSIS install and uninstall
+        shell: pwsh
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RUNNER_OS -ne 'Windows' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
+            throw 'This install smoke is restricted to disposable GitHub-hosted Windows runners.'
+          }
+          $installer = (Resolve-Path 'release/PassWisely-Windows-x64.exe').Path
+          $installDir = Join-Path $env:RUNNER_TEMP ('pw-nsis-' + [guid]::NewGuid().ToString('N'))
+          if (Test-Path -LiteralPath $installDir) { throw 'Smoke install directory must be new.' }
+          $appExe = Join-Path $installDir 'PassWisely.exe'
+          $appAsar = Join-Path $installDir 'resources/app.asar'
+          $report = [ordered]@{
+            success = $false
+            scope = 'Actual per-user silent NSIS install, installed-package import/resources, and uninstall. No normal GUI startup, login, native agent init, recording, upload or ASR.'
+            installExit = $null
+            installedRuntime = $null
+            uninstallExit = $null
+            installedPayloadRemoved = $false
+          }
+          $uninstaller = $null
+          $primaryFailure = $null
+          try {
+            # NSIS /D must be last and unquoted, even if a path contains spaces.
+            # This assisted installer does not start the app in silent mode.
+            $install = Start-Process -FilePath $installer -ArgumentList "/S /currentuser /D=$installDir" -PassThru -Wait
+            $report.installExit = $install.ExitCode
+            if ($install.ExitCode -ne 0) { throw 'NSIS silent install failed.' }
+            if (!(Test-Path -LiteralPath $appExe -PathType Leaf) -or !(Test-Path -LiteralPath $appAsar -PathType Leaf)) {
+              throw 'NSIS did not install the expected executable and ASAR.'
+            }
+            $uninstallers = @(Get-ChildItem -LiteralPath $installDir -File -Filter 'Uninstall*.exe')
+            if ($uninstallers.Count -ne 1) { throw 'Expected one uninstaller in the owned install directory.' }
+            $uninstaller = $uninstallers[0].FullName
+            $probe = & node scripts/verify-windows-runtime.cjs $installDir
+            $probeExit = $LASTEXITCODE
+            $report.installedRuntime = $probe | ConvertFrom-Json
+            if ($probeExit -ne 0 -or $report.installedRuntime.success -ne $true) { throw 'Installed package verification failed.' }
+          } catch {
+            $primaryFailure = $_
+          } finally {
+            try {
+              if ($null -ne $uninstaller -and (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
+                # Same in-place _?= convention used by electron-builder's own
+                # old-version removal; avoids treating only a detached launcher exit as completion.
+                $uninstall = Start-Process -FilePath $uninstaller -ArgumentList "/S /currentuser _?=$installDir" -PassThru -Wait
+                $report.uninstallExit = $uninstall.ExitCode
+                $report.installedPayloadRemoved = !(Test-Path -LiteralPath $appExe) -and !(Test-Path -LiteralPath $appAsar)
+                if ($uninstall.ExitCode -ne 0 -or !$report.installedPayloadRemoved) { throw 'NSIS did not remove the installed application payload.' }
+              } elseif (Test-Path -LiteralPath $appExe) {
+                throw 'Installed executable remains without an owned uninstaller.'
+              }
+              $report.success = $null -eq $primaryFailure -and $report.installedPayloadRemoved
+            } catch {
+              if ($null -eq $primaryFailure) { $primaryFailure = $_ }
+            }
+            # Preserve diagnostic state on failure; do not delete files first and call that uninstall success.
+            $report | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8NoBOM release/windows-install.json
+          }
+          if ($null -ne $primaryFailure) { throw $primaryFailure }
+          if (!$report.success) { throw 'NSIS install/uninstall smoke did not complete.' }
+          # In-place NSIS can retain its running uninstaller. Remove only this
+          # unique temporary directory after checking the real app files are gone.
+          if (Test-Path -LiteralPath $installDir) { Remove-Item -LiteralPath $installDir -Recurse -Force }
       - name: Hash install and verification artifacts
         shell: pwsh
         run: |
@@ -99,6 +164,7 @@ jobs:
             release/latest.yml
             release/windows-runtime.json
             release/windows-signature.json
+            release/windows-install.json
             release/windows-artifacts.json
           if-no-files-found: error
           retention-days: 30

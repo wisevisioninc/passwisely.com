@@ -23,7 +23,11 @@
       "sha256": null,
       "bytes": null,
       "legacy": false,
-      "liveAudio": "included"
+      "liveAudio": "included",
+      "notice": {
+        "zh": "Windows 安装包未签名，录音与浮层交互尚待 Windows 实机验证。",
+        "en": "Unsigned Windows installer. Audio and overlay interactions await testing on a Windows device."
+      }
     }
   }
 }

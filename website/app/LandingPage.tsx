@@ -128,6 +128,7 @@ function Downloads({
         <span>{locale === "zh" ? `Mac Apple 芯片 · v${DOWNLOAD_ARTIFACTS["mac-arm64"].version}${DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "" : " · 准备中"}` : `Mac Apple silicon · v${DOWNLOAD_ARTIFACTS["mac-arm64"].version}${DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "" : " · Pending"}`}</span>
         <Icon name="arrow" size={17} />
       </a>
+      {DOWNLOAD_ARTIFACTS["windows-x64"].notice && <p className="pw-download-notice">{DOWNLOAD_ARTIFACTS["windows-x64"].notice[locale]}</p>}
     </div>
   );
 }

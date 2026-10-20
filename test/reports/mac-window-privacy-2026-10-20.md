@@ -49,3 +49,5 @@ HackerRank 的具体监考模式、Codility Device Integrity 等还涉及独立�
 [测试目录](../privacy/README.md)包含 8 平台、8 维度、3 变体的紧凑 [matrix.template.json](../privacy/matrix.template.json)，默认 unknown、空 runs 不算通过；合成 [capture-target.html](../privacy/capture-target.html) 含时钟、新鲜帧、输入与如实焦点事件。接收端需确认新鲜画面与底层可读，不能把冻结／黑屏误判排除。OS、框架、平台版本／模式变化后需重测。
 
 本轮已由用户准备飞书双设备测试会议。桌面工具对会议只返回窗口容器，首次读取还发生长时间阻塞；Chrome 自动读取发生采集错误，故共享控件和接收端结果需要人工配合。已在本机浏览器打开合成测试页。最终运行包与现场结果在后续追加；此处尚不将八个平台填为通过。
+
+现场进度：正常退出旧包后，工具已实际打开 `release/1.3.0-mac-window-privacy/PassWisely.app`，可访问树 URL 与该包的 app.asar 匹配；登录后浮条就绪。Chrome 原生窗口也已核对为 `127.0.0.1:8774/capture-target.html`。未启动新版录音或发送模型请求。当前等待用户观察飞书整屏共享接收端，不将发送端状态推定为远端排除。

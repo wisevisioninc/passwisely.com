@@ -37,6 +37,18 @@ In the conversation workspace `Command/Ctrl + Enter` asks AI using the current d
 
 Official integration references: [audio-only](https://docs.recall.ai/docs/audio-only), [supported platforms](https://docs.recall.ai/docs/dsdk-supported-platforms), [real-time transcription](https://docs.recall.ai/docs/dsdk-realtime-transcription).
 
+## Accounts and pricing
+
+| Plan | Price | Credits |
+| --- | --- | --- |
+| New user trial | ¥0 | 20, once on registration |
+| Pro | ¥99/month | 200 per purchase |
+| Unlimited | ¥299/month | 1,000 per purchase |
+
+Paid packs are purchased manually, without automatic renewal. Each purchase expires 30 days after its credits first arrive; a new purchase does not extend an earlier pack. “Unlimited” is the plan name, with a 1,000-credit limit per pack. Existing permanent balances and trial credits do not expire. The 20-credit welcome grant applies only to new accounts; existing accounts are not topped up.
+
+The server consumes the earliest-expiring credits first, then permanent credits. Refunds restore the original credit bucket without extending its expiry. Historical pending orders retain the price and permanent-credit entitlement recorded when they were created. See [the website account and payment rules](website/README.md#credit-rules).
+
 ## Requirements
 
 - Node.js 20.9 or newer

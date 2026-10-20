@@ -15,7 +15,8 @@ pnpm test
 
 ## Runtime bindings
 
-- `DB`: Cloudflare D1 database. Migrations are in `drizzle/`.
+- `DB`: legacy Cloudflare D1 account migration store. Its migrations are in `drizzle/`; it does not register current accounts.
+- `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_ANON_KEY`, and `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY`: current server-side accounts, credit ledger, and purchases. Their PostgreSQL migrations are in `supabase/migrations/`.
 - `DOWNLOADS`: Cloudflare R2 bucket for signed desktop installers.
 - `ALIPAY_APP_ID`: production application ID from Alipay Open Platform.
 - `ALIPAY_PRIVATE_KEY`: application RSA2 private key in PKCS#8 PEM format.
@@ -52,21 +53,25 @@ amount before an idempotent credit entry is written. Callback URLs are:
 - `https://passwisely.com/api/payments/alipay/notify`
 - `https://passwisely.com/api/payments/wechat/notify`
 
-The three current RMB pack prices are provisional (`¥9`, `¥29`, `¥59`) and
-must be confirmed before production merchant credentials are enabled.
+The free new-user trial is **¥0 / 20 credits**, once on registration, without a payment order. Paid plans are **Pro: ¥99/month / 200 credits** (`pro_monthly_v2`) and **Unlimited: ¥299/month / 1,000 credits** (`unlimited_monthly_v2`). “Unlimited” is a plan name, not unlimited credits.
+
+Paid packs use manual repurchase, without automatic renewal. Each pack expires 30 days after its credits first arrive; purchasing another pack does not extend an earlier one. New checkout requests reject retired `starter`, `pro`, and `max` IDs. Historical pending orders retain their original immutable price/credit entitlement and remain payable under that snapshot.
 
 The desktop app uses `https://passwisely.com/api` by default. For local or
 staging builds, override it with `PASSWISELY_API_URL`.
 
 ## Credit rules
 
-- New account: 10 welcome credits.
+- New account: 20 permanent welcome credits, once. Existing accounts are not topped up; their earlier 10-credit grants and permanent balances remain unchanged.
 - Solve, debug, or follow-up: 1 credit.
 - Resume review: 2 credits.
 - Resume optimization or interview plan: 3 credits.
 
-Every usage request includes a unique request ID. The API reserves that ID
-before updating the balance, so retries cannot charge twice.
+The fixed action costs above apply to `/api/credits/consume`. Model answers and resume Agents use their server-side model/token cost rules; the plan size does not promise a fixed number of answers.
+
+The database balance owner combines permanent credits with currently valid paid grants. Consumption uses the earliest expiry first, then permanent credits. A grant is unavailable at its expiry instant. Refunds return to the original bucket without changing its expiry; refunding an expired grant does not create new usable or permanent credits.
+
+Every usage request includes a unique request ID. Database transactions bind that ID to the original user, action and cost, so retries cannot charge twice. Duplicate operations return the current effective balance. Payment callbacks credit an order once and never restart its 30-day clock. Account APIs and the administration total read the same database balance owner.
 
 ## wise production deployment
 
@@ -75,15 +80,11 @@ The public domain points to `8.219.140.215`. The application listens only on
 service has its own systemd unit and does not modify the units or Nginx files
 used by WiseVision, WiseDrama, or other sites on the same server.
 
-After a successful build and local D1 migration, a server administrator can
-activate the service, Nginx virtual host, and Let's Encrypt certificate with:
-
-```bash
-sudo bash /home/jerry/codebase/passwisely/website/scripts/activate-wise-production.sh
-```
-
 Payment values belong in the untracked, mode `0600`
-`/home/jerry/codebase/passwisely/website/.env.production` file. The production
-Wrangler command loads that file with `--env-file`, which makes the values
-available as Worker bindings. Apply every file in `drizzle/` in journal order
-before restarting the service.
+`/home/jerry/codebase/passwisely/website/.env.production` file. The existing runtime-configuration owner generates protected bindings at the production path; do not copy credentials or production data into a staging directory.
+
+Before enabling the new monthly checkout, review and apply `supabase/migrations/0010_expiring_credit_grants.sql` through the existing Supabase database owner. Verify the target/schema/migration history and SQL digest, retain a restricted backup, and apply only the reviewed migration. D1's `drizzle/` migrations are separate legacy state; do not replay all historical Supabase migrations or use a database reset to deploy this change.
+
+Use a source-pinned build and the reviewed release activation plan to update the web runtime and download routes. Initial-host provisioning scripts also manage units and certificates; they are not the release-update procedure.
+
+Keep migration 0010 and all credited rights during recovery. Once a monthly grant exists, returning to the old web runtime that reads only `profiles.credits` can restore HTTP routes while under-reporting the user's monthly balance. Prefer temporary maintenance and a forward recovery to a runtime using `get_credit_balance`; never delete grants, expire old permanent balances, or restore the old consumption/refund functions to match an old UI.

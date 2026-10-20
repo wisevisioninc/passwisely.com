@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import type { CreditBalanceDetails } from "../../shared/billing";
 
 type SupabaseEnvironment = Record<string, string | undefined>;
 
@@ -22,6 +23,7 @@ export interface ProfileRow {
   email: string;
   locale: "zh" | "en";
   credits: number;
+  creditBalance: CreditBalanceDetails;
   created_at: string;
   updated_at: string;
 }
@@ -187,24 +189,49 @@ export function signOut(accessToken: string): Promise<unknown> {
   );
 }
 
-export async function getProfile(userId: string): Promise<ProfileRow | null> {
-  const rows = await request<ProfileRow[]>(
-    `/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,email,locale,credits,created_at,updated_at&limit=1`,
-    { method: "GET" },
-    { admin: true },
-  );
-  return rows[0] || null;
+type StoredProfileRow = Omit<ProfileRow, "credits" | "creditBalance">;
+
+// Expiration, ordering and available totals belong to the database ledger.
+// Never fall back to profiles.credits: it contains permanent credits only.
+export async function getCreditBalance(userId: string): Promise<CreditBalanceDetails | null> {
+  const rows = await adminRpc<Array<{
+    balance: number; permanent_balance: number; expiring_balance: number;
+    next_expiry: string | null;
+  }>>("get_credit_balance", { p_user_id: userId });
+  if (!Array.isArray(rows) || rows.length > 1) throw new Error("Invalid credit balance response.");
+  if (!rows.length) return null;
+  const row = rows[0];
+  if (!row || ![row.balance, row.permanent_balance, row.expiring_balance].every(
+    value => Number.isSafeInteger(value) && value >= 0,
+  ) || row.balance !== row.permanent_balance + row.expiring_balance ||
+    !(row.next_expiry === null || (typeof row.next_expiry === "string" && Number.isFinite(Date.parse(row.next_expiry))))) {
+    throw new Error("Invalid credit balance response.");
+  }
+  return { balance: row.balance, permanentBalance: row.permanent_balance,
+    expiringBalance: row.expiring_balance, nextExpiry: row.next_expiry };
 }
 
-export async function findProfileByEmail(
-  email: string,
-): Promise<ProfileRow | null> {
-  const rows = await request<ProfileRow[]>(
-    `/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=id,email,locale,credits,created_at,updated_at&limit=1`,
-    { method: "GET" },
-    { admin: true },
+async function withCreditBalance(row: StoredProfileRow | undefined): Promise<ProfileRow | null> {
+  if (!row) return null;
+  const creditBalance = await getCreditBalance(row.id);
+  if (!creditBalance) throw new Error("Account credit balance is unavailable.");
+  return { ...row, credits: creditBalance.balance, creditBalance };
+}
+
+export async function getProfile(userId: string): Promise<ProfileRow | null> {
+  const rows = await request<StoredProfileRow[]>(
+    `/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id,email,locale,created_at,updated_at&limit=1`,
+    { method: "GET" }, { admin: true },
   );
-  return rows[0] || null;
+  return withCreditBalance(rows[0]);
+}
+
+export async function findProfileByEmail(email: string): Promise<ProfileRow | null> {
+  const rows = await request<StoredProfileRow[]>(
+    `/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=id,email,locale,created_at,updated_at&limit=1`,
+    { method: "GET" }, { admin: true },
+  );
+  return withCreditBalance(rows[0]);
 }
 
 export async function upsertProfile(input: {

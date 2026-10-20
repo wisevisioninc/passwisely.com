@@ -1,6 +1,7 @@
 import { adminRest, adminRpc } from "@/lib/supabase";
 import {
   CREDIT_PACKS,
+  isCreditPackId,
   type CreditPackId,
   type PaymentProvider,
 } from "./catalog";
@@ -15,6 +16,9 @@ export interface PurchaseRow {
   currency: string;
   status: string;
   providerTransactionId: string | null;
+  creditPolicy: "permanent" | "expiring";
+  validityDays: number | null;
+  entitlementVersion: 1 | 2;
 }
 
 function merchantOrderNo(): string {
@@ -27,6 +31,7 @@ export async function createPurchase(input: {
   packId: CreditPackId;
   provider: PaymentProvider;
 }): Promise<PurchaseRow> {
+  if (!isCreditPackId(input.packId)) throw new Error("Unknown or retired credit pack.");
   const pack = CREDIT_PACKS[input.packId];
   const purchase: PurchaseRow = {
     id: crypto.randomUUID(),
@@ -38,6 +43,9 @@ export async function createPurchase(input: {
     currency: "CNY",
     status: "pending",
     providerTransactionId: null,
+    creditPolicy: "expiring",
+    validityDays: pack.validityDays,
+    entitlementVersion: 2,
   };
   await adminRest("purchases", {
     method: "POST",
@@ -52,6 +60,9 @@ export async function createPurchase(input: {
       status: purchase.status,
       provider: purchase.provider,
       merchant_order_no: purchase.merchantOrderNo,
+      credit_policy: purchase.creditPolicy,
+      validity_days: purchase.validityDays,
+      entitlement_version: purchase.entitlementVersion,
     }),
   });
   return purchase;
@@ -71,9 +82,12 @@ export async function findPurchaseByMerchantOrder(
       currency: string;
       status: string;
       provider_transaction_id: string | null;
+      credit_policy: "permanent" | "expiring";
+      validity_days: number | null;
+      entitlement_version: 1 | 2;
     }>
   >(
-    `purchases?merchant_order_no=eq.${encodeURIComponent(merchantOrderNo)}&select=id,user_id,merchant_order_no,provider,credits,amount_minor,currency,status,provider_transaction_id&limit=1`,
+    `purchases?merchant_order_no=eq.${encodeURIComponent(merchantOrderNo)}&select=id,user_id,merchant_order_no,provider,credits,amount_minor,currency,status,provider_transaction_id,credit_policy,validity_days,entitlement_version&limit=1`,
   );
   const row = rows[0];
   return row
@@ -87,6 +101,9 @@ export async function findPurchaseByMerchantOrder(
         currency: row.currency,
         status: row.status,
         providerTransactionId: row.provider_transaction_id,
+        creditPolicy: row.credit_policy,
+        validityDays: row.validity_days,
+        entitlementVersion: row.entitlement_version,
       }
     : null;
 }
@@ -103,20 +120,13 @@ export async function markPurchaseFailed(id: string): Promise<void> {
 }
 
 export async function completePurchase(input: {
-  purchase: PurchaseRow;
+  purchase: Pick<PurchaseRow, "id">;
   eventId: string;
   eventType: string;
   transactionId: string;
 }): Promise<"completed" | "duplicate"> {
-  if (
-    input.purchase.status === "completed" &&
-    input.purchase.providerTransactionId === input.transactionId
-  ) {
-    return "duplicate";
-  }
-  if (input.purchase.status !== "pending") {
-    throw new Error(`Purchase is not payable: ${input.purchase.status}`);
-  }
+  // The DB transaction owns payment identity, duplicate detection and grant
+  // creation; a stale row fetched by a callback must not short-circuit it.
   return adminRpc<"completed" | "duplicate">("complete_purchase", {
     p_purchase_id: input.purchase.id,
     p_transaction_id: input.transactionId,

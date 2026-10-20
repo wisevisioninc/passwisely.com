@@ -284,8 +284,9 @@ export async function POST(request: Request) {
   try {
     generated = await callDefaultModel(prompt.system, prompt.user, MAX_OUTPUT[agent]);
   } catch (error) {
-    await adminRpc("refund_credits", {
+    await adminRpc("refund_credit_debit", {
       p_user_id: user.id,
+      p_debit_reference: reference,
       p_amount: credits,
       p_action: `${agent}_refund`,
       p_reference: `${reference}:refund`,
@@ -308,8 +309,9 @@ export async function POST(request: Request) {
       : credits;
   let finalBalance = debit[0].balance;
   if (actualCredits < credits) {
-    finalBalance = await adminRpc<number>("refund_credits", {
+    finalBalance = await adminRpc<number>("refund_credit_debit", {
       p_user_id: user.id,
+      p_debit_reference: reference,
       p_amount: credits - actualCredits,
       p_action: `${agent}_settlement`,
       p_reference: `${reference}:settlement`,

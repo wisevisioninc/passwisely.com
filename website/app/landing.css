@@ -2007,3 +2007,10 @@
 
 .pw-downloads { flex-wrap: wrap; }
 .pw-download-notice { flex-basis: 100%; max-width: 660px; margin: 0; font-size: 12px; line-height: 1.6; color: #a3a3b3; text-align: left; }
+
+/* Price terms stay legible in both languages and at narrow widths. */
+.pw-price-card li { align-items: flex-start; line-height: 1.6; }
+.pw-price-card li svg { flex: 0 0 auto; margin-top: 2px; }
+.pw-price > span:last-child { white-space: nowrap; font-size: 12px; }
+.payment-plan-summary { padding: 12px; margin-block: 14px; border: 1px solid #575442; border-radius: 8px; line-height: 1.7; }
+.credit-validity { display: grid; gap: 6px; margin: 12px 0 20px; font-size: 13px; line-height: 1.6; }

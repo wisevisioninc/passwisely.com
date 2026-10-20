@@ -202,6 +202,7 @@ export async function POST(request: Request) {
     email: profile.email,
     locale: profile.locale,
     credits: profile.credits,
+      creditBalance: profile.creditBalance,
   };
   if (body.client === "desktop") {
     const token = await createApiSession(profile.id);

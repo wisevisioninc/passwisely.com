@@ -8,6 +8,7 @@ const email = `supabase-e2e-${suffix}@example.com`;
 const password = `Pw${crypto.randomUUID()}A1`;
 const newPassword = `New${crypto.randomUUID()}B2`;
 let userId = "";
+const expectedWelcomeCredits = 20;
 
 async function request(path, init = {}, token = "") {
   const headers = new Headers(init.headers);
@@ -45,7 +46,7 @@ try {
   userId = registration.payload.user?.id || "";
   assert.ok(token);
   assert.ok(userId);
-  assert.equal(registration.payload.user.credits, 10);
+  assert.equal(registration.payload.user.credits, expectedWelcomeCredits);
 
   const duplicateRegistration = await request("/auth/register", {
     method: "POST",
@@ -77,9 +78,10 @@ try {
 
   const initialAccount = await request("/account", {}, token);
   assert.equal(initialAccount.response.status, 200);
-  assert.equal(initialAccount.payload.user.credits, 10);
+  assert.equal(initialAccount.payload.user.credits, expectedWelcomeCredits);
   assert.equal(initialAccount.payload.transactions.length, 1);
   assert.equal(initialAccount.payload.transactions[0].type, "welcome");
+  assert.equal(initialAccount.payload.transactions[0].amount, expectedWelcomeCredits);
 
   const rejectedPasswordChange = await request(
     "/auth/change-password",
@@ -129,7 +131,7 @@ try {
     token,
   );
   assert.equal(firstDebit.response.status, 200);
-  assert.equal(firstDebit.payload.credits, 9);
+  assert.equal(firstDebit.payload.credits, expectedWelcomeCredits - 1);
   assert.equal(firstDebit.payload.duplicate, false);
 
   const duplicateDebit = await request(
@@ -141,10 +143,10 @@ try {
     token,
   );
   assert.equal(duplicateDebit.response.status, 200);
-  assert.equal(duplicateDebit.payload.credits, 9);
+  assert.equal(duplicateDebit.payload.credits, expectedWelcomeCredits - 1);
   assert.equal(duplicateDebit.payload.duplicate, true);
 
-  for (let index = 0; index < 9; index += 1) {
+  for (let index = 0; index < expectedWelcomeCredits - 1; index += 1) {
     const debit = await request(
       "/credits/consume",
       {
@@ -157,7 +159,7 @@ try {
       token,
     );
     assert.equal(debit.response.status, 200);
-    assert.equal(debit.payload.credits, 8 - index);
+    assert.equal(debit.payload.credits, expectedWelcomeCredits - 2 - index);
   }
 
   const insufficient = await request(
@@ -184,7 +186,7 @@ try {
   const finalAccount = await request("/account", {}, login.payload.token);
   assert.equal(finalAccount.response.status, 200);
   assert.equal(finalAccount.payload.user.credits, 0);
-  assert.equal(finalAccount.payload.transactions.length, 11);
+  assert.equal(finalAccount.payload.transactions.length, expectedWelcomeCredits + 1);
 
   console.log(
     JSON.stringify({
@@ -197,7 +199,7 @@ try {
       passwordChanged: true,
       oldPasswordRejected: true,
       newPasswordAccepted: true,
-      welcomeCredits: 10,
+      welcomeCredits: expectedWelcomeCredits,
       finalCredits: 0,
       duplicateDebitPrevented: true,
       insufficientCreditsBlocked: true,

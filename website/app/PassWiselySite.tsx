@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import type { CreditBalanceDetails } from "../../shared/billing";
 import { LandingPage } from "./LandingPage";
+import { CREDIT_PACKS, TRIAL_CREDITS, type CreditPackId } from "../lib/payments/catalog";
 
 type Locale = "zh" | "en";
 type AuthMode = "login" | "register" | "forgot" | "reset" | "change";
-type PackId = "starter" | "pro" | "max";
+type PackId = CreditPackId;
 type PaymentProvider = "alipay" | "wechat";
 
 interface User {
@@ -14,6 +16,7 @@ interface User {
   email: string;
   locale: Locale;
   credits: number;
+  creditBalance?: CreditBalanceDetails;
 }
 
 interface Transaction {
@@ -34,7 +37,7 @@ const copy = {
     password: "密码",
     passwordHint: "至少 10 位，包含字母和数字",
     submitLogin: "登录",
-    submitRegister: "注册并领取 10 积分",
+    submitRegister: `注册并领取 ${TRIAL_CREDITS} 积分`,
     switchRegister: "还没有账户？立即注册",
     switchLogin: "已有账户？直接登录",
     forgotPassword: "忘记密码？",
@@ -65,7 +68,7 @@ const copy = {
     password: "Password",
     passwordHint: "10+ characters with a letter and a number",
     submitLogin: "Sign in",
-    submitRegister: "Create account + get 10 credits",
+    submitRegister: `Create account + get ${TRIAL_CREDITS} credits`,
     switchRegister: "New to PassWisely? Create an account",
     switchLogin: "Already registered? Sign in",
     forgotPassword: "Forgot password?",
@@ -120,6 +123,8 @@ export function PassWiselySite() {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notice, setNotice] = useState("");
+  const [pricingChanged, setPricingChanged] = useState(false);
+  const accountRefreshGeneration = useRef(0);
   const [busy, setBusy] = useState(false);
   const activeModal = authOpen
     ? `auth-${authMode}`
@@ -201,7 +206,7 @@ export function PassWiselySite() {
     void refreshAccount();
     const params = new URLSearchParams(window.location.search);
     if (params.get("payment") === "success") {
-      queueMicrotask(() => setNotice(copy[nextLocale].paymentSuccess));
+      queueMicrotask(() => { setNotice(copy[nextLocale].paymentSuccess); setAccountOpen(true); });
     }
     const fragment = new URLSearchParams(
       window.location.hash.replace(/^#/, ""),
@@ -245,15 +250,28 @@ export function PassWiselySite() {
     return () => window.clearInterval(poll);
   }, [wechatPayment, locale]);
 
+  useEffect(() => {
+    if (accountOpen) void refreshAccount();
+  }, [accountOpen]);
+
+  useEffect(() => {
+    const refresh = () => { void refreshAccount(); };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, []);
+
   async function refreshAccount() {
-    const response = await fetch("/api/account", { credentials: "include" });
-    if (!response.ok) return;
-    const payload = (await response.json()) as {
-      user: User;
-      transactions: Transaction[];
-    };
-    setUser(payload.user);
-    setTransactions(payload.transactions);
+    const generation = ++accountRefreshGeneration.current;
+    try {
+      const response = await fetch("/api/account", { credentials: "include", cache: "no-store" });
+      if (generation !== accountRefreshGeneration.current) return;
+      if (response.status === 401) { setUser(null); setTransactions([]); return; }
+      if (!response.ok) return;
+      const payload = (await response.json()) as { user: User; transactions: Transaction[] };
+      if (generation !== accountRefreshGeneration.current) return;
+      setUser(payload.user);
+      setTransactions(payload.transactions);
+    } catch { /* A failed refresh does not replace the last server snapshot. */ }
   }
 
   function chooseLocale(next: Locale) {
@@ -351,7 +369,9 @@ export function PassWiselySite() {
   }
 
   async function logout() {
+    accountRefreshGeneration.current++;
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    accountRefreshGeneration.current++;
     setUser(null);
     setTransactions([]);
     setAccountOpen(false);
@@ -367,28 +387,30 @@ export function PassWiselySite() {
   }
 
   async function pay(provider: PaymentProvider) {
-    if (!paymentPack) return;
+    if (!paymentPack || busy) return;
     setBusy(true);
     setNotice("");
-    const response = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ packId: paymentPack, provider }),
-    });
-    const payload = (await response.json()) as {
-      url?: string;
-      orderId?: string;
-      error?: string;
-    };
-    setBusy(false);
-    if (payload.url) {
-      setPaymentPack(null);
-      if (provider === "wechat" && payload.orderId) {
-        setWechatPayment({ orderId: payload.orderId, url: payload.url });
-      } else {
-        window.location.assign(payload.url);
-      }
-    } else setNotice(payload.error || "Checkout is unavailable.");
+    setPricingChanged(false);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ packId: paymentPack, provider }),
+        cache: "no-store",
+      });
+      const payload = (await response.json()) as { url?: string; orderId?: string; error?: string; code?: string };
+      if (payload.code === "PRICING_CHANGED") {
+        setPaymentPack(null);
+        setPricingChanged(true);
+        setNotice(locale === "zh" ? "套餐已更新，请刷新页面确认新价格后再购买。" : "Plans have changed. Refresh to review current prices before purchasing.");
+      } else if (response.ok && payload.url) {
+        setPaymentPack(null);
+        if (provider === "wechat" && payload.orderId) setWechatPayment({ orderId: payload.orderId, url: payload.url });
+        else window.location.assign(payload.url);
+      } else setNotice(payload.error || (locale === "zh" ? "暂时无法发起支付，请稍后重试。" : "Checkout is unavailable. Please try again."));
+    } catch {
+      setNotice(locale === "zh" ? "支付连接失败，请重试。" : "Could not connect to checkout. Please try again.");
+    } finally { setBusy(false); }
   }
 
   const displayTransactions = useMemo(
@@ -415,6 +437,10 @@ export function PassWiselySite() {
             setAuthOpen(true);
           }
         }}
+        onRegisterTrial={() => {
+          if (user) setAccountOpen(true);
+          else { setAuthMode("register"); setAuthOpen(true); }
+        }}
         onBuy={(id) => void buy(id)}
         busy={busy}
       />
@@ -422,6 +448,7 @@ export function PassWiselySite() {
       {notice && (
         <div className="notice" role="status" onClick={() => setNotice("")}>
           {notice}
+          {pricingChanged && <button type="button" onClick={event => { event.stopPropagation(); window.location.reload(); }}>{locale === "zh" ? "刷新套餐" : "Refresh plans"}</button>}
         </div>
       )}
 
@@ -607,6 +634,13 @@ export function PassWiselySite() {
                 ? "人民币支付，由福建智感灵眸科技有限公司收款。"
                 : "Payment is collected in CNY by Fujian Zhigan Lingmou Technology Co., Ltd."}
             </p>
+            <div className="payment-plan-summary">
+              <strong>{locale === "zh" ? CREDIT_PACKS[paymentPack].name : CREDIT_PACKS[paymentPack].nameEn} · ¥{CREDIT_PACKS[paymentPack].amountFen / 100}{locale === "zh" ? "/月" : "/month"}</strong>
+              <p>{locale === "zh"
+                ? `每包 ${CREDIT_PACKS[paymentPack].credits.toLocaleString("en-US")} 积分，成功到账后 ${CREDIT_PACKS[paymentPack].validityDays} 天到期。手动续购，无自动续费；每次购买独立计时，不延长旧包。`
+                : `${CREDIT_PACKS[paymentPack].credits.toLocaleString("en-US")} credits per pack, valid for ${CREDIT_PACKS[paymentPack].validityDays} days after credits arrive. Manual renewal, no automatic charges; each purchase expires independently.`}</p>
+              {paymentPack === "unlimited_monthly_v2" && <p>{locale === "zh" ? "“无限制包”为套餐名称，并非无限积分。" : "Unlimited is the plan name, not unlimited credits."}</p>}
+            </div>
             <div className="payment-options">
               <button
                 className="payment-option alipay"
@@ -705,6 +739,12 @@ export function PassWiselySite() {
               <strong>{user.credits}</strong>
               <small>credits</small>
             </div>
+            {user.creditBalance && <div className="credit-validity">
+              <p>{locale === "zh" ? "长期有效积分" : "Permanent credits"}: {user.creditBalance.permanentBalance}</p>
+              <p>{locale === "zh" ? "月包有效积分" : "Active monthly-pack credits"}: {user.creditBalance.expiringBalance}</p>
+              {user.creditBalance.nextExpiry && <p>{locale === "zh" ? "最近一批到期" : "Next pack expiry"}: {new Date(user.creditBalance.nextExpiry).toLocaleString(locale === "zh" ? "zh-CN" : "en-US")}</p>}
+              <small>{locale === "zh" ? "每次新购月包独立有效 30 天；旧余额与体验积分长期有效。" : "Each paid pack has its own 30-day validity. Existing permanent and trial credits do not expire."}</small>
+            </div>}
             <h3>{t.history}</h3>
             <div className="history-list">
               {displayTransactions.length === 0 ? (

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import type { CreditBalanceDetails } from "../../shared/billing";
 import {
   adminRest,
   getAuthUser,
@@ -19,6 +20,7 @@ export interface AccountUser {
   email: string;
   locale: "zh" | "en";
   credits: number;
+  creditBalance: CreditBalanceDetails;
 }
 
 function profileToUser(profile: ProfileRow): AccountUser {
@@ -27,6 +29,7 @@ function profileToUser(profile: ProfileRow): AccountUser {
     email: profile.email,
     locale: profile.locale,
     credits: profile.credits,
+    creditBalance: profile.creditBalance,
   };
 }
 

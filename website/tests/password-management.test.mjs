@@ -39,7 +39,6 @@ test("desktop login uses the app icon, precise errors, and a quit control", asyn
     preload,
     handlers,
     login,
-    accountService,
     toolbar,
     loginLogo,
     toolbarLogo,
@@ -49,7 +48,6 @@ test("desktop login uses the app icon, precise errors, and a quit control", asyn
     read("../../electron/preload.ts"),
     read("../../electron/ipcHandlers.ts"),
     read("../app/api/auth/login/route.ts"),
-    read("../../electron/account.ts"),
     read("../../src/components/Queue/QueueCommands.tsx"),
     readFile(new URL("../../public/logo512.png", import.meta.url)),
     readFile(new URL("../../public/logo192.png", import.meta.url)),
@@ -68,10 +66,8 @@ test("desktop login uses the app icon, precise errors, and a quit control", asyn
   assert.match(handlers, /ipcMain\.handle\("quit-app"/);
   assert.match(login, /"email_not_found"/);
   assert.match(login, /"invalid_password"/);
-  assert.match(
-    accountService,
-    /if \(!this\.getToken\(\)\) return \{ success: false \}/,
-  );
+  // Missing-token semantics are exercised by the production AccountService in
+  // desktop-api/tests/authentication-lifecycle.test.mjs (missing-token lifecycle case).
   assert.deepEqual(loginLogo, packagedAppIcon);
   assert.deepEqual(
     toolbarLogo,

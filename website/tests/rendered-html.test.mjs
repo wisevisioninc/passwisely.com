@@ -14,9 +14,7 @@ test("builds a bilingual PassWisely landing page", async () => {
   ].join("\n");
   assert.match(source, /PassWisely/);
   assert.match(source, /AI Interview Copilot/);
-  assert.match(source, /Get for Mac/);
-  assert.match(source, /下载 Windows/);
-  assert.match(source, /购买积分/);
-  assert.match(source, /Buy credits/);
+  assert.match(source, /购买月包/);
+  assert.match(source, /Buy monthly pack/);
   assert.doesNotMatch(source, /codex-preview|react-loading-skeleton/);
 });

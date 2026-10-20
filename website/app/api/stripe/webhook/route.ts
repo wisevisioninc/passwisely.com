@@ -27,35 +27,14 @@ export async function POST(request: Request) {
   if (!purchaseId) {
     return Response.json({ error: "Missing purchase metadata." }, { status: 400 });
   }
-  const rows = await adminRest<
-    Array<{
-      id: string;
-      user_id: string;
-      merchant_order_no: string;
-      provider: "stripe";
-      credits: number;
-      amount_minor: number;
-      currency: string;
-      status: string;
-      provider_transaction_id: string | null;
-    }>
-  >(
-    `purchases?id=eq.${encodeURIComponent(purchaseId)}&select=id,user_id,merchant_order_no,provider,credits,amount_minor,currency,status,provider_transaction_id&limit=1`,
+  // The transactional completion owner reads the historical order snapshot.
+  const rows = await adminRest<Array<{ id: string }>>(
+    `purchases?id=eq.${encodeURIComponent(purchaseId)}&select=id&limit=1`,
   );
   const row = rows[0];
   if (!row) return Response.json({ error: "Order not found." }, { status: 404 });
   await completePurchase({
-    purchase: {
-      id: row.id,
-      userId: row.user_id,
-      merchantOrderNo: row.merchant_order_no,
-      provider: row.provider,
-      credits: row.credits,
-      amountMinor: row.amount_minor,
-      currency: row.currency,
-      status: row.status,
-      providerTransactionId: row.provider_transaction_id,
-    },
+    purchase: { id: row.id },
     transactionId: event.data?.object?.payment_intent || event.id,
     eventId: event.id,
     eventType: event.type,

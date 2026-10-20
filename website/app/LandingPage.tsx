@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { DOWNLOAD_ARTIFACTS } from "../lib/downloads";
+import { CREDIT_PACKS, TRIAL_CREDITS, type CreditPackId } from "../lib/payments/catalog";
 import "./landing.css";
 
 type Locale = "zh" | "en";
@@ -478,8 +479,41 @@ interface LandingProps {
   onLocale: (locale: Locale) => void;
   accountLabel: string;
   onAccount: () => void;
-  onBuy: (id: "starter" | "pro" | "max") => void;
+  onBuy: (id: CreditPackId) => void;
+  onRegisterTrial: () => void;
   busy: boolean;
+}
+
+export function PricingPlans({ locale, onBuy, onRegisterTrial, busy }: Pick<LandingProps, "locale" | "onBuy" | "onRegisterTrial" | "busy">) {
+  const zh = locale === "zh";
+  const tr = (cn: string, en: string) => zh ? cn : en;
+  const plans: Array<{ id: CreditPackId | null; name: string; amountFen: number; credits: number; validityDays: number | null }> = [
+    { id: null, name: tr("新用户体验", "New user trial"), amountFen: 0, credits: TRIAL_CREDITS, validityDays: null },
+    ...Object.entries(CREDIT_PACKS).map(([id, pack]) => ({ id: id as CreditPackId, name: zh ? pack.name : pack.nameEn, amountFen: pack.amountFen, credits: pack.credits, validityDays: pack.validityDays })),
+  ];
+  return <div className="pw-pricing-grid">
+    {plans.map((plan, index) => <article className={`pw-price-card${index === 1 ? " pw-featured" : ""}`} key={plan.id || "trial"}>
+      {index === 1 && <span className="pw-recommended">{tr("推荐套餐", "RECOMMENDED")}</span>}
+      <div className="pw-plan-name"><h3>{plan.name}</h3><Icon name={index === 0 ? "spark" : index === 1 ? "layers" : "code"} /></div>
+      <p>{plan.id ? tr("手动续购，自由安排", "Renew manually, on your schedule") : tr("新账户一次赠送，无需支付", "One welcome grant, no payment needed")}</p>
+      <div className="pw-price"><span>¥</span><strong>{plan.amountFen / 100}</strong><span>{plan.id ? tr("/月", "/month") : "CNY"}</span></div>
+      <div className="pw-credit-amount">{plan.credits.toLocaleString(zh ? "zh-CN" : "en-US")}<span>{tr("积分", "credits")}</span></div>
+      <button className="pw-buy" disabled={busy} onClick={() => plan.id ? onBuy(plan.id) : onRegisterTrial()}>
+        {plan.id ? tr("购买月包", "Buy monthly pack") : tr("免费注册体验", "Create free account")}<Icon name="arrow" size={17} />
+      </button>
+      <ul>{(plan.id ? [
+        tr("手动续购，无自动续费", "Manual renewal, no auto-renewal"),
+        tr(`到账后 ${plan.validityDays} 天到期`, `Expires ${plan.validityDays} days after credits arrive`),
+        tr("每次独立起算，不延长旧包", "Each purchase has its own expiry"),
+        tr(`每包 ${plan.credits.toLocaleString("en-US")} 积分`, `${plan.credits.toLocaleString("en-US")} credits per pack`),
+      ] : [
+        tr("新用户专享，一次领取", "New accounts, one welcome grant"),
+        tr("体验积分长期有效", "Trial credits do not expire"),
+        tr("无需绑定支付方式", "No payment method required"),
+        tr("支持截图、解题与追问", "Capture, solve, and follow up"),
+      ]).map(item => <li key={item}><Icon name="check" size={15} />{item}</li>)}</ul>
+    </article>)}
+  </div>;
 }
 
 export function LandingPage({
@@ -488,6 +522,7 @@ export function LandingPage({
   accountLabel,
   onAccount,
   onBuy,
+  onRegisterTrial,
   busy,
 }: LandingProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -538,8 +573,8 @@ export function LandingPage({
     [
       tr("如何开始使用 PassWisely？", "How do I get started?"),
       tr(
-        "下载适合电脑的安装包，安装后注册或登录。新账户可获得 10 个体验积分，随后即可通过截图或文字输入开始练习。",
-        "Download the build for your computer, install it, and create an account. New accounts receive 10 trial credits. Start with a screenshot or a typed question.",
+        `下载适合电脑的安装包，安装后注册或登录。新账户可获得 ${TRIAL_CREDITS} 个体验积分，随后即可通过截图或文字输入开始练习。`,
+        `Download the build for your computer, install it, and create an account. New accounts receive ${TRIAL_CREDITS} trial credits. Start with a screenshot or a typed question.`,
       ),
     ],
     [
@@ -552,8 +587,8 @@ export function LandingPage({
     [
       tr("积分如何计费，会过期吗？", "How do credits work? Do they expire?"),
       tr(
-        "积分按需购买，目前不会过期。不同模型和任务的消耗可能不同，部分服务按 token 预算计费；请以客户端提示及账户积分明细为准。",
-        "Buy credits as needed; they currently do not expire. Usage varies by model and task, and some services use token-based budgets. Check the app and your account history for actual charges.",
+        "月包手动续购，无自动续费。每次新购积分自成功到账起独立有效 30 天，续购不会延长此前积分的有效期。旧余额和新用户体验积分长期有效；不同模型和任务消耗以客户端与账户明细为准。",
+        "Renew manually with no automatic charges. Each paid pack expires 30 days after its credits are added; a new purchase does not extend earlier packs. Existing permanent balances and trial credits do not expire. Usage varies by model and task; check the app and account activity.",
       ),
     ],
     [
@@ -679,8 +714,8 @@ export function LandingPage({
             <Downloads locale={locale} />
             <div className="pw-free-note">
               {tr(
-                "无需信用卡 · 注册即送 10 积分",
-                "NO CREDIT CARD NEEDED · 10 FREE CREDITS",
+                `无需信用卡 · 注册即送 ${TRIAL_CREDITS} 积分`,
+                `NO CREDIT CARD NEEDED · ${TRIAL_CREDITS} FREE CREDITS`,
               )}
             </div>
             <a className="pw-intel-link" href="/api/track-download/mac-x64">
@@ -774,8 +809,8 @@ export function LandingPage({
                 "download",
                 tr("下载并登录", "Download and sign in"),
                 tr(
-                  "选择适合电脑的版本，创建账户，领取 10 个体验积分。",
-                  "Choose your desktop build. Create an account and get 10 trial credits.",
+                  `选择适合电脑的版本，创建账户，领取 ${TRIAL_CREDITS} 个体验积分。`,
+                  `Choose your desktop build. Create an account and get ${TRIAL_CREDITS} trial credits.`,
                 ),
               ],
               [
@@ -863,92 +898,16 @@ export function LandingPage({
             </h2>
             <p>
               {tr(
-                "免费下载，注册赠送 10 积分。需要更多时，再按需补充。",
-                "Download for free and start with 10 welcome credits. Top up when you need more.",
+                `免费下载，新用户注册赠送 ${TRIAL_CREDITS} 积分。月包按需手动续购，无自动续费。`,
+                `Download for free and start with ${TRIAL_CREDITS} welcome credits. Renew a monthly pack manually whenever you need it.`,
               )}
             </p>
           </div>
-          <div className="pw-pricing-grid">
-            {(
-              [
-                [
-                  "starter",
-                  tr("轻量包", "Starter"),
-                  "9",
-                  "100",
-                  tr("一次专注的面试准备", "For a focused interview sprint"),
-                ],
-                [
-                  "pro",
-                  tr("进阶包", "Pro"),
-                  "29",
-                  "400",
-                  tr("陪你走过完整求职周期", "For a complete job-search cycle"),
-                ],
-                [
-                  "max",
-                  tr("冲刺包", "Max"),
-                  "59",
-                  "1,000",
-                  tr("为高频练习留足空间", "Room for regular, deeper practice"),
-                ],
-              ] as const
-            ).map(([id, title, price, credits, description], index) => (
-              <article
-                className={`pw-price-card${index === 1 ? " pw-featured" : ""}`}
-                key={id}
-              >
-                {index === 1 && (
-                  <span className="pw-recommended">
-                    {tr("推荐套餐", "RECOMMENDED")}
-                  </span>
-                )}
-                <div className="pw-plan-name">
-                  <h3>{title}</h3>
-                  <Icon
-                    name={
-                      index === 0 ? "spark" : index === 1 ? "layers" : "code"
-                    }
-                  />
-                </div>
-                <p>{description}</p>
-                <div className="pw-price">
-                  <span>¥</span>
-                  <strong>{price}</strong>
-                  <span>CNY</span>
-                </div>
-                <div className="pw-credit-amount">
-                  {credits}
-                  <span>{tr("积分", "credits")}</span>
-                </div>
-                <button
-                  className="pw-buy"
-                  disabled={busy}
-                  onClick={() => onBuy(id)}
-                >
-                  {tr("购买积分", "Buy credits")}
-                  <Icon name="arrow" size={17} />
-                </button>
-                <ul>
-                  {[
-                    tr("一次购买，无自动续费", "One purchase, no auto-renewal"),
-                    tr("积分目前长期有效", "Credits currently do not expire"),
-                    tr("支持截图、解题与追问", "Capture, solve, and follow up"),
-                    tr("账户余额与明细可查", "Track your balance and activity"),
-                  ].map((item) => (
-                    <li key={item}>
-                      <Icon name="check" size={15} />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
+          <PricingPlans locale={locale} onBuy={onBuy} onRegisterTrial={onRegisterTrial} busy={busy} />
           <p className="pw-pricing-note">
             {tr(
-              "模型与任务的积分消耗可能不同，以客户端提示及账户明细为准。支持支付宝与微信支付。",
-              "Credit usage varies by model and task. Check the app and account activity for charges. Alipay and WeChat Pay supported.",
+              "新购月包每次独立有效 30 天；旧余额长期有效。“无限制包”为套餐名称，每包提供 1,000 积分，并非无限额度。支持支付宝与微信支付。",
+              "Each paid pack has its own 30-day validity; existing permanent balances do not expire. Unlimited is the plan name: each pack contains 1,000 credits, not unlimited usage. Alipay and WeChat Pay supported.",
             )}
           </p>
         </div>
@@ -1008,7 +967,7 @@ export function LandingPage({
             ))}
           </details>
           <div className="pw-final-meta">
-            <span>{tr("注册即送 10 积分", "10 free welcome credits")}</span>
+            <span>{tr(`注册即送 ${TRIAL_CREDITS} 积分`, `${TRIAL_CREDITS} free welcome credits`)}</span>
             <span>macOS · Windows</span>
             <a href="/api/track-download/mac-x64">
               {tr(`Mac Intel · v${DOWNLOAD_ARTIFACTS["mac-x64"].version} 旧版（不含实时音频）`, `Mac Intel · legacy v${DOWNLOAD_ARTIFACTS["mac-x64"].version} (no live audio)`)}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "title": "Feishu entire-display sharing: qualitative receiver observations, 2026-10-20",
+  "template": "../matrix.template.json",
+  "defaultStatus": "unknown",
+  "evidencePolicy": "Sender AX/build facts establish preparation and bundle identity only. Receiver outcomes are separately attributed to human reports; unavailable artifacts and metadata remain null.",
+  "runs": [
+    {
+      "runId": "feishu-display-passwisely-01",
+      "timestamp": null,
+      "recordedAt": "2026-10-20T10:26:03.732149+00:00",
+      "platformId": "feishu",
+      "dimension": "display_share",
+      "variant": "passwisely",
+      "bundlePath": "/Users/chenyejin/codebase/passwisely/release/1.3.0-mac-window-privacy/PassWisely.app",
+      "bundleVersion": "1.3.0",
+      "asarSha256": "9f83d7a2309144d044db467bb81f9e3441c442749a15286559d07708fba01c06",
+      "sourceCommitOrUnknown": "49a0145b9da093d2c4c4f57b023da6d7c3ffc633",
+      "osVersion": "26.6.2",
+      "osBuild": "25G83",
+      "arch": "arm64",
+      "displays": null,
+      "platformProductMode": "Feishu native meeting; entire-display sharing, per the user test question and reply",
+      "clientOrBrowserVersion": null,
+      "platformConfiguration": null,
+      "sourceKindAndId": {
+        "kind": "display",
+        "id": null
+      },
+      "capturePipelineOrUnknown": null,
+      "neutralFixtureSha256": "7f8340fb032cf56edce0881721611d95df12cd46d58a5c6fd5953a12bde537c1",
+      "actionTimeline": [
+        {
+          "kind": "tool_confirmation",
+          "action": "Opened the exact new PassWisely bundle; native AX app.asar URL matches it; login and toolbar ready.",
+          "timestamp": null
+        },
+        {
+          "kind": "tool_confirmation",
+          "action": "Chrome AX shows http://127.0.0.1:8774/capture-target.html with a clock and freshness counter; receiver-side continuity is attributed only to the human report.",
+          "timestamp": null
+        },
+        {
+          "kind": "test_instruction",
+          "action": "Share the entire display with the sender overlay visible; inspect the receiver while the fixture clock advances.",
+          "timestamp": null
+        },
+        {
+          "kind": "human_report",
+          "action": "User reports PassWisely absent and underlying page/clock normal on receiver.",
+          "timestamp": null
+        }
+      ],
+      "repetition": 1,
+      "status": "observed_excluded",
+      "evidenceLevel": "human_report_only",
+      "observation": "User confirmed that PassWisely was not visible on the receiving device while the underlying page and clock remained normal.",
+      "evidence": [
+        {
+          "kind": "human_report",
+          "source": "user_message",
+          "quote": "看不到 PassWisely，底层页面和时钟正常",
+          "path": null,
+          "sha256": null,
+          "timeRangeOrFrame": null
+        }
+      ],
+      "receiverOrRecorder": {
+        "kind": "separate_receiving_device",
+        "device": null,
+        "clientVersion": null,
+        "observer": "user"
+      },
+      "freshnessEvidence": {
+        "kind": "human_report",
+        "quote": "底层页面和时钟正常",
+        "artifact": null
+      },
+      "scope": "This one Feishu entire-display receiver observation reported by the user. No independent review of raw receiver frames or recordings; not a guarantee for all frames, settings, versions, platforms or application detection.",
+      "restoreOutcome": null
+    }
+  ],
+  "notMeasured": [
+    "baseline_no_overlay",
+    "systemcontainer",
+    "other sharing modes",
+    "local or platform recording",
+    "platform focus reporting",
+    "system/application detection",
+    "other platforms"
+  ]
+}

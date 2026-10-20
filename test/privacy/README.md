@@ -16,3 +16,7 @@
 - `setContentProtection(true)` 不能保证 ScreenCaptureKit 排除。画面排除、正常焦点/粘贴报告、原生进程检查和隐私指示器是不同维度；任何结果都不能证明平台“不可检测”。不伪装身份、抑制事件或绕过监控。
 - HackerRank Secure/Proctor/Desktop App，CoderPad Interview/Screen，Codility Screen/Interview/Device Integrity 必须记录具体模式。Chime 传统服务结束支持，特殊加入与 Chime SDK 路线需先确定。
 - 缺失/旧版本结果不继承为当前通过；OS、Electron、平台/浏览器、监控模式或窗口实现变化后重测。记录不包含 Token、Cookie、密钥或私人内容。运行证据建议置于忽略目录，人工审核后的有界报告另存。
+
+## 已记录的现场结果
+
+[飞书整屏共享记录](results/feishu-display-share-2026-10-20.json)区分发送端工具确认与接收端人工反馈。用户肉眼反馈可记录为 `observed_excluded` 等观测，但必须标注 `evidenceLevel: human_report_only` 并保存原话；没有原始接收端帧／录像时，artifact 路径、SHA 和帧范围保持 null，不视作独立逐帧验收。不要把保存反馈文件本身的摘要冒充接收画面的摘要。

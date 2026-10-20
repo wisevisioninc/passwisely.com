@@ -1,6 +1,8 @@
 import { app, safeStorage } from "electron";
 import fs from "node:fs";
 import path from "node:path";
+import { DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile } from "./live/transcription";
+import type { TranscriptionSettings } from "./live/transcription";
 
 import {
   AI_PROVIDERS,
@@ -21,6 +23,7 @@ interface StoredProviderSettings {
 }
 
 interface StoredSettings {
+  transcription?: TranscriptionSettings;
   activeProvider?: AiProviderId;
   responseLanguage?: ResponseLanguage;
   providers?: Partial<Record<AiProviderId, StoredProviderSettings>>;
@@ -127,6 +130,52 @@ export class SettingsStore {
       }
       return {};
     }
+  }
+
+  public getTranscriptionSettings(): TranscriptionSettings {
+    const profile = getTranscriptionProfile(this.read().transcription?.profileId);
+    return { profileId: profile?.id || DEFAULT_TRANSCRIPTION_PROFILE };
+  }
+
+  public saveTranscriptionSettings(input: unknown): TranscriptionSettings {
+    if (!input || typeof input !== "object" || Array.isArray(input) ||
+        Object.keys(input).some(key => key !== "profileId")) {
+      throw new Error("Invalid transcription settings.");
+    }
+    const profile = getTranscriptionProfile((input as { profileId?: unknown }).profileId);
+    if (!profile) throw new Error("Unknown transcription profile.");
+    // Keep this preference independent of AI provider migration/configuration.
+    // Read strictly here: an unreadable/malformed existing file must not be lost.
+    let previous: Buffer | undefined;
+    let stored: StoredSettings = {};
+    try {
+      previous = fs.readFileSync(this.settingsPath);
+      const parsed: unknown = JSON.parse(previous.toString("utf8"));
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Existing settings must be an object.");
+      }
+      stored = parsed as StoredSettings;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    const settings = { profileId: profile.id };
+    fs.mkdirSync(path.dirname(this.settingsPath), { recursive: true });
+    if (previous) {
+      const backupPath = `${this.settingsPath}.before-transcription.bak`;
+      try {
+        fs.writeFileSync(backupPath, previous, { flag: "wx", mode: 0o600 });
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        const existing = fs.lstatSync(backupPath);
+        if (!existing.isFile() || existing.isSymbolicLink()) {
+          throw new Error("Existing transcription backup must be a regular file.");
+        }
+      }
+      fs.chmodSync(backupPath, 0o600);
+    }
+    stored.transcription = settings;
+    this.write(stored);
+    return settings;
   }
 
   private migrate(settings: StoredSettings): StoredSettings {

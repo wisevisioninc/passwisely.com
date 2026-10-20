@@ -1,6 +1,8 @@
 import { app, safeStorage } from "electron";
 import fs from "node:fs";
 import path from "node:path";
+import { DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile } from "./live/transcription";
+import type { TranscriptionProfileId } from "./live/transcription";
 import type {
   ResumeProcessResponse,
   ResumeRequest,
@@ -158,10 +160,29 @@ export class AccountService {
     return this.authenticate("login", email, password, "en");
   }
 
-  public createRecallUpload(sessionId: string, signal: AbortSignal): Promise<{ uploadToken: string; uploadId: string; apiUrl: string }> {
-    return this.request("/desktop/recall/upload-token", {
-      method: "POST", body: JSON.stringify({ sessionId }), signal,
+  public async createRecallUpload(sessionId: string, signal: AbortSignal, profileId: TranscriptionProfileId = DEFAULT_TRANSCRIPTION_PROFILE): Promise<{ uploadToken: string; uploadId: string; apiUrl: string; transcriptionProfile?: TranscriptionProfileId }> {
+    if (!getTranscriptionProfile(profileId)) throw new Error("Unknown transcription profile.");
+    // Older English-only token routes reject every field except sessionId.
+    // Omission is the stable English default; only opt-in profiles add a field.
+    const request = profileId === DEFAULT_TRANSCRIPTION_PROFILE
+      ? { sessionId }
+      : { sessionId, transcriptionProfile: profileId };
+    const upload = await this.request<{ uploadToken?: unknown; uploadId?: unknown; apiUrl?: unknown; transcriptionProfile?: unknown }>("/desktop/recall/upload-token", {
+      method: "POST", body: JSON.stringify(request), signal,
     }, true);
+    if (!upload || typeof upload !== "object" || Array.isArray(upload) ||
+        typeof upload.uploadToken !== "string" || !upload.uploadToken.trim() ||
+        typeof upload.uploadId !== "string" || !upload.uploadId ||
+        typeof upload.apiUrl !== "string" ||
+        !["https://us-west-2.recall.ai", "https://us-east-1.recall.ai", "https://eu-central-1.recall.ai", "https://ap-northeast-1.recall.ai"].includes(upload.apiUrl)) {
+      throw new Error("Invalid Recall upload response.");
+    }
+    if (upload.transcriptionProfile !== profileId &&
+        !(profileId === DEFAULT_TRANSCRIPTION_PROFILE && upload.transcriptionProfile === undefined)) {
+      throw new Error("转录配置与请求不一致，请检查服务器设置后重试。");
+    }
+    return { uploadToken: upload.uploadToken, uploadId: upload.uploadId, apiUrl: upload.apiUrl,
+      ...(upload.transcriptionProfile === undefined ? {} : { transcriptionProfile: profileId }) };
   }
 
   public register(

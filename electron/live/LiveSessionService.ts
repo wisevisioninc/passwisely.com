@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import type OpenAI from "openai";
 import { buildConversationMessages } from "./ConversationContext";
 import { MAX_SCREENSHOTS } from "../screenshotLimits";
+import { DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile } from "./transcription";
+import type { TranscriptionProfileId } from "./transcription";
 import type { CaptureStatus, LiveAnswer, LiveAskInput, LiveResult, LiveSnapshot, TranscriptSegment } from "./types";
 
 export interface CaptureCallbacks {
@@ -19,7 +21,8 @@ export interface AudioCapture {
 interface Dependencies {
   support: { supported: boolean; message?: string };
   createCapture: (callbacks: CaptureCallbacks) => AudioCapture;
-  createUpload: (sessionId: string, signal: AbortSignal) => Promise<{ uploadToken: string; apiUrl: string }>;
+  createUpload: (sessionId: string, signal: AbortSignal, profileId: TranscriptionProfileId) => Promise<{ uploadToken: string; apiUrl: string; transcriptionProfile?: TranscriptionProfileId }>;
+  transcriptionProfile?: () => TranscriptionProfileId;
   stream: (messages: OpenAI.Chat.ChatCompletionMessageParam[], signal: AbortSignal, update: (text: string, model: string) => void) => Promise<OpenAI.Chat.ChatCompletion>;
   pendingScreenshots: () => string[];
   images: (paths: readonly string[], signal: AbortSignal) => Promise<string[]>;
@@ -56,7 +59,9 @@ export class LiveSessionService {
 
   constructor(private readonly deps: Dependencies) { this.state = this.empty(); }
   private empty(): LiveSnapshot {
-    return { sessionId: randomUUID(), revision: this.revision, provider: "recall-v2", captureStatus: "idle", transcripts: [], answers: [], transcriptTruncated: false, captureNeedsCleanup: false, platformSupported: this.deps.support.supported, platformMessage: this.deps.support.message };
+    const transcription = getTranscriptionProfile(this.deps.transcriptionProfile?.() || DEFAULT_TRANSCRIPTION_PROFILE);
+    if (!transcription) throw new Error("Unknown transcription profile.");
+    return { sessionId: randomUUID(), revision: this.revision, provider: "recall-v2", transcription: { ...transcription }, captureStatus: "idle", transcripts: [], answers: [], transcriptTruncated: false, captureNeedsCleanup: false, platformSupported: this.deps.support.supported, platformMessage: this.deps.support.message };
   }
   getSnapshot(): LiveSnapshot { return structuredClone(this.state); }
   private emit(immediate = false): void {
@@ -95,13 +100,20 @@ export class LiveSessionService {
     this.state.captureStatus = "starting";
     this.emit(true);
     const sessionId = this.state.sessionId, generation = ++this.generation;
+    const profileId = this.state.transcription!.id;
     const controller = new AbortController();
     this.starting = controller;
     const current = () => sessionId === this.state.sessionId && generation === this.generation && !controller.signal.aborted;
     try {
-      const upload = await this.deps.createUpload(sessionId, controller.signal);
+      const upload = await this.deps.createUpload(sessionId, controller.signal, profileId);
       controller.signal.throwIfAborted();
       if (!current()) return { success: false, error: "启动已取消。" };
+      // Older English-only servers may omit this field. Never let a requested
+      // Chinese profile silently become a different transcription session.
+      if (upload.transcriptionProfile !== profileId &&
+          !(profileId === DEFAULT_TRANSCRIPTION_PROFILE && upload.transcriptionProfile === undefined)) {
+        throw new Error("转录配置与请求不一致，请检查服务器设置后重试。");
+      }
       const capture = this.deps.createCapture({
         onTranscript: segment => { if (current()) this.receive(segment); },
         onState: status => {
@@ -289,6 +301,7 @@ export class LiveSessionService {
         ++this.generation;
         this.state = this.empty();
         this.state.sessionId = previous.sessionId;
+        this.state.transcription = previous.transcription;
         // Clearing conversational context must not release a failed native owner.
         if (previous.captureNeedsCleanup) {
           this.state.captureStatus = previous.captureStatus;

@@ -9,8 +9,9 @@ import type {
   PublicSettings,
 } from "../../../electron/settings";
 import { useToast } from "../../contexts/toast";
+import { SpeechSettings } from "./SpeechSettings";
 
-export const AISettings: React.FC = () => {
+const AIProviderSettings: React.FC = () => {
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
@@ -328,3 +329,9 @@ export const AISettings: React.FC = () => {
     </div>
   );
 };
+
+// Keep each settings owner mounted, including when the other section is loading.
+export const AISettings: React.FC = () => <div className="space-y-4">
+  <AIProviderSettings />
+  <div className="border-t border-white/10 pt-3"><SpeechSettings /></div>
+</div>;

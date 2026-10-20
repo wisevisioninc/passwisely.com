@@ -384,6 +384,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
             </article>)}
           </section>
           <section className="pw-live-transcript-view" aria-label="会话转录" hidden={tab !== "transcript"}>
+            {snapshot?.transcription && <p className="pw-live-context-note" aria-label="本次语音识别">本次：{snapshot.transcription.language === "zh" ? "中文" : "English"} · {snapshot.transcription.provider === "deepgram" ? "Deepgram" : "Recall"} · {snapshot.transcription.latency === "delayed" ? "分钟级（实验）" : "实时"}</p>}
             {transcripts.length === 0 ? <p className="pw-live-empty-transcript">{captureStatus === "starting" ? "Establishing connection…" : captureStatus === "paused" ? "Session paused" : captureStatus === "recording" ? "Listening for audio…" : 'Click "Start Interview" to create your first transcript.'}</p> : transcripts.map(segment => <article className={`pw-live-segment source-${segment.source} ${segment.isFinal ? "final" : "partial"}`} key={segment.id} aria-label={`${SOURCE_LABELS[segment.source]}${segment.isFinal ? "" : " · 识别中"}`} title={`${SOURCE_LABELS[segment.source]} · ${clockLabel(segment.receivedAt)}`}>
               <p>{segment.text}</p>{segment.source === "unknown" && <small>来源未知</small>}{!segment.isFinal && <span className="pw-live-caret" aria-hidden="true" />}
             </article>)}
@@ -410,7 +411,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
       <button type="button" className="pw-live-credits" title="PassWisely account & credits" onClick={() => { void api.accountOpenPortal(); }}>{credits} credits</button>
       <img className="pw-live-toolbar-brand" src="./logo512.png" alt="PassWisely" width={24} height={24} draggable={false} />
       <div className="pw-live-capture-controls">
-        {controls.showStart && !snapshot?.captureNeedsCleanup ? <button type="button" className="pw-live-start" disabled={loading || controls.startDisabled} title={hasSessionText ? "开始新会话将清空当前转录和回答。音频将发送并保存至你的 Recall 项目。" : "音频将发送并保存至你的 Recall 项目；点击后开始英文实时转录。"} onClick={() => void runCapture(api.liveStart, "start")}><Play size={11} />Start Interview</button> : captureStatus === "recording" || captureStatus === "paused" ? <>
+        {controls.showStart && !snapshot?.captureNeedsCleanup ? <button type="button" className="pw-live-start" disabled={loading || controls.startDisabled} title={`${hasSessionText ? "开始新会话将清空当前转录和回答。" : ""}按已保存的语音设置开始新会话。音频将发送并保存至你的 Recall 项目。`} onClick={() => void runCapture(api.liveStart, "start")}><Play size={11} />Start Interview</button> : captureStatus === "recording" || captureStatus === "paused" ? <>
           <button type="button" className="pw-live-pause" disabled={captureBusy} title={captureStatus === "paused" ? "Resume Listening" : "Pause Listening"} aria-label={captureStatus === "paused" ? "Resume Listening / 继续采集" : "Pause Listening / 暂停采集"} onClick={() => void runCapture(captureStatus === "paused" ? api.liveResume : api.livePause)}>{captureStatus === "paused" ? <Play size={11} /> : <Pause size={11} />}</button>
           <span className={`pw-live-waveform ${captureStatus === "paused" ? "paused" : ""}`} role="status" aria-label={CAPTURE_LABELS[captureStatus]}><i /><i /><i /><i /><i /></span>
           {captureStatus === "paused" && <button type="button" className="pw-live-done" disabled={controls.stopDisabled} title="Stop Listening" onClick={() => void runCapture(api.liveStop, "stop")}>Done <Square size={9} /></button>}
@@ -434,7 +435,7 @@ export default function LiveWorkspace({ visible, onSnapshot, onProgramming, cred
           <button type="button" role="menuitem" onClick={() => { void api.accountOpenPortal(); }}>Account & credits</button>
           <button type="button" role="menuitem" onClick={() => { void api.accountLogout().then(result => { if (result.success) window.location.reload(); else setError(result.error || "Sign out failed."); }).catch(reason => setError(errorText(reason))); }}>Sign out</button>
           <button type="button" role="menuitem" onClick={() => { void api.quitApp().catch(reason => setError(errorText(reason))); }}>Quit PassWisely</button>
-          <p className="pw-live-audio-notice">English ASR. 音频将发送并保存至你的 Recall 项目，用于实时转录。点击 Start Interview 后才开始采集。{hasSessionText && " 新会话会清空当前转录和回答。"}</p>
+          <p className="pw-live-audio-notice">音频将按已保存的语音设置转录，并发送及保存至你的 Recall 项目。点击 Start Interview 后才开始采集。{hasSessionText && " 新会话会清空当前转录和回答。"}</p>
         </div>}
       </div>
     </div>

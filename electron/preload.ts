@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { LiveSessionAPI, LiveSnapshot } from "./live/types";
+import type { TranscriptionSettings } from "./live/transcription";
 import type { LiveShortcutAction, OverlayGeometry, OverlayWindowAPI } from "./live/overlayTypes";
 import type { AiProviderId } from "./aiProviders";
 import type {
@@ -14,6 +15,8 @@ console.log("Preload script starting...");
 
 // Types for the exposed Electron API
 interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
+  getTranscriptionSettings: () => Promise<TranscriptionSettings>;
+  saveTranscriptionSettings: (input: TranscriptionSettings) => Promise<{ success: boolean; settings?: TranscriptionSettings; error?: string }>;
   accountGet: () => Promise<{
     success: boolean;
     user?: { id: string; email: string; locale: "zh" | "en"; credits: number };
@@ -214,6 +217,8 @@ const electronAPI = {
   clearStore: () => ipcRenderer.invoke("clear-store"),
   getScreenshots: () => ipcRenderer.invoke("get-screenshots"),
   getAiSettings: () => ipcRenderer.invoke("get-ai-settings"),
+  getTranscriptionSettings: () => ipcRenderer.invoke("get-transcription-settings"),
+  saveTranscriptionSettings: (input: TranscriptionSettings) => ipcRenderer.invoke("save-transcription-settings", input),
   saveAiSettings: (input: SaveAiSettingsInput) =>
     ipcRenderer.invoke("save-ai-settings", input),
   clearApiKey: (provider?: AiProviderId) =>

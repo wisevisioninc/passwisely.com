@@ -10,12 +10,14 @@ import ts from "typescript";
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
 function production(relative, mocks = {}) {
-  const javascript = ts.transpileModule(readFileSync(path.join(root, relative), "utf8"), {
+  const filename = path.join(root, relative);
+  const javascript = ts.transpileModule(readFileSync(filename, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
   }).outputText;
   const module = { exports: {} };
   new Function("require", "module", "exports", "console", javascript)(id => {
     if (id in mocks) return mocks[id];
+    if (id.startsWith(".")) return production(path.relative(root, path.resolve(path.dirname(filename), `${id}.ts`)), mocks);
     return require(id);
   }, module, module.exports, { log() {}, warn() {}, error() {} });
   return module.exports;

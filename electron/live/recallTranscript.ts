@@ -9,6 +9,26 @@ const digest = (value: string): string => createHash("sha256").update(value).dig
 const MAX_WORDS = 1024;
 const MAX_TEXT = 16_384;
 const MAX_SPEAKER = 120;
+const han = /\p{Script=Han}/u;
+
+/** Recall words are lexical tokens, not necessarily space-delimited words. Keep
+ * provider whitespace; only choose separators for boundaries it left implicit. */
+function wordSeparator(previous: string, next: string): string {
+  if (!previous || /\s$/u.test(previous) || /^\s/u.test(next)) return "";
+  const last = previous.slice(-2).match(/.$/u)?.[0] || "";
+  const first = next.match(/^./u)?.[0] || "";
+  if (/^[,.;:!?，。；：！？、)）\]】》」』’”%％…]/u.test(first)) return "";
+  if (/[（(\[【《「『‘“]$/u.test(last)) return "";
+  if (han.test(last) && /^[“‘「『（【《]/u.test(first)) return "";
+  if (/[”’」』）】》]/u.test(last) && han.test(first)) return "";
+  // Han words and numeric dates/amounts do not need inter-word spaces. Keep
+  // Latin technical terms readable at a Chinese/Latin boundary.
+  if (han.test(last) && (han.test(first) || /\d/u.test(first))) return "";
+  if (/\d/u.test(last) && han.test(first)) return "";
+  if (/[，。；：！？、]/u.test(last)) return "";
+  return " ";
+}
+
 function display(value: string, limit: number): string {
   if (value.length <= limit) return value;
   let end = limit - 1;
@@ -52,7 +72,7 @@ export function createRecallTranscriptNormalizer() {
       let truncated = data.words.length > MAX_WORDS;
       for (const word of words) {
         if (typeof word.text !== "string" || !word.text) continue;
-        if (text) text += " ";
+        text += wordSeparator(text, word.text);
         const available = Math.max(0, MAX_TEXT - text.length);
         text += word.text.slice(0, available);
         if (word.text.length > available) { truncated = true; break; }

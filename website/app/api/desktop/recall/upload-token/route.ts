@@ -35,12 +35,12 @@ export async function POST(request: Request): Promise<Response> {
     } catch {
       return json({ error: "A valid sessionId UUID is required.", code: "INVALID_SESSION_ID" }, 400);
     } finally { reader.releaseLock(); }
-    if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some((key) => key !== "sessionId")) {
-      return json({ error: "Only a sessionId UUID is accepted.", code: "INVALID_SESSION_REQUEST" }, 400);
+    if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some((key) => key !== "sessionId" && key !== "transcriptionProfile")) {
+      return json({ error: "Only a sessionId UUID and optional transcriptionProfile are accepted.", code: "INVALID_SESSION_REQUEST" }, 400);
     }
     const sessionId = normalizeRecallSessionId((body as Record<string, unknown>).sessionId);
     if (!sessionId) return json({ error: "A valid sessionId UUID is required.", code: "INVALID_SESSION_ID" }, 400);
-    return json(await createRecallUpload(user.id, sessionId));
+    return json(await createRecallUpload(user.id, sessionId, (body as Record<string, unknown>).transcriptionProfile));
   } catch (error) {
     if (error instanceof RecallUploadError) return json({ error: error.message, code: error.code }, error.status);
     return json({ error: "Audio session creation is temporarily unavailable.", code: "RECALL_SESSION_UNAVAILABLE" }, 503);

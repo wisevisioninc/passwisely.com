@@ -384,3 +384,38 @@ test("transcript boundary bounds words/text/speaker without colliding long ident
   const result = n.normalize(many);
   assert.equal(result.text.split(" ").length, 1024); assert.ok(result.text.endsWith("…"));
 });
+
+test("Recall word boundaries preserve Chinese, dates, Latin terms and punctuation", () => {
+  const inputs = [
+    [["今天", "是", "2026", "年", "10", "月", "20", "日", "，", "订单", "金额", "是", "128.50", "元", "。"], "今天是2026年10月20日，订单金额是128.50元。"],
+    [["请用", "Python", "实现", "binary", "search", "，", "时间", "复杂度", "是", "O(log n)", "。"], "请用 Python 实现 binary search，时间复杂度是 O(log n)。"],
+    [["Hello", ",", "world", "!", "(", "Again", ")"], "Hello, world! (Again)"],
+    [["保留 ", " 空格", "与", "换行\n", "内容"], "保留  空格与换行\n内容"],
+    [["𠮷", "野", "家"], "𠮷野家"],
+  ];
+  for (const [tokens, expected] of inputs) {
+    const n = harness().normalizer();
+    const partial = event("source", "unused", true, { id: 1, is_host: false });
+    partial.data.data.words = tokens.map(text => ({ text }));
+    partial.data.data.utterance_id = "chinese-utterance";
+    const a = n.normalize(partial, 10);
+    const final = structuredClone(partial); final.event = "transcript.data";
+    const b = n.normalize(final, 20);
+    assert.equal(a.text, expected); assert.equal(b.text, expected);
+    assert.equal(a.id, b.id); assert.equal(b.source, "system");
+    assert.equal(n.normalize(final, 30), null);
+  }
+});
+
+test("Chinese text truncation preserves the UTF-16 boundary and resource bounds", () => {
+  const n = harness().normalizer();
+  const input = event("source", "文".repeat(16_382) + "𠮷家");
+  const output = n.normalize(input);
+  assert.ok(output.text.length <= 16_384);
+  assert.ok(output.text.endsWith("…"));
+  assert.ok(!/[\uD800-\uDBFF]$/u.test(output.text.slice(0, -1)));
+  const many = event("source", "unused");
+  many.data.data.words = Array.from({ length: 100_000 }, () => ({ text: "中" }));
+  const result = n.normalize(many);
+  assert.equal(result.text, "中".repeat(1024) + "…");
+});

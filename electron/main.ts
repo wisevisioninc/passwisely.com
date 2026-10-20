@@ -201,7 +201,8 @@ function initializeHelpers() {
   state.liveSession = new LiveSessionService({
     support: RecallCapture.support(),
     createCapture: callbacks => new RecallCapture(callbacks),
-    createUpload: (id, signal) => state.accountService!.createRecallUpload(id, signal),
+    createUpload: (id, signal, profileId) => state.accountService!.createRecallUpload(id, signal, profileId),
+    transcriptionProfile: () => state.settingsStore!.getTranscriptionSettings().profileId,
     stream: (messages, signal, update) => state.processingHelper!.streamConversation(messages, signal, update),
     language: () => state.settingsStore!.getResponseLanguage(),
     pendingScreenshots: () => state.screenshotHelper!.getPendingScreenshots(),
@@ -726,6 +727,9 @@ async function initializeApp() {
       if (state.accountService!.getToken()) return true;
       void handleAuthenticationLost();
       return false;
+    }, {
+      get: () => state.settingsStore!.getTranscriptionSettings(),
+      save: input => state.settingsStore!.saveTranscriptionSettings(input),
     });
     await createWindow();
     state.shortcutsHelper?.registerGlobalShortcuts();

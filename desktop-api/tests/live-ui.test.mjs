@@ -163,7 +163,8 @@ test("recording consent disclosure is present before capture and generation has 
   const disclosure = $(".pw-live-start").attr("title");
   assert.ok(disclosure.includes("发送并保存"));
   assert.ok(disclosure.includes("你的 Recall 项目"));
-  assert.ok(disclosure.includes("点击后开始英文实时转录"));
+  assert.ok(disclosure.includes("按已保存的语音设置开始新会话"));
+  assert.ok(!disclosure.includes("开始英文实时转录"));
   const answer = { id: "fixture-answer", question: "上下文是什么？", text: "已收到的部分回答", model: "fixture-model", status: "streaming", createdAt: 1, screenshotCount: 0 };
   const { dom: active } = renderWorkspace(snapshot({ captureStatus: "recording", answers: [answer] }));
   const stopAnswer = active("button[aria-label='停止生成']");

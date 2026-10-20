@@ -1,0 +1,1547 @@
+{
+  "schemaVersion": 1,
+  "language": "zh-CN",
+  "provenance": {
+    "kind": "synthetic-normalizer-fixture",
+    "realCaptureVerified": false,
+    "containsRealUserAudio": false,
+    "note": "The words and punctuation are authored event payloads, not provider observations. Expected characters validate normalization only, not Chinese ASR accuracy or latency."
+  },
+  "normalizationPolicy": {
+    "hanCharacters": "adjacent without inserted spaces",
+    "latinTerms": "preserve readable boundaries around independent Latin terms and between Latin words",
+    "datesAndNumbers": "digits next to Han units remain adjacent",
+    "punctuation": "no inserted space before independent punctuation"
+  },
+  "cases": [
+    {
+      "id": "mandarin-date-and-numbers",
+      "coverage": [
+        "普通话",
+        "数字",
+        "年月日",
+        "小数",
+        "中文标点"
+      ],
+      "spokenScript": "今天是二零二六年十月二十日，订单金额是一百二十八点五零元。",
+      "expectedFinalCharacters": "今天是2026年10月20日，订单金额是128.50元。",
+      "replay": [
+        {
+          "receivedAt": 1000,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.partial_data",
+            "data": {
+              "source": "microphone",
+              "data": {
+                "utterance_id": "date-and-numbers",
+                "language_code": "zh",
+                "participant": {
+                  "id": 1,
+                  "name": "测试本地发言者",
+                  "is_host": true
+                },
+                "words": [
+                  {
+                    "text": "今天",
+                    "start_timestamp": {
+                      "relative": 0.0
+                    },
+                    "end_timestamp": {
+                      "relative": 0.25
+                    }
+                  },
+                  {
+                    "text": "是",
+                    "start_timestamp": {
+                      "relative": 0.25
+                    },
+                    "end_timestamp": {
+                      "relative": 0.5
+                    }
+                  },
+                  {
+                    "text": "2026",
+                    "start_timestamp": {
+                      "relative": 0.5
+                    },
+                    "end_timestamp": {
+                      "relative": 0.75
+                    }
+                  },
+                  {
+                    "text": "年",
+                    "start_timestamp": {
+                      "relative": 0.75
+                    },
+                    "end_timestamp": {
+                      "relative": 1.0
+                    }
+                  },
+                  {
+                    "text": "10",
+                    "start_timestamp": {
+                      "relative": 1.0
+                    },
+                    "end_timestamp": {
+                      "relative": 1.25
+                    }
+                  },
+                  {
+                    "text": "月",
+                    "start_timestamp": {
+                      "relative": 1.25
+                    },
+                    "end_timestamp": {
+                      "relative": 1.5
+                    }
+                  },
+                  {
+                    "text": "20",
+                    "start_timestamp": {
+                      "relative": 1.5
+                    },
+                    "end_timestamp": {
+                      "relative": 1.75
+                    }
+                  },
+                  {
+                    "text": "日",
+                    "start_timestamp": {
+                      "relative": 1.75
+                    },
+                    "end_timestamp": {
+                      "relative": 2.0
+                    }
+                  },
+                  {
+                    "text": "，",
+                    "start_timestamp": {
+                      "relative": 2.0
+                    },
+                    "end_timestamp": {
+                      "relative": 2.25
+                    }
+                  },
+                  {
+                    "text": "订单",
+                    "start_timestamp": {
+                      "relative": 2.25
+                    },
+                    "end_timestamp": {
+                      "relative": 2.5
+                    }
+                  },
+                  {
+                    "text": "金额",
+                    "start_timestamp": {
+                      "relative": 2.5
+                    },
+                    "end_timestamp": {
+                      "relative": 2.75
+                    }
+                  },
+                  {
+                    "text": "是",
+                    "start_timestamp": {
+                      "relative": 2.75
+                    },
+                    "end_timestamp": {
+                      "relative": 3.0
+                    }
+                  },
+                  {
+                    "text": "128",
+                    "start_timestamp": {
+                      "relative": 3.0
+                    },
+                    "end_timestamp": {
+                      "relative": 3.25
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-1",
+            "text": "今天是2026年10月20日，订单金额是128",
+            "source": "microphone",
+            "isFinal": false,
+            "participantId": "1",
+            "speaker": "测试本地发言者",
+            "startMs": 0,
+            "endMs": 3250,
+            "receivedAt": 1000
+          }
+        },
+        {
+          "receivedAt": 2000,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.data",
+            "data": {
+              "source": "microphone",
+              "data": {
+                "utterance_id": "date-and-numbers",
+                "language_code": "zh",
+                "participant": {
+                  "id": 1,
+                  "name": "测试本地发言者",
+                  "is_host": true
+                },
+                "words": [
+                  {
+                    "text": "今天",
+                    "start_timestamp": {
+                      "relative": 0.0
+                    },
+                    "end_timestamp": {
+                      "relative": 0.25
+                    }
+                  },
+                  {
+                    "text": "是",
+                    "start_timestamp": {
+                      "relative": 0.25
+                    },
+                    "end_timestamp": {
+                      "relative": 0.5
+                    }
+                  },
+                  {
+                    "text": "2026",
+                    "start_timestamp": {
+                      "relative": 0.5
+                    },
+                    "end_timestamp": {
+                      "relative": 0.75
+                    }
+                  },
+                  {
+                    "text": "年",
+                    "start_timestamp": {
+                      "relative": 0.75
+                    },
+                    "end_timestamp": {
+                      "relative": 1.0
+                    }
+                  },
+                  {
+                    "text": "10",
+                    "start_timestamp": {
+                      "relative": 1.0
+                    },
+                    "end_timestamp": {
+                      "relative": 1.25
+                    }
+                  },
+                  {
+                    "text": "月",
+                    "start_timestamp": {
+                      "relative": 1.25
+                    },
+                    "end_timestamp": {
+                      "relative": 1.5
+                    }
+                  },
+                  {
+                    "text": "20",
+                    "start_timestamp": {
+                      "relative": 1.5
+                    },
+                    "end_timestamp": {
+                      "relative": 1.75
+                    }
+                  },
+                  {
+                    "text": "日",
+                    "start_timestamp": {
+                      "relative": 1.75
+                    },
+                    "end_timestamp": {
+                      "relative": 2.0
+                    }
+                  },
+                  {
+                    "text": "，",
+                    "start_timestamp": {
+                      "relative": 2.0
+                    },
+                    "end_timestamp": {
+                      "relative": 2.25
+                    }
+                  },
+                  {
+                    "text": "订单",
+                    "start_timestamp": {
+                      "relative": 2.25
+                    },
+                    "end_timestamp": {
+                      "relative": 2.5
+                    }
+                  },
+                  {
+                    "text": "金额",
+                    "start_timestamp": {
+                      "relative": 2.5
+                    },
+                    "end_timestamp": {
+                      "relative": 2.75
+                    }
+                  },
+                  {
+                    "text": "是",
+                    "start_timestamp": {
+                      "relative": 2.75
+                    },
+                    "end_timestamp": {
+                      "relative": 3.0
+                    }
+                  },
+                  {
+                    "text": "128.50",
+                    "start_timestamp": {
+                      "relative": 3.0
+                    },
+                    "end_timestamp": {
+                      "relative": 3.25
+                    }
+                  },
+                  {
+                    "text": "元",
+                    "start_timestamp": {
+                      "relative": 3.25
+                    },
+                    "end_timestamp": {
+                      "relative": 3.5
+                    }
+                  },
+                  {
+                    "text": "。",
+                    "start_timestamp": {
+                      "relative": 3.5
+                    },
+                    "end_timestamp": {
+                      "relative": 3.75
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-1",
+            "text": "今天是2026年10月20日，订单金额是128.50元。",
+            "source": "microphone",
+            "isFinal": true,
+            "participantId": "1",
+            "speaker": "测试本地发言者",
+            "startMs": 0,
+            "endMs": 3750,
+            "receivedAt": 2000
+          }
+        }
+      ]
+    },
+    {
+      "id": "technical-codewords",
+      "coverage": [
+        "中英技术词",
+        "Latin词间隔",
+        "括号",
+        "复杂度"
+      ],
+      "spokenScript": "请用 Python 实现 binary search，时间复杂度是 O log n。",
+      "expectedFinalCharacters": "请用 Python 实现 binary search，时间复杂度是 O(log n)。",
+      "replay": [
+        {
+          "receivedAt": 3000,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.partial_data",
+            "data": {
+              "source": "system",
+              "data": {
+                "utterance_id": "technical",
+                "language_code": "zh",
+                "participant": {
+                  "id": 2,
+                  "name": "测试远端发言者",
+                  "is_host": false
+                },
+                "words": [
+                  {
+                    "text": "请",
+                    "start_timestamp": {
+                      "relative": 0.0
+                    },
+                    "end_timestamp": {
+                      "relative": 0.25
+                    }
+                  },
+                  {
+                    "text": "用",
+                    "start_timestamp": {
+                      "relative": 0.25
+                    },
+                    "end_timestamp": {
+                      "relative": 0.5
+                    }
+                  },
+                  {
+                    "text": "Python",
+                    "start_timestamp": {
+                      "relative": 0.5
+                    },
+                    "end_timestamp": {
+                      "relative": 0.75
+                    }
+                  },
+                  {
+                    "text": "实现",
+                    "start_timestamp": {
+                      "relative": 0.75
+                    },
+                    "end_timestamp": {
+                      "relative": 1.0
+                    }
+                  },
+                  {
+                    "text": "binary",
+                    "start_timestamp": {
+                      "relative": 1.0
+                    },
+                    "end_timestamp": {
+                      "relative": 1.25
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-1",
+            "text": "请用 Python 实现 binary",
+            "source": "system",
+            "isFinal": false,
+            "participantId": "2",
+            "speaker": "测试远端发言者",
+            "startMs": 0,
+            "endMs": 1250,
+            "receivedAt": 3000
+          }
+        },
+        {
+          "receivedAt": 4000,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.data",
+            "data": {
+              "source": "system",
+              "data": {
+                "utterance_id": "technical",
+                "language_code": "zh",
+                "participant": {
+                  "id": 2,
+                  "name": "测试远端发言者",
+                  "is_host": false
+                },
+                "words": [
+                  {
+                    "text": "请",
+                    "start_timestamp": {
+                      "relative": 0.0
+                    },
+                    "end_timestamp": {
+                      "relative": 0.25
+                    }
+                  },
+                  {
+                    "text": "用",
+                    "start_timestamp": {
+                      "relative": 0.25
+                    },
+                    "end_timestamp": {
+                      "relative": 0.5
+                    }
+                  },
+                  {
+                    "text": "Python",
+                    "start_timestamp": {
+                      "relative": 0.5
+                    },
+                    "end_timestamp": {
+                      "relative": 0.75
+                    }
+                  },
+                  {
+                    "text": "实现",
+                    "start_timestamp": {
+                      "relative": 0.75
+                    },
+                    "end_timestamp": {
+                      "relative": 1.0
+                    }
+                  },
+                  {
+                    "text": "binary",
+                    "start_timestamp": {
+                      "relative": 1.0
+                    },
+                    "end_timestamp": {
+                      "relative": 1.25
+                    }
+                  },
+                  {
+                    "text": "search",
+                    "start_timestamp": {
+                      "relative": 1.25
+                    },
+                    "end_timestamp": {
+                      "relative": 1.5
+                    }
+                  },
+                  {
+                    "text": "，",
+                    "start_timestamp": {
+                      "relative": 1.5
+                    },
+                    "end_timestamp": {
+                      "relative": 1.75
+                    }
+                  },
+                  {
+                    "text": "时间",
+                    "start_timestamp": {
+                      "relative": 1.75
+                    },
+                    "end_timestamp": {
+                      "relative": 2.0
+                    }
+                  },
+                  {
+                    "text": "复杂度",
+                    "start_timestamp": {
+                      "relative": 2.0
+                    },
+                    "end_timestamp": {
+                      "relative": 2.25
+                    }
+                  },
+                  {
+                    "text": "是",
+                    "start_timestamp": {
+                      "relative": 2.25
+                    },
+                    "end_timestamp": {
+                      "relative": 2.5
+                    }
+                  },
+                  {
+                    "text": "O(log n)",
+                    "start_timestamp": {
+                      "relative": 2.5
+                    },
+                    "end_timestamp": {
+                      "relative": 2.75
+                    }
+                  },
+                  {
+                    "text": "。",
+                    "start_timestamp": {
+                      "relative": 2.75
+                    },
+                    "end_timestamp": {
+                      "relative": 3.0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-1",
+            "text": "请用 Python 实现 binary search，时间复杂度是 O(log n)。",
+            "source": "system",
+            "isFinal": true,
+            "participantId": "2",
+            "speaker": "测试远端发言者",
+            "startMs": 0,
+            "endMs": 3000,
+            "receivedAt": 4000
+          }
+        }
+      ]
+    },
+    {
+      "id": "simultaneous-system-and-microphone",
+      "coverage": [
+        "系统来源",
+        "麦克风来源",
+        "左右气泡",
+        "同时间戳来源隔离",
+        "partial到final",
+        "去重",
+        "迟到partial丢弃"
+      ],
+      "spokenScripts": [
+        {
+          "source": "system",
+          "displaySide": "left",
+          "text": "面试官问：数组可以包含负数吗？"
+        },
+        {
+          "source": "microphone",
+          "displaySide": "right",
+          "text": "可以。先处理空数组，再检查左右边界。"
+        }
+      ],
+      "expectedFinalCharacters": [
+        "面试官问：数组可以包含负数吗？",
+        "可以。先处理空数组，再检查左右边界。"
+      ],
+      "replay": [
+        {
+          "receivedAt": 5000,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.partial_data",
+            "data": {
+              "source": "system",
+              "data": {
+                "utterance_id": "two-source-question",
+                "language_code": "zh",
+                "participant": {
+                  "id": 2,
+                  "name": "测试远端发言者",
+                  "is_host": false
+                },
+                "words": [
+                  {
+                    "text": "面试官",
+                    "start_timestamp": {
+                      "relative": 10.0
+                    },
+                    "end_timestamp": {
+                      "relative": 10.25
+                    }
+                  },
+                  {
+                    "text": "问",
+                    "start_timestamp": {
+                      "relative": 10.25
+                    },
+                    "end_timestamp": {
+                      "relative": 10.5
+                    }
+                  },
+                  {
+                    "text": "：",
+                    "start_timestamp": {
+                      "relative": 10.5
+                    },
+                    "end_timestamp": {
+                      "relative": 10.75
+                    }
+                  },
+                  {
+                    "text": "数组",
+                    "start_timestamp": {
+                      "relative": 10.75
+                    },
+                    "end_timestamp": {
+                      "relative": 11.0
+                    }
+                  },
+                  {
+                    "text": "可以",
+                    "start_timestamp": {
+                      "relative": 11.0
+                    },
+                    "end_timestamp": {
+                      "relative": 11.25
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-1",
+            "text": "面试官问：数组可以",
+            "source": "system",
+            "isFinal": false,
+            "participantId": "2",
+            "speaker": "测试远端发言者",
+            "startMs": 10000,
+            "endMs": 11250,
+            "receivedAt": 5000
+          }
+        },
+        {
+          "receivedAt": 5100,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.partial_data",
+            "data": {
+              "source": "microphone",
+              "data": {
+                "utterance_id": "two-source-answer",
+                "language_code": "zh",
+                "participant": {
+                  "id": 1,
+                  "name": "测试本地发言者",
+                  "is_host": true
+                },
+                "words": [
+                  {
+                    "text": "可以",
+                    "start_timestamp": {
+                      "relative": 10.0
+                    },
+                    "end_timestamp": {
+                      "relative": 10.25
+                    }
+                  },
+                  {
+                    "text": "。",
+                    "start_timestamp": {
+                      "relative": 10.25
+                    },
+                    "end_timestamp": {
+                      "relative": 10.5
+                    }
+                  },
+                  {
+                    "text": "先",
+                    "start_timestamp": {
+                      "relative": 10.5
+                    },
+                    "end_timestamp": {
+                      "relative": 10.75
+                    }
+                  },
+                  {
+                    "text": "处理",
+                    "start_timestamp": {
+                      "relative": 10.75
+                    },
+                    "end_timestamp": {
+                      "relative": 11.0
+                    }
+                  },
+                  {
+                    "text": "空",
+                    "start_timestamp": {
+                      "relative": 11.0
+                    },
+                    "end_timestamp": {
+                      "relative": 11.25
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-2",
+            "text": "可以。先处理空",
+            "source": "microphone",
+            "isFinal": false,
+            "participantId": "1",
+            "speaker": "测试本地发言者",
+            "startMs": 10000,
+            "endMs": 11250,
+            "receivedAt": 5100
+          }
+        },
+        {
+          "receivedAt": 6000,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.data",
+            "data": {
+              "source": "system",
+              "data": {
+                "utterance_id": "two-source-question",
+                "language_code": "zh",
+                "participant": {
+                  "id": 2,
+                  "name": "测试远端发言者",
+                  "is_host": false
+                },
+                "words": [
+                  {
+                    "text": "面试官",
+                    "start_timestamp": {
+                      "relative": 10.0
+                    },
+                    "end_timestamp": {
+                      "relative": 10.25
+                    }
+                  },
+                  {
+                    "text": "问",
+                    "start_timestamp": {
+                      "relative": 10.25
+                    },
+                    "end_timestamp": {
+                      "relative": 10.5
+                    }
+                  },
+                  {
+                    "text": "：",
+                    "start_timestamp": {
+                      "relative": 10.5
+                    },
+                    "end_timestamp": {
+                      "relative": 10.75
+                    }
+                  },
+                  {
+                    "text": "数组",
+                    "start_timestamp": {
+                      "relative": 10.75
+                    },
+                    "end_timestamp": {
+                      "relative": 11.0
+                    }
+                  },
+                  {
+                    "text": "可以",
+                    "start_timestamp": {
+                      "relative": 11.0
+                    },
+                    "end_timestamp": {
+                      "relative": 11.25
+                    }
+                  },
+                  {
+                    "text": "包含",
+                    "start_timestamp": {
+                      "relative": 11.25
+                    },
+                    "end_timestamp": {
+                      "relative": 11.5
+                    }
+                  },
+                  {
+                    "text": "负数",
+                    "start_timestamp": {
+                      "relative": 11.5
+                    },
+                    "end_timestamp": {
+                      "relative": 11.75
+                    }
+                  },
+                  {
+                    "text": "吗",
+                    "start_timestamp": {
+                      "relative": 11.75
+                    },
+                    "end_timestamp": {
+                      "relative": 12.0
+                    }
+                  },
+                  {
+                    "text": "？",
+                    "start_timestamp": {
+                      "relative": 12.0
+                    },
+                    "end_timestamp": {
+                      "relative": 12.25
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-1",
+            "text": "面试官问：数组可以包含负数吗？",
+            "source": "system",
+            "isFinal": true,
+            "participantId": "2",
+            "speaker": "测试远端发言者",
+            "startMs": 10000,
+            "endMs": 12250,
+            "receivedAt": 6000
+          }
+        },
+        {
+          "receivedAt": 6100,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.data",
+            "data": {
+              "source": "microphone",
+              "data": {
+                "utterance_id": "two-source-answer",
+                "language_code": "zh",
+                "participant": {
+                  "id": 1,
+                  "name": "测试本地发言者",
+                  "is_host": true
+                },
+                "words": [
+                  {
+                    "text": "可以",
+                    "start_timestamp": {
+                      "relative": 10.0
+                    },
+                    "end_timestamp": {
+                      "relative": 10.25
+                    }
+                  },
+                  {
+                    "text": "。",
+                    "start_timestamp": {
+                      "relative": 10.25
+                    },
+                    "end_timestamp": {
+                      "relative": 10.5
+                    }
+                  },
+                  {
+                    "text": "先",
+                    "start_timestamp": {
+                      "relative": 10.5
+                    },
+                    "end_timestamp": {
+                      "relative": 10.75
+                    }
+                  },
+                  {
+                    "text": "处理",
+                    "start_timestamp": {
+                      "relative": 10.75
+                    },
+                    "end_timestamp": {
+                      "relative": 11.0
+                    }
+                  },
+                  {
+                    "text": "空",
+                    "start_timestamp": {
+                      "relative": 11.0
+                    },
+                    "end_timestamp": {
+                      "relative": 11.25
+                    }
+                  },
+                  {
+                    "text": "数组",
+                    "start_timestamp": {
+                      "relative": 11.25
+                    },
+                    "end_timestamp": {
+                      "relative": 11.5
+                    }
+                  },
+                  {
+                    "text": "，",
+                    "start_timestamp": {
+                      "relative": 11.5
+                    },
+                    "end_timestamp": {
+                      "relative": 11.75
+                    }
+                  },
+                  {
+                    "text": "再",
+                    "start_timestamp": {
+                      "relative": 11.75
+                    },
+                    "end_timestamp": {
+                      "relative": 12.0
+                    }
+                  },
+                  {
+                    "text": "检查",
+                    "start_timestamp": {
+                      "relative": 12.0
+                    },
+                    "end_timestamp": {
+                      "relative": 12.25
+                    }
+                  },
+                  {
+                    "text": "左右",
+                    "start_timestamp": {
+                      "relative": 12.25
+                    },
+                    "end_timestamp": {
+                      "relative": 12.5
+                    }
+                  },
+                  {
+                    "text": "边界",
+                    "start_timestamp": {
+                      "relative": 12.5
+                    },
+                    "end_timestamp": {
+                      "relative": 12.75
+                    }
+                  },
+                  {
+                    "text": "。",
+                    "start_timestamp": {
+                      "relative": 12.75
+                    },
+                    "end_timestamp": {
+                      "relative": 13.0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-2",
+            "text": "可以。先处理空数组，再检查左右边界。",
+            "source": "microphone",
+            "isFinal": true,
+            "participantId": "1",
+            "speaker": "测试本地发言者",
+            "startMs": 10000,
+            "endMs": 13000,
+            "receivedAt": 6100
+          }
+        },
+        {
+          "receivedAt": 6200,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.data",
+            "data": {
+              "source": "microphone",
+              "data": {
+                "utterance_id": "two-source-answer",
+                "language_code": "zh",
+                "participant": {
+                  "id": 1,
+                  "name": "测试本地发言者",
+                  "is_host": true
+                },
+                "words": [
+                  {
+                    "text": "可以",
+                    "start_timestamp": {
+                      "relative": 10.0
+                    },
+                    "end_timestamp": {
+                      "relative": 10.25
+                    }
+                  },
+                  {
+                    "text": "。",
+                    "start_timestamp": {
+                      "relative": 10.25
+                    },
+                    "end_timestamp": {
+                      "relative": 10.5
+                    }
+                  },
+                  {
+                    "text": "先",
+                    "start_timestamp": {
+                      "relative": 10.5
+                    },
+                    "end_timestamp": {
+                      "relative": 10.75
+                    }
+                  },
+                  {
+                    "text": "处理",
+                    "start_timestamp": {
+                      "relative": 10.75
+                    },
+                    "end_timestamp": {
+                      "relative": 11.0
+                    }
+                  },
+                  {
+                    "text": "空",
+                    "start_timestamp": {
+                      "relative": 11.0
+                    },
+                    "end_timestamp": {
+                      "relative": 11.25
+                    }
+                  },
+                  {
+                    "text": "数组",
+                    "start_timestamp": {
+                      "relative": 11.25
+                    },
+                    "end_timestamp": {
+                      "relative": 11.5
+                    }
+                  },
+                  {
+                    "text": "，",
+                    "start_timestamp": {
+                      "relative": 11.5
+                    },
+                    "end_timestamp": {
+                      "relative": 11.75
+                    }
+                  },
+                  {
+                    "text": "再",
+                    "start_timestamp": {
+                      "relative": 11.75
+                    },
+                    "end_timestamp": {
+                      "relative": 12.0
+                    }
+                  },
+                  {
+                    "text": "检查",
+                    "start_timestamp": {
+                      "relative": 12.0
+                    },
+                    "end_timestamp": {
+                      "relative": 12.25
+                    }
+                  },
+                  {
+                    "text": "左右",
+                    "start_timestamp": {
+                      "relative": 12.25
+                    },
+                    "end_timestamp": {
+                      "relative": 12.5
+                    }
+                  },
+                  {
+                    "text": "边界",
+                    "start_timestamp": {
+                      "relative": 12.5
+                    },
+                    "end_timestamp": {
+                      "relative": 12.75
+                    }
+                  },
+                  {
+                    "text": "。",
+                    "start_timestamp": {
+                      "relative": 12.75
+                    },
+                    "end_timestamp": {
+                      "relative": 13.0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": null
+        },
+        {
+          "receivedAt": 6300,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.partial_data",
+            "data": {
+              "source": "system",
+              "data": {
+                "utterance_id": "two-source-question",
+                "language_code": "zh",
+                "participant": {
+                  "id": 2,
+                  "name": "测试远端发言者",
+                  "is_host": false
+                },
+                "words": [
+                  {
+                    "text": "面试官",
+                    "start_timestamp": {
+                      "relative": 10.0
+                    },
+                    "end_timestamp": {
+                      "relative": 10.25
+                    }
+                  },
+                  {
+                    "text": "问",
+                    "start_timestamp": {
+                      "relative": 10.25
+                    },
+                    "end_timestamp": {
+                      "relative": 10.5
+                    }
+                  },
+                  {
+                    "text": "：",
+                    "start_timestamp": {
+                      "relative": 10.5
+                    },
+                    "end_timestamp": {
+                      "relative": 10.75
+                    }
+                  },
+                  {
+                    "text": "数组",
+                    "start_timestamp": {
+                      "relative": 10.75
+                    },
+                    "end_timestamp": {
+                      "relative": 11.0
+                    }
+                  },
+                  {
+                    "text": "可以",
+                    "start_timestamp": {
+                      "relative": 11.0
+                    },
+                    "end_timestamp": {
+                      "relative": 11.25
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": null
+        }
+      ]
+    },
+    {
+      "id": "punctuation-and-unspaced-chinese",
+      "coverage": [
+        "中文无空格",
+        "独立标点token",
+        "引号",
+        "比较运算符"
+      ],
+      "spokenScript": "先比较小于和小于等于，不要把小于读成小于等于。",
+      "expectedFinalCharacters": "先比较“<”和“≤”，不要把小于读成小于等于。",
+      "replay": [
+        {
+          "receivedAt": 7000,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.partial_data",
+            "data": {
+              "source": "system",
+              "data": {
+                "utterance_id": "punctuation",
+                "language_code": "zh",
+                "participant": {
+                  "id": 2,
+                  "name": "测试远端发言者",
+                  "is_host": false
+                },
+                "words": [
+                  {
+                    "text": "先",
+                    "start_timestamp": {
+                      "relative": 0.0
+                    },
+                    "end_timestamp": {
+                      "relative": 0.25
+                    }
+                  },
+                  {
+                    "text": "比较",
+                    "start_timestamp": {
+                      "relative": 0.25
+                    },
+                    "end_timestamp": {
+                      "relative": 0.5
+                    }
+                  },
+                  {
+                    "text": "“",
+                    "start_timestamp": {
+                      "relative": 0.5
+                    },
+                    "end_timestamp": {
+                      "relative": 0.75
+                    }
+                  },
+                  {
+                    "text": "<",
+                    "start_timestamp": {
+                      "relative": 0.75
+                    },
+                    "end_timestamp": {
+                      "relative": 1.0
+                    }
+                  },
+                  {
+                    "text": "”",
+                    "start_timestamp": {
+                      "relative": 1.0
+                    },
+                    "end_timestamp": {
+                      "relative": 1.25
+                    }
+                  },
+                  {
+                    "text": "和",
+                    "start_timestamp": {
+                      "relative": 1.25
+                    },
+                    "end_timestamp": {
+                      "relative": 1.5
+                    }
+                  },
+                  {
+                    "text": "“",
+                    "start_timestamp": {
+                      "relative": 1.5
+                    },
+                    "end_timestamp": {
+                      "relative": 1.75
+                    }
+                  },
+                  {
+                    "text": "≤",
+                    "start_timestamp": {
+                      "relative": 1.75
+                    },
+                    "end_timestamp": {
+                      "relative": 2.0
+                    }
+                  },
+                  {
+                    "text": "”",
+                    "start_timestamp": {
+                      "relative": 2.0
+                    },
+                    "end_timestamp": {
+                      "relative": 2.25
+                    }
+                  },
+                  {
+                    "text": "，",
+                    "start_timestamp": {
+                      "relative": 2.25
+                    },
+                    "end_timestamp": {
+                      "relative": 2.5
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-1",
+            "text": "先比较“<”和“≤”，",
+            "source": "system",
+            "isFinal": false,
+            "participantId": "2",
+            "speaker": "测试远端发言者",
+            "startMs": 0,
+            "endMs": 2500,
+            "receivedAt": 7000
+          }
+        },
+        {
+          "receivedAt": 8000,
+          "event": {
+            "window": {
+              "id": "synthetic-source-zh"
+            },
+            "event": "transcript.data",
+            "data": {
+              "source": "system",
+              "data": {
+                "utterance_id": "punctuation",
+                "language_code": "zh",
+                "participant": {
+                  "id": 2,
+                  "name": "测试远端发言者",
+                  "is_host": false
+                },
+                "words": [
+                  {
+                    "text": "先",
+                    "start_timestamp": {
+                      "relative": 0.0
+                    },
+                    "end_timestamp": {
+                      "relative": 0.25
+                    }
+                  },
+                  {
+                    "text": "比较",
+                    "start_timestamp": {
+                      "relative": 0.25
+                    },
+                    "end_timestamp": {
+                      "relative": 0.5
+                    }
+                  },
+                  {
+                    "text": "“",
+                    "start_timestamp": {
+                      "relative": 0.5
+                    },
+                    "end_timestamp": {
+                      "relative": 0.75
+                    }
+                  },
+                  {
+                    "text": "<",
+                    "start_timestamp": {
+                      "relative": 0.75
+                    },
+                    "end_timestamp": {
+                      "relative": 1.0
+                    }
+                  },
+                  {
+                    "text": "”",
+                    "start_timestamp": {
+                      "relative": 1.0
+                    },
+                    "end_timestamp": {
+                      "relative": 1.25
+                    }
+                  },
+                  {
+                    "text": "和",
+                    "start_timestamp": {
+                      "relative": 1.25
+                    },
+                    "end_timestamp": {
+                      "relative": 1.5
+                    }
+                  },
+                  {
+                    "text": "“",
+                    "start_timestamp": {
+                      "relative": 1.5
+                    },
+                    "end_timestamp": {
+                      "relative": 1.75
+                    }
+                  },
+                  {
+                    "text": "≤",
+                    "start_timestamp": {
+                      "relative": 1.75
+                    },
+                    "end_timestamp": {
+                      "relative": 2.0
+                    }
+                  },
+                  {
+                    "text": "”",
+                    "start_timestamp": {
+                      "relative": 2.0
+                    },
+                    "end_timestamp": {
+                      "relative": 2.25
+                    }
+                  },
+                  {
+                    "text": "，",
+                    "start_timestamp": {
+                      "relative": 2.25
+                    },
+                    "end_timestamp": {
+                      "relative": 2.5
+                    }
+                  },
+                  {
+                    "text": "不要",
+                    "start_timestamp": {
+                      "relative": 2.5
+                    },
+                    "end_timestamp": {
+                      "relative": 2.75
+                    }
+                  },
+                  {
+                    "text": "把",
+                    "start_timestamp": {
+                      "relative": 2.75
+                    },
+                    "end_timestamp": {
+                      "relative": 3.0
+                    }
+                  },
+                  {
+                    "text": "小于",
+                    "start_timestamp": {
+                      "relative": 3.0
+                    },
+                    "end_timestamp": {
+                      "relative": 3.25
+                    }
+                  },
+                  {
+                    "text": "读成",
+                    "start_timestamp": {
+                      "relative": 3.25
+                    },
+                    "end_timestamp": {
+                      "relative": 3.5
+                    }
+                  },
+                  {
+                    "text": "小于等于",
+                    "start_timestamp": {
+                      "relative": 3.5
+                    },
+                    "end_timestamp": {
+                      "relative": 3.75
+                    }
+                  },
+                  {
+                    "text": "。",
+                    "start_timestamp": {
+                      "relative": 3.75
+                    },
+                    "end_timestamp": {
+                      "relative": 4.0
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "expected": {
+            "id": "recall-1",
+            "text": "先比较“<”和“≤”，不要把小于读成小于等于。",
+            "source": "system",
+            "isFinal": true,
+            "participantId": "2",
+            "speaker": "测试远端发言者",
+            "startMs": 0,
+            "endMs": 4000,
+            "receivedAt": 8000
+          }
+        }
+      ]
+    }
+  ]
+}

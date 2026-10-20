@@ -1,3 +1,5 @@
+import type { TranscriptionProfile } from "./transcription";
+
 export type AudioSource = "microphone" | "system" | "unknown";
 export type CaptureStatus = "idle" | "starting" | "recording" | "pausing" | "paused" | "resuming" | "stopping" | "ended" | "error";
 export interface TranscriptSegment {
@@ -24,6 +26,7 @@ export interface LiveAnswer {
   screenshotCleanupError?: string;
 }
 export interface LiveSnapshot {
+  transcription?: TranscriptionProfile;
   sessionId: string;
   revision: number;
   provider: "recall-v2";

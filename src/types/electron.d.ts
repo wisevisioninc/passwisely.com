@@ -1,5 +1,6 @@
 import type { AiProviderId } from "../../electron/aiProviders"
 import type { LiveSessionAPI } from "../../electron/live/types"
+import type { TranscriptionSettings } from "../../electron/live/transcription"
 import type { OverlayWindowAPI } from "../../electron/live/overlayTypes"
 import type {
   ResumeDocumentResponse,
@@ -13,6 +14,8 @@ import type {
 } from "../../electron/settings"
 
 export interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
+  getTranscriptionSettings: () => Promise<TranscriptionSettings>
+  saveTranscriptionSettings: (input: TranscriptionSettings) => Promise<{ success: boolean; settings?: TranscriptionSettings; error?: string }>
   accountGet: () => Promise<{
     success: boolean
     user?: {

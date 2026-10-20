@@ -1,4 +1,6 @@
 import { env } from "cloudflare:workers";
+import { createTranscriptionProvider, DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile } from "../../electron/live/transcription";
+import type { TranscriptionProfileId } from "../../electron/live/transcription";
 
 const REGIONS = {
   "us-west-2": "https://us-west-2.recall.ai",
@@ -12,11 +14,16 @@ const CREATE_INTERVAL_MS = 5_000;
 const MAX_SESSIONS = 256;
 const MAX_PENDING = 8;
 const MAX_RESPONSE_BYTES = 64 * 1024;
+const DEEPGRAM_CREDENTIALS_ERROR_PREFIX = "Unable to get temporary credentials for deepgram_streaming.";
+// Bump when the recording/transcription semantics change, so a cached token
+// cannot silently represent an older profile configuration in this process.
+const PROFILE_CONFIGURATION_VERSION = 1;
 
 export interface RecallUpload {
   uploadToken: string;
   uploadId: string;
   apiUrl: string;
+  transcriptionProfile: TranscriptionProfileId;
 }
 
 export class RecallUploadError extends Error {
@@ -39,6 +46,10 @@ export function normalizeRecallSessionId(value: unknown): string | null {
 
 interface SessionEntry {
   userId: string;
+  transcriptionProfile: TranscriptionProfileId;
+  apiUrl: string;
+  configurationVersion: number;
+  configurationFingerprint: string;
   createdAt: number;
   expiresAt: number;
   pending: boolean;
@@ -92,7 +103,13 @@ async function readUpload(response: Response): Promise<Record<string, unknown>> 
   return value as Record<string, unknown>;
 }
 
-async function requestUpload(apiUrl: string, apiKey: string): Promise<RecallUpload> {
+function upstreamMessage(profile: TranscriptionProfileId, message: string): string {
+  return profile === "deepgram-zh"
+    ? `${message} For Chinese Deepgram transcription, ask the administrator to check the Recall project's default Deepgram transcription credentials and the selected language/model. This may also be a temporary upstream failure; no English fallback was used.`
+    : message;
+}
+
+async function requestUpload(apiUrl: string, apiKey: string, profile: TranscriptionProfileId, provider: ReturnType<typeof createTranscriptionProvider>): Promise<RecallUpload> {
   const signal = AbortSignal.timeout(15_000);
   try {
     const response = await fetch(`${apiUrl}/api/v1/sdk_upload/`, {
@@ -108,7 +125,7 @@ async function requestUpload(apiUrl: string, apiKey: string): Promise<RecallUplo
           video_mixed_mp4: null,
           audio_mixed_mp3: {},
           transcript: {
-            provider: { recallai_streaming: { mode: "prioritize_low_latency", language_code: "en" } },
+            provider,
             diarization: { use_separate_streams_when_available: true },
           },
           realtime_endpoints: [{ type: "desktop_sdk_callback", events: ["transcript.data", "transcript.partial_data"] }],
@@ -116,39 +133,60 @@ async function requestUpload(apiUrl: string, apiKey: string): Promise<RecallUplo
       }),
     });
     if (!response.ok) {
-      await response.body?.cancel().catch(() => undefined);
+      if (response.status === 400 && profile === "deepgram-zh") {
+        // Only the observed provider-specific discriminator is actionable.
+        // Parse with the existing byte limit; never expose or log its body.
+        let errorPayload: Record<string, unknown> | undefined;
+        try { errorPayload = await readUpload(response); } catch { /* Invalid or oversized errors keep the generic 502 below. */ }
+        if (typeof errorPayload?.transcript === "string" && errorPayload.transcript.startsWith(DEEPGRAM_CREDENTIALS_ERROR_PREFIX)) {
+          throw new RecallUploadError(503, "RECALL_DEEPGRAM_CREDENTIALS_UNAVAILABLE", "Recall could not obtain temporary Deepgram credentials. In the Recall transcription dashboard for the same workspace and region as the server's Recall API key, save the Deepgram API Key and matching Project ID and mark that credential as default. Use a Deepgram key with Member, Admin, or Owner access. Adding DEEPGRAM_API_KEY only to the server environment does not register it with Recall. After saving, start a new audio session.");
+        }
+      } else await response.body?.cancel().catch(() => undefined);
       if (response.status === 401 || response.status === 403) {
         throw new RecallUploadError(503, "RECALL_CREDENTIALS_INVALID", "Recall rejected the server credentials. Contact the administrator.");
       }
-      throw new RecallUploadError(502, "RECALL_UPSTREAM_ERROR", "Recall could not prepare an audio session. Please try a new session later.");
+      throw new RecallUploadError(502, "RECALL_UPSTREAM_ERROR", upstreamMessage(profile, "Recall could not prepare the selected audio session. Please try a new session later."));
     }
     const payload = await readUpload(response);
     const uploadId = normalizeRecallSessionId(payload.id);
     if (!uploadId || typeof payload.upload_token !== "string" || !payload.upload_token.trim()) {
       throw new Error("Invalid upload response");
     }
-    return { uploadId, uploadToken: payload.upload_token, apiUrl };
+    return { uploadId, uploadToken: payload.upload_token, apiUrl, transcriptionProfile: profile };
   } catch (error) {
     if (error instanceof RecallUploadError) throw error;
     // Neither upstream bodies nor exception messages are safe to send to clients.
     if (signal.aborted || (error instanceof Error && error.name === "TimeoutError")) {
-      throw new RecallUploadError(504, "RECALL_TIMEOUT", "Recall did not prepare the audio session in time. Please try a new session later.");
+      throw new RecallUploadError(504, "RECALL_TIMEOUT", upstreamMessage(profile, "Recall did not prepare the audio session in time. Please try a new session later."));
     }
-    throw new RecallUploadError(502, "RECALL_UPSTREAM_ERROR", "Recall could not prepare an audio session. Please try a new session later.");
+    throw new RecallUploadError(502, "RECALL_UPSTREAM_ERROR", upstreamMessage(profile, "Recall could not prepare the selected audio session. Please try a new session later."));
   }
 }
 
-export function createRecallUpload(userId: string, sessionId: string): Promise<RecallUpload> {
+export async function createRecallUpload(userId: string, sessionId: string, profileInput: unknown = DEFAULT_TRANSCRIPTION_PROFILE): Promise<RecallUpload> {
   const normalized = normalizeRecallSessionId(sessionId);
   if (!userId || !normalized) throw new RecallUploadError(400, "INVALID_SESSION_ID", "A valid sessionId UUID is required.");
+  const profile = getTranscriptionProfile(profileInput);
+  if (!profile) throw new RecallUploadError(400, "INVALID_TRANSCRIPTION_PROFILE", "Choose a supported transcriptionProfile.");
   const { apiUrl, apiKey } = configuration();
+  const provider = createTranscriptionProvider(profile.id);
+  // Fingerprint the exact selected settings once. Include credential identity:
+  // rotating to another Recall project must not return an old project's token.
+  // The raw key and canonical input are not retained in the session entry,
+  // logged, or returned. Web Crypto is available in both Workers and Node.
+  const identity = JSON.stringify([PROFILE_CONFIGURATION_VERSION, profile.id, apiUrl, provider, apiKey]);
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity));
+  const fingerprint = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, "0")).join("");
   const now = Date.now();
   for (const [key, entry] of sessions) {
     if (!entry.pending && entry.expiresAt <= now) sessions.delete(key);
   }
   const key = JSON.stringify([userId, normalized]);
   const existing = sessions.get(key);
-  if (existing) return existing.result;
+  if (existing) {
+    if (existing.configurationFingerprint !== fingerprint) throw new RecallUploadError(409, "RECALL_SESSION_CONFIG_MISMATCH", "This audio session already belongs to a different transcription configuration. Start a new session to change it.");
+    return existing.result;
+  }
 
   let pending = 0;
   for (const entry of sessions.values()) {
@@ -161,10 +199,10 @@ export function createRecallUpload(userId: string, sessionId: string): Promise<R
     throw new RecallUploadError(429, "RECALL_SESSION_CAPACITY", "Audio session creation is busy. Please try again later.");
   }
   // Cache failures too: a timeout may still have created an upstream upload.
-  const result = requestUpload(apiUrl, apiKey).finally(() => {
+  const result = requestUpload(apiUrl, apiKey, profile.id, provider).finally(() => {
     const entry = sessions.get(key);
     if (entry) entry.pending = false;
   });
-  sessions.set(key, { userId, createdAt: now, expiresAt: now + SESSION_TTL_MS, pending: true, result });
+  sessions.set(key, { userId, transcriptionProfile: profile.id, apiUrl, configurationVersion: PROFILE_CONFIGURATION_VERSION, configurationFingerprint: fingerprint, createdAt: now, expiresAt: now + SESSION_TTL_MS, pending: true, result });
   return result;
 }

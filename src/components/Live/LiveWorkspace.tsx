@@ -51,7 +51,19 @@ function CopyText({ text }: { text: string }) {
   }, [copied]);
   return <button type="button" className="pw-live-icon" aria-label={failed ? "复制失败，请重试" : copied ? "已复制" : "复制回答"}
     title={failed ? "复制失败，请重试" : copied ? "已复制" : "复制回答"}
-    onClick={() => { setFailed(false); void navigator.clipboard.writeText(text).then(() => setCopied(true)).catch(() => setFailed(true)); }}>
+    onClick={async () => {
+      setCopied(false); setFailed(false);
+      try {
+        if (typeof window.electronAPI?.liveCopyText === "function") {
+          const result = await window.electronAPI.liveCopyText(text);
+          if (!result.success) throw new Error(result.error || "Copy failed.");
+        } else {
+          // The standalone browser fixture has no Electron preload.
+          await navigator.clipboard.writeText(text);
+        }
+        setCopied(true);
+      } catch { setFailed(true); }
+    }}>
     {copied ? <Check size={13} /> : <Copy size={13} />}
   </button>;
 }

@@ -170,6 +170,7 @@ const electronAPI = {
     return () => ipcRenderer.removeListener("live-shortcut", listener);
   },
   liveSetWorkspace: (visible: boolean) => ipcRenderer.invoke("live-set-workspace", visible),
+  liveCopyText: (text: string) => ipcRenderer.invoke("live-copy-text", text),
   liveGetSnapshot: () => ipcRenderer.invoke("live-get-snapshot"),
   liveStart: () => ipcRenderer.invoke("live-start"),
   livePause: () => ipcRenderer.invoke("live-pause"),

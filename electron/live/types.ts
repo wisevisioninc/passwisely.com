@@ -45,6 +45,7 @@ export interface LiveAskInput {
   includeScreenshots: boolean;
 }
 export interface LiveSessionAPI {
+  liveCopyText: (text: string) => Promise<LiveResult>;
   liveSetWorkspace: (visible: boolean) => Promise<void>;
   liveGetSnapshot: () => Promise<LiveSnapshot>;
   liveStart: () => Promise<LiveResult>;

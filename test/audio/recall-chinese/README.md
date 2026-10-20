@@ -45,3 +45,7 @@ python3 -m http.server 8772 --bind 127.0.0.1 --directory test/audio/recall-chine
 播放器中的所有 WAV 都是系统音频输入；文件名里的 `microphone` 只是原始回放场景标签，播放该文件不能证明麦克风采集正确。验证麦克风时应停止播放器，再对着 Mac 麦克风朗读固定话语，并单独记录结果。
 
 Deepgram 凭据需要在与服务端 Recall Key 相同的日本区 workspace 中登记并保存为 default；仅向 Wise 的环境文件添加 `DEEPGRAM_API_KEY` / `DEEPGRAM_PROJECT_ID` 不会自动配置 Recall。Host 留空使用默认 Deepgram 服务；修改区域需另外验证 Recall 的兼容性。参见 [Recall Deepgram 配置](https://docs.recall.ai/docs/deepgram)。
+
+## Mac 实测记录
+
+[2026-10-20 Mac 中文实时转录验证](reports/mac-2026-10-20.md) 保留本轮系统声音、默认 AirPods 麦克风、临时文本替换和暂停恢复的实际结果。金额、中英技术词及真人标准句仍有错误；该记录不等于准确率验收通过。

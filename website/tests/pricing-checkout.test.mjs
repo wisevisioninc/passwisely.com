@@ -102,8 +102,19 @@ function checkoutApplication() {
     "@/lib/payments/alipay": { createAlipayPagePayment: async input => { providerCalls.push(["alipay", input]); return { redirectUrl: "https://payment.example.test/alipay" }; } },
     "@/lib/payments/wechat": { createWechatNativePayment: async input => { providerCalls.push(["wechat", input]); return { codeUrl: "weixin://fixture-payment" }; } },
   });
-  return { rows, providerCalls, failures, setUser(value) { user = value; }, send: body => route.POST(new Request("https://example.test/api/checkout", { method: "POST", body: JSON.stringify(body) })) };
+  return { rows, providerCalls, failures, get: () => route.GET(), setUser(value) { user = value; }, send: body => route.POST(new Request("https://example.test/api/checkout", { method: "POST", body: JSON.stringify(body) })) };
 }
+
+test("checkout GET returns a complete method rejection without creating an order or payment", async () => {
+  const app = checkoutApplication();
+  const response = app.get();
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get("allow"), "POST");
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(typeof (await response.json()).error, "string");
+  assert.equal(app.rows.length, 0);
+  assert.equal(app.providerCalls.length, 0);
+});
 
 test("checkout rejects retired cached-page IDs and trial/prototype inputs before DB/payment", async () => {
   const app = checkoutApplication();

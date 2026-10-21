@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PassWiselySite } from "../PassWiselySite";
 
 export const metadata: Metadata = {
-  title: "Dashboard · PassWisely",
+  title: "Dashboard",
   robots: { index: false, follow: false },
 };
 

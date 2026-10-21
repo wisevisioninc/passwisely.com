@@ -38,4 +38,4 @@ The preview prints a loopback-only URL and supports `?scenario=success`, `empty`
 
 ## Publication
 
-The final candidate is prepared and verified; the Dashboard website switch is awaiting the operator's interactive Wise sudo authentication. The prior website remains active. No installer rebuild or repeated database migration is needed.
+The operator completed the pinned activation successfully. Production is active on the exact 43-file manifest. Both local/public owner health and the existing desktop gRPC health passed; Nginx was unchanged. Independent anonymous public checks verified the Dashboard head/loading privacy boundary and the usage API's private/no-store 401, while pricing and installer routes remained correct. Browser inspection confirmed `/dashboard` completes loading and redirects an anonymous visitor to `/?login=1` with the existing sign-in dialog. No authenticated real-account browser session was submitted. No installer rebuild or repeated database migration occurred. See [independent public verification](dashboard-usage/public-verification.json).

@@ -1,10 +1,90 @@
 {
   "sourceCommit": "e84551107eef690058d4b435affbacd0752c817e",
   "manifestSha256": "22c950f3a902f27d4b21cdc4247b591e3a1b3cf2aeb9a00c68530f467e65843c",
-  "status": "awaiting_interactive_sudo",
-  "productionActivated": false,
+  "status": "active",
+  "productionActivated": true,
   "migration0011AlreadyCommitted": true,
   "activationWrapperSha256": "d8f99f7503a56f5abb124ecabc6c3523045914ccc6b767f215529f8c203c7d5f",
-  "priorWebsiteStillRunning": true,
-  "expectedNginxSha256": "99050372081d3a6c242815238d80549916f273aff7c37d6076b822bb645f71b6"
+  "priorWebsiteStillRunning": false,
+  "expectedNginxSha256": "99050372081d3a6c242815238d80549916f273aff7c37d6076b822bb645f71b6",
+  "verifiedAt": "2026-10-21T03:52:12.666760+00:00",
+  "transactionId": "v2.0.0-20261021T034701Z-42e70dfc",
+  "transactionSha256": "a786dbde4d56be51e2d6a53da0b4c789217f98c4b24d6ec2ef24b6d05973197b",
+  "actualRuntimeMatchesManifest": true,
+  "compiledFileCount": 43,
+  "runtimeBindingsMode": "0600",
+  "runtimeConfigurationMatchesOwner": true,
+  "nginxChanged": false,
+  "desktopApiModified": false,
+  "grpcHealth": "SERVING grpc+protobuf",
+  "migrationRepeatedByActivation": false,
+  "localHealth": {
+    "base": "http://127.0.0.1:3011",
+    "homepage": 200,
+    "pricing": {
+      "trialCredits": 20,
+      "paidPacks": [
+        {
+          "priceCny": 99,
+          "credits": 200
+        },
+        {
+          "priceCny": 299,
+          "credits": 1000
+        }
+      ],
+      "paidValidityDays": 30,
+      "automaticRenewal": false
+    },
+    "downloadPlatforms": [
+      "mac-arm64",
+      "mac-x64",
+      "windows-x64"
+    ],
+    "unauthenticatedRecallAndAi": 401,
+    "unauthenticatedCheckout": 401,
+    "checkoutGet": 405,
+    "retiredPackAuthenticatedRejection": "not_exercised_by_unauthenticated_probe",
+    "unknownPlatform": 404,
+    "providerCalls": 0,
+    "paymentOrdersCreated": 0
+  },
+  "publicHealth": {
+    "base": "https://passwisely.com",
+    "homepage": 200,
+    "pricing": {
+      "trialCredits": 20,
+      "paidPacks": [
+        {
+          "priceCny": 99,
+          "credits": 200
+        },
+        {
+          "priceCny": 299,
+          "credits": 1000
+        }
+      ],
+      "paidValidityDays": 30,
+      "automaticRenewal": false
+    },
+    "downloadPlatforms": [
+      "mac-arm64",
+      "mac-x64",
+      "windows-x64"
+    ],
+    "unauthenticatedRecallAndAi": 401,
+    "unauthenticatedCheckout": 401,
+    "checkoutGet": 405,
+    "retiredPackAuthenticatedRejection": "not_exercised_by_unauthenticated_probe",
+    "unknownPlatform": 404,
+    "providerCalls": 0,
+    "paymentOrdersCreated": 0
+  },
+  "browserVerification": {
+    "anonymousDashboardRedirect": "/?login=1",
+    "signInDialogShown": true,
+    "consoleErrorsObserved": 0,
+    "realAccountSubmitted": false,
+    "loginScreenshotSha256": "41c19198375411a0ccf34f1fc50ea31e3d982767f18bca2d58318f4d226576d4"
+  }
 }

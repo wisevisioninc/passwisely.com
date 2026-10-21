@@ -1,0 +1,86 @@
+{
+  "checkedAt": "2026-10-21T03:49:13.966222+00:00",
+  "base": "https://passwisely.com",
+  "sourceCommit": "e84551107eef690058d4b435affbacd0752c817e",
+  "manifestSha256": "22c950f3a902f27d4b21cdc4247b591e3a1b3cf2aeb9a00c68530f467e65843c",
+  "scope": "Anonymous public GET dashboard, GET account/usage, GET homepage and three download HEADs only. No cookie/token, authenticated records, POST, providers, payment or installer download.",
+  "productionWrites": 0,
+  "requestCount": 6,
+  "artifactBytesDownloaded": 0,
+  "dashboard": {
+    "status": 200,
+    "title": "Dashboard · PassWisely",
+    "titleMatched": true,
+    "robots": [
+      "nofollow",
+      "noindex"
+    ],
+    "noIndexNoFollow": true,
+    "loadingRegionBusy": true,
+    "loadingStatusVisible": true,
+    "privateMetricDomClassesAbsent": true,
+    "usageChartHistoryAndBalanceAbsent": true,
+    "setCookiePresent": false,
+    "scopeLimit": "No authenticated data was requested; checks the anonymous SSR loading shell and absence of metric UI, not authenticated dashboard correctness.",
+    "passed": true
+  },
+  "anonymousUsage": {
+    "status": 401,
+    "jsonContentType": true,
+    "errorOnly": true,
+    "fixedAuthenticationError": true,
+    "cacheControl": "no-store, private",
+    "vary": "Cookie, Authorization, RSC, Accept, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Next-Url, X-Vinext-Interception-Context, X-Vinext-Mounted-Slots, X-Vinext-Rsc-Render-Mode",
+    "noStorePrivate": true,
+    "variesOnCookieAndAuthorization": true,
+    "setCookiePresent": false,
+    "passed": true
+  },
+  "homepage": {
+    "status": 200,
+    "heroPresent": true,
+    "pricing": {
+      "trialCredits": 20,
+      "paidPacks": [
+        {
+          "priceCny": 99,
+          "credits": 200
+        },
+        {
+          "priceCny": 299,
+          "credits": 1000
+        }
+      ],
+      "paidValidityDays": 30,
+      "automaticRenewal": false
+    },
+    "pricingPassed": true
+  },
+  "downloads": {
+    "mac-arm64": {
+      "status": 307,
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r2/PassWisely-macOS-arm64.dmg",
+      "releaseVersion": "2.0.0",
+      "sha256Header": "e2492951c2c54941b3638b39a181e5b1738e1e171b1a8db85011b09b5e2f4973",
+      "installerBytesRehashed": false,
+      "expectedMatched": true
+    },
+    "mac-x64": {
+      "status": 307,
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.6/PassWisely-macOS-x64.dmg",
+      "releaseVersion": "1.2.6",
+      "sha256Header": null,
+      "installerBytesRehashed": false,
+      "expectedMatched": true
+    },
+    "windows-x64": {
+      "status": 307,
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r2/PassWisely-Windows-x64.exe",
+      "releaseVersion": "2.0.0",
+      "sha256Header": "604cf3be66ed413da88f54cb1add56227a8ae390070453e96972cfdc56dbf2aa",
+      "installerBytesRehashed": false,
+      "expectedMatched": true
+    }
+  },
+  "verificationPassed": true
+}

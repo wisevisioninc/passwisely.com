@@ -18,7 +18,8 @@
   "sourceFileCount": 144,
   "compiledFileCount": 43,
   "compiledBytes": 5167463,
-  "productionActivated": false,
-  "activationStatus": "awaiting_interactive_sudo",
-  "candidateArchiveSha256": "f5087aa3a4f6587c2f9e06cbfc85778f8073fab71bc7da7d129c6f7b80ea663f"
+  "productionActivated": true,
+  "activationStatus": "active",
+  "candidateArchiveSha256": "f5087aa3a4f6587c2f9e06cbfc85778f8073fab71bc7da7d129c6f7b80ea663f",
+  "publicationEvidence": "publication.json"
 }

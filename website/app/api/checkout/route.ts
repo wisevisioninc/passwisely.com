@@ -1,4 +1,5 @@
 import { getCurrentUser, jsonError } from "@/lib/auth";
+import { getPublicSiteOrigin } from "@/lib/public-site";
 import { createAlipayPagePayment } from "@/lib/payments/alipay";
 import {
   CREDIT_PACKS,
@@ -32,11 +33,16 @@ export async function POST(request: Request) {
   if (!isPaymentProvider(provider)) {
     return jsonError("Choose Alipay or WeChat Pay.", 400);
   }
+  let origin: string;
+  try {
+    origin = getPublicSiteOrigin();
+  } catch {
+    return jsonError("Payments are temporarily unavailable.", 503, "PAYMENT_UNAVAILABLE");
+  }
   const pack = CREDIT_PACKS[packId];
   const purchase = await createPurchase({ userId: user.id, packId, provider });
 
   try {
-    const origin = new URL(request.url).origin;
     const description = `PassWisely ${pack.name}`;
     if (provider === "alipay") {
       const payment = await createAlipayPagePayment({

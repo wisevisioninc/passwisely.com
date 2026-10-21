@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { AI_PROVIDER_CATALOG } from "@/lib/ai-catalog";
 import { getDefaultAiConfig } from "@/lib/ai-config";
+import { getPublicSiteOrigin } from "./public-site";
 
 export type HealthState = "healthy" | "degraded" | "down";
 
@@ -109,19 +110,32 @@ async function hostHealth(): Promise<{ service: ServiceHealth; host: HostHealth 
   }
 }
 
+async function publicSiteHealth(): Promise<ServiceHealth[]> {
+  const checks: Array<[string, string, ServiceHealth["group"], string]> = [
+    ["website", "官方网站", "runtime", "/"],
+    ["mac-arm64", "macOS Apple 芯片安装包", "delivery", "/api/download/mac-arm64"],
+    ["mac-x64", "macOS Intel 安装包", "delivery", "/api/download/mac-x64"],
+    ["windows-x64", "Windows x64 安装包", "delivery", "/api/download/windows-x64"],
+  ];
+  let origin: string;
+  try {
+    origin = getPublicSiteOrigin();
+  } catch {
+    return checks.map(([id, name, group]) => ({
+      id, name, group, state: "degraded", detail: "PUBLIC_SITE_URL 配置无效",
+    }));
+  }
+  return Promise.all(checks.map(([id, name, group, path]) =>
+    timedFetch(id, name, group, `${origin}${path}`)));
+}
+
 export async function getAdminHealth(databaseLatencyMs: number): Promise<{
   services: ServiceHealth[];
   host: HostHealth | null;
 }> {
   const values = environment();
-  const origins = {
-    website: values.PUBLIC_SITE_URL?.trim() || "https://passwisely.com",
-  };
-  const [website, macArm, macIntel, windows, runtime, defaultAi] = await Promise.all([
-    timedFetch("website", "官方网站", "runtime", `${origins.website}/`),
-    timedFetch("mac-arm64", "macOS Apple 芯片安装包", "delivery", `${origins.website}/api/download/mac-arm64`),
-    timedFetch("mac-x64", "macOS Intel 安装包", "delivery", `${origins.website}/api/download/mac-x64`),
-    timedFetch("windows-x64", "Windows x64 安装包", "delivery", `${origins.website}/api/download/windows-x64`),
+  const [siteServices, runtime, defaultAi] = await Promise.all([
+    publicSiteHealth(),
     hostHealth(),
     getDefaultAiConfig().catch(() => null),
   ]);
@@ -147,11 +161,9 @@ export async function getAdminHealth(databaseLatencyMs: number): Promise<{
         detail: "统计 RPC 正常",
         latencyMs: databaseLatencyMs,
       },
-      website,
+      siteServices[0],
       runtime.service,
-      macArm,
-      macIntel,
-      windows,
+      ...siteServices.slice(1),
       {
         id: "ai-relay",
         name: "AI 模型中继",

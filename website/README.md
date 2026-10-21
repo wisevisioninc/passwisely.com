@@ -15,6 +15,7 @@ pnpm test
 
 ## Runtime bindings
 
+- `PUBLIC_SITE_URL`: canonical public HTTPS origin; defaults to `https://passwisely.com` only when omitted. See public links below.
 - `DB`: legacy Cloudflare D1 account migration store. Its migrations are in `drizzle/`; it does not register current accounts.
 - `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_ANON_KEY`, and `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY`: current server-side accounts, credit ledger, and purchases. Their PostgreSQL migrations are in `supabase/migrations/`.
 - `DOWNLOADS`: Cloudflare R2 bucket for signed desktop installers.
@@ -60,7 +61,24 @@ When a PEM key is stored on one line, line breaks may be represented as `\n`.
 PassWisely's RMB merchant and settlement entity is
 `福建智感灵眸科技有限公司`.
 
-The checkout API creates a local pending order before contacting the provider.
+Payment notifications/returns, password-recovery links and public-site health
+checks share the server-owned `PUBLIC_SITE_URL` origin. Incoming `Host`,
+`X-Forwarded-Host`, `X-Forwarded-Proto` and the physical HTTP listener URL never
+select these destinations. Set only an absolute HTTPS origin, optionally with a
+trailing `/`; user information, paths, query strings and fragments are rejected.
+An explicit blank or invalid value fails checkout with 503 before creating an
+order, blocks recovery email delivery, and degrades the affected health checks
+without probing that destination. Invalid explicit configuration never falls
+back to the production domain.
+
+Local HTTP development requests still produce the default public HTTPS links
+when this binding is omitted. Configure an explicit HTTPS test domain/local TLS
+proxy for development and allow its recovery URL in the test Supabase project;
+use synthetic payment/email seams until ready for a real external action. HTTP
+origins, including localhost, are intentionally rejected in every environment.
+
+The checkout API validates its public origin, then creates a local pending order
+before contacting the provider.
 Alipay uses computer website payment and WeChat uses Native payment. Signed
 asynchronous callbacks verify merchant/app IDs, order number, currency, and
 amount before an idempotent credit entry is written. Callback URLs are:

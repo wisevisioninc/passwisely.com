@@ -111,6 +111,7 @@ function checkoutApplication({ providerError, notificationError, completionError
     return provider === "alipay" ? { redirectUrl: "https://payment.example.test/alipay" } : { codeUrl: "weixin://fixture-payment" };
   };
   const route = sourceModule("app/api/checkout/route.ts", {
+    "cloudflare:workers": { env: {} },
     "@/lib/auth": { getCurrentUser: async () => user, jsonError: (error, status, code) => Response.json({ error, ...(code ? { code } : {}) }, { status }) },
     "@/lib/payments/orders": orders,
     "@/lib/payments/alipay": { createAlipayPagePayment: input => payment("alipay", input) },

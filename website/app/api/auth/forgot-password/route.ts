@@ -1,4 +1,5 @@
 import { jsonError, normalizeEmail } from "@/lib/auth";
+import { getPublicSiteOrigin } from "@/lib/public-site";
 import {
   requestPasswordReset,
   SupabaseRequestError,
@@ -11,8 +12,8 @@ export async function POST(request: Request) {
     return jsonError("Please enter a valid email address.", 400);
   }
 
-  const origin = new URL(request.url).origin;
   try {
+    const origin = getPublicSiteOrigin();
     await requestPasswordReset(email, `${origin}/?reset=password`);
   } catch (error) {
     // Supabase deliberately returns a generic result for unknown addresses.

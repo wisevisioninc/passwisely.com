@@ -155,20 +155,20 @@ test("historical Stripe callback delegates only order identity to the real trans
   assert.deepEqual(calls[1], ["complete_purchase", { p_purchase_id: "old-starter-order", p_transaction_id: "old-payment", p_event_id: "old-event", p_event_type: "checkout.session.completed" }]);
 });
 
-function siteHarness() {
+function siteHarness(props = {}) {
   const values = [], refs = [], effectSlots = [];
   let stateIndex = 0, refIndex = 0, effectIndex = 0, pendingEffects = [];
   const hooks = { useState(initial) { const index = stateIndex++; if (!(index in values)) values[index] = typeof initial === "function" ? initial() : initial; return [values[index], value => { values[index] = typeof value === "function" ? value(values[index]) : value; }]; },
-    useRef(initial) { const index = refIndex++; return refs[index] ||= { current: initial }; }, useMemo: callback => callback(),
+    useRef(initial) { const index = refIndex++; return refs[index] ||= { current: initial }; }, useMemo: callback => callback(), useCallback: callback => callback,
     useEffect(callback, deps) { const index = effectIndex++; const previous = effectSlots[index]; if (!previous || !deps || deps.some((value, i) => !Object.is(value, previous.deps?.[i]))) pendingEffects.push(() => { previous?.cleanup?.(); effectSlots[index] = { deps, cleanup: callback() }; }); },
   };
   const { PassWiselySite } = sourceModule("app/PassWiselySite.tsx", { react: hooks });
-  return { render() { stateIndex = refIndex = effectIndex = 0; return PassWiselySite(); }, flushEffects() { const batch = pendingEffects; pendingEffects = []; for (const run of batch) run(); }, cleanup() { for (const effect of effectSlots) effect?.cleanup?.(); } };
+  return { render() { stateIndex = refIndex = effectIndex = 0; return PassWiselySite(props); }, flushEffects() { const batch = pendingEffects; pendingEffects = []; for (const run of batch) run(); }, cleanup() { for (const effect of effectSlots) effect?.cleanup?.(); } };
 }
 async function settle() { await new Promise(resolve => setImmediate(resolve)); await new Promise(resolve => setImmediate(resolve)); }
 function browser(t) {
   const listeners = new Map(); const assigned = [];
-  const fakeWindow = { location: { search: "", hash: "", pathname: "/", assign: value => assigned.push(value), reload: () => assigned.push("reload") }, history: { replaceState: noop }, addEventListener: (name, callback) => listeners.set(name, callback), removeEventListener: name => listeners.delete(name), setInterval: () => 1, clearInterval: noop };
+  const fakeWindow = { location: { search: "", hash: "", pathname: "/", assign: value => assigned.push(value), replace: value => assigned.push(value), reload: () => assigned.push("reload") }, history: { replaceState: noop }, addEventListener: (name, callback) => listeners.set(name, callback), removeEventListener: name => listeners.delete(name), setInterval: () => 1, clearInterval: noop };
   for (const [key, value] of Object.entries({ window: fakeWindow, localStorage: { getItem: () => "en", setItem: noop }, navigator: { language: "en" }, document: { documentElement: {}, querySelector: () => null, body: { style: {} }, addEventListener: noop, removeEventListener: noop, activeElement: null } })) {
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, key); Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
     t.after(() => descriptor ? Object.defineProperty(globalThis, key, descriptor) : delete globalThis[key]);
@@ -195,35 +195,44 @@ test("actual purchase client sends versioned ID and makes pricing-change recover
   walk(tree, e => e.type === "button" && text(e) === "Refresh plans")[0].props.onClick({ stopPropagation: noop }); assert.deepEqual(b.assigned, ["reload"]);
 });
 
-test("account open and window focus read server-owned active balances and only nearest expiry", async t => {
-  const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t);
+test("Dashboard account open and homepage focus read server-owned balances and only nearest expiry", async t => {
+  const app = siteHarness({ initialDashboard: true }), home = siteHarness(); t.after(() => { app.cleanup(); home.cleanup(); }); const b = browser(t);
   let balance = { balance: 220, permanentBalance: 20, expiringBalance: 200, nextExpiry: "2026-11-19T09:00:00.000Z" }; const requests = [];
-  t.mock.method(globalThis, "fetch", async (url, init) => { requests.push([url, init]); return Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: balance.balance, creditBalance: balance }, transactions: [] }); });
-  app.render(); app.flushEffects(); await settle(); let tree = app.render();
-  walk(tree, e => e.type?.name === "LandingPage")[0].props.onAccount(); tree = app.render(); app.flushEffects(); await settle(); tree = app.render();
+  const account = () => ({ user: { id: "fixture-user", email: "fixture@example.test", credits: balance.balance, creditBalance: balance }, transactions: [] });
+  t.mock.method(globalThis, "fetch", async (url, init) => { requests.push([url, init]); return Response.json(account()); });
+  home.render(); home.flushEffects(); await settle(); assert.equal(walk(home.render(), e => e.type?.name === "LandingPage")[0].props.accountLabel, "220 · Dashboard");
+  let tree = app.render(); app.flushEffects(); await settle(); tree = app.render();
+  const dashboard = walk(tree, e => e.type?.name === "Dashboard")[0]; dashboard.props.onUser(account().user); dashboard.props.onAccount();
+  tree = app.render(); app.flushEffects(); await settle(); tree = app.render();
   assert.match(text(tree), /Permanent credits :\s+20/); assert.match(text(tree), /Active monthly-pack credits :\s+200/); assert.match(text(tree), /Next pack expiry/);
   balance = { balance: 20, permanentBalance: 20, expiringBalance: 0, nextExpiry: null };
-  b.listeners.get("focus")(); await settle(); tree = app.render();
+  b.listeners.get("focus")(); await settle(); assert.equal(walk(home.render(), e => e.type?.name === "LandingPage")[0].props.accountLabel, "20 · Dashboard");
+  walk(tree, e => e.type === "button" && e.props.className === "modal-close")[0].props.onClick(); app.render(); app.flushEffects();
+  walk(app.render(), e => e.type?.name === "Dashboard")[0].props.onAccount(); app.render(); app.flushEffects(); await settle(); tree = app.render();
   assert.match(text(tree), /Active monthly-pack credits :\s+0/); assert.doesNotMatch(text(tree), /Next pack expiry/);
-  assert.ok(requests.length >= 3); assert.equal(requests.every(([url, init]) => url === "/api/account" && init.cache === "no-store"), true);
+  assert.ok(requests.length >= 4); assert.equal(requests.every(([url, init]) => url === "/api/account" && init.cache === "no-store"), true);
 });
 
-
-test("a pending focus refresh cannot restore the account after sign-out completes", async t => {
-  const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t);
-  let accountCalls = 0, releaseLogout, releaseFocus;
-  const account = () => Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: 220 }, transactions: [] });
+test("a pending Dashboard account refresh cannot restore the account after sign-out completes", async t => {
+  const app = siteHarness({ initialDashboard: true }); t.after(() => app.cleanup()); const b = browser(t);
+  let accountCalls = 0, releaseLogout, releaseAccount;
+  const snapshot = { id: "fixture-user", email: "fixture@example.test", credits: 220 };
+  const account = () => Response.json({ user: snapshot, transactions: [] });
   t.mock.method(globalThis, "fetch", (url) => {
     if (url === "/api/auth/logout") return new Promise(resolve => { releaseLogout = () => resolve(Response.json({ success: true })); });
     accountCalls++;
     if (accountCalls === 1) return Promise.resolve(account());
-    return new Promise(resolve => { releaseFocus = () => resolve(account()); });
+    return new Promise(resolve => { releaseAccount = () => resolve(account()); });
   });
-  app.render(); app.flushEffects(); await settle(); let tree = app.render();
-  walk(tree, e => e.type?.name === "LandingPage")[0].props.onAccount(); tree = app.render();
+  let tree = app.render(); app.flushEffects(); await settle(); tree = app.render();
+  walk(tree, e => e.type?.name === "Dashboard")[0].props.onUser(snapshot);
+  walk(app.render(), e => e.type?.name === "Dashboard")[0].props.onAccount(); app.render(); app.flushEffects(); await settle(); tree = app.render();
+  walk(tree, e => e.type === "button" && e.props.className === "modal-close")[0].props.onClick(); app.render(); app.flushEffects();
+  walk(app.render(), e => e.type?.name === "Dashboard")[0].props.onAccount(); tree = app.render(); app.flushEffects();
   walk(tree, e => e.type === "button" && text(e) === "Sign out")[0].props.onClick();
-  b.listeners.get("focus")(); releaseLogout(); await settle();
-  releaseFocus(); await settle(); tree = app.render();
-  assert.equal(walk(tree, e => e.type?.name === "LandingPage")[0].props.accountLabel, "Sign in");
-  assert.equal(walk(tree, e => e.props?.className === "modal account-modal").length, 0);
+  releaseLogout(); await settle(); releaseAccount(); await settle(); tree = app.render();
+  assert.deepEqual(b.assigned, ["/"]); assert.equal(walk(tree, e => e.props?.className === "modal account-modal").length, 0);
+  walk(tree, e => e.type?.name === "Dashboard")[0].props.onBuy("pro_monthly_v2"); tree = app.render();
+  assert.equal(walk(tree, e => e.props?.role === "dialog")[0].props["aria-label"], "Create your account");
+  assert.equal(walk(tree, e => e.props?.className === "modal payment-modal").length, 0);
 });

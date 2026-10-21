@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import type { CreditBalanceDetails } from "../../shared/billing";
+import type { AccountUser } from "../lib/auth";
+import { Dashboard } from "./dashboard/Dashboard";
 import { LandingPage } from "./LandingPage";
 import { CREDIT_PACKS, TRIAL_CREDITS, type CreditPackId } from "../lib/payments/catalog";
 
@@ -11,13 +12,7 @@ type AuthMode = "login" | "register" | "forgot" | "reset" | "change";
 type PackId = CreditPackId;
 type PaymentProvider = "alipay" | "wechat";
 
-interface User {
-  id: string;
-  email: string;
-  locale: Locale;
-  credits: number;
-  creditBalance?: CreditBalanceDetails;
-}
+type User = AccountUser;
 
 interface Transaction {
   id: string;
@@ -109,7 +104,7 @@ function Logo() {
   );
 }
 
-export function PassWiselySite() {
+export function PassWiselySite({ initialDashboard = false }: { initialDashboard?: boolean } = {}) {
   const [locale, setLocale] = useState<Locale>("zh");
   const [authOpen, setAuthOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -125,7 +120,9 @@ export function PassWiselySite() {
   const [notice, setNotice] = useState("");
   const [pricingChanged, setPricingChanged] = useState(false);
   const accountRefreshGeneration = useRef(0);
+  const sessionEnding = useRef(false);
   const [busy, setBusy] = useState(false);
+  const [dashboardRefreshRevision, setDashboardRefreshRevision] = useState(0);
   const activeModal = authOpen
     ? `auth-${authMode}`
     : accountOpen
@@ -143,7 +140,7 @@ export function PassWiselySite() {
     const dialog = document.querySelector<HTMLElement>(
       ".passwisely-site [role=dialog]",
     );
-    const landing = document.querySelector<HTMLElement>(".pw-landing");
+    const landing = document.querySelector<HTMLElement>(".pw-landing, .pd-app");
     const previousOverflow = document.body.style.overflow;
     if (landing) landing.inert = true;
     document.body.style.overflow = "hidden";
@@ -203,11 +200,8 @@ export function PassWiselySite() {
           : "en";
     queueMicrotask(() => setLocale(nextLocale));
     document.documentElement.lang = nextLocale === "zh" ? "zh-CN" : "en";
-    void refreshAccount();
+    if (!initialDashboard) void refreshAccount();
     const params = new URLSearchParams(window.location.search);
-    if (params.get("payment") === "success") {
-      queueMicrotask(() => { setNotice(copy[nextLocale].paymentSuccess); setAccountOpen(true); });
-    }
     const fragment = new URLSearchParams(
       window.location.hash.replace(/^#/, ""),
     );
@@ -226,8 +220,16 @@ export function PassWiselySite() {
             : "The reset link is invalid or expired. Request a new one.",
         ),
       );
+    } else if (["return", "success"].includes(params.get("payment") || "")) {
+      // A provider return is navigation, never proof that an order was paid.
+      if (!initialDashboard) window.location.replace("/dashboard?payment=return");
+      else queueMicrotask(() => setNotice(nextLocale === "zh"
+        ? "已返回账户，请以最新积分和订单状态为准。"
+        : "Back to your account. Check your refreshed balance and order status."));
+    } else if (params.get("login") === "1") {
+      queueMicrotask(() => { setAuthMode("login"); setAuthOpen(true); });
     }
-  }, []);
+  }, [initialDashboard]);
 
   useEffect(() => {
     if (!wechatPayment) return;
@@ -255,22 +257,36 @@ export function PassWiselySite() {
   }, [accountOpen]);
 
   useEffect(() => {
-    const refresh = () => { void refreshAccount(); };
+    // Dashboard owns its single authenticated usage request and refresh cycle.
+    if (initialDashboard) return;
+    const refresh = () => { if (!sessionEnding.current) void refreshAccount(); };
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
+  }, [initialDashboard]);
+
+  const receiveDashboardUser = useCallback((snapshot: User) => {
+    if (!sessionEnding.current) setUser(snapshot);
+  }, []);
+  const dashboardUnauthorized = useCallback(() => {
+    if (sessionEnding.current) return;
+    accountRefreshGeneration.current++;
+    setUser(null);
+    setTransactions([]);
+    window.location.replace("/?login=1");
   }, []);
 
   async function refreshAccount() {
     const generation = ++accountRefreshGeneration.current;
     try {
       const response = await fetch("/api/account", { credentials: "include", cache: "no-store" });
-      if (generation !== accountRefreshGeneration.current) return;
+      if (generation !== accountRefreshGeneration.current || sessionEnding.current) return;
       if (response.status === 401) { setUser(null); setTransactions([]); return; }
       if (!response.ok) return;
       const payload = (await response.json()) as { user: User; transactions: Transaction[] };
-      if (generation !== accountRefreshGeneration.current) return;
+      if (generation !== accountRefreshGeneration.current || sessionEnding.current) return;
       setUser(payload.user);
       setTransactions(payload.transactions);
+      if (initialDashboard) setDashboardRefreshRevision(value => value + 1);
     } catch { /* A failed refresh does not replace the last server snapshot. */ }
   }
 
@@ -285,25 +301,25 @@ export function PassWiselySite() {
     setBusy(true);
     setNotice("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch(`/api/auth/${authMode}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        email: form.get("email"),
-        password: form.get("password"),
-        locale,
-      }),
-    });
-    const payload = (await response.json()) as { user?: User; error?: string };
-    setBusy(false);
-    if (!response.ok || !payload.user) {
-      setNotice(payload.error || "Something went wrong.");
-      return;
-    }
-    setUser(payload.user);
-    setAuthOpen(false);
-    setAccountOpen(true);
-    await refreshAccount();
+    try {
+      const response = await fetch(`/api/auth/${authMode}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: form.get("email"), password: form.get("password"), locale }),
+      });
+      const payload = (await response.json()) as { user?: User; error?: string };
+      if (!response.ok || !payload.user) {
+        setNotice(payload.error || (locale === "zh" ? "登录暂时不可用，请重试。" : "Sign-in is unavailable. Please try again."));
+        return;
+      }
+      accountRefreshGeneration.current++;
+      setUser(payload.user);
+      setAuthOpen(false);
+      window.location.assign("/dashboard");
+    } catch {
+      setNotice(locale === "zh" ? "连接失败，请重试。" : "Could not connect. Please try again.");
+    } finally { setBusy(false); }
   }
 
   async function requestPasswordReset(event: FormEvent<HTMLFormElement>) {
@@ -369,12 +385,22 @@ export function PassWiselySite() {
   }
 
   async function logout() {
+    if (sessionEnding.current) return;
+    sessionEnding.current = true;
     accountRefreshGeneration.current++;
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    accountRefreshGeneration.current++;
-    setUser(null);
-    setTransactions([]);
-    setAccountOpen(false);
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST", credentials: "include", cache: "no-store" });
+      if (!response.ok) throw new Error("Sign-out unavailable");
+      accountRefreshGeneration.current++;
+      setUser(null);
+      setTransactions([]);
+      setAccountOpen(false);
+      if (initialDashboard) window.location.replace("/");
+    } catch {
+      sessionEnding.current = false;
+      setNotice(locale === "zh" ? "退出失败，请重试。" : "Could not sign out. Please try again.");
+      throw new Error("Could not sign out.");
+    }
   }
 
   async function buy(packId: PackId) {
@@ -426,24 +452,33 @@ export function PassWiselySite() {
 
   return (
     <main id="top" className="passwisely-site">
-      <LandingPage
+      {initialDashboard ? <Dashboard
         locale={locale}
         onLocale={chooseLocale}
-        accountLabel={user ? `${user.credits} · ${t.account}` : t.signIn}
+        onAccount={() => setAccountOpen(true)}
+        onBuy={(id) => void buy(id)}
+        onLogout={logout}
+        onUser={receiveDashboardUser}
+        onUnauthorized={dashboardUnauthorized}
+        refreshRevision={dashboardRefreshRevision}
+      /> : <LandingPage
+        locale={locale}
+        onLocale={chooseLocale}
+        accountLabel={user ? `${user.credits} · Dashboard` : t.signIn}
         onAccount={() => {
-          if (user) setAccountOpen(true);
+          if (user) window.location.assign("/dashboard");
           else {
             setAuthMode("login");
             setAuthOpen(true);
           }
         }}
         onRegisterTrial={() => {
-          if (user) setAccountOpen(true);
+          if (user) window.location.assign("/dashboard");
           else { setAuthMode("register"); setAuthOpen(true); }
         }}
         onBuy={(id) => void buy(id)}
         busy={busy}
-      />
+      />}
 
       {notice && (
         <div className="notice" role="status" onClick={() => setNotice("")}>
@@ -776,7 +811,7 @@ export function PassWiselySite() {
             </button>
             <button
               className="button button-secondary logout"
-              onClick={() => void logout()}
+              onClick={() => { void logout().catch(() => undefined); }}
             >
               {t.logout}
             </button>

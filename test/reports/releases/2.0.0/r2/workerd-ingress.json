@@ -1,0 +1,581 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "d85871ddb6de0bdaf6edcb23b150842be7cfb8a9",
+  "verificationStatus": {
+    "productionActivation": "pending_root_sudo_activation_and_public_health",
+    "finalLinuxCandidate": "passed_in_isolated_linux_loopback",
+    "realLinuxOversizeCancellation": "observed_16777217_byte_request_413_and_following_405_200_passed"
+  },
+  "environment": {
+    "nodeVersion": "v22.15.0",
+    "wranglerVersion": "4.92.0",
+    "miniflareVersion": "4.20260515.0",
+    "workerdVersion": "workerd 2026-05-15",
+    "wranglerCliSha256": "fc1aa72afc91906759a3555e76e6dae1b13504f71dec6d3bbfa0fe24c351ebd7"
+  },
+  "evidenceSources": [
+    {
+      "kind": "safe_synthetic_linux_report",
+      "sha256": "8c0675ceabe29a687596e89a643861399d35ebe48cbf2e78ef7b50f87299f7be"
+    },
+    {
+      "kind": "safe_synthetic_linux_report",
+      "sha256": "07b6c36d698075b44dbce5cc35b140b447f5f29efa9a2f3433fe1c40c0f50ac7"
+    },
+    {
+      "kind": "safe_final_compiled_linux_report",
+      "sha256": "2b9201c4e0b4605fef6fe48e0e3e99bb345591da43a6482e517b4cb9b3811e6d"
+    }
+  ],
+  "historicalMinimalProbes": {
+    "scope": "Isolated empty-environment Linux loopback synthetic Workers",
+    "A": {
+      "id": "A",
+      "syntheticWorkerSha256": "502aa8d2d256aea11001f9f7a386c60830d1ea8adac252ed275ff5e367a43158",
+      "cycles": 3,
+      "requests": 6,
+      "postStatuses": [
+        401,
+        401,
+        401
+      ],
+      "getStatuses": [
+        null,
+        405,
+        405
+      ],
+      "getTimeoutCycles": [
+        1
+      ],
+      "getTimeoutStage": "opener.open (connect/send/status-line/headers/handlers), not proven TCP connect only",
+      "getTimeoutSeconds": [
+        5.0039
+      ],
+      "fixedDiagnosticLabelCounts": {
+        "requestStreamAfterResponse": 3,
+        "brokenPipe": 1,
+        "reload": 0,
+        "configChanged": 0,
+        "proxyOptionsChanged": 0
+      },
+      "ownedProcessGroupAbsent": true,
+      "ownedPortClosed": true,
+      "behavior": "Return early 401 without reading or cloning native request body"
+    },
+    "B": {
+      "id": "B",
+      "syntheticWorkerSha256": "85c44e34885921d89ea7d4738cd25f3da19d0354106a13081abeb9edeb82c83b",
+      "cycles": 3,
+      "requests": 6,
+      "postStatuses": [
+        401,
+        401,
+        401
+      ],
+      "getStatuses": [
+        null,
+        405,
+        405
+      ],
+      "getTimeoutCycles": [
+        1
+      ],
+      "getTimeoutStage": "opener.open (connect/send/status-line/headers/handlers), not proven TCP connect only",
+      "getTimeoutSeconds": [
+        5.0057
+      ],
+      "fixedDiagnosticLabelCounts": {
+        "requestStreamAfterResponse": 3,
+        "brokenPipe": 1,
+        "reload": 0,
+        "configChanged": 0,
+        "proxyOptionsChanged": 0
+      },
+      "ownedProcessGroupAbsent": true,
+      "ownedPortClosed": true,
+      "behavior": "Construct Request(original, headers), then return early 401 without consuming body"
+    },
+    "C": {
+      "id": "C",
+      "syntheticWorkerSha256": "b1edae6d222b73d42e580f8d497d6df78883424cf0d9939d76b00c1bbccc0e57",
+      "cycles": 3,
+      "requests": 6,
+      "postStatuses": [
+        401,
+        401,
+        401
+      ],
+      "getStatuses": [
+        405,
+        405,
+        405
+      ],
+      "getTimeoutCycles": [],
+      "getTimeoutStage": "opener.open (connect/send/status-line/headers/handlers), not proven TCP connect only",
+      "getTimeoutSeconds": [],
+      "fixedDiagnosticLabelCounts": {
+        "requestStreamAfterResponse": 0,
+        "brokenPipe": 0,
+        "reload": 0,
+        "configChanged": 0,
+        "proxyOptionsChanged": 0
+      },
+      "ownedProcessGroupAbsent": true,
+      "ownedPortClosed": true,
+      "behavior": "Construct Request(original, headers), fully consume body, then return 401"
+    },
+    "observation": "A and B each returned all three POST 401 responses; only the first following GET timed out at about five seconds. Their second and third GETs returned 405. C returned all six expected responses with zero matching stream or broken-pipe labels.",
+    "derivation": "Unread raw native request bodies were sufficient to reproduce the symptom in this environment. Vinext cloning, an unimplemented GET, ambient proxy configuration or injected body-drain middleware were not required by this minimal reproduction.",
+    "limitations": "This is an isolated local Workerd reproduction, not an upstream root-cause confirmation or a final production-candidate result."
+  },
+  "historicalBlobMetadataProbe": {
+    "id": "C_blob",
+    "syntheticWorkerSha256": "2557807a1d8f045533b70d1a98264bdb769b4af72e729f81335671daf2dd0bdf",
+    "cycles": 3,
+    "requests": 6,
+    "postStatuses": [
+      401,
+      401,
+      401
+    ],
+    "getStatuses": [
+      405,
+      405,
+      405
+    ],
+    "getTimeoutCycles": [],
+    "getTimeoutStage": "opener.open (connect/send/status-line/headers/handlers), not proven TCP connect only",
+    "getTimeoutSeconds": [],
+    "fixedDiagnosticLabelCounts": {
+      "requestStreamAfterResponse": 0,
+      "brokenPipe": 0,
+      "reload": 0,
+      "configChanged": 0,
+      "proxyOptionsChanged": 0
+    },
+    "ownedProcessGroupAbsent": true,
+    "ownedPortClosed": true,
+    "behavior": "Fully read native input, release reader, build immutable Blob, construct Request(original, body: Blob), return 401",
+    "metadataCheckNames": [
+      "methodEqual",
+      "urlEqual",
+      "headersEqual",
+      "signalAbortedEqualBefore",
+      "cfMarkerEqual",
+      "cfCountryEqual",
+      "cfNestedEqual",
+      "cfOriginalFieldsPresent",
+      "bufferedBodyEqual",
+      "signalFollowsAbort"
+    ],
+    "metadataChecksPerCycle": 10,
+    "cyclesAllChecksTrue": 3,
+    "totalChecksTrue": 30,
+    "limitation": "Synthetic cf fields establish constructor preservation for this fixture, not coverage of every native cf property or all platform metadata."
+  },
+  "historicalSmallBodyCancellationProbe": {
+    "id": "D_cancel",
+    "syntheticWorkerSha256": "99d6f116e6ae9324b205d4c4f8739d27f351f1867a42986063fd4df9d07108c8",
+    "cycles": 3,
+    "requests": 6,
+    "postStatuses": [
+      401,
+      401,
+      401
+    ],
+    "getStatuses": [
+      405,
+      405,
+      405
+    ],
+    "getTimeoutCycles": [],
+    "getTimeoutStage": "opener.open (connect/send/status-line/headers/handlers), not proven TCP connect only",
+    "getTimeoutSeconds": [],
+    "fixedDiagnosticLabelCounts": {
+      "requestStreamAfterResponse": 3,
+      "brokenPipe": 0,
+      "reload": 0,
+      "configChanged": 0,
+      "proxyOptionsChanged": 0
+    },
+    "ownedProcessGroupAbsent": true,
+    "ownedPortClosed": true,
+    "behavior": "Cancel unread small native body before returning 401",
+    "observation": "All six HTTP requests completed, but the request-stream-after-response label still appeared three times. No broken-pipe label appeared.",
+    "realOverflowProbe": "Separately completed in finalLinuxCandidate. Historical direct-cancel warnings remain valid observations for the earlier minimal probe.",
+    "notEstablishedByThisHistoricalSmallBodyProbe": [
+      "warning-free cancellation",
+      "real 16 MiB overflow behavior",
+      "bounded latency of cancellation under arbitrary stalled input"
+    ]
+  },
+  "fix": {
+    "owner": "website/worker/request-body.ts, called at the Worker ingress before both image optimization and app routing",
+    "maxBodyBytes": 16777216,
+    "limitBasis": "Existing production Nginx client_max_body_size 16m",
+    "representation": "Bounded growing Uint8Array, immutable Blob snapshot, Request(original, body: Blob)",
+    "success": "Preserve route authorization and original response/SSE object; GET/HEAD and requests without a body retain the original Request",
+    "failures": {
+      "alreadyConsumedOrReadFailure": {
+        "status": 400,
+        "code": "INVALID_REQUEST_BODY"
+      },
+      "actualBytesOverLimit": {
+        "status": 413,
+        "code": "REQUEST_BODY_TOO_LARGE"
+      },
+      "cancellationFailure": "Does not replace the fixed rejection; no exception message is returned"
+    },
+    "nativeReaderCleanup": "Each read is awaited, failure cancellation is awaited and caught, and reader lock is released in finally",
+    "unchanged": [
+      "POST pricing and purchase authorization",
+      "public NextRequest clone semantics",
+      "Wrangler/Vinext versions",
+      "TLS, probe health assertions and cache-control request headers"
+    ]
+  },
+  "nodeRegression": {
+    "targeted": {
+      "nodeVersion": "v24.19.0",
+      "command": "node --test website/tests/worker-request-body.test.mjs website/tests/pricing-checkout.test.mjs website/tests/admin-observability.test.mjs",
+      "tests": 28,
+      "passed": 28,
+      "ingressTests": 13,
+      "websiteTypecheckPassed": true,
+      "diffCheckPassed": true,
+      "scope": "Actual Worker/helper source with router boundary substituted, actual image optimizer, real ReadableStream/Request/Response/Blob; no network or payment providers"
+    },
+    "full": {
+      "tests": 408,
+      "passed": 408,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 21762.632,
+      "nodeVersion": "v24.19.0",
+      "evidenceOrigin": "Root executed; result summary independently read from local regression log",
+      "logSha256": "4f62edd0f73e9dc4613b82d9e4217aa8d3796ed73fa94ee759c88e9ca8a1fed6",
+      "rawLogCopied": false
+    },
+    "fullCommandWithPortableExecutable": "node --test desktop-api/tests/*.test.mjs website/tests/*.test.mjs",
+    "boundaryCoverage": [
+      "native input EOF and reader unlocked before routing",
+      "multichunk UTF-8 bytes and reused mutable producer buffer",
+      "request URL/method/headers/authorization/signal preservation",
+      "exact 16 MiB acceptance and 16 MiB plus one byte rejection without route entry",
+      "cancellation rejection and read failure with fixed safe output",
+      "already-consumed nonempty unlocked body rejected as 400",
+      "GET/HEAD/no body and truly empty stream",
+      "original error response and successful unread SSE object retained",
+      "actual image optimizer POST early-rejection path after native input EOF"
+    ]
+  },
+  "finalLinuxCandidate": {
+    "status": "passed_in_isolated_linux_loopback",
+    "sourceCommit": "d85871ddb6de0bdaf6edcb23b150842be7cfb8a9",
+    "manifestSha256": "9940fa0d028e9d7a8a017f5cc3d570b7747515ebc91349ec2d1ee0dfd8d0e186",
+    "compiledTreeFingerprint": "804b61a5991529f634f8421cc5643534b0f985c55f693a9e03370f7ab2a9466f",
+    "compiledFilesVerified": 39,
+    "healthOwnerSha256": "2e2a5d7587d42edcb3fe699b9d46b64cf45d044570b723315893e5c2a722437a",
+    "environment": {
+      "nodeVersion": "v22.15.0",
+      "wranglerVersion": "4.92.0",
+      "miniflareVersion": "4.20260515.0",
+      "workerdVersion": "workerd 2026-05-15",
+      "wranglerCliSha256": "fc1aa72afc91906759a3555e76e6dae1b13504f71dec6d3bbfa0fe24c351ebd7"
+    },
+    "isolation": {
+      "freshEmptyEnvHomeState": true,
+      "loopbackOnly": true,
+      "credentialsInherited": false,
+      "providerCalls": 0,
+      "ordersSubmitted": 0,
+      "productionOperations": 0,
+      "harnessWritesDuringRequests": false,
+      "healthOwnerPreloadedBeforeRuntime": true
+    },
+    "originalOwnerHealth": {
+      "rounds": 3,
+      "httpRequests": 33,
+      "allPassed": true,
+      "requestHeadersAndStatusAssertionsUnchanged": true,
+      "postResponseBodyPolicy": "Original owner intentionally does not read POST response bodies and closes responses in finally; this policy was retained.",
+      "requestObservationsGrouped": [
+        {
+          "method": "GET",
+          "path": "/",
+          "status": 200,
+          "observations": 3
+        },
+        {
+          "method": "HEAD",
+          "path": "/api/download/mac-arm64",
+          "status": 307,
+          "observations": 3
+        },
+        {
+          "method": "HEAD",
+          "path": "/api/download/mac-x64",
+          "status": 307,
+          "observations": 3
+        },
+        {
+          "method": "HEAD",
+          "path": "/api/download/windows-x64",
+          "status": 307,
+          "observations": 3
+        },
+        {
+          "method": "POST",
+          "path": "/api/desktop/recall/upload-token",
+          "status": 401,
+          "observations": 3
+        },
+        {
+          "method": "POST",
+          "path": "/api/ai/chat/completions",
+          "status": 401,
+          "observations": 3
+        },
+        {
+          "method": "GET",
+          "path": "/api/checkout",
+          "status": 405,
+          "observations": 3
+        },
+        {
+          "method": "POST",
+          "path": "/api/checkout",
+          "status": 401,
+          "observations": 9
+        },
+        {
+          "method": "HEAD",
+          "path": "/api/download/__proto__",
+          "status": 404,
+          "observations": 3
+        }
+      ],
+      "pricing": {
+        "trialCredits": 20,
+        "paidPacks": [
+          {
+            "priceCny": 99,
+            "credits": 200
+          },
+          {
+            "priceCny": 299,
+            "credits": 1000
+          }
+        ],
+        "paidValidityDays": 30,
+        "automaticRenewal": false
+      },
+      "retiredPackAuthenticatedRejection": "not_exercised_by_unauthenticated_probe"
+    },
+    "manualHttp": {
+      "requests": 10,
+      "allPassed": true,
+      "observations": [
+        {
+          "tag": "checkout_complete_json",
+          "path": "/api/checkout",
+          "method": "GET",
+          "status": 405,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "validJsonError": true,
+          "allowPost": true,
+          "passed": true
+        },
+        {
+          "tag": "chunked_small_json",
+          "path": "/api/ai/chat/completions",
+          "method": "POST",
+          "status": 401,
+          "syntheticBodyBytes": 2,
+          "chunked": true,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "passed": true
+        },
+        {
+          "tag": "after_chunked_checkout",
+          "path": "/api/checkout",
+          "method": "GET",
+          "status": 405,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "validJsonError": true,
+          "allowPost": true,
+          "passed": true
+        },
+        {
+          "tag": "after_chunked_homepage",
+          "path": "/",
+          "method": "GET",
+          "status": 200,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "passed": true
+        },
+        {
+          "tag": "exact_16mib_unauthenticated",
+          "path": "/api/ai/chat/completions",
+          "method": "POST",
+          "status": 401,
+          "syntheticBodyBytes": 16777216,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "passed": true
+        },
+        {
+          "tag": "after_exact_limit_checkout",
+          "path": "/api/checkout",
+          "method": "GET",
+          "status": 405,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "validJsonError": true,
+          "allowPost": true,
+          "passed": true
+        },
+        {
+          "tag": "after_exact_limit_homepage",
+          "path": "/",
+          "method": "GET",
+          "status": 200,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "passed": true
+        },
+        {
+          "tag": "over_16mib_by_one",
+          "path": "/api/ai/chat/completions",
+          "method": "POST",
+          "status": 413,
+          "syntheticBodyBytes": 16777217,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "passed": true
+        },
+        {
+          "tag": "after_over_limit_checkout",
+          "path": "/api/checkout",
+          "method": "GET",
+          "status": 405,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "validJsonError": true,
+          "allowPost": true,
+          "passed": true
+        },
+        {
+          "tag": "after_over_limit_homepage",
+          "path": "/",
+          "method": "GET",
+          "status": 200,
+          "requestWriteCompleted": true,
+          "completeResponseBody": true,
+          "passed": true
+        }
+      ]
+    },
+    "totalHttpRequests": 43,
+    "allHttpAssertionsPassed": true,
+    "fixedDiagnosticLabelsByWindow": {
+      "ordinarySmallBodyLogDelta": {
+        "requestStreamAfterResponse": 0,
+        "requestStreamClientDisconnected": 0,
+        "brokenPipe": 0,
+        "networkConnectionLost": 0,
+        "proxyWorkerError": 0,
+        "workerRestartedMessage": 0,
+        "localReload": 0,
+        "configChange": 0
+      },
+      "ordinaryLegalBodyLogDelta": {
+        "requestStreamAfterResponse": 0,
+        "requestStreamClientDisconnected": 0,
+        "brokenPipe": 0,
+        "networkConnectionLost": 0,
+        "proxyWorkerError": 0,
+        "workerRestartedMessage": 0,
+        "localReload": 0,
+        "configChange": 0
+      },
+      "overLimitAndRecoveryLogDelta": {
+        "requestStreamAfterResponse": 0,
+        "requestStreamClientDisconnected": 0,
+        "brokenPipe": 0,
+        "networkConnectionLost": 0,
+        "proxyWorkerError": 0,
+        "workerRestartedMessage": 0,
+        "localReload": 0,
+        "configChange": 0
+      },
+      "finalLogLabelCounts": {
+        "requestStreamAfterResponse": 0,
+        "requestStreamClientDisconnected": 0,
+        "brokenPipe": 0,
+        "networkConnectionLost": 0,
+        "proxyWorkerError": 0,
+        "workerRestartedMessage": 0,
+        "localReload": 0,
+        "configChange": 0
+      }
+    },
+    "diagnosticScope": "All eight selected fixed labels were zero in this run, including over-limit recovery and final cleanup. Observation windows do not prove exact per-request causality, absence of all possible warnings, or future warning-free behavior.",
+    "cleanup": {
+      "ownedGroupAbsent": true,
+      "childExitCode": 0,
+      "cleanupExceptionClasses": [],
+      "ownedIdentityRetained": false,
+      "ownedPortClosed": true
+    },
+    "limitations": [
+      "Isolated compiled Linux candidate; production activation/public HTTPS are not established by this report.",
+      "Unauthenticated paths only; this run did not exercise authenticated payment orders or live model providers.",
+      "The over-limit observation is one fully transmitted 16777217-byte synthetic request, not arbitrary network failure or stalled-upload coverage.",
+      "No production RSS/throughput benchmarking."
+    ]
+  },
+  "resourceLimitsAndCosts": {
+    "maxAccumulatorBytes": 16777216,
+    "maxStableBlobBytes": 16777216,
+    "logicalRetainedAccumulatorPlusBlobUpperBytes": 33554432,
+    "totalRssIsNotCappedAtThisValue": true,
+    "additionalMemory": [
+      "native incoming buffers",
+      "previous growth buffers pending garbage collection",
+      "runtime Blob internals",
+      "downstream JSON strings and parsed objects",
+      "parallel requests"
+    ],
+    "timeCost": "Bodies are completely read before routing/authentication. Buffer growth, copying and Blob snapshot add O(n) work. This removes streaming request forwarding for admitted request bodies.",
+    "aggregateConcurrencyLimitAdded": false,
+    "productionRssThroughputLatencyBenchmarks": "not_measured"
+  },
+  "sourceFiles": [
+    {
+      "path": "website/worker/index.ts",
+      "sha256": "e65157f7b8ad5167ada37084e46e8ed4fc350ce8612ad0cb094927142396d6b0"
+    },
+    {
+      "path": "website/worker/request-body.ts",
+      "sha256": "95ab6eb30a87a2445b843b7a2a67093269decaecd19caa4465f724940e82e395"
+    },
+    {
+      "path": "website/tests/worker-request-body.test.mjs",
+      "sha256": "5a783703bb11e1e8527223777a0455ab82554c4f7495f19a4e1845316332b42b"
+    }
+  ],
+  "pendingVerification": [
+    "Production activation with authorized sudo and public HTTPS owner health, owned by root"
+  ],
+  "publicationScope": {
+    "machinePidsPortsPrivatePathsOmitted": true,
+    "rawLogsHeadersBodiesEnvironmentCredentialsOmitted": true,
+    "noProductionActivationClaim": true
+  }
+}

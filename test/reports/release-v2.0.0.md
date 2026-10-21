@@ -13,8 +13,8 @@ Mac Apple silicon and Windows x64 share Recall V2 system/microphone capture, rea
 ## Source and ledger checks
 
 - Desktop renderer/Electron assets compiled from `6f1779dc9bb74aebb79c13ca15e75f1f13d9e936`.
-- Website/source candidate: `1303c5eed0949553321edd3642bddc94ad8ce884`.
-- Node 24 source regression: 394/394 passed; renderer, Electron and website TypeScript checks passed.
+- Website/source candidate: `d85871ddb6de0bdaf6edcb23b150842be7cfb8a9`.
+- Node 24.19.0 final source regression: 408/408 passed in 21.763 seconds; renderer/Electron checks from the desktop build and the current website TypeScript check passed.
 - Real PostgreSQL PL/pgSQL ledger tests via isolated PGlite: 17/17 passed, including production-style default ACLs, legacy rights, independent expiry, payment replays, original-bucket refunds and permission boundaries. PGlite uses one connection; independent-connection lock contention was not measured.
 - Production migration 0010 committed successfully. Exact function bodies/permissions, RLS, unchanged permanent balances and new PostgREST balance RPC were independently checked read-only. Only DDL metadata was backed up; no user rows or credentials were cloned.
 - Pricing/checkout tests execute real production handlers with substituted payment transports; no real payment was submitted.
@@ -32,9 +32,11 @@ Evidence: [Mac bundle](releases/2.0.0/r2/mac-bundle.json), [Mac DMG](releases/2.
 
 ## Publication status
 
-Both final r2 installers are uploaded. Anonymous full-content GET SHA-256 verification passed for each, and the receipts reproduce the committed download catalog exactly. Website activation is awaiting the operator's Wise sudo authentication; the first invocation exited before any deployment transaction or service change. Current public download routes have not yet been switched. Only final installers were published; unused blockmaps/update feeds were not distributed.
+Both final r2 installers are uploaded. Anonymous full-content GET SHA-256 verification passed for each, and the receipts reproduce the committed download catalog exactly. An early unauthenticated invocation exited without changes. The subsequent authenticated 1303c5e activation passed local checks but failed public HTTP probes and automatically restored the old runtime and Nginx; database migration 0010 was not reverted. Native Linux Workerd reproduction identified unread incoming request bodies as sufficient to cause the stream failure. The d85871d candidate now stabilizes bounded request bytes before framework routing, passed all 43 isolated Linux HTTP checks, and is prepared with pinned file/source/manifest digests. Final activation awaits the operator's interactive Wise sudo authentication; current public download routes have not yet been switched. Only final installers were published; unused blockmaps/update feeds were not distributed.
 
 Public-object evidence: [Mac receipt](releases/2.0.0/r2/oss-mac-r2-receipt.json), [Windows receipt](releases/2.0.0/r2/oss-windows-r2-receipt.json).
+
+Website evidence: [credential-free build](releases/2.0.0/r2/web-build.json), [native Workerd diagnosis and regression](releases/2.0.0/r2/workerd-ingress.json), [final Linux runtime](releases/2.0.0/r2/linux-runtime.json). Three complete production-owner health sequences retained the original no-cache and response handling. Exact 16 MiB input returned 401, one byte over returned 413, and subsequent checkout/homepage requests remained healthy. All monitored stream/proxy labels were zero in this run; this does not establish warning-free cancellation under every network condition. No provider or payment requests were submitted. Pre-reading adds O(n) copying and upload completion before authorization; total RSS/concurrent-load costs remain unmeasured.
 
 ## Native verification limits
 

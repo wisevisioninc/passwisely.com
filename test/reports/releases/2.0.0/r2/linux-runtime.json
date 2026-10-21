@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "d85871ddb6de0bdaf6edcb23b150842be7cfb8a9",
+  "manifestSha256": "9940fa0d028e9d7a8a017f5cc3d570b7747515ebc91349ec2d1ee0dfd8d0e186",
+  "treeFingerprint": "804b61a5991529f634f8421cc5643534b0f985c55f693a9e03370f7ab2a9466f",
+  "scope": "Real compiled candidate on installed Linux Node22/Wrangler/workerd; fresh empty env/HOME/state; loopback only, no providers/orders/production state.",
+  "environment": {
+    "nodeVersion": "v22.15.0",
+    "wranglerVersion": "4.92.0",
+    "wranglerCliSha256": "fc1aa72afc91906759a3555e76e6dae1b13504f71dec6d3bbfa0fe24c351ebd7",
+    "miniflareVersion": "4.20260515.0",
+    "workerdVersion": "workerd 2026-05-15"
+  },
+  "fullOwnerHealth": {
+    "roundsPassed": 3,
+    "requestsPassed": 33,
+    "roundSeconds": [
+      0.140061,
+      0.105556,
+      0.104084
+    ],
+    "healthOwnerSha256": "2e2a5d7587d42edcb3fe699b9d46b64cf45d044570b723315893e5c2a722437a",
+    "result": {
+      "base": "loopback isolated runtime",
+      "homepage": 200,
+      "pricing": {
+        "trialCredits": 20,
+        "paidPacks": [
+          {
+            "priceCny": 99,
+            "credits": 200
+          },
+          {
+            "priceCny": 299,
+            "credits": 1000
+          }
+        ],
+        "paidValidityDays": 30,
+        "automaticRenewal": false
+      },
+      "downloadPlatforms": [
+        "mac-arm64",
+        "mac-x64",
+        "windows-x64"
+      ],
+      "unauthenticatedRecallAndAi": 401,
+      "unauthenticatedCheckout": 401,
+      "checkoutGet": 405,
+      "retiredPackAuthenticatedRejection": "not_exercised_by_unauthenticated_probe",
+      "unknownPlatform": 404,
+      "providerCalls": 0,
+      "paymentOrdersCreated": 0
+    }
+  },
+  "manualRequests": [
+    {
+      "tag": "checkout_complete_json",
+      "method": "GET",
+      "path": "/api/checkout",
+      "expectedStatus": 405,
+      "status": 405,
+      "passed": true,
+      "seconds": 0.004577
+    },
+    {
+      "tag": "chunked_small_json",
+      "method": "POST",
+      "path": "/api/ai/chat/completions",
+      "expectedStatus": 401,
+      "status": 401,
+      "passed": true,
+      "seconds": 0.0063
+    },
+    {
+      "tag": "after_chunked_checkout",
+      "method": "GET",
+      "path": "/api/checkout",
+      "expectedStatus": 405,
+      "status": 405,
+      "passed": true,
+      "seconds": 0.004576
+    },
+    {
+      "tag": "after_chunked_homepage",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "status": 200,
+      "passed": true,
+      "seconds": 0.018886
+    },
+    {
+      "tag": "exact_16mib_unauthenticated",
+      "method": "POST",
+      "path": "/api/ai/chat/completions",
+      "expectedStatus": 401,
+      "status": 401,
+      "passed": true,
+      "seconds": 0.160144
+    },
+    {
+      "tag": "after_exact_limit_checkout",
+      "method": "GET",
+      "path": "/api/checkout",
+      "expectedStatus": 405,
+      "status": 405,
+      "passed": true,
+      "seconds": 0.008288
+    },
+    {
+      "tag": "after_exact_limit_homepage",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "status": 200,
+      "passed": true,
+      "seconds": 0.038693
+    },
+    {
+      "tag": "over_16mib_by_one",
+      "method": "POST",
+      "path": "/api/ai/chat/completions",
+      "expectedStatus": 413,
+      "status": 413,
+      "passed": true,
+      "seconds": 0.114895
+    },
+    {
+      "tag": "after_over_limit_checkout",
+      "method": "GET",
+      "path": "/api/checkout",
+      "expectedStatus": 405,
+      "status": 405,
+      "passed": true,
+      "seconds": 0.003307
+    },
+    {
+      "tag": "after_over_limit_homepage",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "status": 200,
+      "passed": true,
+      "seconds": 0.012713
+    }
+  ],
+  "logLabels": {
+    "ordinaryLegalBody": {
+      "requestStreamAfterResponse": 0,
+      "requestStreamClientDisconnected": 0,
+      "brokenPipe": 0,
+      "networkConnectionLost": 0,
+      "proxyWorkerError": 0,
+      "workerRestartedMessage": 0,
+      "localReload": 0,
+      "configChange": 0
+    },
+    "overLimitAndRecovery": {
+      "requestStreamAfterResponse": 0,
+      "requestStreamClientDisconnected": 0,
+      "brokenPipe": 0,
+      "networkConnectionLost": 0,
+      "proxyWorkerError": 0,
+      "workerRestartedMessage": 0,
+      "localReload": 0,
+      "configChange": 0
+    },
+    "final": {
+      "requestStreamAfterResponse": 0,
+      "requestStreamClientDisconnected": 0,
+      "brokenPipe": 0,
+      "networkConnectionLost": 0,
+      "proxyWorkerError": 0,
+      "workerRestartedMessage": 0,
+      "localReload": 0,
+      "configChange": 0
+    },
+    "limitation": "Reported separately; raw reader cancellation may log stream warnings. Passing statuses do not assert zero warnings."
+  },
+  "cleanup": {
+    "ownedGroupAbsent": true,
+    "childExitCode": 0,
+    "ownedPortClosed": true,
+    "ownedIdentityRetained": false
+  },
+  "credentialsInherited": false,
+  "providerCalls": 0,
+  "ordersSubmitted": 0,
+  "rawLogCopied": false,
+  "originalSafeReportSha256": "2b9201c4e0b4605fef6fe48e0e3e99bb345591da43a6482e517b4cb9b3811e6d",
+  "passed": true,
+  "productionActivationProvenByThisProbe": false
+}

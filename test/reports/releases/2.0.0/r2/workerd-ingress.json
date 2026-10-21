@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "sourceCommit": "d85871ddb6de0bdaf6edcb23b150842be7cfb8a9",
   "verificationStatus": {
-    "productionActivation": "pending_root_sudo_activation_and_public_health",
+    "productionActivation": "active_local_and_public_owner_health_passed",
     "finalLinuxCandidate": "passed_in_isolated_linux_loopback",
     "realLinuxOversizeCancellation": "observed_16777217_byte_request_413_and_following_405_200_passed"
   },
@@ -570,12 +570,11 @@
       "sha256": "5a783703bb11e1e8527223777a0455ab82554c4f7495f19a4e1845316332b42b"
     }
   ],
-  "pendingVerification": [
-    "Production activation with authorized sudo and public HTTPS owner health, owned by root"
-  ],
+  "pendingVerification": [],
   "publicationScope": {
     "machinePidsPortsPrivatePathsOmitted": true,
     "rawLogsHeadersBodiesEnvironmentCredentialsOmitted": true,
-    "noProductionActivationClaim": true
-  }
+    "noProductionActivationClaim": false
+  },
+  "productionVerificationEvidence": "production-activation.json"
 }

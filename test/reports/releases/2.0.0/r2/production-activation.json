@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "2.0.0",
+  "sourceCommit": "d85871ddb6de0bdaf6edcb23b150842be7cfb8a9",
+  "manifestSha256": "9940fa0d028e9d7a8a017f5cc3d570b7747515ebc91349ec2d1ee0dfd8d0e186",
+  "status": "active",
+  "oldFingerprint": "74200cff347abd071659e3f95e6162833329c8872455b9d340145aa2ddbc7697",
+  "newFingerprint": "804b61a5991529f634f8421cc5643534b0f985c55f693a9e03370f7ab2a9466f",
+  "oldNginxSha256": "65948123bd7a083d1e27bddae1ea711a61445b15358bf2243cc15088fc265b6f",
+  "newNginxSha256": "99050372081d3a6c242815238d80549916f273aff7c37d6076b822bb645f71b6",
+  "runtimeExchanged": true,
+  "nginxInstalled": true,
+  "productionDataModified": false,
+  "desktopApiModified": false,
+  "localHealth": {
+    "base": "http://127.0.0.1:3011",
+    "homepage": 200,
+    "pricing": {
+      "trialCredits": 20,
+      "paidPacks": [
+        {
+          "priceCny": 99,
+          "credits": 200
+        },
+        {
+          "priceCny": 299,
+          "credits": 1000
+        }
+      ],
+      "paidValidityDays": 30,
+      "automaticRenewal": false
+    },
+    "downloadPlatforms": [
+      "mac-arm64",
+      "mac-x64",
+      "windows-x64"
+    ],
+    "unauthenticatedRecallAndAi": 401,
+    "unauthenticatedCheckout": 401,
+    "checkoutGet": 405,
+    "retiredPackAuthenticatedRejection": "not_exercised_by_unauthenticated_probe",
+    "unknownPlatform": 404,
+    "providerCalls": 0,
+    "paymentOrdersCreated": 0
+  },
+  "publicHealth": {
+    "base": "https://passwisely.com",
+    "homepage": 200,
+    "pricing": {
+      "trialCredits": 20,
+      "paidPacks": [
+        {
+          "priceCny": 99,
+          "credits": 200
+        },
+        {
+          "priceCny": 299,
+          "credits": 1000
+        }
+      ],
+      "paidValidityDays": 30,
+      "automaticRenewal": false
+    },
+    "downloadPlatforms": [
+      "mac-arm64",
+      "mac-x64",
+      "windows-x64"
+    ],
+    "unauthenticatedRecallAndAi": 401,
+    "unauthenticatedCheckout": 401,
+    "checkoutGet": 405,
+    "retiredPackAuthenticatedRejection": "not_exercised_by_unauthenticated_probe",
+    "unknownPlatform": 404,
+    "providerCalls": 0,
+    "paymentOrdersCreated": 0
+  },
+  "verifiedAt": "2026-10-21T03:07:53.055998+00:00",
+  "transactionId": "v2.0.0-20261021T030109Z-159aa00c",
+  "transactionSha256": "065801cae3664f32b15ebba7af02e9eb3ea65545e789f523bb0722c053f4a70d",
+  "actualRuntimeMatchesManifest": true,
+  "compiledFileCount": 39,
+  "runtimeBindingsMode": "0600",
+  "runtimeConfigurationMatchesOwner": true,
+  "grpcHealth": "SERVING grpc+protobuf",
+  "databaseMigrationRepeated": false,
+  "providerCalls": 0,
+  "paymentOrdersCreated": 0,
+  "browserVerification": {
+    "url": "https://passwisely.com/#pricing",
+    "threePricingCardsVisible": true,
+    "freeTrialOpensRegistration": true,
+    "registrationCtaCredits": 20,
+    "registrationSubmitted": false,
+    "pricingScreenshotSha256": "9d7f60768660071922a8001ece246cbfb6fc82f7e2275bb3b0c6a229dfb9a15a"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "checkedAt": "2026-10-21T03:02:40.618592+00:00",
+  "base": "https://passwisely.com",
+  "sourceCommit": "d85871ddb6de0bdaf6edcb23b150842be7cfb8a9",
+  "manifestSha256": "9940fa0d028e9d7a8a017f5cc3d570b7747515ebc91349ec2d1ee0dfd8d0e186",
+  "scope": "Public homepage GET and three download HEADs only; no cookies, credentials, POST, provider calls or full installer downloads.",
+  "productionWrites": 0,
+  "artifactBytesDownloaded": 0,
+  "requests": {},
+  "homepage": {
+    "status": 200,
+    "heroPresent": true,
+    "visiblePlanCards": [
+      {
+        "name": "新用户体验",
+        "price": "¥ 0 CNY",
+        "credits": "20 积分",
+        "text": "新用户体验 新账户一次赠送，无需支付 ¥ 0 CNY 20 积分 免费注册体验 新用户专享，一次领取 体验积分长期有效 无需绑定支付方式 支持截图、解题与追问"
+      },
+      {
+        "name": "进阶包",
+        "price": "¥ 99 /月",
+        "credits": "200 积分",
+        "text": "推荐套餐 进阶包 手动续购，自由安排 ¥ 99 /月 200 积分 购买月包 手动续购，无自动续费 到账后 30 天到期 每次独立起算，不延长旧包 每包 200 积分"
+      },
+      {
+        "name": "无限制包",
+        "price": "¥ 299 /月",
+        "credits": "1,000 积分",
+        "text": "无限制包 手动续购，自由安排 ¥ 299 /月 1,000 积分 购买月包 手动续购，无自动续费 到账后 30 天到期 每次独立起算，不延长旧包 每包 1,000 积分"
+      }
+    ],
+    "pricing": {
+      "trialCredits": 20,
+      "paidPacks": [
+        {
+          "priceCny": 99,
+          "credits": 200
+        },
+        {
+          "priceCny": 299,
+          "credits": 1000
+        }
+      ],
+      "paidValidityDays": 30,
+      "automaticRenewal": false
+    },
+    "pricingPassed": true,
+    "releaseLimitations": {
+      "windowsUnsignedAndNativeAcceptancePending": true,
+      "intelNoLiveAudio": true,
+      "versionsVisible": true,
+      "existingPermanentCreditsRemain": true,
+      "unlimitedMeans1000NotUnbounded": true
+    }
+  },
+  "downloads": {
+    "mac-arm64": {
+      "status": 307,
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r2/PassWisely-macOS-arm64.dmg",
+      "releaseVersion": "2.0.0",
+      "sha256Header": "e2492951c2c54941b3638b39a181e5b1738e1e171b1a8db85011b09b5e2f4973",
+      "installerBytesRehashed": false,
+      "expectedMatched": true
+    },
+    "mac-x64": {
+      "status": 307,
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v1.2.6/PassWisely-macOS-x64.dmg",
+      "releaseVersion": "1.2.6",
+      "sha256Header": null,
+      "installerBytesRehashed": false,
+      "expectedMatched": true
+    },
+    "windows-x64": {
+      "status": 307,
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r2/PassWisely-Windows-x64.exe",
+      "releaseVersion": "2.0.0",
+      "sha256Header": "604cf3be66ed413da88f54cb1add56227a8ae390070453e96972cfdc56dbf2aa",
+      "installerBytesRehashed": false,
+      "expectedMatched": true
+    }
+  },
+  "verificationPassed": true
+}

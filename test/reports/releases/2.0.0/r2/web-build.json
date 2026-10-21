@@ -18,8 +18,9 @@
   "sourceFileCount": 132,
   "compiledFileCount": 39,
   "compiledBytes": 4955237,
-  "productionActivated": false,
+  "productionActivated": true,
   "linuxCandidatePassed": true,
-  "activationStatus": "awaiting_interactive_sudo",
-  "candidateArchiveSha256": "a80b645a0130a612b48da9da2db74b4e800666813345d54d63351b7a69508e13"
+  "activationStatus": "active",
+  "candidateArchiveSha256": "a80b645a0130a612b48da9da2db74b4e800666813345d54d63351b7a69508e13",
+  "productionVerification": "production-activation.json"
 }

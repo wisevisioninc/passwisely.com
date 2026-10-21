@@ -1,0 +1,37 @@
+{
+  "sourceCommit": "e84551107eef690058d4b435affbacd0752c817e",
+  "node": "v24.19.0",
+  "tests": {
+    "tests": 432,
+    "passed": 432,
+    "durationMs": 21770.932959,
+    "logSha256": "a1e40f06c111408111fd9faec3683dc4dfb1b17bdb62f05a4330e133b01504e9"
+  },
+  "websiteTypecheckPassed": true,
+  "browserQa": {
+    "actualComponents": true,
+    "syntheticData": true,
+    "desktop": true,
+    "mobile390NoOverflow": true,
+    "periods7And30": true,
+    "page23Rows": true,
+    "errorEmptyUnauthorized": true,
+    "accountModal": true,
+    "localesZhEn": true,
+    "screenshot": "synthetic-data preview saved locally",
+    "screenshotSha256": "3637030ede49862aa60d45fd26c4179f4db6bb6f8c2410ab582a1a33ea678cb6",
+    "fixedSameSource7DaySubset": true
+  },
+  "productionUserAccountFetched": false,
+  "productionCredentialsCopied": false,
+  "migrationRunnerTests": {
+    "passed": 5,
+    "failed": 0,
+    "durationMs": 1740.781375
+  },
+  "reference": {
+    "url": "https://www.interviewcoder.co/dashboard",
+    "observed": "redirected to sign-in; private Dashboard content not inspected",
+    "implementation": "PassWisely brand workspace with user usage analytics"
+  }
+}

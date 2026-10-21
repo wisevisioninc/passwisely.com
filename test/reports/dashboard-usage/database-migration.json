@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "mode": "apply",
+  "schemaChanged": true,
+  "targetFunctionsCreated": 1,
+  "committed": true,
+  "alreadyApplied": false,
+  "migrationSha256": "770a28fed6fd635e9d5934da78d36c150b0bc086bec02239791a6662fac2e881",
+  "contract": {
+    "exactSignature": true,
+    "exactSource": true,
+    "attributesMatch": true,
+    "aclServiceOnly": true,
+    "markerMatches": true,
+    "functionOwnerMatches": true
+  },
+  "userRowsWritten": 0,
+  "credentialsCopied": false,
+  "postgrest": {
+    "success": true,
+    "readOnly": true,
+    "randomAbsentUuidConfirmed": true,
+    "checks": [
+      {
+        "days": 7,
+        "emptyUsageVerified": true
+      },
+      {
+        "days": 30,
+        "emptyUsageVerified": true
+      }
+    ],
+    "userRowsWritten": 0,
+    "realUserRecordsFetched": 0,
+    "credentialsCopied": false
+  },
+  "tls": {
+    "encrypted": true,
+    "authorized": true,
+    "protocol": "TLSv1.3"
+  },
+  "parserSha256": "62430a996f1f6188bf8c9e0075685739e40ddb90750b6817c6c3521000cffe4e"
+}

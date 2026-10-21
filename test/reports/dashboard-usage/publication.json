@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "e84551107eef690058d4b435affbacd0752c817e",
+  "manifestSha256": "22c950f3a902f27d4b21cdc4247b591e3a1b3cf2aeb9a00c68530f467e65843c",
+  "status": "awaiting_interactive_sudo",
+  "productionActivated": false,
+  "migration0011AlreadyCommitted": true,
+  "activationWrapperSha256": "d8f99f7503a56f5abb124ecabc6c3523045914ccc6b767f215529f8c203c7d5f",
+  "priorWebsiteStillRunning": true,
+  "expectedNginxSha256": "99050372081d3a6c242815238d80549916f273aff7c37d6076b822bb645f71b6"
+}

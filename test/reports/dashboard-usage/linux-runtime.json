@@ -1,0 +1,160 @@
+{
+  "sourceCommit": "e84551107eef690058d4b435affbacd0752c817e",
+  "manifestSha256": "22c950f3a902f27d4b21cdc4247b591e3a1b3cf2aeb9a00c68530f467e65843c",
+  "treeFingerprint": "9d5e1b3cc798ff7bb8b44a572e9949216a6ab8ffca3019ef030c20cbf07daf1a",
+  "scope": "Real compiled candidate on installed Linux Node22/Wrangler/workerd; fresh empty env/HOME/state; loopback only, no providers/orders/production state.",
+  "nodeVersion": "v22.15.0",
+  "wranglerVersion": "4.92.0",
+  "wranglerCliSha256": "fc1aa72afc91906759a3555e76e6dae1b13504f71dec6d3bbfa0fe24c351ebd7",
+  "miniflareVersion": "4.20260515.0",
+  "workerdVersion": "workerd 2026-05-15",
+  "healthOwnerSha256": "2e2a5d7587d42edcb3fe699b9d46b64cf45d044570b723315893e5c2a722437a",
+  "passed": true,
+  "originalSafeReportSha256": "73ad1c623df876ee80eb9ec0282f1b2ef51b4b3b263ae6eededb964cef35a6f6",
+  "healthRoundsPassed": 3,
+  "healthRequests": 33,
+  "manualRequests": [
+    {
+      "tag": "checkout_complete_json",
+      "path": "/api/checkout",
+      "method": "GET",
+      "status": 405,
+      "expectedStatus": 405,
+      "passed": true
+    },
+    {
+      "tag": "chunked_small_json",
+      "path": "/api/ai/chat/completions",
+      "method": "POST",
+      "status": 401,
+      "expectedStatus": 401,
+      "passed": true
+    },
+    {
+      "tag": "after_chunked_checkout",
+      "path": "/api/checkout",
+      "method": "GET",
+      "status": 405,
+      "expectedStatus": 405,
+      "passed": true
+    },
+    {
+      "tag": "after_chunked_homepage",
+      "path": "/",
+      "method": "GET",
+      "status": 200,
+      "expectedStatus": 200,
+      "passed": true
+    },
+    {
+      "tag": "dashboard_public_private_shell",
+      "path": "/dashboard",
+      "method": "GET",
+      "status": 200,
+      "expectedStatus": 200,
+      "passed": true,
+      "dashboardChecks": {
+        "titleMatches": true,
+        "robotsNoindex": true,
+        "robotsNofollow": true,
+        "publicLoadingShell": true,
+        "noPrivateMetricNodes": true,
+        "syntheticPrivateSentinelNotEmbedded": true,
+        "noSsrSessionRotation": true
+      }
+    },
+    {
+      "tag": "anonymous_usage_private_no_store",
+      "path": "/api/account/usage",
+      "method": "GET",
+      "status": 401,
+      "expectedStatus": 401,
+      "passed": true,
+      "usageChecks": {
+        "anonymous401": true,
+        "jsonErrorOnly": true,
+        "noStore": true,
+        "private": true,
+        "varyCookieAndAuthorization": true,
+        "noSessionRotation": true
+      }
+    },
+    {
+      "tag": "exact_16mib_unauthenticated",
+      "path": "/api/ai/chat/completions",
+      "method": "POST",
+      "status": 401,
+      "expectedStatus": 401,
+      "passed": true
+    },
+    {
+      "tag": "after_exact_limit_checkout",
+      "path": "/api/checkout",
+      "method": "GET",
+      "status": 405,
+      "expectedStatus": 405,
+      "passed": true
+    },
+    {
+      "tag": "after_exact_limit_homepage",
+      "path": "/",
+      "method": "GET",
+      "status": 200,
+      "expectedStatus": 200,
+      "passed": true
+    },
+    {
+      "tag": "over_16mib_by_one",
+      "path": "/api/ai/chat/completions",
+      "method": "POST",
+      "status": 413,
+      "expectedStatus": 413,
+      "passed": true
+    },
+    {
+      "tag": "after_over_limit_checkout",
+      "path": "/api/checkout",
+      "method": "GET",
+      "status": 405,
+      "expectedStatus": 405,
+      "passed": true
+    },
+    {
+      "tag": "after_over_limit_homepage",
+      "path": "/",
+      "method": "GET",
+      "status": 200,
+      "expectedStatus": 200,
+      "passed": true
+    }
+  ],
+  "normalLegalBodyLogLabelCounts": {
+    "requestStreamAfterResponse": 0,
+    "requestStreamClientDisconnected": 0,
+    "brokenPipe": 0,
+    "networkConnectionLost": 0,
+    "proxyWorkerError": 0,
+    "workerRestartedMessage": 0,
+    "localReload": 0,
+    "configChange": 0
+  },
+  "finalLogLabelCounts": {
+    "requestStreamAfterResponse": 0,
+    "requestStreamClientDisconnected": 0,
+    "brokenPipe": 0,
+    "networkConnectionLost": 0,
+    "proxyWorkerError": 0,
+    "workerRestartedMessage": 0,
+    "localReload": 0,
+    "configChange": 0
+  },
+  "cleanup": {
+    "ownedGroupAbsent": true,
+    "ownedPortClosed": true,
+    "childExitCode": 0
+  },
+  "credentialsInherited": false,
+  "realAuthenticatedAccountTested": false,
+  "providerCalls": 0,
+  "paymentOrdersCreated": 0
+}

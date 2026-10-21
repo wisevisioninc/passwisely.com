@@ -11,8 +11,7 @@ import {
 } from "@/lib/payments/orders";
 import { createWechatNativePayment } from "@/lib/payments/wechat";
 
-// A concrete response avoids the deployed worker's intermittent hang when it
-// synthesizes a response for an unimplemented method.
+// Keep the method rejection explicit and complete; GET never creates a purchase.
 export function GET() {
   return Response.json({ error: "Use POST to create a purchase." }, {
     status: 405,

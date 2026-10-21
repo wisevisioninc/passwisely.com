@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { stabilizeRequestBody } from "./request-body";
 
 interface Env {
   ASSETS: Fetcher;
@@ -31,10 +32,20 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const startedAt = Date.now();
+    const stable = await stabilizeRequestBody(request);
+    if (!stable.ok) {
+      const response = Response.json({
+        error: stable.code === "REQUEST_BODY_TOO_LARGE" ? "Request body is too large." : "Invalid request body.",
+        code: stable.code,
+      }, { status: stable.status, headers: { "cache-control": "no-store" } });
+      recordRequest(url.pathname, response.status, Date.now() - startedAt, env, ctx);
+      return response;
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
-      return handleImageOptimization(request, {
+      return handleImageOptimization(stable.request, {
         fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
         transformImage: async (body, { width, format, quality }) => {
           const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
@@ -43,8 +54,7 @@ const worker = {
       }, allowedWidths);
     }
 
-    const startedAt = Date.now();
-    const response = await handler.fetch(request, env, ctx);
+    const response = await handler.fetch(stable.request, env, ctx);
     recordRequest(url.pathname, response.status, Date.now() - startedAt, env, ctx);
     return response;
   },

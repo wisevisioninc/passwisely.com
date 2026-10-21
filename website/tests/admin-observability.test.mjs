@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+import { createProductionTsLoader } from "../../desktop-api/tests/helpers/production-typescript.mjs";
 
 test("admin analytics migration covers growth, revenue, conversion, and usage", async () => {
   const migration = await readFile(new URL("../supabase/migrations/0006_admin_observability.sql", import.meta.url), "utf8");
@@ -46,3 +48,44 @@ test("production admin authentication does not fall back to default credentials"
   assert.doesNotMatch(auth, /SUPABASE_SERVICE_ROLE_KEY\?\.trim\(\)/);
   assert.match(auth, /development \? "admin" : ""/);
 });
+
+// Execute the real health owner with synthetic runtime bindings. Network and AI
+// seams are substituted because this checks configuration completeness only;
+// it does not establish merchant-product permission or provider availability.
+const alipayConfigFixture = {
+  PUBLIC_SITE_URL: "https://site.example.invalid",
+  ALIPAY_APP_ID: "synthetic-app",
+  ALIPAY_SELLER_ID: "2088000000000000",
+  ALIPAY_PRIVATE_KEY: "synthetic-application-key",
+  ALIPAY_PUBLIC_KEY: "synthetic-platform-key",
+};
+for (const [description, overrides, expectedState] of [
+  ["all required fields", {}, "healthy"],
+  ["missing seller ID", { ALIPAY_SELLER_ID: undefined }, "degraded"],
+  ["blank seller ID", { ALIPAY_SELLER_ID: "   " }, "degraded"],
+  ["missing app ID", { ALIPAY_APP_ID: undefined }, "degraded"],
+  ["missing private key", { ALIPAY_PRIVATE_KEY: undefined }, "degraded"],
+  ["missing public key", { ALIPAY_PUBLIC_KEY: undefined }, "degraded"],
+]) {
+  test(`admin Alipay configuration health accounts for ${description}`, async t => {
+    const env = { ...alipayConfigFixture, ...overrides };
+    const { getAdminHealth } = createProductionTsLoader({ mocks: {
+      "cloudflare:workers": { env },
+      "@/lib/ai-catalog": { AI_PROVIDER_CATALOG: {} },
+      "@/lib/ai-config": { getDefaultAiConfig: async () => null },
+    } })(fileURLToPath(new URL("../lib/admin-health.ts", import.meta.url)));
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async url => {
+      requests.push(url);
+      if (url === "http://127.0.0.1:3013/health") return Response.json({});
+      assert.ok(String(url).startsWith("https://site.example.invalid/"));
+      return new Response(null, { status: 200 });
+    });
+    const report = await getAdminHealth(1);
+    const alipay = report.services.find(service => service.id === "alipay");
+    assert.equal(alipay.group, "configuration");
+    assert.equal(alipay.state, expectedState);
+    assert.equal(alipay.detail, expectedState === "healthy" ? "生产配置完整" : "配置不完整");
+    assert.equal(requests.length, 5);
+  });
+}

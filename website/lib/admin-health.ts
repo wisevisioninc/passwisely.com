@@ -126,7 +126,7 @@ export async function getAdminHealth(databaseLatencyMs: number): Promise<{
     getDefaultAiConfig().catch(() => null),
   ]);
 
-  const alipayReady = configured(values, ["ALIPAY_APP_ID", "ALIPAY_PRIVATE_KEY", "ALIPAY_PUBLIC_KEY"]);
+  const alipayReady = configured(values, ["ALIPAY_APP_ID", "ALIPAY_SELLER_ID", "ALIPAY_PRIVATE_KEY", "ALIPAY_PUBLIC_KEY"]);
   const wechatReady =
     configuredOneOf(values, ["WECHAT_PAY_APP_ID", "WECHAT_APP_ID"]) &&
     configuredOneOf(values, ["WECHAT_PAY_MCH_ID", "WECHAT_MCH_ID"]) &&

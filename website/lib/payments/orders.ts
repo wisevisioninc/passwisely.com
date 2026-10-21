@@ -108,17 +108,6 @@ export async function findPurchaseByMerchantOrder(
     : null;
 }
 
-export async function markPurchaseFailed(id: string): Promise<void> {
-  await adminRest(
-    `purchases?id=eq.${encodeURIComponent(id)}&status=eq.pending`,
-    {
-      method: "PATCH",
-      headers: { prefer: "return=minimal" },
-      body: JSON.stringify({ status: "failed" }),
-    },
-  );
-}
-
 export async function completePurchase(input: {
   purchase: Pick<PurchaseRow, "id">;
   eventId: string;

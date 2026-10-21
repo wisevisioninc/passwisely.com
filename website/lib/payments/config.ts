@@ -29,6 +29,7 @@ export const MERCHANT_LEGAL_NAME = "福建智感灵眸科技有限公司";
 export function getAlipayConfig() {
   return {
     appId: requiredEnv("ALIPAY_APP_ID"),
+    sellerId: requiredEnv("ALIPAY_SELLER_ID"),
     privateKey: requiredEnv("ALIPAY_PRIVATE_KEY"),
     publicKey: requiredEnv("ALIPAY_PUBLIC_KEY"),
     gateway: optionalEnv(

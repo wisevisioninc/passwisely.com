@@ -16,11 +16,13 @@ export async function POST(request: Request) {
   try {
     const params = new URLSearchParams(await request.text());
     if (!(await verifyAlipayNotification(params))) return text("failure", 400);
+    const config = getAlipayConfig();
     const tradeStatus = params.get("trade_status");
     const merchantOrderNo = params.get("out_trade_no") || "";
     const transactionId = params.get("trade_no") || "";
     if (
-      params.get("app_id") !== getAlipayConfig().appId ||
+      params.get("app_id") !== config.appId ||
+      params.get("seller_id") !== config.sellerId ||
       !["TRADE_SUCCESS", "TRADE_FINISHED"].includes(tradeStatus || "") ||
       !merchantOrderNo ||
       !transactionId

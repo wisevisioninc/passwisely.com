@@ -5,10 +5,7 @@ import {
   isCreditPackId,
   isPaymentProvider,
 } from "@/lib/payments/catalog";
-import {
-  createPurchase,
-  markPurchaseFailed,
-} from "@/lib/payments/orders";
+import { createPurchase } from "@/lib/payments/orders";
 import { createWechatNativePayment } from "@/lib/payments/wechat";
 
 // Keep the method rejection explicit and complete; GET never creates a purchase.
@@ -65,11 +62,14 @@ export async function POST(request: Request) {
       orderId: purchase.id,
       url: payment.codeUrl,
     }, { headers: { "cache-control": "no-store" } });
-  } catch (error) {
-    await markPurchaseFailed(purchase.id);
-    return jsonError(
-      error instanceof Error ? error.message : "Checkout is unavailable.",
-      503,
-    );
+  } catch {
+    // A timeout, unreadable response or failed response verification does not
+    // establish that the provider rejected the order. Keep it payable so a
+    // later verified success notification can reach the transaction owner.
+    return Response.json({
+      error: "Payment initiation could not be confirmed. Check your credits or contact support before paying again.",
+      code: "CHECKOUT_UNCONFIRMED",
+      orderId: purchase.id,
+    }, { status: 503, headers: { "cache-control": "no-store" } });
   }
 }

@@ -47,10 +47,7 @@ export async function POST(request: Request) {
       eventType: "wechat:TRANSACTION.SUCCESS",
     });
     return Response.json({ code: "SUCCESS", message: "成功" });
-  } catch (error) {
-    return failure(
-      error instanceof Error ? error.message : "Callback processing failed.",
-      500,
-    );
+  } catch {
+    return failure("Callback processing failed.", 500);
   }
 }

@@ -19,6 +19,7 @@ pnpm test
 - `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_ANON_KEY`, and `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY`: current server-side accounts, credit ledger, and purchases. Their PostgreSQL migrations are in `supabase/migrations/`.
 - `DOWNLOADS`: Cloudflare R2 bucket for signed desktop installers.
 - `ALIPAY_APP_ID`: production application ID from Alipay Open Platform.
+- `ALIPAY_SELLER_ID`: merchant PID (the `2088...` UID), which must match the signed callback's `seller_id`.
 - `ALIPAY_PRIVATE_KEY`: application RSA2 private key in PKCS#8 PEM format.
 - `ALIPAY_PUBLIC_KEY`: Alipay public key in SubjectPublicKeyInfo PEM format.
 - `WECHAT_PAY_APP_ID`: AppID bound to the WeChat Pay merchant.
@@ -31,6 +32,8 @@ pnpm test
 - `WECHAT_PAY_PUBLIC_KEY`: the matching downloaded WeChat Pay public key in PEM
   format (this is not the merchant certificate public key).
 
+- `RELEASE_UPLOAD_KEY`: bearer-like key for the private installer upload route.
+
 For local production builds, `.env.production` may instead set
 `WECHAT_V3_CERT` to the directory containing `apiclient_cert.pem` and
 `apiclient_key.pem`, or set `WECHAT_V3_CERT_PEM` and `WECHAT_V3_CERT_PE` to
@@ -38,9 +41,21 @@ their individual paths. It may set `WECHAT_PUB_KEY` to the downloaded WeChat
 Pay public-key file path. The staging script loads the PEM files into protected
 Worker runtime bindings and derives the merchant certificate serial number.
 `WECHAT_APIV3_KEY` and `WECHAT_PUB_KEY_ID` remain supported aliases.
-- `RELEASE_UPLOAD_KEY`: bearer-like key for the private installer upload route.
+`WECHAT_MCH_ID` is normalized to `WECHAT_PAY_MCH_ID` only when the canonical
+value is absent. Supply your merchant number explicitly: no merchant number is
+inferred or supplied by default. Missing payment configuration does not prevent
+an unrelated web build; the affected payment route rejects checkout at runtime.
 
-Payment secrets must only exist in the server's untracked `.env.production`.
+Payment secrets must only exist in the server's untracked `.env.production`;
+never paste private keys or API keys into chat. Alipay requires the approved
+computer website payment product (`alipay.trade.page.pay`) and RSA2 public-key
+mode: application private key in PKCS#8 PEM and Alipay public key in SPKI PEM.
+Also configure the receiving merchant PID (`ALIPAY_SELLER_ID`, the `2088...` UID)
+so signed notifications can be checked against the intended recipient.
+WeChat requires the Native payment product, an explicit merchant number with its
+bound AppID, a 32-byte API v3 key, the matching merchant API certificate serial
+and private key, plus the WeChat Pay public key and its public-key ID. Merely
+providing key files does not enable an unapproved merchant product.
 When a PEM key is stored on one line, line breaks may be represented as `\n`.
 PassWisely's RMB merchant and settlement entity is
 `福建智感灵眸科技有限公司`.

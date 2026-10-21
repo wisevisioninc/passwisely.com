@@ -83,10 +83,9 @@ if (!values.get("WECHAT_PAY_MCH_SERIAL_NO")) {
   }
 }
 
-values.set(
-  "WECHAT_PAY_MCH_ID",
-  values.get("WECHAT_PAY_MCH_ID") || "1748736064",
-);
+if (values.get("WECHAT_MCH_ID") && !values.get("WECHAT_PAY_MCH_ID")) {
+  values.set("WECHAT_PAY_MCH_ID", values.get("WECHAT_MCH_ID"));
+}
 if (values.get("WECHAT_APIV3_KEY") && !values.get("WECHAT_PAY_API_V3_KEY")) {
   values.set("WECHAT_PAY_API_V3_KEY", values.get("WECHAT_APIV3_KEY"));
 }

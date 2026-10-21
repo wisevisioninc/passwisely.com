@@ -18,9 +18,16 @@ function chinaTimestamp(): string {
   return `${part("year")}-${part("month")}-${part("day")} ${part("hour")}:${part("minute")}:${part("second")}`;
 }
 
-function canonicalize(params: URLSearchParams): string {
+// Page-pay requests sign sign_type and omit empty optional values. Alipay's
+// asynchronous-notification rule excludes sign/sign_type but retains empty
+// fields. URLSearchParams has already decoded form values; do not decode again.
+function canonicalize(
+  params: URLSearchParams,
+  purpose: "payment-request" | "notification",
+): string {
   return [...params.entries()]
-    .filter(([key, value]) => key !== "sign" && value !== "")
+    .filter(([key, value]) => key !== "sign" &&
+      (purpose === "notification" ? key !== "sign_type" : value !== ""))
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
     .map(([key, value]) => `${key}=${value}`)
     .join("&");
@@ -50,7 +57,7 @@ export async function createAlipayPagePayment(input: {
       subject: input.subject,
     }),
   });
-  params.set("sign", await rsaSha256Sign(canonicalize(params), config.privateKey));
+  params.set("sign", await rsaSha256Sign(canonicalize(params, "payment-request"), config.privateKey));
   return { redirectUrl: `${config.gateway}?${params.toString()}` };
 }
 
@@ -60,7 +67,7 @@ export async function verifyAlipayNotification(
   const signature = params.get("sign");
   if (!signature) return false;
   return rsaSha256Verify(
-    canonicalize(params),
+    canonicalize(params, "notification"),
     signature.replaceAll(" ", "+"),
     getAlipayConfig().publicKey,
   );

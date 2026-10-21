@@ -417,6 +417,9 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
     setBusy(true);
     setNotice("");
     setPricingChanged(false);
+    const unconfirmedNotice = locale === "zh"
+      ? "暂未确认支付发起结果。若已付款，请先查看账户积分或联系支持，避免重复付款。"
+      : "Payment initiation could not be confirmed. If you paid, check your credits or contact support before paying again.";
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -429,13 +432,17 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
         setPaymentPack(null);
         setPricingChanged(true);
         setNotice(locale === "zh" ? "套餐已更新，请刷新页面确认新价格后再购买。" : "Plans have changed. Refresh to review current prices before purchasing.");
+      } else if (payload.code === "CHECKOUT_UNCONFIRMED") {
+        setPaymentPack(null);
+        setNotice(unconfirmedNotice + (payload.orderId ? (locale === "zh" ? ` 订单编号：${payload.orderId}` : ` Order: ${payload.orderId}`) : ""));
       } else if (response.ok && payload.url) {
         setPaymentPack(null);
         if (provider === "wechat" && payload.orderId) setWechatPayment({ orderId: payload.orderId, url: payload.url });
         else window.location.assign(payload.url);
       } else setNotice(payload.error || (locale === "zh" ? "暂时无法发起支付，请稍后重试。" : "Checkout is unavailable. Please try again."));
     } catch {
-      setNotice(locale === "zh" ? "支付连接失败，请重试。" : "Could not connect to checkout. Please try again.");
+      setPaymentPack(null);
+      setNotice(unconfirmedNotice);
     } finally { setBusy(false); }
   }
 

@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { LandingDemo } from "./LandingDemo";
+import { LandingPrivacy } from "./LandingPrivacy";
 import { DEMO_VIDEO } from "./demo-video";
 import { DOWNLOAD_ARTIFACTS } from "../lib/downloads";
 import {
@@ -1058,6 +1059,8 @@ export function LandingPage({
             </div>
           </div>
         </section>
+
+        <LandingPrivacy locale={locale} />
 
         <DemoVideoSection locale={locale} />
 

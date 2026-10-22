@@ -67,7 +67,7 @@ curl --fail --silent --show-error --retry 3 --retry-delay 2 --max-time 20 https:
 grep -q 'pw-hero-title' "$backup/public.html"
 for platform in mac-arm64 mac-x64 windows-x64; do
   curl --fail --silent --show-error --head --max-time 20 "https://passwisely.com/api/download/$platform" > "$backup/download-$platform.headers"
-  grep -q '/releases/v1.2.6/' "$backup/download-$platform.headers"
+  grep -qiE '^location: https://[^ ]+/releases/v[0-9]+\.[0-9]+\.[0-9]+/' "$backup/download-$platform.headers"
 done
 systemctl is-active --quiet "$service"
 trap - ERR

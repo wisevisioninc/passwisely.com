@@ -57,9 +57,9 @@ const copy = {
   zh: {
     region: "PassWisely 交互式产品演示",
     session: "模拟练习会话",
-    question: "两数之和",
+    question: "接雨水",
     instructions:
-      "返回数组中和为 target 的两个元素下标，每个元素最多使用一次。",
+      "给定每根柱子的高度（宽度为 1），计算下雨之后最多能接多少雨水。",
     examples: "示例",
     constraints: "先说明思路，再写出实现，并检查边界情况。",
     interviewer: "提问者",
@@ -72,16 +72,16 @@ const copy = {
     transcripts: "转录",
     source: "系统音频",
     microphone: "麦克风",
-    questionTranscript: "给定一个整数数组，怎样找到和为目标值的两个数？",
-    followupTranscript: "如果数组里出现重复的数字呢？",
-    meTranscript: "先检查补数，再记录当前下标。",
-    responseTitle: "用哈希表，把两次查找变成一次遍历。",
+    questionTranscript: "给一组柱子的高度，下雨之后最多能接多少水？",
+    followupTranscript: "能把额外空间降到 O(1) 吗？",
+    meTranscript: "先说按列计算，再优化空间。",
+    responseTitle: "每一列的水位，由两侧最高柱子中较矮的一方决定。",
     responseBody:
-      "遍历到 value 时，检查 target − value 是否已出现。先查找、后记录，避免重复使用同一个元素。",
-    followupTitle: "重复值也能正确处理。",
+      "对每一列计算 min(左侧最高, 右侧最高) − 当前高度并累加。预处理左右最高值数组即可做到 O(n)。",
+    followupTitle: "可以，用双指针从较矮的一侧收敛。",
     followupBody:
-      "对于 [3, 3] 和 target = 6，第二个 3 会找到已记录的第一个 3，返回 [0, 1]。",
-    complexity: "时间 O(n) · 空间 O(n)",
+      "较矮一侧的最高值已经确定了水位上限，边移动边累加。对于 [4, 2, 0, 3, 2, 5]，结果是 9。",
+    complexity: "时间 O(n) · 空间 O(1)",
     context: "组合上下文",
     contextItems: ["对话转录", "题目截图", "手输追问"],
     stages: [
@@ -112,9 +112,9 @@ const copy = {
   en: {
     region: "PassWisely interactive product demo",
     session: "Practice session",
-    question: "Two sum",
+    question: "Trapping rain water",
     instructions:
-      "Return the indices of two numbers that add up to target. Use each element at most once.",
+      "Given the height of each bar (width 1), compute how much water can be trapped after it rains.",
     examples: "EXAMPLE",
     constraints:
       "Explain an approach, write the code, then check the edge cases.",
@@ -129,16 +129,16 @@ const copy = {
     source: "System audio",
     microphone: "Microphone",
     questionTranscript:
-      "Given an integer array, how would you find two numbers that add up to a target?",
-    followupTranscript: "What if the array contains duplicate values?",
-    meTranscript: "Check for the complement before storing the current index.",
-    responseTitle: "One pass. Remember the values you have seen.",
+      "Given the bar heights, how much water can be trapped after it rains?",
+    followupTranscript: "Can you reduce the extra space to O(1)?",
+    meTranscript: "Start with a per-column view, then optimize space.",
+    responseTitle: "Each column fills to the shorter of its two tallest walls.",
     responseBody:
-      "At each value, look for target minus value in a hash map. Check before storing so the same element cannot be used twice.",
-    followupTitle: "Duplicate values work, too.",
+      "For every column, add min(max left, max right) minus its height. Precomputing both maxima gives O(n).",
+    followupTitle: "Yes. Close in from the shorter side.",
     followupBody:
-      "For [3, 3] with target = 6, the second 3 finds the first one in the map, returning [0, 1].",
-    complexity: "Time O(n) · Space O(n)",
+      "The shorter side's running maximum already caps the water level, so add as you move. For [4, 2, 0, 3, 2, 5], the answer is 9.",
+    complexity: "Time O(n) · Space O(1)",
     context: "CONTEXT TOGETHER",
     contextItems: ["Conversation", "Question capture", "Typed follow-up"],
     stages: [
@@ -170,14 +170,19 @@ const copy = {
 };
 
 const answerCode = [
-  "def two_sum(nums, target):",
-  "    seen = {}",
-  "    for i, value in enumerate(nums):",
-  "        other = target - value",
-  "        if other in seen:",
-  "            return [seen[other], i]",
-  "        seen[value] = i",
-  "    return []",
+  "def trap(height):",
+  "    left, right = 0, len(height) - 1",
+  "    left_max = right_max = water = 0",
+  "    while left < right:",
+  "        if height[left] < height[right]:",
+  "            left_max = max(left_max, height[left])",
+  "            water += left_max - height[left]",
+  "            left += 1",
+  "        else:",
+  "            right_max = max(right_max, height[right])",
+  "            water += right_max - height[right]",
+  "            right -= 1",
+  "    return water",
 ];
 
 function Avatar({ variant }: { variant: "a" | "b" }) {
@@ -221,8 +226,9 @@ export function LandingDemo({
   const displayedCode =
     stage === 2
       ? [
-          "assert two_sum([3, 3], 6) == [0, 1]",
-          "assert two_sum([2, 7, 11, 15], 9) == [0, 1]",
+          "assert trap([4, 2, 0, 3, 2, 5]) == 9",
+          "assert trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]) == 6",
+          "assert trap([]) == 0",
         ]
       : answerCode;
 
@@ -275,10 +281,9 @@ export function LandingDemo({
             <div className="pw-demo-example">
               <span>{t.examples}</span>
               <code>
-                nums = [2, 7, 11, 15]
+                height = [4, 2, 0, 3, 2, 5]
                 <br />
-                target = 9<br />
-                <b>→ [0, 1]</b>
+                <b>→ 9</b>
               </code>
             </div>
             <p className="pw-demo-constraint">{t.constraints}</p>

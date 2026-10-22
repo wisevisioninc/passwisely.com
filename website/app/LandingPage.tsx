@@ -176,17 +176,17 @@ const examples = {
     {
       label: "算法解题",
       tag: "CODING",
-      question: "找到数组中和为目标值的两个数",
+      question: "接雨水：计算柱子之间能接多少水",
       prompt:
-        "给定整数数组 nums 和目标值 target，返回和为 target 的两个元素下标。每个元素只能使用一次。",
-      input: "nums = [2, 7, 11, 15], target = 9",
-      result: "[0, 1]",
-      heading: "一次遍历，哈希表记录已见元素",
+        "给定 n 个非负整数表示每根柱子的高度（宽度为 1），计算下雨之后最多能接多少雨水。",
+      input: "height = [4, 2, 0, 3, 2, 5]",
+      result: "9",
+      heading: "双指针，从较矮的一侧向中间收敛",
       explanation:
-        "遍历数组，查找 target − 当前值是否已出现。找到即返回两个下标，否则记录当前元素。",
-      complexity: "时间 O(n) · 空间 O(n)",
-      code: "class Solution:\n    def twoSum(self, nums, target):\n        seen = {}\n        for i, num in enumerate(nums):\n            if target - num in seen:\n                return [seen[target - num], i]\n            seen[num] = i\n        return []",
-      other: "其他解法：排序后使用双指针，时间 O(n log n)，需保留原始下标。",
+        "每一列的水位由左右两侧最高柱子中较矮的一方决定。左右指针相向移动，每次处理较矮的一侧，并累加当前最高值与柱高之差。",
+      complexity: "时间 O(n) · 空间 O(1)",
+      code: "class Solution:\n    def trap(self, height):\n        left, right = 0, len(height) - 1\n        left_max = right_max = water = 0\n        while left < right:\n            if height[left] < height[right]:\n                left_max = max(left_max, height[left])\n                water += left_max - height[left]\n                left += 1\n            else:\n                right_max = max(right_max, height[right])\n                water += right_max - height[right]\n                right -= 1\n        return water",
+      other: "其他解法：预处理左右最高值数组，或使用单调栈按层计算，时间 O(n)，空间 O(n)。",
     },
     {
       label: "系统设计",
@@ -239,18 +239,18 @@ const examples = {
     {
       label: "Coding",
       tag: "CODING",
-      question: "Find two numbers that add up to a target",
+      question: "Trapping Rain Water",
       prompt:
-        "Given an integer array nums and a target, return the indices of two elements whose sum is target. Use each element at most once.",
-      input: "nums = [2, 7, 11, 15], target = 9",
-      result: "[0, 1]",
-      heading: "One pass. A hash map for seen values.",
+        "Given n non-negative integers representing bar heights (each of width 1), compute how much water can be trapped after it rains.",
+      input: "height = [4, 2, 0, 3, 2, 5]",
+      result: "9",
+      heading: "Two pointers. Move in from the shorter side.",
       explanation:
-        "Look for target minus the current value in the map. Return both indices when found; otherwise store the current value.",
-      complexity: "Time O(n) · Space O(n)",
-      code: "class Solution:\n    def twoSum(self, nums, target):\n        seen = {}\n        for i, num in enumerate(nums):\n            if target - num in seen:\n                return [seen[target - num], i]\n            seen[num] = i\n        return []",
+        "Water above each bar is limited by the shorter of the tallest bars on either side. Move the pointer on the shorter side and add the gap between its running maximum and the bar height.",
+      complexity: "Time O(n) · Space O(1)",
+      code: "class Solution:\n    def trap(self, height):\n        left, right = 0, len(height) - 1\n        left_max = right_max = water = 0\n        while left < right:\n            if height[left] < height[right]:\n                left_max = max(left_max, height[left])\n                water += left_max - height[left]\n                left += 1\n            else:\n                right_max = max(right_max, height[right])\n                water += right_max - height[right]\n                right -= 1\n        return water",
       other:
-        "Alternative: sort and use two pointers in O(n log n), keeping the original indices.",
+        "Alternatives: precompute left and right maxima, or use a monotonic stack, both in O(n) time and O(n) space.",
     },
     {
       label: "System design",
@@ -399,11 +399,11 @@ function FeatureVisual({ index, locale }: { index: number; locale: Locale }) {
       {index === 0 && (
         <>
           <div className="pw-capture-page">
-            <span>01 / TWO SUM</span>
-            <b>{zh ? "两数之和" : "Two Sum"}</b>
+            <span>01 / RAIN WATER</span>
+            <b>{zh ? "接雨水" : "Trapping Rain Water"}</b>
             <div className="pw-faux-line" />
             <div className="pw-faux-line short" />
-            <code>nums = [2, 7, 11, 15]</code>
+            <code>height = [4, 2, 0, 3, 2, 5]</code>
             <div className="pw-selection">
               <i />
               <i />
@@ -429,7 +429,7 @@ function FeatureVisual({ index, locale }: { index: number; locale: Locale }) {
             <i />
           </span>
           <b>
-            {zh ? "用哈希表，一次遍历完成查找。" : "A hash map. A single pass."}
+            {zh ? "双指针，从较矮的一侧收敛。" : "Two pointers, from the shorter side."}
           </b>
           <div className="pw-stream-line">
             <span />
@@ -438,9 +438,9 @@ function FeatureVisual({ index, locale }: { index: number; locale: Locale }) {
             <span />
           </div>
           <code>
-            if target - num in seen:
+            water += left_max - height[left]
             <br />
-            &nbsp; return [seen[target - num], i]
+            left += 1
             <i className="pw-cursor" />
           </code>
           <small>

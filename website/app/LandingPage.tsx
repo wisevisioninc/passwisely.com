@@ -1011,16 +1011,12 @@ export function LandingPage({
                 <Icon name="arrow" size={13} />
               </a>
               <h1 id="pw-hero-title" className="pw-hero-title">
-                {tr("捕捉对话中的问题", "Stay with the conversation.")}
-                <br />
-                <span>
-                  {tr("展开下一步思路。", "Find your next clear step.")}
-                </span>
+                {tr("每一场面试，都机灵地通过", "Pass Every Interview Wisely.")}
               </h1>
               <p>
                 {tr(
-                  "听见问题，看懂上下文。从实时转录到截图解答，让每一轮准备，都有清晰的思路。",
-                  "Turn live conversation and screenshots into a connected workspace. Follow the reasoning, explore the code, and prepare your next response.",
+                  "隐身 AI，助力你拿下offer。",
+                  "The Undetectable AI That Gets You Hired.",
                 )}
               </p>
               <Downloads locale={locale} showNotice={false} />

@@ -185,7 +185,7 @@ const examples = {
       explanation:
         "每一列的水位由左右两侧最高柱子中较矮的一方决定。左右指针相向移动，每次处理较矮的一侧，并累加当前最高值与柱高之差。",
       complexity: "时间 O(n) · 空间 O(1)",
-      code: "class Solution:\n    def trap(self, height):\n        left, right = 0, len(height) - 1\n        left_max = right_max = water = 0\n        while left < right:\n            if height[left] < height[right]:\n                left_max = max(left_max, height[left])\n                water += left_max - height[left]\n                left += 1\n            else:\n                right_max = max(right_max, height[right])\n                water += right_max - height[right]\n                right -= 1\n        return water",
+      code: "class Solution:\n    def trap(self, h):\n        l, r = 0, len(h) - 1\n        lmax = rmax = water = 0\n        while l < r:\n            if h[l] < h[r]:\n                lmax = max(lmax, h[l])\n                water += lmax - h[l]\n                l += 1\n            else:\n                rmax = max(rmax, h[r])\n                water += rmax - h[r]\n                r -= 1\n        return water",
       other: "其他解法：预处理左右最高值数组，或使用单调栈按层计算，时间 O(n)，空间 O(n)。",
     },
     {
@@ -248,7 +248,7 @@ const examples = {
       explanation:
         "Water above each bar is limited by the shorter of the tallest bars on either side. Move the pointer on the shorter side and add the gap between its running maximum and the bar height.",
       complexity: "Time O(n) · Space O(1)",
-      code: "class Solution:\n    def trap(self, height):\n        left, right = 0, len(height) - 1\n        left_max = right_max = water = 0\n        while left < right:\n            if height[left] < height[right]:\n                left_max = max(left_max, height[left])\n                water += left_max - height[left]\n                left += 1\n            else:\n                right_max = max(right_max, height[right])\n                water += right_max - height[right]\n                right -= 1\n        return water",
+      code: "class Solution:\n    def trap(self, h):\n        l, r = 0, len(h) - 1\n        lmax = rmax = water = 0\n        while l < r:\n            if h[l] < h[r]:\n                lmax = max(lmax, h[l])\n                water += lmax - h[l]\n                l += 1\n            else:\n                rmax = max(rmax, h[r])\n                water += rmax - h[r]\n                r -= 1\n        return water",
       other:
         "Alternatives: precompute left and right maxima, or use a monotonic stack, both in O(n) time and O(n) space.",
     },
@@ -438,9 +438,9 @@ function FeatureVisual({ index, locale }: { index: number; locale: Locale }) {
             <span />
           </div>
           <code>
-            water += left_max - height[left]
+            water += lmax - h[l]
             <br />
-            left += 1
+            l += 1
             <i className="pw-cursor" />
           </code>
           <small>

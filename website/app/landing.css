@@ -2059,3 +2059,131 @@
     opacity: 0;
   }
 }
+
+/* Comparison table and optional product video. */
+.pw-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.pw-compare-table {
+  max-width: 960px;
+  margin: 0 auto;
+  border: 1px solid #292924;
+  border-radius: 22px;
+  background: #161614;
+  overflow: hidden;
+}
+.pw-compare-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr));
+  align-items: center;
+  border-top: 1px solid #262621;
+}
+.pw-compare-row:first-child {
+  border-top: 0;
+}
+.pw-compare-row > span {
+  padding: 20px 24px;
+  font-size: 14px;
+  color: #d8d8d0;
+}
+.pw-compare-row > span:not(:first-child) {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+.pw-compare-row.is-head > span {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #8f8f86;
+  padding-block: 18px;
+}
+.pw-compare-row > .is-ours {
+  background: #f3d43b0d;
+}
+.pw-compare-row.is-head > .is-ours {
+  color: var(--pw-yellow);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 13px;
+}
+.pw-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 99px;
+  font-style: normal;
+}
+.pw-mark i {
+  font-style: normal;
+  font-size: 14px;
+  line-height: 1;
+}
+.pw-mark.is-yes {
+  background: var(--pw-yellow);
+  color: #17170f;
+}
+.pw-mark.is-partial {
+  border: 1px solid #4a4632;
+  color: #c8bc7e;
+}
+.pw-mark.is-no {
+  color: #5f5f57;
+}
+.pw-compare-note {
+  text-align: center;
+  font-size: 11px;
+  color: #85857c;
+  margin-top: 18px !important;
+}
+.pw-video-frame {
+  max-width: 1040px;
+  margin: 0 auto;
+  border-radius: 24px;
+  border: 1px solid #33332c;
+  background: #0c0c0b;
+  overflow: hidden;
+  box-shadow: 0 40px 120px #0000008c, 0 0 0 8px #ffffff06;
+}
+.pw-video-frame video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0c0c0b;
+}
+@media (max-width: 767px) {
+  .pw-compare-table {
+    border-radius: 16px;
+  }
+  .pw-compare-row {
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 0.8fr));
+  }
+  .pw-compare-row > span {
+    padding: 14px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .pw-compare-row > span:first-child {
+    padding-left: 14px;
+  }
+  .pw-compare-row.is-head > span {
+    font-size: 9px;
+    letter-spacing: 0.02em;
+  }
+  .pw-compare-row.is-head > .is-ours {
+    font-size: 10px;
+  }
+  .pw-mark {
+    width: 22px;
+    height: 22px;
+  }
+  .pw-video-frame {
+    border-radius: 14px;
+  }
+}

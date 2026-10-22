@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { LandingDemo } from "./LandingDemo";
+import { DEMO_VIDEO } from "./demo-video";
 import { DOWNLOAD_ARTIFACTS } from "../lib/downloads";
 import {
   CREDIT_PACKS,
@@ -115,9 +116,11 @@ function Brand() {
 function Downloads({
   locale,
   compact = false,
+  showNotice = true,
 }: {
   locale: Locale;
   compact?: boolean;
+  showNotice?: boolean;
 }) {
   return (
     <div className={`pw-downloads${compact ? " pw-downloads-compact" : ""}`}>
@@ -159,7 +162,7 @@ function Downloads({
         </span>
         <Icon name="arrow" size={17} />
       </a>
-      {DOWNLOAD_ARTIFACTS["windows-x64"].notice && (
+      {showNotice && DOWNLOAD_ARTIFACTS["windows-x64"].notice && (
         <p className="pw-download-notice">
           {DOWNLOAD_ARTIFACTS["windows-x64"].notice[locale]}
         </p>
@@ -516,6 +519,147 @@ interface LandingProps {
   busy: boolean;
 }
 
+type Support = "yes" | "partial" | "no";
+
+const comparisonRows: Readonly<
+  { zh: string; en: string; values: readonly [Support, Support, Support] }[]
+> = [
+  {
+    zh: "同时转录系统音频与麦克风",
+    en: "Transcribe system audio and microphone together",
+    values: ["yes", "no", "no"],
+  },
+  {
+    zh: "截图题目、代码或报错后直接提问",
+    en: "Ask about a screenshot of a question, code, or error",
+    values: ["yes", "partial", "no"],
+  },
+  {
+    zh: "转录、截图与追问合并为同一上下文",
+    en: "Keep transcript, screenshots, and follow-ups in one context",
+    values: ["yes", "partial", "no"],
+  },
+  {
+    zh: "流式展示思路、复杂度与代码",
+    en: "Stream the approach, complexity, and code",
+    values: ["yes", "yes", "no"],
+  },
+  {
+    zh: "桌面浮层与快捷键，无需切换窗口",
+    en: "Desktop overlay and shortcuts, no window switching",
+    values: ["yes", "no", "no"],
+  },
+];
+
+function SupportMark({ value, locale }: { value: Support; locale: Locale }) {
+  const label =
+    value === "yes"
+      ? locale === "zh" ? "支持" : "Yes"
+      : value === "partial"
+        ? locale === "zh" ? "部分 / 需手动" : "Partly / manual"
+        : locale === "zh" ? "不支持" : "No";
+  return (
+    <span className={`pw-mark is-${value}`} title={label}>
+      {value === "yes" ? (
+        <Icon name="check" size={15} />
+      ) : value === "partial" ? (
+        <i aria-hidden="true">~</i>
+      ) : (
+        <i aria-hidden="true">—</i>
+      )}
+      <span className="pw-sr">{label}</span>
+    </span>
+  );
+}
+
+function ComparisonSection({ locale }: { locale: Locale }) {
+  const zh = locale === "zh";
+  const tr = (cn: string, en: string) => (zh ? cn : en);
+  const columns = [
+    "PassWisely",
+    tr("通用 AI 聊天", "General AI chat"),
+    tr("手动整理", "Manual notes"),
+  ];
+  return (
+    <section
+      className="pw-section pw-shell pw-compare"
+      id="compare"
+      aria-labelledby="pw-compare-title"
+    >
+      <div className="pw-section-heading">
+        <p className="pw-eyebrow">{tr("为什么是桌面工作台", "WHY A DESKTOP WORKSPACE")}</p>
+        <h2 id="pw-compare-title">
+          {tr("少一次复制粘贴，\n多一分专注。", "Less copy and paste.\nMore focus.")}
+        </h2>
+        <p>
+          {tr(
+            "把听到的、看到的和想问的放在一起，而不是在多个窗口之间来回搬运。",
+            "Bring what you hear, see, and want to ask into one place instead of moving it between windows.",
+          )}
+        </p>
+      </div>
+      <div className="pw-compare-table" role="table" aria-label={tr("功能对比", "Feature comparison")}>
+        <div className="pw-compare-row is-head" role="row">
+          <span role="columnheader">{tr("能力", "Capability")}</span>
+          {columns.map((name, index) => (
+            <span role="columnheader" key={name} className={index === 0 ? "is-ours" : undefined}>
+              {name}
+            </span>
+          ))}
+        </div>
+        {comparisonRows.map((row) => (
+          <div className="pw-compare-row" role="row" key={row.en}>
+            <span role="rowheader">{zh ? row.zh : row.en}</span>
+            {row.values.map((value, index) => (
+              <span role="cell" key={index} className={index === 0 ? "is-ours" : undefined}>
+                <SupportMark value={value} locale={locale} />
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+      <p className="pw-compare-note">
+        {tr(
+          "“通用 AI 聊天”指网页或 App 形式的对话助手，具体能力因产品而异。",
+          "“General AI chat” refers to browser or app chat assistants; capabilities vary by product.",
+        )}
+      </p>
+    </section>
+  );
+}
+
+function DemoVideoSection({ locale }: { locale: Locale }) {
+  if (!DEMO_VIDEO.src) return null;
+  const zh = locale === "zh";
+  return (
+    <section className="pw-section pw-shell pw-video" id="demo" aria-labelledby="pw-video-title">
+      <div className="pw-section-heading">
+        <p className="pw-eyebrow">{zh ? "产品演示" : "SEE IT IN ACTION"}</p>
+        <h2 id="pw-video-title">
+          {zh ? "两分钟，看完整个工作流。" : "The whole workflow, in minutes."}
+        </h2>
+        <p>
+          {zh
+            ? "从开始聆听、截图提问，到流式解答和连续追问。"
+            : "From listening and capturing a question to streamed answers and follow-ups."}
+        </p>
+      </div>
+      <div className="pw-video-frame">
+        <video
+          src={DEMO_VIDEO.src}
+          poster={DEMO_VIDEO.poster ?? undefined}
+          controls
+          playsInline
+          preload="metadata"
+        />
+      </div>
+      {DEMO_VIDEO.durationLabel && (
+        <p className="pw-compare-note">{DEMO_VIDEO.durationLabel}</p>
+      )}
+    </section>
+  );
+}
+
 export function PricingPlans({
   locale,
   onBuy,
@@ -643,6 +787,7 @@ export function LandingPage({
   const nav = [
     ["features", tr("功能", "Features")],
     ["how", tr("使用方式", "How it works")],
+    ["compare", tr("对比", "Compare")],
     ["pricing", tr("定价", "Pricing")],
     ["faq", tr("帮助", "Help")],
   ];
@@ -878,7 +1023,7 @@ export function LandingPage({
                   "Turn live conversation and screenshots into a connected workspace. Follow the reasoning, explore the code, and prepare your next response.",
                 )}
               </p>
-              <Downloads locale={locale} />
+              <Downloads locale={locale} showNotice={false} />
               <div className="pw-free-note">
                 <Icon name="check" size={13} />
                 {tr(
@@ -917,6 +1062,8 @@ export function LandingPage({
             </div>
           </div>
         </section>
+
+        <DemoVideoSection locale={locale} />
 
         <section className="pw-section pw-shell" id="how">
           <div className="pw-section-heading">
@@ -1006,6 +1153,8 @@ export function LandingPage({
             ))}
           </div>
         </section>
+
+        <ComparisonSection locale={locale} />
 
         <section className="pw-proof-section">
           <div className="pw-shell pw-proof-layout">

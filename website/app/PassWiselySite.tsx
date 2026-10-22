@@ -5,12 +5,11 @@ import { QRCodeSVG } from "qrcode.react";
 import type { AccountUser } from "../lib/auth";
 import { Dashboard } from "./dashboard/Dashboard";
 import { LandingPage } from "./LandingPage";
-import { CREDIT_PACKS, TRIAL_CREDITS, type CreditPackId } from "../lib/payments/catalog";
+import { CREDIT_PACKS, TRIAL_CREDITS, isCheckoutProvider, type CreditPackId, type PaymentProvider } from "../lib/payments/catalog";
 
 type Locale = "zh" | "en";
 type AuthMode = "login" | "register" | "forgot" | "reset" | "change";
 type PackId = CreditPackId;
-type PaymentProvider = "alipay" | "wechat";
 
 type User = AccountUser;
 
@@ -432,6 +431,11 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
         setPaymentPack(null);
         setPricingChanged(true);
         setNotice(locale === "zh" ? "套餐已更新，请刷新页面确认新价格后再购买。" : "Plans have changed. Refresh to review current prices before purchasing.");
+      } else if (payload.code === "PAYMENT_UNAVAILABLE" || payload.code === "PAYMENT_METHOD_UNAVAILABLE") {
+        setPaymentPack(null);
+        setNotice(payload.code === "PAYMENT_METHOD_UNAVAILABLE"
+          ? (locale === "zh" ? "该支付方式暂未开放，请选择支付宝。" : "This payment method is not available. Choose Alipay.")
+          : (locale === "zh" ? "支付宝暂时不可用，请稍后重试或联系支持。" : "Alipay is temporarily unavailable. Please try again later or contact support."));
       } else if (payload.code === "CHECKOUT_UNCONFIRMED") {
         setPaymentPack(null);
         setNotice(unconfirmedNotice + (payload.orderId ? (locale === "zh" ? ` 订单编号：${payload.orderId}` : ` Order: ${payload.orderId}`) : ""));
@@ -684,7 +688,7 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
               {paymentPack === "unlimited_monthly_v2" && <p>{locale === "zh" ? "“无限制包”为套餐名称，并非无限积分。" : "Unlimited is the plan name, not unlimited credits."}</p>}
             </div>
             <div className="payment-options">
-              <button
+              {isCheckoutProvider("alipay") && <button
                 className="payment-option alipay"
                 disabled={busy}
                 onClick={() => void pay("alipay")}
@@ -695,8 +699,8 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
                   <small>Alipay</small>
                 </span>
                 <i>→</i>
-              </button>
-              <button
+              </button>}
+              {isCheckoutProvider("wechat") && <button
                 className="payment-option wechat"
                 disabled={busy}
                 onClick={() => void pay("wechat")}
@@ -707,7 +711,7 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
                   <small>WeChat Pay</small>
                 </span>
                 <i>→</i>
-              </button>
+              </button>}
             </div>
             <small className="payment-note">
               {locale === "zh"

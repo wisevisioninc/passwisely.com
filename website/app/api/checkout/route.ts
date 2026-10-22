@@ -1,10 +1,12 @@
 import { getCurrentUser, jsonError } from "@/lib/auth";
 import { getPublicSiteOrigin } from "@/lib/public-site";
 import { createAlipayPagePayment } from "@/lib/payments/alipay";
+import { getAlipayConfig } from "@/lib/payments/config";
 import {
   CREDIT_PACKS,
   isCreditPackId,
   isPaymentProvider,
+  isCheckoutProvider,
 } from "@/lib/payments/catalog";
 import { createPurchase } from "@/lib/payments/orders";
 import { createWechatNativePayment } from "@/lib/payments/wechat";
@@ -31,13 +33,24 @@ export async function POST(request: Request) {
   }
   if (!isCreditPackId(packId)) return jsonError("Unknown credit pack.", 400);
   if (!isPaymentProvider(provider)) {
-    return jsonError("Choose Alipay or WeChat Pay.", 400);
+    return jsonError("Choose an available payment method.", 400);
+  }
+  if (!isCheckoutProvider(provider)) {
+    return Response.json({
+      error: "This payment method is not available. Choose Alipay.",
+      code: "PAYMENT_METHOD_UNAVAILABLE",
+    }, { status: 503, headers: { "cache-control": "no-store" } });
   }
   let origin: string;
   try {
     origin = getPublicSiteOrigin();
+    // Missing local configuration is known before any order or provider call.
+    if (provider === "alipay") getAlipayConfig();
   } catch {
-    return jsonError("Payments are temporarily unavailable.", 503, "PAYMENT_UNAVAILABLE");
+    return Response.json({
+      error: "Payments are temporarily unavailable.",
+      code: "PAYMENT_UNAVAILABLE",
+    }, { status: 503, headers: { "cache-control": "no-store" } });
   }
   const pack = CREDIT_PACKS[packId];
   const purchase = await createPurchase({ userId: user.id, packId, provider });

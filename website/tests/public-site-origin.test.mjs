@@ -47,6 +47,10 @@ function application(environment) {
   const purchases = [], payments = [], emails = [];
   const checkout = createProductionTsLoader({ mocks: {
     "@/lib/public-site": owner,
+    "@/lib/payments/config": createProductionTsLoader({ mocks: { "cloudflare:workers": { env: {
+      ALIPAY_APP_ID: "synthetic-app", ALIPAY_SELLER_ID: "2088000000000000",
+      ALIPAY_PRIVATE_KEY: "synthetic-private-key", ALIPAY_PUBLIC_KEY: "synthetic-public-key",
+    } } } })(filename("lib/payments/config.ts")),
     "@/lib/auth": {
       getCurrentUser: async () => ({ id: "synthetic-user" }),
       jsonError: (error, status, code) => Response.json({ error, ...(code ? { code } : {}) }, { status }),
@@ -142,6 +146,11 @@ for (const configured of [undefined, "https://TEST.example.invalid:443/"]) {
     ]) {
       for (const provider of ["alipay", "wechat"]) {
         const response = await post("/api/checkout", { packId: "pro_monthly_v2", provider }, headers);
+        if (provider === "wechat") {
+          assert.equal(response.status, 503);
+          assert.equal(response.body.code, "PAYMENT_METHOD_UNAVAILABLE");
+          continue;
+        }
         assert.equal(response.status, 200);
         const [actualProvider, input] = app.payments.at(-1);
         assert.equal(actualProvider, provider);
@@ -151,8 +160,8 @@ for (const configured of [undefined, "https://TEST.example.invalid:443/"]) {
       assert.equal(response.status, 200);
       assert.deepEqual(app.emails.at(-1), ["synthetic@example.invalid", `${expected}/?reset=password`]);
     }
-    assert.equal(app.purchases.length, 4);
-    assert.equal(app.payments.length, 4);
+    assert.equal(app.purchases.length, 2);
+    assert.equal(app.payments.length, 2);
     assert.equal(app.emails.length, 2);
     assert.equal(observedUrls.length, 6);
     assert.ok(observedUrls.every(url => url.startsWith("http://")), "The regression must actually use an HTTP inbound URL");
@@ -170,7 +179,9 @@ test("invalid explicit configuration creates no purchase/provider request/recove
         method: "POST", headers: { "x-forwarded-proto": "https" }, body: JSON.stringify({ packId: "pro_monthly_v2", provider }),
       }));
       assert.equal(response.status, 503);
-      assert.deepEqual(await response.json(), { error: "Payments are temporarily unavailable.", code: "PAYMENT_UNAVAILABLE" });
+      assert.deepEqual(await response.json(), provider === "alipay"
+        ? { error: "Payments are temporarily unavailable.", code: "PAYMENT_UNAVAILABLE" }
+        : { error: "This payment method is not available. Choose Alipay.", code: "PAYMENT_METHOD_UNAVAILABLE" });
     }
     const recovery = await app.forgotPassword.POST(new Request("http://passwisely.com/api/auth/forgot-password", {
       method: "POST", body: JSON.stringify({ email: "synthetic@example.invalid" }),

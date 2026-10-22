@@ -337,3 +337,12 @@ test("a pending Dashboard account refresh cannot restore the account after sign-
   assert.equal(walk(tree, e => e.props?.role === "dialog")[0].props["aria-label"], "Create your account");
   assert.equal(walk(tree, e => e.props?.className === "modal payment-modal").length, 0);
 });
+
+for (const initialDashboard of [false, true]) test(`actual ${initialDashboard ? "Dashboard" : "homepage"} shell owns a unique main landmark and anchor IDs`, () => {
+  const { PassWiselySite } = sourceModule("app/PassWiselySite.tsx");
+  const html = renderToStaticMarkup(React.createElement(PassWiselySite, { initialDashboard }));
+  assert.equal([...html.matchAll(/<main(?:\s|>)/g)].length, 1);
+  const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
+  assert.equal(new Set(ids).size, ids.length, "Duplicate anchor IDs break skip links and page navigation");
+  assert.ok(ids.includes("top"));
+});

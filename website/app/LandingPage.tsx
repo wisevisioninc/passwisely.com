@@ -1,11 +1,17 @@
 "use client";
 
 /* Downloads are navigation to file redirects, never Next.js prefetch targets. */
-/* eslint-disable @next/next/no-html-link-for-pages */
+/* Small, local brand assets do not need a remote image optimizer. */
+/* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
 
 import { useState } from "react";
+import { LandingDemo } from "./LandingDemo";
 import { DOWNLOAD_ARTIFACTS } from "../lib/downloads";
-import { CREDIT_PACKS, TRIAL_CREDITS, type CreditPackId } from "../lib/payments/catalog";
+import {
+  CREDIT_PACKS,
+  TRIAL_CREDITS,
+  type CreditPackId,
+} from "../lib/payments/catalog";
 import "./landing.css";
 
 type Locale = "zh" | "en";
@@ -115,21 +121,49 @@ function Downloads({
 }) {
   return (
     <div className={`pw-downloads${compact ? " pw-downloads-compact" : ""}`}>
-      <a className="pw-download" href={DOWNLOAD_ARTIFACTS["windows-x64"].available ? "/api/track-download/windows-x64" : undefined} aria-disabled={!DOWNLOAD_ARTIFACTS["windows-x64"].available}>
+      <a
+        className="pw-download"
+        href={
+          DOWNLOAD_ARTIFACTS["windows-x64"].available
+            ? "/api/track-download/windows-x64"
+            : undefined
+        }
+        aria-disabled={!DOWNLOAD_ARTIFACTS["windows-x64"].available}
+      >
         <span className="pw-platform">
           <Icon name="windows" size={18} />
         </span>
-        <span>{locale === "zh" ? `Windows x64 · v${DOWNLOAD_ARTIFACTS["windows-x64"].version}${DOWNLOAD_ARTIFACTS["windows-x64"].available ? "" : " · 准备中"}` : `Windows x64 · v${DOWNLOAD_ARTIFACTS["windows-x64"].version}${DOWNLOAD_ARTIFACTS["windows-x64"].available ? "" : " · Pending"}`}</span>
+        <span>
+          {locale === "zh"
+            ? `Windows x64 · v${DOWNLOAD_ARTIFACTS["windows-x64"].version}${DOWNLOAD_ARTIFACTS["windows-x64"].available ? "" : " · 准备中"}`
+            : `Windows x64 · v${DOWNLOAD_ARTIFACTS["windows-x64"].version}${DOWNLOAD_ARTIFACTS["windows-x64"].available ? "" : " · Pending"}`}
+        </span>
         <Icon name="arrow" size={17} />
       </a>
-      <a className="pw-download" href={DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "/api/track-download/mac-arm64" : undefined} aria-disabled={!DOWNLOAD_ARTIFACTS["mac-arm64"].available}>
+      <a
+        className="pw-download"
+        href={
+          DOWNLOAD_ARTIFACTS["mac-arm64"].available
+            ? "/api/track-download/mac-arm64"
+            : undefined
+        }
+        aria-disabled={!DOWNLOAD_ARTIFACTS["mac-arm64"].available}
+      >
         <span className="pw-platform">
           <Icon name="apple" size={19} />
         </span>
-        <span>{locale === "zh" ? `Mac Apple 芯片 · v${DOWNLOAD_ARTIFACTS["mac-arm64"].version}${DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "" : " · 准备中"}` : `Mac Apple silicon · v${DOWNLOAD_ARTIFACTS["mac-arm64"].version}${DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "" : " · Pending"}`}</span>
+        <span>
+          {locale === "zh"
+            ? `Mac Apple 芯片 · v${DOWNLOAD_ARTIFACTS["mac-arm64"].version}${DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "" : " · 准备中"}`
+            : `Mac Apple silicon · v${DOWNLOAD_ARTIFACTS["mac-arm64"].version}${DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "" : " · Pending"}`}
+        </span>
         <Icon name="arrow" size={17} />
       </a>
-      {DOWNLOAD_ARTIFACTS["windows-x64"].notice && <p className="pw-download-notice">{DOWNLOAD_ARTIFACTS["windows-x64"].notice[locale]}</p>}
+      {DOWNLOAD_ARTIFACTS["windows-x64"].notice && (
+        <p className="pw-download-notice">
+          {DOWNLOAD_ARTIFACTS["windows-x64"].notice[locale]}
+        </p>
+      )}
     </div>
   );
 }
@@ -269,15 +303,13 @@ const examples = {
 function ProductPreview({
   locale,
   example = 0,
-  hero = false,
 }: {
   locale: Locale;
   example?: number;
-  hero?: boolean;
 }) {
   const content = examples[locale][example];
   return (
-    <div className={`pw-product${hero ? " pw-product-hero" : ""}`}>
+    <div className="pw-product">
       <div className="pw-product-chrome">
         <span className="pw-window-dots">
           <i />
@@ -337,7 +369,7 @@ function ProductPreview({
               ))}
             </code>
           </pre>
-          {!hero && <p className="pw-alternative">{content.other}</p>}
+          <p className="pw-alternative">{content.other}</p>
         </div>
       </div>
       <div className="pw-product-bottom">
@@ -484,36 +516,115 @@ interface LandingProps {
   busy: boolean;
 }
 
-export function PricingPlans({ locale, onBuy, onRegisterTrial, busy }: Pick<LandingProps, "locale" | "onBuy" | "onRegisterTrial" | "busy">) {
+export function PricingPlans({
+  locale,
+  onBuy,
+  onRegisterTrial,
+  busy,
+}: Pick<LandingProps, "locale" | "onBuy" | "onRegisterTrial" | "busy">) {
   const zh = locale === "zh";
-  const tr = (cn: string, en: string) => zh ? cn : en;
-  const plans: Array<{ id: CreditPackId | null; name: string; amountFen: number; credits: number; validityDays: number | null }> = [
-    { id: null, name: tr("新用户体验", "New user trial"), amountFen: 0, credits: TRIAL_CREDITS, validityDays: null },
-    ...Object.entries(CREDIT_PACKS).map(([id, pack]) => ({ id: id as CreditPackId, name: zh ? pack.name : pack.nameEn, amountFen: pack.amountFen, credits: pack.credits, validityDays: pack.validityDays })),
+  const tr = (cn: string, en: string) => (zh ? cn : en);
+  const plans: Array<{
+    id: CreditPackId | null;
+    name: string;
+    amountFen: number;
+    credits: number;
+    validityDays: number | null;
+  }> = [
+    {
+      id: null,
+      name: tr("新用户体验", "New user trial"),
+      amountFen: 0,
+      credits: TRIAL_CREDITS,
+      validityDays: null,
+    },
+    ...Object.entries(CREDIT_PACKS).map(([id, pack]) => ({
+      id: id as CreditPackId,
+      name: zh ? pack.name : pack.nameEn,
+      amountFen: pack.amountFen,
+      credits: pack.credits,
+      validityDays: pack.validityDays,
+    })),
   ];
-  return <div className="pw-pricing-grid">
-    {plans.map((plan, index) => <article className={`pw-price-card${index === 1 ? " pw-featured" : ""}`} key={plan.id || "trial"}>
-      {index === 1 && <span className="pw-recommended">{tr("推荐套餐", "RECOMMENDED")}</span>}
-      <div className="pw-plan-name"><h3>{plan.name}</h3><Icon name={index === 0 ? "spark" : index === 1 ? "layers" : "code"} /></div>
-      <p>{plan.id ? tr("手动续购，自由安排", "Renew manually, on your schedule") : tr("新账户一次赠送，无需支付", "One welcome grant, no payment needed")}</p>
-      <div className="pw-price"><span>¥</span><strong>{plan.amountFen / 100}</strong><span>{plan.id ? tr("/月", "/month") : "CNY"}</span></div>
-      <div className="pw-credit-amount">{plan.credits.toLocaleString(zh ? "zh-CN" : "en-US")}<span>{tr("积分", "credits")}</span></div>
-      <button className="pw-buy" disabled={busy} onClick={() => plan.id ? onBuy(plan.id) : onRegisterTrial()}>
-        {plan.id ? tr("购买月包", "Buy monthly pack") : tr("免费注册体验", "Create free account")}<Icon name="arrow" size={17} />
-      </button>
-      <ul>{(plan.id ? [
-        tr("手动续购，无自动续费", "Manual renewal, no auto-renewal"),
-        tr(`到账后 ${plan.validityDays} 天到期`, `Expires ${plan.validityDays} days after credits arrive`),
-        tr("每次独立起算，不延长旧包", "Each purchase has its own expiry"),
-        tr(`每包 ${plan.credits.toLocaleString("en-US")} 积分`, `${plan.credits.toLocaleString("en-US")} credits per pack`),
-      ] : [
-        tr("新用户专享，一次领取", "New accounts, one welcome grant"),
-        tr("体验积分长期有效", "Trial credits do not expire"),
-        tr("无需绑定支付方式", "No payment method required"),
-        tr("支持截图、解题与追问", "Capture, solve, and follow up"),
-      ]).map(item => <li key={item}><Icon name="check" size={15} />{item}</li>)}</ul>
-    </article>)}
-  </div>;
+  return (
+    <div className="pw-pricing-grid">
+      {plans.map((plan, index) => (
+        <article
+          className={`pw-price-card${index === 1 ? " pw-featured" : ""}`}
+          key={plan.id || "trial"}
+        >
+          {index === 1 && (
+            <span className="pw-recommended">
+              {tr("推荐套餐", "RECOMMENDED")}
+            </span>
+          )}
+          <div className="pw-plan-name">
+            <h3>{plan.name}</h3>
+            <Icon
+              name={index === 0 ? "spark" : index === 1 ? "layers" : "code"}
+            />
+          </div>
+          <p>
+            {plan.id
+              ? tr("手动续购，自由安排", "Renew manually, on your schedule")
+              : tr(
+                  "新账户一次赠送，无需支付",
+                  "One welcome grant, no payment needed",
+                )}
+          </p>
+          <div className="pw-price">
+            <span>¥</span>
+            <strong>{plan.amountFen / 100}</strong>
+            <span>{plan.id ? tr("/月", "/month") : "CNY"}</span>
+          </div>
+          <div className="pw-credit-amount">
+            {plan.credits.toLocaleString(zh ? "zh-CN" : "en-US")}
+            <span>{tr("积分", "credits")}</span>
+          </div>
+          <button
+            className="pw-buy"
+            disabled={busy}
+            onClick={() => (plan.id ? onBuy(plan.id) : onRegisterTrial())}
+          >
+            {plan.id
+              ? tr("购买月包", "Buy monthly pack")
+              : tr("免费注册体验", "Create free account")}
+            <Icon name="arrow" size={17} />
+          </button>
+          <ul>
+            {(plan.id
+              ? [
+                  tr("手动续购，无自动续费", "Manual renewal, no auto-renewal"),
+                  tr(
+                    `到账后 ${plan.validityDays} 天到期`,
+                    `Expires ${plan.validityDays} days after credits arrive`,
+                  ),
+                  tr(
+                    "每次独立起算，不延长旧包",
+                    "Each purchase has its own expiry",
+                  ),
+                  tr(
+                    `每包 ${plan.credits.toLocaleString("en-US")} 积分`,
+                    `${plan.credits.toLocaleString("en-US")} credits per pack`,
+                  ),
+                ]
+              : [
+                  tr("新用户专享，一次领取", "New accounts, one welcome grant"),
+                  tr("体验积分长期有效", "Trial credits do not expire"),
+                  tr("无需绑定支付方式", "No payment method required"),
+                  tr("支持截图、解题与追问", "Capture, solve, and follow up"),
+                ]
+            ).map((item) => (
+              <li key={item}>
+                <Icon name="check" size={15} />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </article>
+      ))}
+    </div>
+  );
 }
 
 export function LandingPage({
@@ -530,51 +641,58 @@ export function LandingPage({
   const zh = locale === "zh";
   const tr = (cn: string, en: string) => (zh ? cn : en);
   const nav = [
-    ["features", tr("产品功能", "Features")],
+    ["features", tr("功能", "Features")],
     ["how", tr("使用方式", "How it works")],
-    ["pricing", tr("积分套餐", "Pricing")],
-    ["faq", tr("常见问题", "FAQ")],
+    ["pricing", tr("定价", "Pricing")],
+    ["faq", tr("帮助", "Help")],
   ];
   const features: [IconName, string, string][] = [
     [
       "capture",
-      tr("一张截图，进入解题状态", "A screenshot is all it takes"),
+      tr("把屏幕里的问题带进来", "Bring the question into focus"),
       tr(
-        "捕获题目、代码或报错信息，减少复制粘贴，让注意力留在问题本身。",
-        "Capture a question, code, or an error. Spend less time copying and more time understanding the problem.",
+        "快捷截图题目、代码与报错。补充一句说明，和正在进行的对话一起交给 AI。",
+        "Capture a question, code, or an error. Add a note and bring it together with the conversation.",
       ),
     ],
     [
       "spark",
-      tr("答案流式出现，思路先行", "Read the answer as it arrives"),
+      tr("从第一段思路，读到完整解答", "Follow the reasoning as it unfolds"),
       tr(
-        "从第一段思路开始阅读。解题思路、复杂度、完整代码和其他解法，逐步清晰呈现。",
-        "Start with the first explanation. Follow the approach, complexity, complete code, and alternative solutions as they unfold.",
+        "流式展示解题思路、复杂度和代码。继续追问边界条件，逐步理解每一个选择。",
+        "Read the approach, complexity, and code as they arrive. Explore edge cases and understand the decisions.",
       ),
     ],
     [
       "layers",
-      tr("多轮上下文，连续思考", "Keep the whole problem in view"),
+      tr("让下一句，接得上上一句", "Keep the conversation connected"),
       tr(
-        "补充截图、调试代码、继续追问，在同一个桌面工作流里逐步深入。",
-        "Add screenshots, debug your code, and ask follow-up questions in one connected desktop workflow.",
+        "转录、截图、手输问题组合为上下文。无需反复搬运材料，让追问留在同一条思路里。",
+        "Combine transcripts, screenshots, and typed questions. Follow up without rebuilding the context each time.",
       ),
     ],
     [
       "keyboard",
-      tr("快捷键，让操作更轻盈", "Stay in flow with shortcuts"),
+      tr("常用操作，不打断你的节奏", "A workspace that stays within reach"),
       tr(
-        "截图、解答、切换窗口，常用操作触手可及。支持 macOS 与 Windows。",
-        "Capture, solve, and control your window with keyboard shortcuts. Available on macOS and Windows.",
+        "截图、解答、显示与隐藏都可用快捷键完成。Mac 半透明正文支持鼠标穿透，方便操作下方内容。",
+        "Use shortcuts to capture, answer, show, or hide. On Mac, click through the translucent answer area to work underneath.",
       ),
     ],
   ];
   const faqs = [
     [
-      tr("如何开始使用 PassWisely？", "How do I get started?"),
+      tr("怎样开始使用？", "How do I get started?"),
       tr(
-        `下载适合电脑的安装包，安装后注册或登录。新账户可获得 ${TRIAL_CREDITS} 个体验积分，随后即可通过截图或文字输入开始练习。`,
-        `Download the build for your computer, install it, and create an account. New accounts receive ${TRIAL_CREDITS} trial credits. Start with a screenshot or a typed question.`,
+        `下载适合电脑的安装包，安装后注册或登录。新账户可获得 ${TRIAL_CREDITS} 个体验积分，通过截图、文字或实时对话开始使用。`,
+        `Download the build for your computer, install it, and create an account. New accounts receive ${TRIAL_CREDITS} trial credits. Start with a screenshot, a typed question, or a live conversation.`,
+      ),
+    ],
+    [
+      tr("支持中文实时转录吗？", "Does live transcription support Chinese?"),
+      tr(
+        "支持中英文实时转录，区分系统音频与麦克风来源，可暂停和恢复。首次使用需要授予相应录音权限；识别效果会受到麦克风、噪声和口音影响。",
+        "Live transcription supports Chinese and English, identifies system audio and microphone sources, and can be paused and resumed. Grant the required recording permissions on first use. Results depend on your microphone, background noise, and accent.",
       ),
     ],
     [
@@ -585,36 +703,70 @@ export function LandingPage({
       ),
     ],
     [
-      tr("积分如何计费，会过期吗？", "How do credits work? Do they expire?"),
+      tr(
+        "月包会自动续费吗？积分何时到期？",
+        "Do packs auto-renew? When do credits expire?",
+      ),
       tr(
         "月包手动续购，无自动续费。每次新购积分自成功到账起独立有效 30 天，续购不会延长此前积分的有效期。旧余额和新用户体验积分长期有效；不同模型和任务消耗以客户端与账户明细为准。",
         "Renew manually with no automatic charges. Each paid pack expires 30 days after its credits are added; a new purchase does not extend earlier packs. Existing permanent balances and trial credits do not expire. Usage varies by model and task; check the app and account activity.",
       ),
     ],
     [
-      tr("Mac 应该下载哪个版本？", "Which Mac version should I download?"),
       tr(
-        "在 Mac 左上角的苹果菜单打开“关于本机”。显示 Apple M 系列芯片请选择 Apple 芯片版；显示 Intel 处理器请选择 Intel 版。",
-        "Open About This Mac from the Apple menu. Choose the Apple silicon build for an Apple M-series chip, or the Intel build for an Intel processor.",
+        "共享屏幕时，浮层是否可见？",
+        "Will the overlay appear in a screen share?",
+      ),
+      tr(
+        "Mac 版已在飞书双设备整屏共享中验证：接收端看不到 PassWisely 浮条和正文，底层页面与时钟正常。此结果仅代表该次环境；其他平台、系统版本和共享模式需要分别验证，不承诺对所有检测方式不可见。",
+        "In a two-device Feishu full-screen sharing test on Mac, the receiving device did not display the PassWisely toolbar or body while the underlying page and clock remained visible. This result applies to that test environment. Other platforms, OS versions, and sharing modes need separate verification; it is not a guarantee against every form of detection.",
       ),
     ],
     [
-      tr("上传的问题如何处理？", "How are my questions processed?"),
+      tr("如何查看使用量和余额？", "Where can I check usage and balance?"),
       tr(
-        "你主动提交的题目、截图及上下文会发送给所选 AI 服务进行处理。请勿提交无权分享的机密内容，模型输出也需要自行检查与验证。",
-        "Questions, screenshots, and context you submit are sent to the selected AI service for processing. Only share material you are authorized to provide, and review and verify model output.",
+        "登录后进入 Dashboard，可查看积分余额、有效期与使用记录，并按时间范围查看使用量。积分消耗以服务端账户明细为准。",
+        "Sign in to your Dashboard to see your credit balance, expiry, and usage history, with time-range filters. Your server-side account activity is the source of truth for credit charges.",
       ),
     ],
     [
-      tr("适合哪些使用场景？", "What can I use it for?"),
+      tr("提交的内容会怎样处理？", "How is submitted content processed?"),
       tr(
-        "适用于算法练习、模拟面试、系统设计学习、代码调试和简历准备。在面试或考试中使用前，请确认并遵守组织方的规则。",
-        "Use PassWisely for coding practice, mock interviews, system design, debugging, and resume preparation. Follow the organizer’s rules for any interview or assessment.",
+        "主动提交的题目、截图及上下文会发送给所选 AI 服务；实时音频会交由配置的转录服务处理。请只提供有权分享的内容，并自行验证模型输出。适用于练习、模拟面试与获准使用辅助工具的场景。",
+        "Submitted questions, screenshots, and context go to the selected AI service. Live audio is processed by the configured transcription service. Share only material you are authorized to provide and verify model output. Use it for practice, mock interviews, and situations where assistance is permitted.",
       ),
     ],
   ];
+  const checks = [
+    [
+      tr("实时音频与中文转录", "Live audio and Chinese transcription"),
+      tr(
+        "系统音频 · 麦克风 · 暂停 / 恢复",
+        "System audio · Microphone · Pause / resume",
+      ),
+      tr("Mac 已验证", "Verified on Mac"),
+    ],
+    [
+      tr("组合上下文问答", "Questions with combined context"),
+      tr("转录 + 截图 + 手输问题", "Transcript + Screenshot + Typed question"),
+      tr("Mac 已验证", "Verified on Mac"),
+    ],
+    [
+      tr("半透明浮层鼠标穿透", "Click-through translucent overlay"),
+      tr(
+        "底层选字与输入，控件仍可点击",
+        "Select and type underneath; controls stay clickable",
+      ),
+      tr("Mac 已验证", "Verified on Mac"),
+    ],
+    [
+      tr("账户使用量统计", "Account usage reporting"),
+      tr("余额 · 有效期 · 使用明细", "Balance · Expiry · Activity"),
+      tr("网页已提供", "Available on web"),
+    ],
+  ];
   return (
-    <div className="pw-landing">
+    <div className="pw-landing" data-locale={locale}>
       <a className="pw-skip" href="#main-content">
         {tr("跳到主要内容", "Skip to content")}
       </a>
@@ -646,8 +798,13 @@ export function LandingPage({
             </div>
             <button className="pw-login" onClick={onAccount}>
               {accountLabel}
-              <Icon name="arrow" size={15} />
             </button>
+            <a className="pw-nav-download" href="#download">
+              <span>
+                <Icon name="download" size={15} />
+              </span>
+              {tr("免费下载", "Download free")}
+            </a>
             <button
               className="pw-menu-toggle"
               aria-label={
@@ -679,6 +836,15 @@ export function LandingPage({
                   <Icon name="arrow" size={16} />
                 </a>
               ))}
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onAccount();
+                }}
+              >
+                {accountLabel}
+                <Icon name="arrow" size={16} />
+              </button>
               <a href="#download" onClick={() => setMenuOpen(false)}>
                 {tr("下载应用", "Download app")}
                 <Icon name="download" size={16} />
@@ -687,296 +853,419 @@ export function LandingPage({
           )}
         </nav>
       </header>
-
-      <section
-        className="pw-hero"
-        id="main-content"
-        aria-labelledby="pw-hero-title"
-      >
-        <div className="pw-shell">
-          <div className="pw-hero-copy">
-            <a href="#features" className="pw-pill">
-              <span />
-              {tr("你的 AI 技术面试助手", "YOUR AI INTERVIEW COPILOT")}
-              <Icon name="arrow" size={13} />
-            </a>
-            <h1 id="pw-hero-title">
-              {tr("让每一道难题，", "Your next technical interview.")}
-              <br />
-              {tr("都有清晰的思路。", "Meet it with clarity.")}
-            </h1>
-            <p>
-              {tr(
-                "截图识题，即时展开解答。把算法、系统设计、代码调试和简历准备，汇集到一个专注的 AI 桌面工作台。",
-                "Capture a question. Follow a clear answer. Coding, system design, debugging, and resume prep—together in one focused AI desktop workspace.",
-              )}
-            </p>
-            <Downloads locale={locale} />
-            <div className="pw-free-note">
-              {tr(
-                `无需信用卡 · 注册即送 ${TRIAL_CREDITS} 积分`,
-                `NO CREDIT CARD NEEDED · ${TRIAL_CREDITS} FREE CREDITS`,
-              )}
-            </div>
-            <a className="pw-intel-link" href="/api/track-download/mac-x64">
-              {tr(
-                `Intel Mac：v${DOWNLOAD_ARTIFACTS["mac-x64"].version} 旧版（不含实时音频）`,
-                `Intel Mac: legacy v${DOWNLOAD_ARTIFACTS["mac-x64"].version} (no live audio)`,
-              )}
-              <Icon name="arrow" size={12} />
-            </a>
-          </div>
-          <div className="pw-hero-stage">
-            <div className="pw-stage-label">
-              <span>PASSWISELY DESKTOP</span>
-              <span>
-                {tr("从问题，到清晰的答案", "FROM QUESTION TO CLARITY")}
-              </span>
-            </div>
-            <ProductPreview locale={locale} hero />
-          </div>
-          <div className="pw-capabilities">
-            <span>
-              {tr("为你的下一轮面试做好准备", "BUILT FOR YOUR NEXT ROUND")}
-            </span>
-            <div>
-              {[
-                tr("算法解题", "Coding"),
-                tr("系统设计", "System design"),
-                tr("代码调试", "Debugging"),
-                tr("简历准备", "Resume prep"),
-              ].map((label) => (
-                <span key={label}>
-                  <Icon name="check" size={14} />
-                  {label}
+      <main id="main-content">
+        <section className="pw-hero" aria-labelledby="pw-hero-title">
+          <div className="pw-shell">
+            <div className="pw-hero-copy">
+              <a href="#how" className="pw-pill">
+                <span />
+                {tr(
+                  "PASSWISELY · 你的桌面 AI 面试助手",
+                  "PASSWISELY · YOUR DESKTOP INTERVIEW WORKSPACE",
+                )}
+                <Icon name="arrow" size={13} />
+              </a>
+              <h1 id="pw-hero-title" className="pw-hero-title">
+                {tr("捕捉对话中的问题", "Stay with the conversation.")}
+                <br />
+                <span>
+                  {tr("展开下一步思路。", "Find your next clear step.")}
                 </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="pw-section pw-shell" id="features">
-        <div className="pw-section-heading">
-          <p className="pw-eyebrow">
-            {tr("专注问题，少些切换", "LESS FRICTION. MORE FOCUS.")}
-          </p>
-          <h2>
-            {tr("为你的答题节奏而设计", "Built around the way you think")}
-          </h2>
-          <p>
-            {tr(
-              "从捕获问题到理解答案，每一步都更顺手。",
-              "From capturing the question to understanding the answer, stay in your flow.",
-            )}
-          </p>
-        </div>
-        <div className="pw-features">
-          {features.map(([icon, title, description], index) => (
-            <article className="pw-feature" key={icon}>
-              <FeatureVisual index={index} locale={locale} />
-              <div className="pw-feature-copy">
-                <span className="pw-icon-tile">
-                  <Icon name={icon} size={23} />
-                </span>
-                <h3>{title}</h3>
-                <p>{description}</p>
+              </h1>
+              <p>
+                {tr(
+                  "听见问题，看懂上下文。从实时转录到截图解答，让每一轮准备，都有清晰的思路。",
+                  "Turn live conversation and screenshots into a connected workspace. Follow the reasoning, explore the code, and prepare your next response.",
+                )}
+              </p>
+              <Downloads locale={locale} />
+              <div className="pw-free-note">
+                <Icon name="check" size={13} />
+                {tr(
+                  `免费注册 · ${TRIAL_CREDITS} 积分体验 · 无需信用卡`,
+                  `${TRIAL_CREDITS} WELCOME CREDITS · NO CREDIT CARD REQUIRED`,
+                )}
               </div>
-            </article>
-          ))}
-        </div>
-      </section>
+              <a className="pw-intel-link" href="/api/track-download/mac-x64">
+                {tr(
+                  `Intel Mac：v${DOWNLOAD_ARTIFACTS["mac-x64"].version} 旧版（不含实时音频）`,
+                  `Intel Mac: legacy v${DOWNLOAD_ARTIFACTS["mac-x64"].version} (no live audio)`,
+                )}
+                <Icon name="arrow" size={12} />
+              </a>
+            </div>
+            <div className="pw-hero-stage">
+              <LandingDemo locale={locale} compact />
+            </div>
+            <div className="pw-capabilities">
+              <span>
+                {tr("围绕真实的准备流程", "BUILT AROUND YOUR PREPARATION")}
+              </span>
+              <div>
+                {[
+                  tr("实时转录", "Live transcription"),
+                  tr("截图解答", "Screenshot answers"),
+                  tr("连续追问", "Follow-up questions"),
+                  tr("使用量统计", "Usage dashboard"),
+                ].map((label) => (
+                  <span key={label}>
+                    <Icon name="check" size={14} />
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <section className="pw-light-section" id="how">
-        <div className="pw-shell">
+        <section className="pw-section pw-shell" id="how">
           <div className="pw-section-heading">
-            <p className="pw-eyebrow">
-              {tr("简单开始，专注练习", "A SMALL SETUP. A BETTER WORKFLOW.")}
-            </p>
+            <p className="pw-eyebrow">{tr("从输入，到思路", "THE WORKFLOW")}</p>
             <h2>
-              {tr("从安装到解题，只需三步", "Three steps to your next answer")}
+              {tr("让每个问题，都有上下文。", "Every question has a context.")}
             </h2>
             <p>
               {tr(
-                "准备好问题，剩下的从这里开始。",
-                "Bring a question. Build a clearer way to answer it.",
+                "听、看、问、答，连接成一个桌面工作流。",
+                "Listen, capture, ask, and explore. All in one desktop workflow.",
               )}
             </p>
           </div>
-          <div className="pw-steps">
-            {[
-              [
-                "download",
-                tr("下载并登录", "Download and sign in"),
-                tr(
-                  `选择适合电脑的版本，创建账户，领取 ${TRIAL_CREDITS} 个体验积分。`,
-                  `Choose your desktop build. Create an account and get ${TRIAL_CREDITS} trial credits.`,
-                ),
-              ],
-              [
-                "capture",
-                tr("捕获你的问题", "Capture your question"),
-                tr(
-                  "快捷键截取题目，或直接输入文字。补充上下文，让问题更完整。",
-                  "Take a screenshot or type a question. Add the context that matters.",
-                ),
-              ],
-              [
-                "code",
-                tr("理解，再讲清楚", "Understand. Then explain."),
-                tr(
-                  "跟随流式答案梳理思路，运行代码验证结果，再深入追问。",
-                  "Follow the streamed explanation, run the code to verify it, and ask deeper questions.",
-                ),
-              ],
-            ].map(([icon, title, description], index) => (
-              <article key={title}>
-                <div className="pw-step-top">
-                  <Icon name={icon as IconName} size={27} />
-                  <span>0{index + 1}</span>
+          <div className="pw-audio-feature">
+            <div className="pw-audio-copy">
+              <span className="pw-feature-number">01 / LIVE CONVERSATION</span>
+              <h3>
+                {tr(
+                  "对话在继续，\n思路也跟得上。",
+                  "The conversation moves.\nYour context comes with it.",
+                )}
+              </h3>
+              <p>
+                {tr(
+                  "同时采集系统音频与麦克风，将中英文对话转成实时文本。区分说话来源，保留临时与最终文本，随时暂停和恢复。",
+                  "Capture system audio and your microphone, with live Chinese and English transcription. Distinguish sources, follow interim and final text, and pause or resume when you need.",
+                )}
+              </p>
+              <a className="pw-text-link" href="#scenarios">
+                {tr("探索回答示例", "Explore an example")}
+                <Icon name="arrow" size={16} />
+              </a>
+            </div>
+            <div
+              className="pw-audio-sample"
+              aria-label={tr("合成转录示例", "Illustrative transcript")}
+            >
+              <div className="pw-audio-sample-top">
+                <span>
+                  <i />
+                  {tr("正在聆听", "Listening")}
+                </span>
+                <span>00:24</span>
+              </div>
+              <div className="pw-waveform" aria-hidden="true">
+                {Array.from({ length: 42 }, (_, i) => (
+                  <i key={i} style={{ height: `${12 + ((i * 17) % 31)}px` }} />
+                ))}
+              </div>
+              <div className="pw-transcript-line">
+                <span>{tr("系统音频", "System audio")}</span>
+                <p>
+                  {tr(
+                    "如果输入是空数组，我们应该返回什么？",
+                    "What should we return when the input is empty?",
+                  )}
+                </p>
+              </div>
+              <div className="pw-transcript-line is-mic">
+                <span>{tr("麦克风", "Microphone")}</span>
+                <p>
+                  {tr(
+                    "先确认边界，再说明时间复杂度。",
+                    "Check the boundary case, then explain the complexity.",
+                  )}
+                </p>
+              </div>
+              <small>
+                {tr(
+                  "合成界面示例 · 非实时录音",
+                  "Illustrative UI · Not a live recording",
+                )}
+              </small>
+            </div>
+          </div>
+          <div className="pw-features" id="features">
+            {features.map(([icon, title, description], index) => (
+              <article className="pw-feature" key={icon}>
+                <FeatureVisual index={index} locale={locale} />
+                <div className="pw-feature-copy">
+                  <span className="pw-feature-number">0{index + 2}</span>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
                 </div>
-                <h3>{title}</h3>
-                <p>{description}</p>
               </article>
             ))}
           </div>
-          <a className="pw-text-link" href="#download">
-            {tr(
-              "下载 PassWisely，开始练习",
-              "Get PassWisely and start practicing",
-            )}
-            <Icon name="arrow" size={18} />
-          </a>
-        </div>
-      </section>
+        </section>
 
-      <section className="pw-section pw-shell pw-scenarios" id="scenarios">
-        <div className="pw-section-heading">
-          <p className="pw-eyebrow">
-            {tr(
-              "一个工作台，多种准备方式",
-              "ONE WORKSPACE. EVERY KIND OF PREP.",
-            )}
-          </p>
-          <h2>{tr("下一题，无论是什么", "Whatever comes up next")}</h2>
-          <p>
-            {tr(
-              "选择一个场景，看看 PassWisely 如何组织答案。",
-              "Choose a scenario to explore how PassWisely structures an answer.",
-            )}
-          </p>
-        </div>
-        <div
-          className="pw-scenario-tabs"
-          role="group"
-          aria-label={tr("选择演示场景", "Choose a demo scenario")}
-        >
-          {examples[locale].map((example, index) => (
-            <button
-              key={example.tag}
-              aria-pressed={index === scenario}
-              onClick={() => setScenario(index)}
-            >
-              {example.label}
-              <Icon name="arrow" size={15} />
-            </button>
-          ))}
-        </div>
-        <div aria-live="polite" aria-atomic="true">
-          <ProductPreview locale={locale} example={scenario} />
-        </div>
-      </section>
+        <section className="pw-proof-section">
+          <div className="pw-shell pw-proof-layout">
+            <div className="pw-proof-heading">
+              <p className="pw-eyebrow">
+                {tr("功能与验证", "CAPABILITIES & VALIDATION")}
+              </p>
+              <h2>
+                {tr(
+                  "看得见的能力，\n说得清的边界。",
+                  "Useful capabilities.\nClear boundaries.",
+                )}
+              </h2>
+              <p>
+                {tr(
+                  "从实际工作流出发，把已验证的体验与仍待验证的环境分别说明。",
+                  "Start with the workflow. Know what has been verified and where more testing is needed.",
+                )}
+              </p>
+              <a className="pw-text-link" href="#compatibility">
+                {tr("查看共享测试范围", "See sharing test coverage")}
+                <Icon name="arrow" size={16} />
+              </a>
+            </div>
+            <div className="pw-check-list">
+              {checks.map(([title, description, status], index) => (
+                <article key={title}>
+                  <span className="pw-check-number">0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                  <span className="pw-check-status">
+                    <Icon name="check" size={14} />
+                    {status}
+                  </span>
+                </article>
+              ))}
+              <p className="pw-validation-note">
+                {tr(
+                  "Windows 安装包已提供；实时音频与浮层行为仍待 Windows 真机验证。",
+                  "A Windows installer is available. Live audio and overlay behavior still require validation on a Windows device.",
+                )}
+              </p>
+            </div>
+          </div>
+        </section>
 
-      <section className="pw-pricing-section" id="pricing">
-        <div className="pw-shell">
+        <section className="pw-section pw-shell pw-scenarios" id="scenarios">
           <div className="pw-section-heading">
             <p className="pw-eyebrow">
-              {tr("按需购买，自由安排", "YOUR PREP. YOUR PACE.")}
+              {tr("看看它如何组织答案", "EXPLORE THE WORKSPACE")}
             </p>
             <h2>
-              {tr("为下一步，选一份准备", "A little credit for your next step")}
+              {tr(
+                "一个工作台，不止一种思路。",
+                "One workspace. More ways to prepare.",
+              )}
             </h2>
             <p>
               {tr(
-                `免费下载，新用户注册赠送 ${TRIAL_CREDITS} 积分。月包按需手动续购，无自动续费。`,
-                `Download for free and start with ${TRIAL_CREDITS} welcome credits. Renew a monthly pack manually whenever you need it.`,
+                "切换场景，查看完整的思路、代码与下一步追问。",
+                "Choose a scenario. Explore the reasoning, code, and next question.",
               )}
             </p>
           </div>
-          <PricingPlans locale={locale} onBuy={onBuy} onRegisterTrial={onRegisterTrial} busy={busy} />
-          <p className="pw-pricing-note">
-            {tr(
-              "新购月包每次独立有效 30 天；旧余额长期有效。“无限制包”为套餐名称，每包提供 1,000 积分，并非无限额度。支持支付宝与微信支付。",
-              "Each paid pack has its own 30-day validity; existing permanent balances do not expire. Unlimited is the plan name: each pack contains 1,000 credits, not unlimited usage. Alipay and WeChat Pay supported.",
-            )}
-          </p>
-        </div>
-      </section>
-
-      <section className="pw-section pw-shell pw-faq-section" id="faq">
-        <div className="pw-faq-heading">
-          <p className="pw-eyebrow">
-            {tr("你可能还想了解", "A FEW MORE THINGS")}
-          </p>
-          <h2>{tr("常见问题", "Frequently asked questions")}</h2>
-          <p>
-            {tr(
-              "还有疑问？我们随时愿意帮助。",
-              "Still have a question? We’re here to help.",
-            )}
-          </p>
-          <a href="mailto:support@passwisely.com">
-            {tr("联系支持", "Contact support")}
-            <Icon name="arrow" size={16} />
-          </a>
-        </div>
-        <div className="pw-faq-list">
-          {faqs.map(([question, answer]) => (
-            <details key={question}>
-              <summary>
-                {question}
-                <Icon name="plus" size={19} />
-              </summary>
-              <p>{answer}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      <section className="pw-final" id="download">
-        <div className="pw-shell">
-          <span className="pw-final-icon">
-            <Icon name="spark" size={30} />
-          </span>
-          <h2>
-            {tr("把下一题，", "Your next question.")}
-            <br />
-            {tr("变成你的下一步。", "Your next step forward.")}
-          </h2>
-          <p>
-            {tr(
-              "下载 PassWisely，让准备更充分，让表达更从容。",
-              "Get PassWisely. Prepare with focus. Explain with confidence.",
-            )}
-          </p>
-          <Downloads locale={locale} compact />
-          <details className="pw-release-checksums">
-            <summary>{tr("安装包 SHA-256", "Installer SHA-256")}</summary>
-            {Object.values(DOWNLOAD_ARTIFACTS).filter(artifact => artifact.sha256).map(artifact => (
-              <p key={artifact.platform}><span>{artifact.platform} · v{artifact.version}: </span><code>{artifact.sha256}</code></p>
+          <div
+            className="pw-scenario-tabs"
+            role="group"
+            aria-label={tr("选择演示场景", "Choose a demo scenario")}
+          >
+            {examples[locale].map((example, index) => (
+              <button
+                key={example.tag}
+                aria-pressed={index === scenario}
+                onClick={() => setScenario(index)}
+              >
+                {example.label}
+                <Icon name="arrow" size={15} />
+              </button>
             ))}
-          </details>
-          <div className="pw-final-meta">
-            <span>{tr(`注册即送 ${TRIAL_CREDITS} 积分`, `${TRIAL_CREDITS} free welcome credits`)}</span>
-            <span>macOS · Windows</span>
-            <a href="/api/track-download/mac-x64">
-              {tr(`Mac Intel · v${DOWNLOAD_ARTIFACTS["mac-x64"].version} 旧版（不含实时音频）`, `Mac Intel · legacy v${DOWNLOAD_ARTIFACTS["mac-x64"].version} (no live audio)`)}
-              <Icon name="arrow" size={12} />
+          </div>
+          <div aria-live="polite" aria-atomic="true">
+            <ProductPreview locale={locale} example={scenario} />
+          </div>
+        </section>
+
+        <section className="pw-pricing-section" id="pricing">
+          <div className="pw-shell">
+            <div className="pw-section-heading">
+              <p className="pw-eyebrow">
+                {tr("按需准备，自由选择", "PREPARE AT YOUR PACE")}
+              </p>
+              <h2>
+                {tr("先开始，再选你的节奏。", "Start free. Find your pace.")}
+              </h2>
+              <p>
+                {tr(
+                  `免费下载，新用户注册赠送 ${TRIAL_CREDITS} 积分。月包按需手动续购，无自动续费。`,
+                  `Download for free and start with ${TRIAL_CREDITS} welcome credits. Renew a monthly pack manually whenever you need it.`,
+                )}
+              </p>
+            </div>
+            <PricingPlans
+              locale={locale}
+              onBuy={onBuy}
+              onRegisterTrial={onRegisterTrial}
+              busy={busy}
+            />
+            <p className="pw-pricing-note">
+              {tr(
+                "新购月包每次独立有效 30 天；旧余额长期有效。“无限制包”为套餐名称，每包提供 1,000 积分，并非无限额度。支付渠道以结算页实际可用状态为准。",
+                "Each paid pack has its own 30-day validity; existing permanent balances do not expire. Unlimited is the plan name: each pack contains 1,000 credits, not unlimited usage. Available payment methods are shown at checkout.",
+              )}
+            </p>
+          </div>
+        </section>
+
+        <section
+          className="pw-section pw-shell pw-compatibility"
+          id="compatibility"
+        >
+          <div className="pw-section-heading">
+            <p className="pw-eyebrow">
+              {tr("共享与浮层", "SHARING & OVERLAYS")}
+            </p>
+            <h2>
+              {tr("兼容性，用实测说明。", "Compatibility, with test context.")}
+            </h2>
+            <p>
+              {tr(
+                "平台、系统和共享方式不同，结果也可能不同。",
+                "Results can vary with the platform, OS, and sharing mode.",
+              )}
+            </p>
+          </div>
+          <div className="pw-compat-list">
+            {[
+              [
+                "Feishu / 飞书",
+                true,
+                tr(
+                  "Mac 双设备整屏共享实测，接收端未显示浮条与正文，底层页面及动态时钟正常。这一结果不覆盖所有系统版本、录屏工具或检测方式。",
+                  "Verified in a two-device full-screen share on Mac: the receiving device did not show the toolbar or body, while the underlying page and animated clock remained visible. This does not cover all OS versions, recording tools, or detection methods.",
+                ),
+              ],
+              [
+                "Zoom / Google Meet",
+                false,
+                tr(
+                  "尚未完成同等条件的接收端测试。请在自己的测试会议中核对整屏共享和窗口共享结果。",
+                  "Equivalent receiving-device tests have not been completed. Check full-screen and window sharing in a test meeting.",
+                ),
+              ],
+              [
+                "Microsoft Teams / Webex",
+                false,
+                tr(
+                  "尚未验证。共享客户端和 macOS 更新可能改变捕获行为，使用前应重新测试。",
+                  "Not yet verified. Updates to sharing clients and macOS can change capture behavior; test again before use.",
+                ),
+              ],
+            ].map(([name, verified, description], index) => (
+              <details key={String(name)} open={index === 0}>
+                <summary>
+                  <span className="pw-check-number">00{index + 1}</span>
+                  <span className="pw-platform-name">{name}</span>
+                  <span
+                    className={`pw-platform-status${verified ? " is-verified" : ""}`}
+                  >
+                    {verified
+                      ? tr("已实测", "Tested")
+                      : tr("待实测", "Not tested")}
+                  </span>
+                  <Icon name="plus" size={20} />
+                </summary>
+                <p>{description}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section className="pw-section pw-shell pw-faq-section" id="faq">
+          <div className="pw-faq-heading">
+            <p className="pw-eyebrow">
+              {tr("你可能还想了解", "BEFORE YOU START")}
+            </p>
+            <h2>{tr("常见问题", "Questions, answered.")}</h2>
+            <p>
+              {tr("还有疑问？欢迎联系我们。", "Need a hand? Get in touch.")}
+            </p>
+            <a href="mailto:support@passwisely.com">
+              support@passwisely.com
+              <Icon name="arrow" size={16} />
             </a>
           </div>
-        </div>
-      </section>
+          <div className="pw-faq-list">
+            {faqs.map(([question, answer]) => (
+              <details key={question}>
+                <summary>
+                  {question}
+                  <Icon name="plus" size={19} />
+                </summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
 
+        <section className="pw-final" id="download">
+          <div className="pw-shell">
+            <span className="pw-final-icon">
+              <Icon name="spark" size={28} />
+            </span>
+            <h2>
+              {tr("下一轮，", "Your next round.")}
+              <br />
+              <span>
+                {tr("带着思路出发。", "Bring a clearer perspective.")}
+              </span>
+            </h2>
+            <p>
+              {tr(
+                "准备好你的问题，剩下的从这里开始。",
+                "Bring your questions. Build your next answer.",
+              )}
+            </p>
+            <Downloads locale={locale} compact />
+            <details className="pw-release-checksums">
+              <summary>{tr("安装包 SHA-256", "Installer SHA-256")}</summary>
+              {Object.values(DOWNLOAD_ARTIFACTS)
+                .filter((artifact) => artifact.sha256)
+                .map((artifact) => (
+                  <p key={artifact.platform}>
+                    <span>
+                      {artifact.platform} · v{artifact.version}:{" "}
+                    </span>
+                    <code>{artifact.sha256}</code>
+                  </p>
+                ))}
+            </details>
+            <div className="pw-final-meta">
+              <span>
+                {tr(
+                  `注册即送 ${TRIAL_CREDITS} 积分`,
+                  `${TRIAL_CREDITS} free welcome credits`,
+                )}
+              </span>
+              <span>macOS · Windows</span>
+              <a href="/api/track-download/mac-x64">
+                {tr(
+                  `Mac Intel · v${DOWNLOAD_ARTIFACTS["mac-x64"].version} 旧版（不含实时音频）`,
+                  `Mac Intel · legacy v${DOWNLOAD_ARTIFACTS["mac-x64"].version} (no live audio)`,
+                )}
+                <Icon name="arrow" size={12} />
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
       <footer className="pw-footer">
         <div className="pw-shell">
           <div className="pw-footer-top">
@@ -984,8 +1273,8 @@ export function LandingPage({
               <Brand />
               <p>
                 {tr(
-                  "为每一次认真准备而打造。",
-                  "Built for everyone who comes prepared.",
+                  "让每一次认真准备，都更进一步。",
+                  "A clearer way to prepare for what’s next.",
                 )}
               </p>
             </div>
@@ -999,7 +1288,12 @@ export function LandingPage({
               <div>
                 <span>{tr("了解更多", "RESOURCES")}</span>
                 <a href="#how">{tr("快速开始", "Getting started")}</a>
+                <a href="#scenarios">{tr("场景示例", "Examples")}</a>
                 <a href="#faq">{tr("常见问题", "FAQ")}</a>
+              </div>
+              <div>
+                <span>{tr("账户与支持", "ACCOUNT & SUPPORT")}</span>
+                <button onClick={onAccount}>{accountLabel}</button>
                 <a href="mailto:support@passwisely.com">
                   {tr("联系支持", "Contact support")}
                 </a>
@@ -1010,11 +1304,16 @@ export function LandingPage({
             <span>© {new Date().getFullYear()} PassWisely</span>
             <span>
               {tr(
-                "为准备与学习而设计，请遵守面试和考试规则。",
-                "Designed for preparation and learning. Follow your interview and assessment rules.",
+                "福建智感灵眸科技有限公司",
+                "Fujian Zhigan Lingmou Technology Co., Ltd.",
               )}
             </span>
-            <a href="mailto:support@passwisely.com">support@passwisely.com</a>
+            <span>
+              {tr(
+                "请遵守面试与考试规则。",
+                "Follow your interview and assessment rules.",
+              )}
+            </span>
           </div>
         </div>
       </footer>

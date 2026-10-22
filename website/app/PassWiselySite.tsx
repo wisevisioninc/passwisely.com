@@ -458,7 +458,7 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
   );
 
   return (
-    <main id="top" className="passwisely-site">
+    <div id="top" className="passwisely-site">
       {initialDashboard ? <Dashboard
         locale={locale}
         onLocale={chooseLocale}
@@ -825,6 +825,6 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
           </section>
         </div>
       )}
-    </main>
+    </div>
   );
 }

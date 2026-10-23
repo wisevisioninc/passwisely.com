@@ -77,10 +77,14 @@ proxy for development and allow its recovery URL in the test Supabase project;
 use synthetic payment/email seams until ready for a real external action. HTTP
 origins, including localhost, are intentionally rejected in every environment.
 
-The checkout API validates its public origin, then creates a local pending order
-before contacting the provider.
-Alipay uses computer website payment and WeChat uses Native payment. Signed
-asynchronous callbacks verify merchant/app IDs, order number, currency, and
+Checkout currently enables Alipay computer website payment and WeChat Native
+payment through the shared payment catalog. Before creating a pending order,
+the API validates its public origin and the selected channel's required runtime
+configuration using its configuration owner. Missing configuration returns
+`503 / PAYMENT_UNAVAILABLE` without creating an order or calling a provider;
+configuration for the other channel is not required. Once an order exists, an
+uncertain provider result preserves it as pending for a later verified callback.
+Signed asynchronous callbacks verify merchant/app IDs, order number, currency, and
 amount before an idempotent credit entry is written. Callback URLs are:
 
 - `https://passwisely.com/api/payments/alipay/notify`

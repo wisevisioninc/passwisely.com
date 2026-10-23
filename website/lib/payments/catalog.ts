@@ -27,8 +27,8 @@ export type CreditPackId = keyof typeof CREDIT_PACKS;
 export type PaymentProvider = "alipay" | "wechat";
 
 // New checkout availability is separate from historical payment identity.
-// Keep WeChat orders and callbacks readable while its onboarding is pending.
-export const CHECKOUT_PROVIDERS = ["alipay"] as const satisfies readonly PaymentProvider[];
+// Each enabled channel still requires its own runtime configuration at checkout.
+export const CHECKOUT_PROVIDERS = ["alipay", "wechat"] as const satisfies readonly PaymentProvider[];
 
 export function isCheckoutProvider(value: unknown): value is PaymentProvider {
   return CHECKOUT_PROVIDERS.some(provider => provider === value);

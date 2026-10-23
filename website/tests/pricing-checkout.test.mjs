@@ -45,7 +45,7 @@ const text = tree => {
   return tree == null || typeof tree === "boolean" ? "" : String(tree);
 };
 const noop = () => {};
-const { CREDIT_PACKS, TRIAL_CREDITS, CHECKOUT_PROVIDERS, isPaymentProvider, isCheckoutProvider } = sourceModule("lib/payments/catalog.ts");
+const { CREDIT_PACKS, TRIAL_CREDITS } = sourceModule("lib/payments/catalog.ts");
 const { PricingPlans, LandingPage } = sourceModule("app/LandingPage.tsx");
 const { DOWNLOAD_ARTIFACTS } = sourceModule("lib/downloads.ts");
 
@@ -96,6 +96,13 @@ function checkoutApplication({ providerError, notificationError, completionError
     ALIPAY_SELLER_ID: "2088000000000000",
     ALIPAY_PRIVATE_KEY: "synthetic-private-key",
     ALIPAY_PUBLIC_KEY: "synthetic-public-key",
+    WECHAT_PAY_APP_ID: "fixture-app",
+    WECHAT_PAY_MCH_ID: "fixture-merchant",
+    WECHAT_PAY_MCH_SERIAL_NO: "fixture-serial",
+    WECHAT_PAY_PRIVATE_KEY: "synthetic-wechat-private-key",
+    WECHAT_PAY_API_V3_KEY: "synthetic-wechat-api-v3-key",
+    WECHAT_PAY_PUBLIC_KEY_ID: "PUB_KEY_ID_fixture",
+    WECHAT_PAY_PUBLIC_KEY: "synthetic-wechat-public-key",
     ...paymentEnvironment,
   };
   const rows = [], providerCalls = [], failures = [], completions = [];
@@ -171,20 +178,6 @@ test("checkout rejects retired cached-page IDs and trial/prototype inputs before
   assert.equal((await app.send({ packId: "pro_monthly_v2", provider: "alipay" })).status, 401);
 });
 
-test("only Alipay is open for checkout while historical payment identities stay valid", async () => {
-  assert.deepEqual(CHECKOUT_PROVIDERS, ["alipay"]);
-  assert.equal(isPaymentProvider("wechat"), true);
-  assert.equal(isCheckoutProvider("wechat"), false);
-  const app = checkoutApplication();
-  for (const packId of Object.keys(CREDIT_PACKS)) {
-    const response = await app.send({ packId, provider: "wechat" });
-    assert.equal(response.status, 503);
-    assert.equal(response.headers.get("cache-control"), "no-store");
-    assert.deepEqual(await response.json(), { error: "This payment method is not available. Choose Alipay.", code: "PAYMENT_METHOD_UNAVAILABLE" });
-  }
-  assert.deepEqual(app.rows, []); assert.deepEqual(app.providerCalls, []); assert.deepEqual(app.completions, []);
-});
-
 test("Alipay configuration is checked by its real owner before any order or provider operation", async () => {
   const names = ["ALIPAY_APP_ID", "ALIPAY_SELLER_ID", "ALIPAY_PRIVATE_KEY", "ALIPAY_PUBLIC_KEY"];
   const environments = [Object.fromEntries(names.map(name => [name, undefined]))];
@@ -199,10 +192,38 @@ test("Alipay configuration is checked by its real owner before any order or prov
   }
 });
 
-test("real Alipay checkout+order snapshot use owner amounts/credits/expiry, ignoring forged prices", async () => {
+test("WeChat configuration is checked by its real owner before any order or provider operation", async () => {
+  const pairs = [["WECHAT_PAY_APP_ID", "WECHAT_APP_ID"], ["WECHAT_PAY_MCH_ID", "WECHAT_MCH_ID"], ["WECHAT_PAY_MCH_SERIAL_NO", "WECHAT_MCH_SERIAL_NO"], ["WECHAT_PAY_PRIVATE_KEY", "WECHAT_MERCHANT_PRIVATE_KEY"], ["WECHAT_PAY_API_V3_KEY", "WECHAT_APIV3_KEY"], ["WECHAT_PAY_PUBLIC_KEY_ID", "WECHAT_PUB_KEY_ID"], ["WECHAT_PAY_PUBLIC_KEY", "WECHAT_PUB_KEY"]];
+  const environments = [Object.fromEntries(pairs.flat().map(name => [name, undefined]))];
+  for (const pair of pairs) for (const value of [undefined, "", "   "]) environments.push(Object.fromEntries(pair.map(name => [name, value])));
+  for (const paymentEnvironment of environments) {
+    const app = checkoutApplication({ paymentEnvironment });
+    const response = await app.send({ packId: "pro_monthly_v2", provider: "wechat" });
+    assert.equal(response.status, 503); assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await response.json(), { error: "Payments are temporarily unavailable.", code: "PAYMENT_UNAVAILABLE" });
+    assert.deepEqual(app.rows, []); assert.deepEqual(app.providerCalls, []); assert.deepEqual(app.completions, []);
+  }
+});
+
+test("WeChat preflight preserves supported legacy aliases and does not require Alipay credentials", async () => {
+  const paymentEnvironment = {
+    ALIPAY_APP_ID: undefined, ALIPAY_SELLER_ID: undefined, ALIPAY_PRIVATE_KEY: undefined, ALIPAY_PUBLIC_KEY: undefined,
+    WECHAT_PAY_APP_ID: "", WECHAT_APP_ID: "fixture-app", WECHAT_PAY_MCH_ID: "", WECHAT_MCH_ID: "fixture-merchant",
+    WECHAT_PAY_MCH_SERIAL_NO: "", WECHAT_MCH_SERIAL_NO: "fixture-serial", WECHAT_PAY_PRIVATE_KEY: "", WECHAT_MERCHANT_PRIVATE_KEY: "synthetic-private",
+    WECHAT_PAY_API_V3_KEY: "", WECHAT_APIV3_KEY: "synthetic-v3-key", WECHAT_PAY_PUBLIC_KEY_ID: "", WECHAT_PUB_KEY_ID: "PUB_KEY_ID_fixture",
+    WECHAT_PAY_PUBLIC_KEY: "", WECHAT_PUB_KEY: "synthetic-public",
+  };
+  const app = checkoutApplication({ paymentEnvironment });
+  assert.equal((await app.send({ packId: "pro_monthly_v2", provider: "wechat" })).status, 200);
+  assert.equal(app.rows.length, 1); assert.equal(app.providerCalls[0][0], "wechat");
+  const alipay = checkoutApplication({ paymentEnvironment: Object.fromEntries(Object.keys(paymentEnvironment).filter(name => name.startsWith("WECHAT")).map(name => [name, undefined])) });
+  assert.equal((await alipay.send({ packId: "pro_monthly_v2", provider: "alipay" })).status, 200);
+  assert.equal(alipay.rows.length, 1); assert.equal(alipay.providerCalls[0][0], "alipay");
+});
+
+test("real Alipay and WeChat checkout use owner amounts/credits/expiry, ignoring forged prices", async () => {
   const app = checkoutApplication();
-  const provider = "alipay";
-  for (const [packId, pack] of Object.entries(CREDIT_PACKS)) {
+  for (const provider of ["alipay", "wechat"]) for (const [packId, pack] of Object.entries(CREDIT_PACKS)) {
     const response = await app.send({ packId, provider, amountFen: 1, credits: 999999, validityDays: 999 });
     assert.equal(response.status, 200); assert.equal(response.headers.get("cache-control"), "no-store");
     const order = app.rows.at(-1); const [sentProvider, payment] = app.providerCalls.at(-1);
@@ -212,9 +233,8 @@ test("real Alipay checkout+order snapshot use owner amounts/credits/expiry, igno
   }
 });
 
-test("uncertain Alipay exceptions preserve the pending order and return a bounded neutral result", async () => {
-  const provider = "alipay";
-  for (const providerError of [new TypeError("fixture network interruption"), new Error("fixture response signature invalid"), new SyntaxError("fixture unreadable provider response")]) {
+test("uncertain provider exceptions preserve the pending order and return a bounded neutral result", async () => {
+  for (const provider of ["alipay", "wechat"]) for (const providerError of [new TypeError("fixture network interruption"), new Error("fixture response signature invalid"), new SyntaxError("fixture unreadable provider response")]) {
     const app = checkoutApplication({ providerError });
     const response = await app.send({ packId: "pro_monthly_v2", provider });
     assert.equal(response.status, 503); assert.equal(response.headers.get("cache-control"), "no-store");
@@ -224,6 +244,30 @@ test("uncertain Alipay exceptions preserve the pending order and return a bounde
     assert.equal(app.rows[0].status, "pending"); assert.deepEqual(app.failures, []);
     assert.equal(app.providerCalls.length, 1); assert.deepEqual(app.completions, []);
   }
+});
+
+test("new WeChat checkout returns a QR URL and only a verified correctly priced notification delegates crediting", async () => {
+  const app = checkoutApplication();
+  const response = await app.send({ packId: "pro_monthly_v2", provider: "wechat" });
+  assert.equal(response.status, 200);
+  const payload = await response.json(), order = app.rows[0];
+  assert.deepEqual(payload, { provider: "wechat", orderId: order.id, url: "weixin://fixture-payment" });
+  assert.deepEqual(app.completions, []);
+  assert.equal((await app.notifyWechat(order, order.amount_minor - 1)).status, 400);
+  assert.deepEqual(app.completions, []);
+  assert.equal((await app.notifyWechat(order)).status, 200);
+  assert.equal(app.completions.length, 1); assert.equal(app.completions[0][0], "complete_purchase");
+});
+
+test("WeChat rejects a CNY callback for a local USD order before credit completion", async () => {
+  const app = checkoutApplication();
+  const order = app.historicalWechatOrder();
+  order.currency = "USD";
+  const response = await app.notifyWechat(order);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { code: "FAIL", message: "Order verification failed." });
+  assert.deepEqual(app.completions, []); assert.deepEqual(app.providerCalls, []);
+  assert.equal(order.status, "pending");
 });
 
 test("historical WeChat pending orders still complete through verified callbacks with amount verification intact", async () => {
@@ -276,13 +320,13 @@ function siteHarness(props = {}) {
 }
 async function settle() { await new Promise(resolve => setImmediate(resolve)); await new Promise(resolve => setImmediate(resolve)); }
 function browser(t, locale = "en") {
-  const listeners = new Map(); const assigned = [];
-  const fakeWindow = { location: { search: "", hash: "", pathname: "/", assign: value => assigned.push(value), replace: value => assigned.push(value), reload: () => assigned.push("reload") }, history: { replaceState: noop }, addEventListener: (name, callback) => listeners.set(name, callback), removeEventListener: name => listeners.delete(name), setInterval: () => 1, clearInterval: noop };
+  const listeners = new Map(); const assigned = []; const intervals = new Map(); let nextInterval = 0;
+  const fakeWindow = { location: { search: "", hash: "", pathname: "/", assign: value => assigned.push(value), replace: value => assigned.push(value), reload: () => assigned.push("reload") }, history: { replaceState: noop }, addEventListener: (name, callback) => listeners.set(name, callback), removeEventListener: name => listeners.delete(name), setInterval: (callback, delay) => { const id = ++nextInterval; intervals.set(id, { callback, delay }); return id; }, clearInterval: id => intervals.delete(id) };
   for (const [key, value] of Object.entries({ window: fakeWindow, localStorage: { getItem: () => locale, setItem: noop }, navigator: { language: locale }, document: { documentElement: {}, querySelector: () => null, body: { style: {} }, addEventListener: noop, removeEventListener: noop, activeElement: null } })) {
     const descriptor = Object.getOwnPropertyDescriptor(globalThis, key); Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
     t.after(() => descriptor ? Object.defineProperty(globalThis, key, descriptor) : delete globalThis[key]);
   }
-  return { listeners, assigned };
+  return { listeners, assigned, intervals };
 }
 
 test("actual site trial CTA opens registration with20 and never checkout", async t => {
@@ -292,23 +336,37 @@ test("actual site trial CTA opens registration with20 and never checkout", async
   assert.match(text(next), /注册并领取 20 积分/); assert.equal(calls.length, 0);
 });
 
-for (const locale of ["zh", "en"]) test(`actual ${locale} payment modal only offers Alipay and reaches its checkout redirect`, async t => {
+for (const locale of ["zh", "en"]) for (const provider of ["alipay", "wechat"]) test(`actual ${locale} payment modal offers both channels and completes the ${provider} checkout UI`, async t => {
   const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t, locale); const calls = [];
+  let paid = false;
   t.mock.method(globalThis, "fetch", async (url, init) => {
     calls.push([url, init]);
-    return url === "/api/account"
-      ? Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: 20 }, transactions: [] })
-      : Response.json({ provider: "alipay", orderId: "fixture-order", url: "https://payment.example.test/alipay" });
+    if (url === "/api/account") return Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: paid ? 220 : 20 }, transactions: [] });
+    if (url.startsWith("/api/payments/status/")) return Response.json({ order: { status: paid ? "completed" : "pending" } });
+    return Response.json({ provider, orderId: "fixture-order", url: provider === "wechat" ? "weixin://fixture-payment" : "https://payment.example.test/alipay" });
   });
   app.render(); app.flushEffects(); await settle(); let tree = app.render();
   walk(tree, e => e.type?.name === "LandingPage")[0].props.onBuy("pro_monthly_v2"); tree = app.render(); app.flushEffects();
   const buttons = walk(tree, e => e.type === "button" && e.props.className?.startsWith("payment-option "));
-  assert.equal(buttons.length, 1); assert.equal(buttons[0].props.className, "payment-option alipay");
-  assert.doesNotMatch(text(walk(tree, e => e.props?.className === "modal payment-modal")[0]), /WeChat|微信/);
-  buttons[0].props.onClick(); await settle();
+  assert.deepEqual(buttons.map(button => button.props.className), ["payment-option alipay", "payment-option wechat"]);
+  buttons.find(button => button.props.className === `payment-option ${provider}`).props.onClick(); await settle(); tree = app.render(); app.flushEffects();
   const checkout = calls.filter(([url]) => url === "/api/checkout");
-  assert.equal(checkout.length, 1); assert.deepEqual(JSON.parse(checkout[0][1].body), { packId: "pro_monthly_v2", provider: "alipay" });
-  assert.deepEqual(b.assigned, ["https://payment.example.test/alipay"]);
+  assert.equal(checkout.length, 1); assert.deepEqual(JSON.parse(checkout[0][1].body), { packId: "pro_monthly_v2", provider });
+  if (provider === "alipay") assert.deepEqual(b.assigned, ["https://payment.example.test/alipay"]);
+  else {
+    assert.deepEqual(b.assigned, []);
+    assert.equal(walk(tree, e => e.props?.className === "modal wechat-qr-modal").length, 1);
+    const qr = walk(tree, e => e.props?.value === "weixin://fixture-payment"); assert.equal(qr.length, 1);
+    assert.equal(b.intervals.size, 1);
+    const poll = [...b.intervals.values()][0]; assert.equal(poll.delay, 2000);
+    await poll.callback(); tree = app.render(); app.flushEffects();
+    assert.equal(walk(tree, e => e.props?.className === "modal wechat-qr-modal").length, 1);
+    paid = true; await poll.callback(); tree = app.render(); app.flushEffects();
+    assert.equal(walk(tree, e => e.props?.className === "modal wechat-qr-modal").length, 0); assert.equal(b.intervals.size, 0);
+    assert.match(text(walk(tree, e => e.props?.role === "status")[0]), locale === "zh" ? /支付成功/ : /Payment received/);
+    assert.match(walk(tree, e => e.type?.name === "LandingPage")[0].props.accountLabel, /220/);
+    assert.equal(calls.filter(([url]) => url === "/api/payments/status/fixture-order").length, 2);
+  }
 });
 
 test("actual purchase client sends versioned ID and makes pricing-change recovery explicit", async t => {
@@ -323,16 +381,17 @@ test("actual purchase client sends versioned ID and makes pricing-change recover
   walk(tree, e => e.type === "button" && text(e) === "Refresh plans")[0].props.onClick({ stopPropagation: noop }); assert.deepEqual(b.assigned, ["reload"]);
 });
 
-for (const locale of ["zh", "en"]) for (const code of ["PAYMENT_UNAVAILABLE", "PAYMENT_METHOD_UNAVAILABLE"]) test(`actual ${locale} checkout client describes ${code} as unavailable, without implying a payment attempt`, async t => {
+for (const locale of ["zh", "en"]) for (const provider of ["alipay", "wechat"]) for (const code of ["PAYMENT_UNAVAILABLE", "PAYMENT_METHOD_UNAVAILABLE"]) test(`actual ${locale} ${provider} checkout client describes ${code} as unavailable, without implying a payment attempt`, async t => {
   const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t, locale);
   t.mock.method(globalThis, "fetch", async url => url === "/api/account"
     ? Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: 20 }, transactions: [] })
     : Response.json({ error: "fixture internal configuration detail", code }, { status: 503 }));
   app.render(); app.flushEffects(); await settle(); let tree = app.render();
   walk(tree, e => e.type?.name === "LandingPage")[0].props.onBuy("pro_monthly_v2"); tree = app.render(); app.flushEffects();
-  walk(tree, e => e.type === "button" && e.props.className === "payment-option alipay")[0].props.onClick(); await settle(); tree = app.render();
+  walk(tree, e => e.type === "button" && e.props.className === `payment-option ${provider}`)[0].props.onClick(); await settle(); tree = app.render();
   const notice = text(walk(tree, e => e.props?.role === "status")[0]);
   assert.match(notice, locale === "zh" ? /暂时不可用|暂未开放/ : /temporarily unavailable|not available/);
+  if (code === "PAYMENT_UNAVAILABLE") assert.match(notice, provider === "wechat" ? (locale === "zh" ? /微信支付/ : /WeChat Pay/) : (locale === "zh" ? /支付宝/ : /Alipay/));
   assert.doesNotMatch(notice, /fixture|若已付款|If you paid|could not be confirmed|订单编号|Order:/);
   assert.equal(walk(tree, e => e.props?.className === "modal payment-modal").length, 0);
   assert.deepEqual(b.assigned, []);

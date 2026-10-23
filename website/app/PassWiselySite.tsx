@@ -433,9 +433,10 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
         setNotice(locale === "zh" ? "套餐已更新，请刷新页面确认新价格后再购买。" : "Plans have changed. Refresh to review current prices before purchasing.");
       } else if (payload.code === "PAYMENT_UNAVAILABLE" || payload.code === "PAYMENT_METHOD_UNAVAILABLE") {
         setPaymentPack(null);
+        const providerName = provider === "wechat" ? (locale === "zh" ? "微信支付" : "WeChat Pay") : (locale === "zh" ? "支付宝" : "Alipay");
         setNotice(payload.code === "PAYMENT_METHOD_UNAVAILABLE"
-          ? (locale === "zh" ? "该支付方式暂未开放，请选择支付宝。" : "This payment method is not available. Choose Alipay.")
-          : (locale === "zh" ? "支付宝暂时不可用，请稍后重试或联系支持。" : "Alipay is temporarily unavailable. Please try again later or contact support."));
+          ? (locale === "zh" ? "该支付方式暂未开放，请选择其他支付方式。" : "This payment method is not available. Choose another payment method.")
+          : (locale === "zh" ? `${providerName}暂时不可用，请稍后重试或联系支持。` : `${providerName} is temporarily unavailable. Please try again later or contact support.`));
       } else if (payload.code === "CHECKOUT_UNCONFIRMED") {
         setPaymentPack(null);
         setNotice(unconfirmedNotice + (payload.orderId ? (locale === "zh" ? ` 订单编号：${payload.orderId}` : ` Order: ${payload.orderId}`) : ""));

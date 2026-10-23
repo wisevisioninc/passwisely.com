@@ -1,7 +1,7 @@
 import { getCurrentUser, jsonError } from "@/lib/auth";
 import { getPublicSiteOrigin } from "@/lib/public-site";
 import { createAlipayPagePayment } from "@/lib/payments/alipay";
-import { getAlipayConfig } from "@/lib/payments/config";
+import { getAlipayConfig, getWechatPayConfig } from "@/lib/payments/config";
 import {
   CREDIT_PACKS,
   isCreditPackId,
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   }
   if (!isCheckoutProvider(provider)) {
     return Response.json({
-      error: "This payment method is not available. Choose Alipay.",
+      error: "This payment method is not available. Choose another payment method.",
       code: "PAYMENT_METHOD_UNAVAILABLE",
     }, { status: 503, headers: { "cache-control": "no-store" } });
   }
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
     origin = getPublicSiteOrigin();
     // Missing local configuration is known before any order or provider call.
     if (provider === "alipay") getAlipayConfig();
+    else getWechatPayConfig();
   } catch {
     return Response.json({
       error: "Payments are temporarily unavailable.",

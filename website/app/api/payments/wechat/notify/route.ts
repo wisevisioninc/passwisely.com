@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     if (
       !purchase ||
       purchase.provider !== "wechat" ||
+      purchase.currency !== "CNY" ||
       amount?.currency !== "CNY" ||
       amount.total !== purchase.amountMinor
     ) {

@@ -6,35 +6,85 @@ import { createProductionTsLoader } from "../../desktop-api/tests/helpers/produc
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 const manifest = JSON.parse(await read("../lib/download-artifacts.json"));
+const platforms = ["mac-arm64", "mac-x64", "windows-x64"];
+const fixtureSha256 = "a".repeat(64);
+const legacyIntelFixture = {
+  version: "1.2.6", filename: "PassWisely-macOS-x64.dmg",
+  sha256: "b".repeat(64), bytes: 2345, legacy: true, liveAudio: "not_included",
+  notice: { zh: "Intel 兼容旧版 v1.2.6，不含实时音频。", en: "Intel legacy compatibility release v1.2.6, with no live audio." },
+};
 function application(data = manifest) {
   const load = createProductionTsLoader({ mocks: { "./download-artifacts.json": data } });
   return load(fileURLToPath(new URL("../lib/downloads.ts", import.meta.url)));
 }
 const verified = () => ({ ...manifest, artifacts: Object.fromEntries(Object.entries(manifest.artifacts).map(([platform, value]) =>
-  [platform, value.legacy ? value : { ...value, sha256: "a".repeat(64), bytes: 1234 }])), });
+  [platform, { ...value, version: "2.0.0", legacy: false, sha256: fixtureSha256, bytes: 1234 }])), });
 
-test("verified v2 Mac ARM64 and Windows keep Intel on its honest legacy URL", () => {
-  const app = application(verified());
-  for (const platform of ["mac-arm64", "mac-x64", "windows-x64"]) {
+test("published catalog identifies verified v2 installers for all three platforms", () => {
+  const app = application();
+  assert.equal(manifest.releaseVersion, "2.0.0");
+  assert.deepEqual(Object.keys(manifest.artifacts).sort(), [...platforms].sort());
+  for (const platform of platforms) {
     const artifact = app.downloadArtifact(platform), response = app.downloadResponse(platform);
-    const version = platform === "mac-x64" ? "1.2.6" : "2.0.0";
-    assert.equal(artifact.version, version); assert.equal(response.status, 307);
-    assert.equal(response.headers.get("location"), `${app.OSS_RELEASE_ORIGIN}/releases/v${version}/${artifact.revision > 1 ? `r${artifact.revision}/` : ""}${artifact.filename}`);
-    assert.equal(response.headers.get("x-passwisely-release-version"), version);
-    assert.equal(response.headers.get("x-passwisely-artifact-sha256"), platform === "mac-x64" ? null : "a".repeat(64));
+    assert.equal(artifact.version, manifest.releaseVersion, platform);
+    assert.equal(artifact.legacy, false, platform);
+    assert.equal(artifact.available, true, platform);
+    assert.match(artifact.sha256, /^[0-9a-f]{64}$/);
+    assert.ok(Number.isSafeInteger(artifact.bytes) && artifact.bytes > 0, platform);
+    assert.equal(response.status, 307);
+    assert.equal(response.headers.get("location"), artifact.url);
+    assert.equal(response.headers.get("x-passwisely-artifact-sha256"), artifact.sha256);
+    assert.equal(response.headers.get("cache-control"), "no-store");
   }
-  assert.equal(app.downloadArtifact("mac-x64").liveAudio, "not_included");
+  const intel = app.downloadArtifact("mac-x64");
+  assert.equal(intel.liveAudio, "not_included");
+  assert.match(intel.notice.zh, /不含实时音频/);
+  assert.match(intel.notice.en, /no live audio/i);
+  assert.doesNotMatch(intel.notice.zh, /旧版|v1\.2\.6/);
+  assert.doesNotMatch(intel.notice.en, /legacy|v1\.2\.6/i);
 });
 
-test("unverified new artifacts fail closed without silently selecting v1.2.6", () => {
-  const pending = { ...manifest, artifacts: Object.fromEntries(Object.entries(manifest.artifacts).map(([platform, value]) => [platform, value.legacy ? value : { ...value, sha256: null, bytes: null }])) };
+test("verified v2 downloads return the selected immutable artifact without caching the alias", () => {
+  const app = application(verified());
+  for (const platform of platforms) {
+    const artifact = app.downloadArtifact(platform), response = app.downloadResponse(platform);
+    assert.equal(artifact.version, "2.0.0"); assert.equal(response.status, 307);
+    assert.equal(response.headers.get("location"), `${app.OSS_RELEASE_ORIGIN}/releases/v2.0.0/${artifact.revision > 1 ? `r${artifact.revision}/` : ""}${artifact.filename}`);
+    assert.equal(response.headers.get("x-passwisely-release-version"), "2.0.0");
+    assert.equal(response.headers.get("x-passwisely-artifact-sha256"), fixtureSha256);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(app.downloadUrl(platform), artifact.url);
+  }
+});
+
+test("the independent Intel v1.2.6 legacy fixture retains its identity and audio limitation", () => {
+  const current = verified();
+  const app = application({ ...current, artifacts: { ...current.artifacts, "mac-x64": legacyIntelFixture } });
+  const intel = app.downloadArtifact("mac-x64"), response = app.downloadResponse("mac-x64");
+  assert.deepEqual({ version: intel.version, legacy: intel.legacy, liveAudio: intel.liveAudio,
+    sha256: intel.sha256, bytes: intel.bytes, available: intel.available }, {
+    version: "1.2.6", legacy: true, liveAudio: "not_included",
+    sha256: legacyIntelFixture.sha256, bytes: legacyIntelFixture.bytes, available: true,
+  });
+  assert.equal(app.downloadUrl("mac-x64"), `${app.OSS_RELEASE_ORIGIN}/releases/v1.2.6/${legacyIntelFixture.filename}`);
+  assert.equal(response.status, 307);
+  assert.equal(response.headers.get("x-passwisely-artifact-sha256"), legacyIntelFixture.sha256);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.match(intel.notice.zh, /旧版.*v1\.2\.6.*不含实时音频/);
+  assert.match(intel.notice.en, /legacy.*v1\.2\.6.*no live audio/i);
+  const unverifiedLegacy = app.versionedArtifact("mac-x64", { ...legacyIntelFixture, sha256: null, bytes: null });
+  assert.equal(unverifiedLegacy.available, true);
+});
+
+test("unverified v2 artifacts fail closed for every platform without selecting v1.2.6", () => {
+  const current = verified();
+  const pending = { ...current, artifacts: Object.fromEntries(Object.entries(current.artifacts).map(([platform, value]) => [platform, { ...value, sha256: null, bytes: null }])) };
   const app = application(pending);
-  for (const platform of ["mac-arm64", "windows-x64"]) {
+  for (const platform of platforms) {
     const response = app.downloadResponse(platform);
     assert.equal(response.status, 503); assert.equal(response.headers.get("location"), null);
     assert.equal(response.headers.get("cache-control"), "no-store"); assert.equal(app.downloadUrl(platform), null);
   }
-  assert.equal(app.downloadResponse("mac-x64").status, 307);
 });
 
 test("unknown and prototype names cannot select a download", () => {
@@ -51,7 +101,9 @@ test("artifact owner validates version, filename, digest, length and legacy exce
     assert.throws(() => app.versionedArtifact("mac-arm64", { ...valid, ...patch }), /release artifact/);
   }
   assert.throws(() => app.versionedArtifact("unknown", valid), /release artifact/);
-  assert.throws(() => app.versionedArtifact("mac-x64", {...manifest.artifacts["mac-x64"],liveAudio:"included"}), /legacy/);
+  for (const patch of [{ version: "2.0.0" }, { liveAudio: "included" }]) {
+    assert.throws(() => app.versionedArtifact("mac-x64", { ...legacyIntelFixture, ...patch }), /legacy/);
+  }
 });
 
 test("download and tracking route use the parsed owner before recording an event", async () => {
@@ -73,7 +125,6 @@ test("Windows download notice preserves unsigned/native-acceptance scope in both
   const app = application(verified());
   assert.match(app.downloadArtifact("windows-x64").notice.zh, /未签名.*实机验证/);
   assert.match(app.downloadArtifact("windows-x64").notice.en, /Unsigned.*await testing/);
-  assert.equal(app.downloadArtifact("mac-x64").notice, null);
   assert.throws(() => app.versionedArtifact("windows-x64", { ...verified().artifacts["windows-x64"], notice: "invalid" }), /notice/);
 });
 

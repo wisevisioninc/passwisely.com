@@ -5,6 +5,7 @@ import test from "node:test";
 import { createProductionTsLoader } from "../../desktop-api/tests/helpers/production-typescript.mjs";
 
 const website = new URL("../", import.meta.url);
+const downloadManifest = JSON.parse(readFileSync(new URL("lib/download-artifacts.json", website), "utf8"));
 const noop = () => {};
 const cleanups = new WeakMap();
 const user = (id = "account-a", credits = 220) => ({ id, email: `${id}@example.invalid`, locale: "en", credits,
@@ -35,7 +36,7 @@ const settle = async () => { await new Promise(resolve => setImmediate(resolve))
 // Browser and hooks are the seams. The real page, parent auth/navigation,
 // Dashboard controller, catalog and download normalizer execute from source.
 // Separate hook frames preserve component state and effect/abort ownership.
-function application(t, siteProps = {}) {
+function application(t, siteProps = {}, artifactManifest = downloadManifest) {
   const frames = new Map(); let frame; const effects = [];
   const slot = () => { const index = frame.index++; return [frame, index]; };
   const same = (a, b) => a && b && a.length === b.length && a.every((value, i) => Object.is(value, b[i]));
@@ -48,7 +49,7 @@ function application(t, siteProps = {}) {
     useEffect(callback, deps) { const [owner, index] = slot(); const previous = owner.slots[index]; if (!previous || !same(previous.deps, deps)) effects.push(() => { previous?.cleanup?.(); owner.slots[index] = { deps, cleanup: callback() }; }); },
     useId() { return hooks.useRef(`fixture-${frames.size}-${frame.index}`).current; },
   };
-  const load = createProductionTsLoader({ mocks: { react: hooks, "./download-artifacts.json": JSON.parse(readFileSync(new URL("lib/download-artifacts.json", website), "utf8")) } });
+  const load = createProductionTsLoader({ mocks: { react: hooks, "./download-artifacts.json": artifactManifest } });
   const { PassWiselySite } = load(fileURLToPath(new URL("app/PassWiselySite.tsx", website)));
   const { Dashboard } = load(fileURLToPath(new URL("app/dashboard/Dashboard.tsx", website)));
   function render(Component, props, key) {
@@ -56,6 +57,7 @@ function application(t, siteProps = {}) {
     try { return Component(props); } finally { frame = undefined; }
   }
   const app = {
+    artifacts: load(fileURLToPath(new URL("lib/downloads.ts", website))).DOWNLOAD_ARTIFACTS,
     render() { const root = render(PassWiselySite, siteProps, "site"); const dashboard = walk(root, e => e.type === Dashboard)[0]; return dashboard ? [root, render(Dashboard, dashboard.props, "dashboard")] : root; },
     dashboard(props) { return render(Dashboard, props, "standalone-dashboard"); },
     page() { return load(fileURLToPath(new URL("app/dashboard/page.tsx", website))); },
@@ -201,4 +203,56 @@ for (const status of [200, 401]) test(`late focus refresh ${status} cannot resto
   assert.deepEqual(b.replaced, ["/"]);
   element(tree, "Dashboard").props.onBuy("pro_monthly_v2"); tree = app.render();
   assert.equal(walk(tree, e => e.props?.role === "dialog")[0].props["aria-label"], "Create your account");
+});
+
+
+for (const locale of ["zh", "en"]) test(`real ${locale} Dashboard offers all three manifest packages with exact versions and limitations`, t => {
+  browser(t);
+  const app = application(t);
+  const tree = app.dashboard({ locale, onLocale: noop, onAccount: noop, onBuy: noop, onLogout: async () => {}, onUser: noop, onUnauthorized: noop });
+  const cards = walk(tree, item => item.props?.className === "pd-download-card");
+  assert.equal(cards.length, 3);
+  for (const platform of ["mac-arm64", "mac-x64", "windows-x64"]) {
+    const artifact = app.artifacts[platform];
+    const card = cards.find(item => item.props["data-platform"] === platform);
+    assert.ok(card);
+    assert.ok(text(card).includes(`v ${artifact.version}`));
+    const links = walk(card, item => item.type === "a");
+    if (artifact.available) {
+      assert.equal(links.length, 1);
+      assert.equal(links[0].props.href, `/api/download/${platform}`);
+      assert.match(links[0].props["aria-label"], platform === "mac-arm64" ? /macOS Apple silicon/ : platform === "mac-x64" ? /macOS Intel/ : /Windows x64/);
+    } else assert.equal(links.length, 0);
+    if (artifact.liveAudio === "not_included") assert.match(text(card), locale === "zh" ? /不含实时音频/ : /No live audio/);
+    if (artifact.legacy) assert.match(text(card), locale === "zh" ? /旧版/ : /Legacy/);
+    else assert.doesNotMatch(text(card), /旧版|legacy/i);
+    if (artifact.notice) assert.ok(text(card).includes(artifact.notice[locale]));
+  }
+});
+
+for (const locale of ["zh", "en"]) test(`real ${locale} Dashboard Intel v2 stays current and pending packages have no links`, t => {
+  browser(t);
+  const v2 = { ...downloadManifest, artifacts: Object.fromEntries(Object.entries(downloadManifest.artifacts).map(([platform, artifact]) => [platform, {
+    ...artifact, version: "2.0.0", legacy: false, sha256: "a".repeat(64), bytes: 1234,
+    notice: platform === "mac-x64" ? { zh: "Intel v2 不含实时音频。", en: "Intel v2 has no live audio." } : artifact.notice,
+  }])) };
+  for (const pendingPlatform of [null, "mac-arm64", "mac-x64", "windows-x64"]) {
+    const input = structuredClone(v2);
+    if (pendingPlatform) { input.artifacts[pendingPlatform].sha256 = null; input.artifacts[pendingPlatform].bytes = null; }
+    const tree = application(t, {}, input).dashboard({ locale, onLocale: noop, onAccount: noop, onBuy: noop, onLogout: async () => {}, onUser: noop, onUnauthorized: noop });
+    const cards = walk(tree, item => item.props?.className === "pd-download-card");
+    const intel = cards.find(item => item.props["data-platform"] === "mac-x64");
+    assert.match(text(intel), /v 2\.0\.0/);
+    assert.match(text(intel), locale === "zh" ? /不含实时音频/ : /No live audio/);
+    assert.doesNotMatch(text(intel), /旧版|legacy/i);
+    assert.ok(text(intel).includes(input.artifacts["mac-x64"].notice[locale]));
+    for (const card of cards) {
+      const platform = card.props["data-platform"];
+      const links = walk(card, item => item.type === "a");
+      if (platform === pendingPlatform) {
+        assert.equal(links.length, 0);
+        assert.match(text(card), locale === "zh" ? /安装包准备中，暂时无法下载/ : /Installer pending; not available yet/);
+      } else assert.equal(links[0].props.href, `/api/download/${platform}`);
+    }
+  }
 });

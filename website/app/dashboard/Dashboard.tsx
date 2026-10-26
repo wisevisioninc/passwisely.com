@@ -206,7 +206,27 @@ export function Dashboard(props: DashboardProps) {
         </>}
       </div>
       <section className="pd-billing-section" id="billing" aria-labelledby="pd-billing-title"><div className="pd-section-heading"><div><span className="pd-eyebrow">KEEP YOUR MOMENTUM</span><h2 id="pd-billing-title">{zh ? "按需补充，继续准备。" : "Keep your preparation moving."}</h2></div><span>{zh ? "手动续购 · 无自动扣款" : "Manual renewal · no automatic charges"}</span></div><div className="pd-plans">{(Object.entries(CREDIT_PACKS) as Array<[CreditPackId, typeof CREDIT_PACKS[CreditPackId]]>).map(([id, pack], index) => <article className={`pd-plan${index === 0 ? " pd-plan-featured" : ""}`} key={id}><div className="pd-plan-title"><h3>{zh ? pack.name : pack.nameEn}</h3><span>{format.format(pack.credits)} {zh ? "积分" : "credits"}</span></div><p>{index === 0 ? zh ? "为完整的求职周期留出空间" : "Room for your next interview cycle" : zh ? "为更高频的准备，从容加码" : "More room for a focused preparation routine"}</p><div className="pd-plan-bottom"><strong><small>¥</small>{format.format(pack.amountFen / 100)}<span>{zh ? "/月" : "/month"}</span></strong><button type="button" className={`pd-button ${index === 0 ? "pd-button-gold" : "pd-button-outline"}`} disabled={logoutBusy} onClick={() => onBuy(id)}>{zh ? "购买积分" : "Buy credits"}<Icon name="arrow" size={16}/></button></div><div className="pd-plan-validity"><Icon name="check" size={14}/>{zh ? `每次到账后 ${pack.validityDays} 天到期，独立计算` : `Each purchase expires ${pack.validityDays} days after delivery`}</div></article>)}</div><p className="pd-billing-note">{zh ? "“无限制包”包含 1,000 积分，仍按实际使用扣除。续购不会延长已有积分的有效期；原永久积分保持有效。" : "The Unlimited plan includes 1,000 credits and remains credit based. Repurchasing does not extend existing grants. Permanent credits keep their original validity."}</p></section>
-      <section className="pd-download-section" id="downloads" aria-labelledby="pd-download-title"><div className="pd-section-heading"><div><span className="pd-eyebrow">YOUR DESKTOP, READY</span><h2 id="pd-download-title">{zh ? "让工具，就位。" : "Put your tools within reach."}</h2></div></div><div className="pd-downloads">{(["mac-arm64", "windows-x64"] as DownloadPlatform[]).map(platform => { const artifact = DOWNLOAD_ARTIFACTS[platform]; return <article className="pd-download-card" key={platform}><span className="pd-os-icon"><Icon name={platform === "mac-arm64" ? "apple" : "windows"} size={25}/></span><div><h3>{platform === "mac-arm64" ? "macOS" : "Windows"}<span>v{artifact.version}</span></h3><p>{platform === "mac-arm64" ? zh ? "Apple 芯片 · 已签名与公证" : "Apple silicon · signed & notarized" : "Windows x64"}</p></div>{artifact.available ? <a href={`/api/download/${platform}`} className="pd-download-link" aria-label={`${zh ? "下载" : "Download"} ${platform === "mac-arm64" ? "macOS Apple silicon" : "Windows x64"}`}><Icon name="download" size={19}/></a> : <span className="pd-subtle">{zh ? "验证中" : "Verifying"}</span>}{artifact.notice && <p className="pd-download-notice">{artifact.notice[locale]}</p>}</article>; })}</div><p className="pd-intel-note">{zh ? "使用 Intel Mac？" : "On an Intel Mac?"} {DOWNLOAD_ARTIFACTS["mac-x64"].available && <a href={`/api/download/${DOWNLOAD_ARTIFACTS["mac-x64"].platform}`}>{zh ? "下载旧版" : "Get legacy"} v{DOWNLOAD_ARTIFACTS["mac-x64"].version}<Icon name="external" size={12}/></a>}<span>{zh ? "旧版不包含实时音频能力。" : "The legacy release does not include live audio."}</span></p></section>
+      <section className="pd-download-section" id="downloads" aria-labelledby="pd-download-title">
+        <div className="pd-section-heading"><div><span className="pd-eyebrow">YOUR DESKTOP, READY</span><h2 id="pd-download-title">{zh ? "让工具，就位。" : "Put your tools within reach."}</h2></div></div>
+        <div className="pd-downloads">
+          {(["mac-arm64", "mac-x64", "windows-x64"] as DownloadPlatform[]).map(platform => {
+            const artifact = DOWNLOAD_ARTIFACTS[platform];
+            const name = platform === "mac-arm64" ? "macOS Apple silicon" : platform === "mac-x64" ? "macOS Intel" : "Windows x64";
+            const chip = platform === "mac-arm64" ? zh ? "Apple 芯片" : "Apple silicon" : platform === "mac-x64" ? "Intel x64" : "Windows x64";
+            return <article className="pd-download-card" data-platform={platform} key={platform}>
+              <span className="pd-os-icon"><Icon name={platform === "windows-x64" ? "windows" : "apple"} size={25}/></span>
+              <div>
+                <h3>{platform === "windows-x64" ? "Windows" : "macOS"}<span>v{artifact.version}</span></h3>
+                <p>{chip}{artifact.legacy ? zh ? " · 旧版" : " · Legacy" : ""}{artifact.liveAudio === "not_included" ? zh ? " · 不含实时音频" : " · No live audio" : ""}</p>
+              </div>
+              {artifact.available
+                ? <a href={`/api/download/${platform}`} className="pd-download-link" aria-label={`${zh ? "下载" : "Download"} ${name}`}><Icon name="download" size={19}/></a>
+                : <span className="pd-download-notice">{zh ? "安装包准备中，暂时无法下载。" : "Installer pending; not available yet."}</span>}
+              {artifact.notice && <p className="pd-download-notice">{artifact.notice[locale]}</p>}
+            </article>;
+          })}
+        </div>
+      </section>
       <footer className="pd-footer"><span>© {new Date().getUTCFullYear()} PassWisely</span><span>{zh ? "准备充分，表达从容。" : "Prepared with purpose."}</span></footer>
     </main>
   </div>;

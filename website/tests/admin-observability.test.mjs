@@ -30,17 +30,17 @@ test("admin dashboard exposes business, service, and host monitoring views", asy
 });
 
 test("performance monitoring stores minute aggregates and download samples", async () => {
-  const [migration, worker, site] = await Promise.all([
+  const [migration, worker] = await Promise.all([
     readFile(new URL("../supabase/migrations/0007_performance_download_metrics.sql", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/LandingPage.tsx", import.meta.url), "utf8"),
   ]);
   for (const metric of ["qps_current", "qps_peak_1h", "avg_latency_ms_5m", "downloads_total", "download_performance"]) {
     assert.match(migration, new RegExp(`'${metric}'`));
   }
   assert.match(worker, /record_service_metrics/);
   assert.match(worker, /durationMsTotal/);
-  assert.match(site, /\/api\/track-download\/mac-arm64/);
+  // Real bilingual landing renders and all tracked download links are covered
+  // by pricing-checkout.test.mjs; their source representation is not a metric.
 });
 
 test("production admin authentication does not fall back to default credentials", async () => {

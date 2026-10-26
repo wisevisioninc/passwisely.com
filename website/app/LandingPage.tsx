@@ -2,13 +2,14 @@
 
 /* Downloads are navigation to file redirects, never Next.js prefetch targets. */
 /* Small, local brand assets do not need a remote image optimizer. */
-/* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LandingDemo } from "./LandingDemo";
 import { LandingPrivacy } from "./LandingPrivacy";
 import { DEMO_VIDEO } from "./demo-video";
-import { DOWNLOAD_ARTIFACTS } from "../lib/downloads";
+import { DOWNLOAD_ARTIFACTS, type DownloadPlatform } from "../lib/downloads";
+import { detectDownloadPlatform, type DownloadPlatformDetection } from "../lib/download-platform";
 import {
   CREDIT_PACKS,
   TRIAL_CREDITS,
@@ -114,60 +115,79 @@ function Brand() {
   );
 }
 
-function Downloads({
+function downloadNames(locale: Locale): Record<DownloadPlatform, string> {
+  return {
+    "windows-x64": "Windows x64",
+    "mac-arm64": locale === "zh" ? "Mac Apple 芯片" : "Mac Apple silicon",
+    "mac-x64": "Mac Intel",
+  };
+}
+
+export function Downloads({
   locale,
+  detection = null,
   compact = false,
   showNotice = true,
 }: {
   locale: Locale;
+  detection?: DownloadPlatformDetection | null;
   compact?: boolean;
   showNotice?: boolean;
 }) {
+  const zh = locale === "zh";
+  const recommended = detection?.recommendedPlatform;
+  const names = downloadNames(locale);
+  const platforms: DownloadPlatform[] = ["mac-arm64", "mac-x64", "windows-x64"];
+  let guidance = zh ? "选择你的系统与 Mac 芯片版本" : "Choose your system and Mac chip";
+  if (detection?.os === "macos") {
+    guidance = recommended === "mac-arm64"
+      ? (zh ? "已识别 Apple 芯片 Mac，已标出推荐版本。" : "Apple silicon Mac detected. Your recommended version is marked.")
+      : recommended === "mac-x64"
+        ? (zh ? "已识别 Intel Mac，已标出兼容版本。" : "Intel Mac detected. Your compatible version is marked.")
+        : (zh ? "浏览器未提供芯片信息，请手动选择。可在  → 关于本机查看“芯片”或“处理器”。" : "Your browser did not provide chip information. Choose a version below; check Chip or Processor in  → About This Mac.");
+  } else if (recommended === "windows-x64") {
+    guidance = zh ? "已识别 Windows，已标出推荐版本。" : "Windows detected. Your recommended version is marked.";
+  }
+  if (recommended && !DOWNLOAD_ARTIFACTS[recommended].available) {
+    guidance = zh
+      ? `${names[recommended]} 安装包准备中，暂时无法下载。`
+      : `The ${names[recommended]} installer is being prepared and is not available yet.`;
+  }
   return (
     <div className={`pw-downloads${compact ? " pw-downloads-compact" : ""}`}>
-      <a
-        className="pw-download"
-        href={
-          DOWNLOAD_ARTIFACTS["windows-x64"].available
-            ? "/api/track-download/windows-x64"
-            : undefined
-        }
-        aria-disabled={!DOWNLOAD_ARTIFACTS["windows-x64"].available}
-      >
-        <span className="pw-platform">
-          <Icon name="windows" size={18} />
-        </span>
-        <span>
-          {locale === "zh"
-            ? `Windows x64 · v${DOWNLOAD_ARTIFACTS["windows-x64"].version}${DOWNLOAD_ARTIFACTS["windows-x64"].available ? "" : " · 准备中"}`
-            : `Windows x64 · v${DOWNLOAD_ARTIFACTS["windows-x64"].version}${DOWNLOAD_ARTIFACTS["windows-x64"].available ? "" : " · Pending"}`}
-        </span>
-        <Icon name="arrow" size={17} />
-      </a>
-      <a
-        className="pw-download"
-        href={
-          DOWNLOAD_ARTIFACTS["mac-arm64"].available
-            ? "/api/track-download/mac-arm64"
-            : undefined
-        }
-        aria-disabled={!DOWNLOAD_ARTIFACTS["mac-arm64"].available}
-      >
-        <span className="pw-platform">
-          <Icon name="apple" size={19} />
-        </span>
-        <span>
-          {locale === "zh"
-            ? `Mac Apple 芯片 · v${DOWNLOAD_ARTIFACTS["mac-arm64"].version}${DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "" : " · 准备中"}`
-            : `Mac Apple silicon · v${DOWNLOAD_ARTIFACTS["mac-arm64"].version}${DOWNLOAD_ARTIFACTS["mac-arm64"].available ? "" : " · Pending"}`}
-        </span>
-        <Icon name="arrow" size={17} />
-      </a>
-      {showNotice && DOWNLOAD_ARTIFACTS["windows-x64"].notice && (
-        <p className="pw-download-notice">
-          {DOWNLOAD_ARTIFACTS["windows-x64"].notice[locale]}
-        </p>
-      )}
+      <p className="pw-download-detection" role={compact ? undefined : "status"}>{guidance}</p>
+      {platforms.map((platform) => {
+        const artifact = DOWNLOAD_ARTIFACTS[platform];
+        const preferred = artifact.available && platform === recommended;
+        return (
+          <a
+            key={platform}
+            className="pw-download"
+            data-platform={platform}
+            data-recommended={preferred}
+            href={artifact.available ? `/api/track-download/${platform}` : undefined}
+            aria-disabled={!artifact.available}
+          >
+            <span className="pw-platform"><Icon name={platform === "windows-x64" ? "windows" : "apple"} size={18} /></span>
+            <span className="pw-download-label">
+              <span>{names[platform]} · v{artifact.version}{artifact.available ? "" : zh ? " · 准备中" : " · Pending"}</span>
+              {(artifact.legacy || artifact.liveAudio === "not_included") && (
+                <small>{artifact.liveAudio === "not_included"
+                  ? artifact.legacy
+                    ? (zh ? "旧版（不含实时音频）" : "Legacy (no live audio)")
+                    : (zh ? "不含实时音频" : "No live audio")
+                  : (zh ? "旧版" : "Legacy")}</small>
+              )}
+            </span>
+            {preferred && <span className="pw-download-badge">{zh ? "推荐" : "Recommended"}</span>}
+            <Icon name="arrow" size={17} />
+          </a>
+        );
+      })}
+      {showNotice && platforms.map((platform) => {
+        const notice = DOWNLOAD_ARTIFACTS[platform].notice;
+        return notice ? <p key={platform} className="pw-download-notice">{notice[locale]}</p> : null;
+      })}
     </div>
   );
 }
@@ -783,6 +803,16 @@ export function LandingPage({
 }: LandingProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scenario, setScenario] = useState(0);
+  const [downloadDetection, setDownloadDetection] = useState<DownloadPlatformDetection | null>(null);
+  const downloadDetectionRequest = useRef<Promise<DownloadPlatformDetection> | null>(null);
+  useEffect(() => {
+    let active = true;
+    const request = downloadDetectionRequest.current ??= detectDownloadPlatform(navigator);
+    void request.then((result) => {
+      if (active) setDownloadDetection(result);
+    }).catch(() => { /* Keep every explicit download available if a browser API fails. */ });
+    return () => { active = false; };
+  }, []);
   const zh = locale === "zh";
   const tr = (cn: string, en: string) => (zh ? cn : en);
   const nav = [
@@ -826,6 +856,15 @@ export function LandingPage({
       ),
     ],
   ];
+  const buildNames = downloadNames(locale);
+  const supportedBuilds = (["mac-arm64", "mac-x64", "windows-x64"] as const).map((platform) => {
+    const artifact = DOWNLOAD_ARTIFACTS[platform];
+    const details = [`${buildNames[platform]} v${artifact.version}`];
+    if (artifact.legacy) details.push(tr("旧版", "legacy"));
+    if (artifact.liveAudio === "not_included") details.push(tr("不含实时音频", "no live audio"));
+    if (!artifact.available) details.push(tr("安装包准备中", "installer pending"));
+    return details.join(" · ");
+  }).join(zh ? "；" : "; ");
   const faqs = [
     [
       tr("怎样开始使用？", "How do I get started?"),
@@ -844,8 +883,8 @@ export function LandingPage({
     [
       tr("支持哪些电脑和模型？", "Which computers and models are supported?"),
       tr(
-        "v2.0.0 面向 Apple 芯片 Mac 和 Windows x64；实时音频需要 macOS 14.2+ 或 Windows 10 1803+。Intel Mac 保留 v1.2.6，不含实时音频。支持 Kimi、Qwen 等模型，可用模型以当前配置为准。",
-        "v2.0.0 targets Apple silicon Macs and Windows x64. Live audio requires macOS 14.2+ or Windows 10 1803+. Intel Macs retain legacy v1.2.6 without live audio. Models include Kimi and Qwen; availability follows current configuration.",
+        `${supportedBuilds}。支持实时音频的版本需要 macOS 14.2+ 或 Windows 10 1803+。支持 Kimi、Qwen 等模型，可用模型以当前配置为准。`,
+        `${supportedBuilds}. Builds with live audio require macOS 14.2+ or Windows 10 1803+. Models include Kimi and Qwen; availability follows current configuration.`,
       ),
     ],
     [
@@ -1020,7 +1059,7 @@ export function LandingPage({
                   "The Undetectable AI That Gets You Hired.",
                 )}
               </p>
-              <Downloads locale={locale} showNotice={false} />
+              <Downloads locale={locale} detection={downloadDetection} showNotice={false} />
               <div className="pw-free-note">
                 <Icon name="check" size={13} />
                 {tr(
@@ -1028,13 +1067,6 @@ export function LandingPage({
                   `${TRIAL_CREDITS} WELCOME CREDITS · NO CREDIT CARD REQUIRED`,
                 )}
               </div>
-              <a className="pw-intel-link" href="/api/track-download/mac-x64">
-                {tr(
-                  `Intel Mac：v${DOWNLOAD_ARTIFACTS["mac-x64"].version} 旧版（不含实时音频）`,
-                  `Intel Mac: legacy v${DOWNLOAD_ARTIFACTS["mac-x64"].version} (no live audio)`,
-                )}
-                <Icon name="arrow" size={12} />
-              </a>
             </div>
             <div className="pw-hero-stage">
               <LandingDemo locale={locale} compact />
@@ -1381,7 +1413,7 @@ export function LandingPage({
                 "Bring your questions. Build your next answer.",
               )}
             </p>
-            <Downloads locale={locale} compact />
+            <Downloads locale={locale} detection={downloadDetection} compact />
             <details className="pw-release-checksums">
               <summary>{tr("安装包 SHA-256", "Installer SHA-256")}</summary>
               {Object.values(DOWNLOAD_ARTIFACTS)
@@ -1403,13 +1435,6 @@ export function LandingPage({
                 )}
               </span>
               <span>macOS · Windows</span>
-              <a href="/api/track-download/mac-x64">
-                {tr(
-                  `Mac Intel · v${DOWNLOAD_ARTIFACTS["mac-x64"].version} 旧版（不含实时音频）`,
-                  `Mac Intel · legacy v${DOWNLOAD_ARTIFACTS["mac-x64"].version} (no live audio)`,
-                )}
-                <Icon name="arrow" size={12} />
-              </a>
             </div>
           </div>
         </section>

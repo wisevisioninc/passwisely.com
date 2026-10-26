@@ -73,7 +73,7 @@ export function downloadResponse(platform: string): Response {
     status: 503, headers: { "cache-control": "no-store", "retry-after": "300" },
   });
   return new Response(null, { status: 307, headers: {
-    location: artifact.url, "cache-control": "public, max-age=300", "referrer-policy": "no-referrer",
+    location: artifact.url, "cache-control": "no-store", "referrer-policy": "no-referrer",
     "x-content-type-options": "nosniff", "x-passwisely-release-version": artifact.version,
     ...(artifact.sha256 ? { "x-passwisely-artifact-sha256": artifact.sha256 } : {}),
   } });

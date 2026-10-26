@@ -13,7 +13,7 @@ function sourceModule(relative, overrides = {}, cache = new Map()) {
   const filename = path.resolve(website, relative);
   if (cache.has(filename)) return cache.get(filename).exports;
   if (filename.endsWith(".json")) return JSON.parse(readFileSync(filename, "utf8"));
-  const module = { exports: {} }; cache.set(filename, module);
+  const loadedModule = { exports: {} }; cache.set(filename, loadedModule);
   const code = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: {
     module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
   }, fileName: filename }).outputText;
@@ -29,8 +29,8 @@ function sourceModule(relative, overrides = {}, cache = new Map()) {
     }
     return require(name);
   };
-  new Function("require", "module", "exports", code)(localRequire, module, module.exports);
-  return module.exports;
+  new Function("require", "module", "exports", code)(localRequire, loadedModule, loadedModule.exports);
+  return loadedModule.exports;
 }
 function walk(tree, predicate, found = []) {
   if (Array.isArray(tree)) { for (const item of tree) walk(item, predicate, found); return found; }
@@ -46,7 +46,7 @@ const text = tree => {
 };
 const noop = () => {};
 const { CREDIT_PACKS, TRIAL_CREDITS } = sourceModule("lib/payments/catalog.ts");
-const { PricingPlans, LandingPage } = sourceModule("app/LandingPage.tsx");
+const { PricingPlans, LandingPage, Downloads } = sourceModule("app/LandingPage.tsx");
 const { DOWNLOAD_ARTIFACTS } = sourceModule("lib/downloads.ts");
 
 for (const locale of ["zh", "en"]) test(`real ${locale} pricing renders 0/99/299, trial20 and exact monthly terms`, () => {
@@ -65,11 +65,12 @@ for (const locale of ["zh", "en"]) test(`real ${locale} pricing renders 0/99/299
   assert.match(html, locale === "zh" ? /并非无限额度/ : /not unlimited usage/);
   assert.match(html, locale === "zh" ? /旧余额长期有效/ : /existing permanent balances do not expire/);
   const downloadLinks = [...html.matchAll(/<a class="pw-download"[^]*?<\/a>/g)].map(match => match[0]);
-  for (const platform of ["mac-arm64", "windows-x64"]) {
+  for (const platform of ["mac-arm64", "mac-x64", "windows-x64"]) {
     const artifact = DOWNLOAD_ARTIFACTS[platform];
-    const expectedName = `${platform === "windows-x64" ? "Windows x64" : locale === "zh" ? "Mac Apple 芯片" : "Mac Apple silicon"} · v${artifact.version}`;
+    const name = platform === "windows-x64" ? "Windows x64" : platform === "mac-x64" ? "Mac Intel" : locale === "zh" ? "Mac Apple 芯片" : "Mac Apple silicon";
+    const expectedName = `${name} · v${artifact.version}`;
     const matching = downloadLinks.filter(link => link.replace(/<svg[^]*?<\/svg>/g, "").replace(/<[^>]+>/g, "").includes(expectedName));
-    assert.ok(matching.length >= 1, `Download accessible text must include ${expectedName}`);
+    assert.equal(matching.length, 2, `Both download sections must include ${expectedName}`);
     for (const link of matching) {
       assert.ok(link.includes(`aria-disabled="${!artifact.available}"`));
       if (artifact.available) assert.ok(link.includes(`href="/api/track-download/${platform}"`));
@@ -77,7 +78,127 @@ for (const locale of ["zh", "en"]) test(`real ${locale} pricing renders 0/99/299
     }
     if (artifact.notice) assert.ok(html.includes(artifact.notice[locale]));
   }
+  assert.doesNotMatch(html, /data-recommended="true"/, "SSR leaves every available package as an explicit choice");
   assert.doesNotMatch(html, /Starter|轻量包|冲刺包|10 free welcome credits|注册即送 10/);
+});
+
+for (const locale of ["zh", "en"]) test(`real ${locale} computer FAQ follows package version, legacy, audio and availability facts`, () => {
+  const artifacts = Object.fromEntries(Object.entries(DOWNLOAD_ARTIFACTS).map(([platform, artifact]) => [platform, {
+    ...artifact, version: "2.1.0", legacy: false, available: platform !== "windows-x64", liveAudio: platform === "mac-x64" ? "not_included" : "included",
+  }]));
+  const { LandingPage: ReleaseLanding } = sourceModule("app/LandingPage.tsx", { "../lib/downloads": { DOWNLOAD_ARTIFACTS: artifacts } });
+  const html = renderToStaticMarkup(React.createElement(ReleaseLanding, { locale, onLocale: noop, accountLabel: "Account", onAccount: noop, onBuy: noop, onRegisterTrial: noop, busy: false }));
+  const faq = [...html.matchAll(/<details[^]*?<\/details>/g)].map(match => match[0]).find(item => item.includes(locale === "zh" ? "支持哪些电脑和模型" : "Which computers and models are supported"));
+  assert.ok(faq);
+  for (const platform of ["mac-arm64", "mac-x64", "windows-x64"]) assert.ok(faq.includes(`v${artifacts[platform].version}`));
+  assert.match(faq, locale === "zh" ? /Mac Intel v2\.1\.0 · 不含实时音频/ : /Mac Intel v2\.1\.0 · no live audio/);
+  assert.match(faq, locale === "zh" ? /Windows x64 v2\.1\.0 · 安装包准备中/ : /Windows x64 v2\.1\.0 · installer pending/);
+  assert.doesNotMatch(faq, /v1\.2\.6|v2\.0\.0|旧版|legacy/i);
+});
+
+for (const locale of ["zh", "en"]) test(`real ${locale} downloads recommend the detected package without replacing explicit choices`, () => {
+  for (const [recommendedPlatform, architecture] of [["mac-arm64", "arm64"], ["mac-x64", "x64"], ["windows-x64", "unknown"]]) {
+    const detection = { os: recommendedPlatform.startsWith("mac-") ? "macos" : "windows", architecture, recommendedPlatform, source: "client-hints" };
+    const html = renderToStaticMarkup(React.createElement(Downloads, { locale, detection }));
+    const links = [...html.matchAll(/<a class="pw-download"[^]*?<\/a>/g)].map(match => match[0]);
+    assert.equal(links.length, 3);
+    assert.equal(links.filter(link => link.includes('data-recommended="true"')).length, DOWNLOAD_ARTIFACTS[recommendedPlatform].available ? 1 : 0);
+    for (const platform of ["mac-arm64", "mac-x64", "windows-x64"]) {
+      const link = links.find(value => value.includes(`data-platform="${platform}"`));
+      if (DOWNLOAD_ARTIFACTS[platform].available) assert.ok(link.includes(`href="/api/track-download/${platform}"`));
+      else assert.doesNotMatch(link, /href=/);
+      assert.ok(link.includes(`data-recommended="${platform === recommendedPlatform && DOWNLOAD_ARTIFACTS[platform].available}"`));
+    }
+    const intel = links.find(link => link.includes('data-platform="mac-x64"'));
+    assert.ok(intel.includes(`v${DOWNLOAD_ARTIFACTS["mac-x64"].version}`));
+    if (DOWNLOAD_ARTIFACTS["mac-x64"].liveAudio === "not_included") assert.match(intel, locale === "zh" ? /不含实时音频/ : /no live audio/i);
+    if (!DOWNLOAD_ARTIFACTS["mac-x64"].legacy) assert.doesNotMatch(intel, /旧版|Legacy/);
+  }
+});
+
+for (const locale of ["zh", "en"]) test(`real ${locale} downloads stay usable before detection and when Mac architecture is unknown`, () => {
+  for (const detection of [null, { os: "macos", architecture: "unknown", recommendedPlatform: null, source: "user-agent" }]) {
+    const html = renderToStaticMarkup(React.createElement(Downloads, { locale, detection }));
+    assert.equal([...html.matchAll(/href="\/api\/track-download\//g)].length, Object.values(DOWNLOAD_ARTIFACTS).filter(artifact => artifact.available).length);
+    assert.doesNotMatch(html, /data-recommended="true"/);
+    if (detection) assert.match(html, locale === "zh" ? /关于本机/ : /About This Mac/);
+  }
+});
+
+for (const locale of ["zh", "en"]) test(`real ${locale} unavailable detected installers have accurate pending guidance and no recommendation`, () => {
+  for (const platform of ["mac-arm64", "mac-x64", "windows-x64"]) {
+    const artifacts = { ...DOWNLOAD_ARTIFACTS, [platform]: { ...DOWNLOAD_ARTIFACTS[platform], available: false } };
+    const { Downloads: PendingDownloads } = sourceModule("app/LandingPage.tsx", { "../lib/downloads": { DOWNLOAD_ARTIFACTS: artifacts } });
+    const detection = { os: platform.startsWith("mac-") ? "macos" : "windows", architecture: platform === "mac-arm64" ? "arm64" : platform === "mac-x64" ? "x64" : "unknown", recommendedPlatform: platform, source: "client-hints" };
+    const html = renderToStaticMarkup(React.createElement(PendingDownloads, { locale, detection }));
+    const link = [...html.matchAll(/<a class="pw-download"[^]*?<\/a>/g)].map(match => match[0]).find(value => value.includes(`data-platform="${platform}"`));
+    assert.ok(link.includes('aria-disabled="true"'));
+    assert.doesNotMatch(link, /href=|data-recommended="true"/);
+    const guidance = html.match(/<p class="pw-download-detection"[^]*?<\/p>/)[0];
+    assert.match(guidance, locale === "zh" ? /安装包准备中，暂时无法下载/ : /being prepared and is not available yet/);
+    assert.doesNotMatch(guidance, /已标出|marked/);
+  }
+});
+
+for (const locale of ["zh", "en"]) test(`real ${locale} Intel v2 audio limits remain inline in both download sections without a legacy label`, () => {
+  const artifacts = { ...DOWNLOAD_ARTIFACTS, "mac-x64": { ...DOWNLOAD_ARTIFACTS["mac-x64"], version: "2.0.0", legacy: false, liveAudio: "not_included", notice: { zh: "Intel v2 不含实时音频。", en: "Intel v2 has no live audio." } } };
+  const { Downloads: IntelDownloads } = sourceModule("app/LandingPage.tsx", { "../lib/downloads": { DOWNLOAD_ARTIFACTS: artifacts } });
+  for (const props of [{ showNotice: false }, { compact: true }]) {
+    const html = renderToStaticMarkup(React.createElement(IntelDownloads, { locale, ...props }));
+    const intel = [...html.matchAll(/<a class="pw-download"[^]*?<\/a>/g)].map(match => match[0]).find(link => link.includes('data-platform="mac-x64"'));
+    assert.match(intel, /v2\.0\.0/);
+    assert.match(intel, locale === "zh" ? /不含实时音频/ : /No live audio/);
+    assert.doesNotMatch(intel, /旧版|Legacy/);
+    if (props.compact) assert.ok(html.includes(artifacts["mac-x64"].notice[locale]));
+  }
+});
+
+const landingProps = { locale: "zh", onLocale: noop, accountLabel: "Account", onAccount: noop, onBuy: noop, onRegisterTrial: noop, busy: false };
+const downloadSections = tree => walk(tree, element => element.type?.name === "Downloads");
+
+test("the real landing page shares one detection across effect replay, both sections and locale changes", async t => {
+  browser(t);
+  let resolveDetection;
+  const pending = new Promise(resolve => { resolveDetection = resolve; });
+  const inputs = [];
+  const props = { ...landingProps };
+  const app = componentHarness("app/LandingPage.tsx", "LandingPage", props, { "../lib/download-platform": { detectDownloadPlatform(input) { inputs.push(input); return pending; } } });
+  t.after(() => app.cleanup());
+  const before = downloadSections(app.render());
+  assert.equal(before.length, 2);
+  assert.ok(before.every(section => section.props.detection === null));
+  app.flushEffects();
+  app.replayEffects();
+  assert.deepEqual(inputs, [globalThis.navigator], "StrictMode's setup/cleanup/setup reuses the same request");
+  const result = { os: "macos", architecture: "arm64", recommendedPlatform: "mac-arm64", source: "client-hints" };
+  resolveDetection(result);
+  await settle();
+  const after = downloadSections(app.render());
+  assert.equal(after.length, 2);
+  assert.ok(after.every(section => section.props.detection === result), "both sections receive the same resolved result");
+  assert.equal(app.stateUpdates, 1, "the cleaned-up subscription does not update state");
+  for (let index = 0; index < before.length; index++) {
+    const render = section => renderToStaticMarkup(React.createElement(section.type, section.props));
+    const hrefs = html => [...html.matchAll(/href="([^"]+)"/g)].map(match => match[1]);
+    assert.deepEqual(hrefs(render(after[index])), hrefs(render(before[index])), "recommendations preserve every manual download target");
+  }
+  props.locale = "en";
+  assert.ok(downloadSections(app.render()).every(section => section.props.detection === result));
+  app.flushEffects();
+  assert.equal(inputs.length, 1, "rerendering or changing locale does not repeat detection");
+});
+
+test("the real landing page ignores detection that resolves after unmount", async t => {
+  browser(t);
+  let resolveDetection;
+  const pending = new Promise(resolve => { resolveDetection = resolve; });
+  const app = componentHarness("app/LandingPage.tsx", "LandingPage", landingProps, { "../lib/download-platform": { detectDownloadPlatform: () => pending } });
+  app.render();
+  app.flushEffects();
+  app.cleanup();
+  resolveDetection({ os: "macos", architecture: "x64", recommendedPlatform: "mac-x64", source: "client-hints" });
+  await settle();
+  assert.equal(app.stateUpdates, 0, "an unmounted page cannot receive the pending result");
 });
 
 test("real trial action invokes registration only; paid actions retain versioned identities", () => {
@@ -308,16 +429,26 @@ test("historical Stripe callback delegates only order identity to the real trans
   assert.deepEqual(calls[1], ["complete_purchase", { p_purchase_id: "old-starter-order", p_transaction_id: "old-payment", p_event_id: "old-event", p_event_type: "checkout.session.completed" }]);
 });
 
-function siteHarness(props = {}) {
+function componentHarness(relative, name, props = {}, overrides = {}) {
   const values = [], refs = [], effectSlots = [];
-  let stateIndex = 0, refIndex = 0, effectIndex = 0, pendingEffects = [];
-  const hooks = { useState(initial) { const index = stateIndex++; if (!(index in values)) values[index] = typeof initial === "function" ? initial() : initial; return [values[index], value => { values[index] = typeof value === "function" ? value(values[index]) : value; }]; },
+  let stateIndex = 0, refIndex = 0, effectIndex = 0, pendingEffects = [], stateUpdates = 0;
+  const hooks = { useState(initial) { const index = stateIndex++; if (!(index in values)) values[index] = typeof initial === "function" ? initial() : initial; return [values[index], value => { stateUpdates++; values[index] = typeof value === "function" ? value(values[index]) : value; }]; },
     useRef(initial) { const index = refIndex++; return refs[index] ||= { current: initial }; }, useMemo: callback => callback(), useCallback: callback => callback,
-    useEffect(callback, deps) { const index = effectIndex++; const previous = effectSlots[index]; if (!previous || !deps || deps.some((value, i) => !Object.is(value, previous.deps?.[i]))) pendingEffects.push(() => { previous?.cleanup?.(); effectSlots[index] = { deps, cleanup: callback() }; }); },
+    useEffect(callback, deps) { const index = effectIndex++; const previous = effectSlots[index]; if (!previous || !deps || deps.some((value, i) => !Object.is(value, previous.deps?.[i]))) pendingEffects.push(() => { previous?.cleanup?.(); effectSlots[index] = { deps, callback, cleanup: callback() }; }); },
   };
-  const { PassWiselySite } = sourceModule("app/PassWiselySite.tsx", { react: hooks });
-  return { render() { stateIndex = refIndex = effectIndex = 0; return PassWiselySite(props); }, flushEffects() { const batch = pendingEffects; pendingEffects = []; for (const run of batch) run(); }, cleanup() { for (const effect of effectSlots) effect?.cleanup?.(); } };
+  const Component = sourceModule(relative, { ...overrides, react: hooks })[name];
+  return {
+    render() { stateIndex = refIndex = effectIndex = 0; return Component(props); },
+    flushEffects() { const batch = pendingEffects; pendingEffects = []; for (const run of batch) run(); },
+    replayEffects() { for (const effect of effectSlots) { effect.cleanup?.(); effect.cleanup = effect.callback(); } },
+    cleanup() { for (const effect of effectSlots) effect?.cleanup?.(); },
+    get stateUpdates() { return stateUpdates; },
+  };
 }
+function siteHarness(props = {}) {
+  return componentHarness("app/PassWiselySite.tsx", "PassWiselySite", props);
+}
+
 async function settle() { await new Promise(resolve => setImmediate(resolve)); await new Promise(resolve => setImmediate(resolve)); }
 function browser(t, locale = "en") {
   const listeners = new Map(); const assigned = []; const intervals = new Map(); let nextInterval = 0;

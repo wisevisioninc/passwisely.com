@@ -157,6 +157,26 @@ npm run dist:mac -- --arm64 --publish never -c.forceCodeSigning=true -c.dmg.writ
 npm run dist:win -- --x64 --publish never -c.win.signAndEditExecutable=true
 ```
 
+Intel v2.0.0 uses `build/electron-builder.mac-x64.cjs`. Compile frontend/Electron
+assets with the host development toolchain, then point `directories.app` at a
+separate production install created with `npm ci --omit=dev --ignore-scripts
+--cpu=x64 --os=darwin`. Copy the compiled assets into that app directory and
+remove its `package.json` build field for electron-builder’s two-package mode.
+Do not share the ARM development dependency directory with the shipped app.
+
+```bash
+npx electron-builder --mac --x64 --publish never \
+  --config build/electron-builder.mac-x64.cjs \
+  -c.directories.app=/absolute/path/to/isolated-x64-app \
+  -c.directories.output=/absolute/path/to/intel-output
+```
+
+The profile excludes the ARM-only Recall runtime and checks every native binary
+for x86_64, including the unpacked Canvas library used by PDF parsing. The
+existing Developer ID and App/DMG notarization hooks remain mandatory. Intel
+supports screenshots and text questions, with no Recall system/microphone
+capture. See [Intel v2.0.0 release verification](test/reports/release-v2.0.0-intel.md).
+
 macOS packaging normalizes all nested Mach-O signatures, including the Recall
 SDK under Resources, before the normal Developer ID signing phase. An ad-hoc
 structural signature alone does not establish that hardened-runtime library
@@ -197,13 +217,13 @@ it is considered finished:
 
 1. Run desktop, website, and live account regression tests.
 2. Increment the desktop version; never overwrite an existing release path.
-3. Build the Windows x64 installer and Mac ARM64 release on native hosts. The current Recall native Mac runtime is arm64-only; retain Intel v1.2.6 with its no-live-audio limitation until an x64 runtime is verified.
+3. Build Windows x64, Mac ARM64 and Mac Intel x64 installers with the same desktop version. Use the Intel-specific packaging profile below; Recall audio remains unavailable on Intel Macs.
 4. Sign macOS artifacts with Developer ID, notarize them, staple the Apple
    tickets, and verify them with `codesign`, `spctl`, and `stapler`.
-5. Upload the two v2 installers to
+5. Upload the verified platform installers to
    `oss://passwisely-releases-prod/releases/<version>/` and set only those
    installer objects to `public-read`.
-6. Update the shared artifact catalog with each verified version, size and SHA-256. Remove the obsolete Nginx download redirects so website links and API routes consume the same owner; retain the honest Intel legacy entry.
+6. Update the shared artifact catalog with each verified version, size and SHA-256. Website links and API routes must consume the same owner, including each platform’s live-audio limitation; immutable revisions may differ while the desktop version remains the same.
 7. Synchronize local, GitHub, and wise, deploy the website, then verify each
    public download URL, checksum, size, and installer signature.
 

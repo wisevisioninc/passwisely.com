@@ -21,6 +21,8 @@ import { WindowCaptureProtection } from "./WindowCaptureProtection";
 import { WindowVisibilityController, WindowVisibilityCleanupError } from "./WindowVisibility";
 import { LiveSessionService } from "./live/LiveSessionService";
 import { RecallCapture } from "./live/RecallCapture";
+import { NativePcmCapture } from "./live/NativePcmCapture";
+import { captureBackend, publicTranscriptionSettings } from "./live/CaptureSelection";
 import { initializeLiveIpc } from "./live/ipc";
 import { OverlayWindowController, initializeOverlayIpc } from "./live/OverlayWindow";
 import type { LiveShortcutAction } from "./live/overlayTypes";
@@ -200,11 +202,22 @@ function initializeHelpers() {
     ...state.settingsStore.getRuntimeConfig(),
     wiseAccessToken: state.accountService.getToken(),
   });
+  const captureProvider = captureBackend(process.platform, process.arch);
+  const nativeAudio = captureProvider === "native-deepgram";
+  const effectiveSpeechSettings = () => publicTranscriptionSettings(state.settingsStore!.getTranscriptionSettings(), captureProvider);
+  const audioHelper = app.isPackaged
+    ? path.join(process.resourcesPath, "audio", "PassWiselyAudioHelper")
+    : path.resolve(__dirname, "../build/native-audio", process.arch, "PassWiselyAudioHelper");
   state.liveSession = new LiveSessionService({
-    support: RecallCapture.support(),
-    createCapture: callbacks => new RecallCapture(callbacks),
-    createUpload: (id, signal, profileId) => state.accountService!.createRecallUpload(id, signal, profileId),
-    transcriptionProfile: () => state.settingsStore!.getTranscriptionSettings().profileId,
+    provider: captureProvider,
+    support: nativeAudio ? NativePcmCapture.support() : RecallCapture.support(),
+    createCapture: callbacks => nativeAudio ? new NativePcmCapture(callbacks, { helperPath: audioHelper }) : new RecallCapture(callbacks),
+    createSession: async (id, signal, profileId) => {
+      if (!nativeAudio) return { kind: "recall-upload" as const, ...await state.accountService!.createRecallUpload(id, signal, profileId) };
+      signal.throwIfAborted();
+      return state.accountService!.createNativeCaptureSession(id, signal, profileId);
+    },
+    transcriptionProfile: () => effectiveSpeechSettings().profileId,
     stream: (messages, signal, update) => state.processingHelper!.streamConversation(messages, signal, update),
     language: () => state.settingsStore!.getResponseLanguage(),
     pendingScreenshots: () => state.screenshotHelper!.getPendingScreenshots(),
@@ -758,8 +771,13 @@ async function initializeApp() {
       void handleAuthenticationLost();
       return false;
     }, {
-      get: () => state.settingsStore!.getTranscriptionSettings(),
-      save: input => state.settingsStore!.saveTranscriptionSettings(input),
+      get: () => publicTranscriptionSettings(state.settingsStore!.getTranscriptionSettings(), captureBackend(process.platform, process.arch)),
+      save: input => {
+        const provider = captureBackend(process.platform, process.arch);
+        const available = publicTranscriptionSettings(state.settingsStore!.getTranscriptionSettings(), provider).availableProfileIds;
+        if (!available.includes(input.profileId)) throw new Error("当前采集方式不支持此转录引擎，请选择列表中的语音设置。");
+        return publicTranscriptionSettings(state.settingsStore!.saveTranscriptionSettings(input), provider);
+      },
     });
     await createWindow();
     state.shortcutsHelper?.registerGlobalShortcuts();

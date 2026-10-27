@@ -4,7 +4,9 @@ import { CODE_LANGUAGES, OUTPUT_LANGUAGES, getCodeLanguage, getOutputLanguage } 
 import type { CodeLanguage, OutputLanguageId } from "../../../electron/languages";
 import type { CaptureStatus } from "../../../electron/live/types";
 import type { OverlayDisplay, OverlayGeometry } from "../../../electron/live/overlayTypes";
-import { getTranscriptionProfile, TRANSCRIPTION_PROFILES } from "../../../electron/live/transcription";
+import { getTranscriptionProfile } from "../../../electron/live/transcription";
+import { getAvailableTranscriptionProfiles, parsePublicTranscriptionSettings } from "../../../electron/live/CaptureSelection";
+import type { PublicTranscriptionSettings } from "../../../electron/live/CaptureSelection";
 import type { TranscriptionProfileId } from "../../../electron/live/transcription";
 import { formatShortcutKeys, saveKeyDisplayMode, useKeyDisplayMode } from "./livePreferences";
 import { directSettingsWrite } from "../shared/settingsWrites";
@@ -71,6 +73,10 @@ export function LiveSettingsPopover({ currentLanguage, onLanguageChange, capture
   const locks = useRef({ output: false, speech: false, display: false });
   const [output, setOutput] = useState<OutputLanguage | "">("");
   const [speech, setSpeech] = useState<TranscriptionProfileId | "">("");
+  const [speechSettings, setSpeechSettings] = useState<PublicTranscriptionSettings | null>(null);
+  const availableSpeech = getAvailableTranscriptionProfiles(speechSettings);
+  const availableSpeechRef = useRef(availableSpeech);
+  availableSpeechRef.current = availableSpeech;
   const [displays, setDisplays] = useState<OverlayDisplay[]>([]);
   const [busy, setBusy] = useState({ output: false, speech: false, display: false });
   const [errors, setErrors] = useState({ output: "", speech: "", display: "", preferences: "", action: "" });
@@ -86,7 +92,7 @@ export function LiveSettingsPopover({ currentLanguage, onLanguageChange, capture
   useEffect(() => {
     let current = true;
     mounted.current = true;
-    setOutput(""); setSpeech(""); setDisplays([]);
+    setOutput(""); setSpeech(""); setSpeechSettings(null); setDisplays([]);
     setErrors({ output: "", speech: "", display: "", preferences: "", action: "" });
     const load = () => {
       void api.getAiSettings().then(value => {
@@ -95,9 +101,9 @@ export function LiveSettingsPopover({ currentLanguage, onLanguageChange, capture
         if (current) setOutput(parsed);
       }).catch(reason => { if (current) setErrors(previous => ({ ...previous, output: errorMessage(reason, "无法加载回答语言。") })); });
       void api.getTranscriptionSettings().then(value => {
-        const parsed = getTranscriptionProfile(value?.profileId);
-        if (!parsed) throw new Error("无法识别已保存的语音设置。");
-        if (current) setSpeech(parsed.id);
+        const parsed = parsePublicTranscriptionSettings(value);
+        if (!parsed) throw new Error("无法识别已保存的语音设置或可用识别方式。");
+        if (current) { setSpeech(parsed.profileId); setSpeechSettings(parsed); }
       }).catch(reason => { if (current) setErrors(previous => ({ ...previous, speech: errorMessage(reason, "无法加载语音设置。") })); });
       void api.getOverlayDisplays().then(value => {
         if (current) setDisplays(value);
@@ -139,15 +145,16 @@ export function LiveSettingsPopover({ currentLanguage, onLanguageChange, capture
   };
   const changeSpeech = async (value: unknown) => {
     const requested = getTranscriptionProfile(value);
-    if (!requested || !speech || requested.id === speech || locks.current.speech || locks.current.output || writeBusyRef.current || speechLockedRef.current) return;
+    if (!requested || !availableSpeechRef.current.some(profile => profile.id === requested.id) || !speech || requested.id === speech || locks.current.speech || locks.current.output || writeBusyRef.current || speechLockedRef.current) return;
     locks.current.speech = true;
     setBusy(previous => ({ ...previous, speech: true }));
     setErrors(previous => ({ ...previous, speech: "" })); setNotices(previous => ({ ...previous, speech: "" }));
     try {
       const result = await runSettingsWrite(() => api.saveTranscriptionSettings({ profileId: requested.id }));
       if (!result.success) throw new Error(result.error || "无法保存语音设置。");
-      if (getTranscriptionProfile(result.settings?.profileId)?.id !== requested.id) throw new Error("服务返回了不同的语音设置，请重新加载确认。");
-      if (mounted.current) { setSpeech(requested.id); setNotices(previous => ({ ...previous, speech: "Saved · 下次新会话生效" })); }
+      const saved = parsePublicTranscriptionSettings(result.settings);
+      if (!saved || saved.profileId !== requested.id || saved.captureProvider !== speechSettings?.captureProvider) throw new Error("服务返回了不同的语音设置，请重新加载确认。");
+      if (mounted.current) { setSpeech(saved.profileId); setSpeechSettings(saved); setNotices(previous => ({ ...previous, speech: "Saved · 下次新会话生效" })); }
     } catch (reason) { if (mounted.current) setErrors(previous => ({ ...previous, speech: errorMessage(reason, "无法保存语音设置。") })); }
     finally { locks.current.speech = false; if (mounted.current) setBusy(previous => ({ ...previous, speech: false })); }
   };
@@ -218,9 +225,10 @@ export function LiveSettingsPopover({ currentLanguage, onLanguageChange, capture
       </select></label>
       <label>Meeting Audio Language<select data-settings-control aria-label="Meeting Audio Language" aria-describedby={speechHintId} value={speech}
         disabled={!speech || settingsWriteBusy || speechLocked} onChange={event => void changeSpeech(event.target.value)}>
-        {!speech && <option value="" disabled>Loading…</option>}{TRANSCRIPTION_PROFILES.map(profile => <option key={profile.id} value={profile.id}>{profile.label}</option>)}
+        {!speech && <option value="" disabled>Loading…</option>}{availableSpeech.map(profile => <option key={profile.id} value={profile.id}>{profile.label}</option>)}
       </select></label>{status("speech")}
       <p id={speechHintId} className="pw-settings-hint">{speechLocked ? "当前音频会话中无法更改。" : "选择后保存，仅对下次新会话生效。"}</p>
+      {speechSettings?.captureProvider === "native-deepgram" && <p className="pw-settings-hint">macOS 原生采集系统声音和麦克风，由 Deepgram Nova-3 实时识别。音频发送至 Deepgram，无需客户端填写 Key。</p>}
       {speech === "recall-zh" && <p className="pw-settings-hint">实验模式，分钟级转录，不适合实时问答。</p>}
       {displays.length > 1 && <label>Display<select data-settings-control aria-label="Display" value={displays.find(display => display.selected)?.id ?? ""}
         disabled={busy.display} onChange={event => void changeDisplay(Number(event.target.value))}>

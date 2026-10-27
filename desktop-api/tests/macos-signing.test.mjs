@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import vm from 'node:vm'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
@@ -16,7 +17,7 @@ function macho(type = 2) {
   return header
 }
 
-function fixture(t) {
+function fixture(t, { audio = true } = {}) {
   const temp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'passwisely-signing-')))
   t.after(() => fs.rmSync(temp, { recursive: true, force: true }))
   const app = path.join(temp, 'Test.app')
@@ -27,6 +28,8 @@ function fixture(t) {
     return target
   }
   const main = write('Contents/MacOS/Test')
+  const audioHelper = audio ? write('Contents/Resources/audio/PassWiselyAudioHelper') : null
+  if (audioHelper) fs.chmodSync(audioHelper, 0o755)
   const helper = write('Contents/Frameworks/Helper.app/Contents/MacOS/Helper')
   const sdk = write('Contents/Resources/app.asar.unpacked/node_modules/@recallai/desktop-sdk/desktop_sdk_macos_exe')
   const library = write('Contents/Resources/app.asar.unpacked/node_modules/@recallai/desktop-sdk/Frameworks/Native.framework/Versions/A/Native', macho(6))
@@ -39,14 +42,14 @@ function fixture(t) {
   fs.symlinkSync(outside, path.join(app, 'Contents/Resources/external'))
   write('Contents/Resources/readme.txt', Buffer.from('not an executable'))
   write('Contents/Resources/Java.class', Buffer.from('cafebabe0000003400010000000000000000000000000000000000000000000000', 'hex'))
-  return { app, main, helper, sdk, library, framework }
+  return { app, main, helper, sdk, library, framework, audioHelper }
 }
 
 test('discovers SDK code under Resources, signs real leaves before containers and verifies strictly', (t) => {
   const f = fixture(t)
   const calls = []
   const plan = afterPack.signAdHocApp(f.app, '/entitlements.plist', (command, args) => calls.push({ command, args }))
-  assert.deepEqual(new Set(plan.leaves.map(x => x.path)), new Set([f.main, f.helper, f.sdk, f.library]))
+  assert.deepEqual(new Set(plan.leaves.map(x => x.path)), new Set([f.main, f.helper, f.sdk, f.library, f.audioHelper]))
   assert.equal(plan.bundles.at(-1), fs.realpathSync(f.app))
   assert.ok(plan.bundles.includes(f.framework))
   assert.equal(calls.length, plan.leaves.length + plan.bundles.length + 1)
@@ -125,7 +128,76 @@ test('installed electron-builder signing walker selects Resources native leaves 
   const { walkAsync } = require('@electron/osx-sign/dist/cjs/util.js')
   const selected = new Set(await walkAsync(path.join(f.app, 'Contents')))
   for (const leaf of afterPack.collectCodePaths(f.app).leaves) assert.ok(selected.has(leaf.path), leaf.path)
+  assert.ok(selected.has(f.audioHelper))
   assert.ok(selected.has(f.sdk))
   assert.ok(selected.has(f.library))
   assert.ok(selected.has(f.framework))
+})
+
+function loadHook(mocks) {
+  const filename = path.resolve(import.meta.dirname, '../../scripts/after-pack-macos.js')
+  const module = { exports: {} }, nativeRequire = createRequire(filename)
+  vm.runInNewContext(fs.readFileSync(filename, 'utf8'), {
+    module, Buffer, __dirname: path.dirname(filename), require: name => Object.hasOwn(mocks, name) ? mocks[name] : nativeRequire(name),
+  }, { filename })
+  return module.exports
+}
+
+test('shared afterPack compiles exact target audio helper, verifies it, then signs the complete code plan', async t => {
+  const { Arch } = require('builder-util')
+  for (const [target, arch] of [[Arch.x64, 'x86_64'], [Arch.arm64, 'arm64']]) {
+    const f = fixture(t, { audio: false }), calls = []
+    const output = path.join(f.app, 'Contents/Resources/audio/PassWiselyAudioHelper')
+    const owner = loadHook({
+      './build-macos-audio-helper': { build(options) {
+        assert.equal(options.arch, arch); assert.equal(options.output, output); assert.equal(fs.existsSync(output), false)
+        fs.writeFileSync(output, macho()); fs.chmodSync(output, 0o755); calls.push('compile'); return { output, arch }
+      } },
+      'node:child_process': { spawnSync(command, args) { assert.equal(command, '/usr/bin/codesign'); calls.push(['sign', args]); return { status: 0 } } },
+    })
+    const context = { electronPlatformName: 'darwin', arch: target, appOutDir: path.dirname(f.app), packager: { appInfo: { productFilename: 'Test' } } }
+    const result = await owner(context, app => { assert.equal(app, f.app); assert.ok(fs.lstatSync(output).isFile()); calls.push('verify') })
+    assert.equal(calls[0], 'compile'); assert.equal(calls[1], 'verify')
+    assert.ok(calls.slice(2).every(value => value[0] === 'sign'))
+    assert.ok(result.signingPlan.leaves.some(value => value.path === output && value.executable))
+    const signature = calls.find(value => Array.isArray(value) && value[1].at(-1) === output)
+    assert.ok(signature[1].includes('runtime')); assert.ok(signature[1].includes('--entitlements'))
+  }
+})
+
+test('compile errors, rejected verification, unsupported architecture and symlink output never sign', async t => {
+  const { Arch } = require('builder-util')
+  for (const failure of ['compile', 'verify', 'architecture', 'symlink']) {
+    const f = fixture(t, { audio: false }), calls = []
+    const audio = path.join(f.app, 'Contents/Resources/audio')
+    if (failure === 'symlink') fs.symlinkSync(path.dirname(f.app), audio, 'dir')
+    const owner = loadHook({
+      './build-macos-audio-helper': { build({ output }) { calls.push('compile'); if (failure === 'compile') throw new Error('compile refused'); fs.writeFileSync(output, macho()); return { output } } },
+      'node:child_process': { spawnSync() { calls.push('unexpected-sign'); return { status: 0 } } },
+    })
+    const context = { electronPlatformName: 'darwin', arch: failure === 'architecture' ? Arch.universal : Arch.x64, appOutDir: path.dirname(f.app), packager: { appInfo: { productFilename: 'Test' } } }
+    await assert.rejects(owner(context, () => { calls.push('verify'); throw new Error('verify refused') }))
+    assert.ok(!calls.includes('unexpected-sign'))
+    if (failure === 'architecture' || failure === 'symlink') assert.deepEqual(calls, [])
+    if (failure === 'compile') assert.deepEqual(calls, ['compile'])
+    if (failure === 'verify') assert.deepEqual(calls, ['compile', 'verify'])
+  }
+})
+
+test('Developer ID verifier requires the audio helper leaf to carry hardened runtime and timestamp', t => {
+  const f = fixture(t), calls = [], filename = path.resolve(import.meta.dirname, '../../scripts/macos-notarization.js')
+  const nativeRequire = createRequire(filename), module = { exports: {} }
+  let helperRuntime = true
+  vm.runInNewContext(fs.readFileSync(filename, 'utf8'), {
+    module, process: { env: { APPLE_TEAM_ID: 'FIXTURETEAM' } }, require: name => name === 'node:child_process' ? { spawnSync(command, args) {
+      assert.equal(command, '/usr/bin/codesign'); calls.push(args)
+      const runtime = args.at(-1) !== f.audioHelper || helperRuntime
+      return { status: 0, stdout: 'Authority=Developer ID Application: Fixture\nTeamIdentifier=FIXTURETEAM\nTimestamp=fixture\nCodeDirectory v=20500 flags=' + (runtime ? 'runtime' : '0') + '\n', stderr: '' }
+    } } : nativeRequire(name),
+  }, { filename })
+  module.exports.requireDeveloperIdSignature(f.app)
+  assert.ok(calls.some(args => args[0] === '-dv' && args.at(-1) === f.audioHelper))
+  assert.ok(calls.some(args => args[0] === '--verify' && args.includes('--strict') && args.at(-1) === f.audioHelper))
+  helperRuntime = false
+  assert.throws(() => module.exports.requireDeveloperIdSignature(f.app), /hardened runtime/)
 })

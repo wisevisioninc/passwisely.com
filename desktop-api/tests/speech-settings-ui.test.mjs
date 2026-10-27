@@ -253,19 +253,16 @@ test("advanced Save and Clear share the local in-flight control lock without rel
   } finally { h.cleanup(); }
 });
 
-test("live overlay describes saved speech settings generically and displays the frozen session profile", () => {
+test("live overlay displays the frozen profile and discloses the actual capture provider before start", () => {
   const previousWindow = globalThis.window;
   const previousError = console.error;
   globalThis.window = { electronAPI: {} };
   console.error = (...args) => { if (!String(args[0]).startsWith("Warning: useLayoutEffect")) previousError(...args); };
   try {
-    for (const transcription of [
-      { id: "deepgram-zh", label: "中文 · Deepgram 实时", language: "zh", provider: "deepgram", latency: "realtime" },
-      { id: "recall-zh", label: "中文 · Recall 内置（分钟级，实验）", language: "zh", provider: "recall", latency: "delayed" },
-      { id: "recall-en", label: "English · Recall 实时", language: "en", provider: "recall", latency: "realtime" },
-    ]) {
+    const { TRANSCRIPTION_PROFILES } = productionLoader()("electron/live/transcription.ts");
+    for (const captureProvider of ["recall-v2", "native-deepgram"]) for (const transcription of TRANSCRIPTION_PROFILES.filter(profile => captureProvider === "recall-v2" || profile.provider === "deepgram")) {
       let injected = false;
-      const state = { sessionId: "frozen", revision: 1, provider: "recall-v2", captureStatus: "ended", transcripts: [{ id: "final", text: "保留本次转录。", source: "microphone", isFinal: true, receivedAt: 1 }], answers: [], transcriptTruncated: false, captureNeedsCleanup: false, platformSupported: true, transcription };
+      const state = { sessionId: "frozen", revision: 1, provider: captureProvider, captureStatus: "ended", transcripts: [{ id: "final", text: "保留本次转录。", source: "microphone", isFinal: true, receivedAt: 1 }], answers: [], transcriptTruncated: false, captureNeedsCleanup: false, platformSupported: true, transcription };
       const react = { ...React, useState(initial) { if (initial === null && !injected) { injected = true; return React.useState(state); } return React.useState(initial); } };
       const { default: Component } = productionLoader({ react,
         "../shared/AISettings": { AISettings: () => null },
@@ -273,12 +270,19 @@ test("live overlay describes saved speech settings generically and displays the 
         "./AnswerMarkdown": { AnswerMarkdown: () => null },
       })("src/components/Live/LiveWorkspace.tsx");
       const $ = parseHtml(renderToStaticMarkup(React.createElement(Component, { visible: true })));
-      assert.match($(".pw-live-start").attr("title"), /按已保存的语音设置开始新会话/);
-      assert.doesNotMatch($(".pw-live-start").attr("title"), /开始英文/);
+      const disclosure = $(".pw-live-start").attr("title");
+      assert.match(disclosure, /按已保存的语音设置开始新会话/);
+      assert.doesNotMatch(disclosure, /开始英文/);
+      if (captureProvider === "native-deepgram") {
+        assert.match(disclosure, /macOS 原生采集系统声音和麦克风/);
+        assert.match(disclosure, /音频将发送至 Deepgram/);
+        assert.doesNotMatch(disclosure, /Recall 项目/);
+      } else assert.match(disclosure, /音频将发送并保存至你的 Recall 项目/);
       const metadata = $("[aria-label='本次语音识别']").text();
       assert.ok(metadata.includes(transcription.language === "zh" ? "中文" : "English"));
       assert.ok(metadata.includes(transcription.provider === "deepgram" ? "Deepgram" : "Recall"));
       assert.ok(metadata.includes(transcription.latency === "delayed" ? "分钟级（实验）" : "实时"));
+      assert.equal(metadata.includes("macOS 原生双路采集"), captureProvider === "native-deepgram");
     }
   } finally { if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow; console.error = previousError; }
 });
@@ -305,4 +309,58 @@ test("an unknown advanced output value remains unresolved instead of selecting t
     assert.equal(placeholder.props.disabled, true);
     assert.equal(h.calls.length, 0);
   } finally { h.cleanup(); }
+});
+
+
+test("advanced native speech uses available en/zh facts, hides Recall credential help and saves only its draft profile", async () => {
+  const settings = { profileId: "deepgram-en", availableProfileIds: ["deepgram-en", "deepgram-zh"], captureProvider: "native-deepgram" };
+  const h = controller({ async getTranscriptionSettings() { return settings; }, async saveTranscriptionSettings(input) {
+    h.calls.push(["save", input]); return { success: true, settings: { ...settings, ...input } };
+  } });
+  try {
+    await h.settle();
+    assert.equal(h.select().props.value, "deepgram-en");
+    assert.deepEqual(elements(h.select()).filter(node => node.type === "option").map(node => node.props.value), ["deepgram-en", "deepgram-zh"]);
+    assert.match(text(h.render()), /macOS 原生采集系统声音和麦克风/);
+    assert.match(text(h.render()), /音频发送至 Deepgram/);
+    assert.doesNotMatch(text(h.render()), /Recall|Project ID/);
+    assert.equal(h.nodes().some(node => node.type === "a" || node.type === "input"), false);
+    h.select().props.onChange({ target: { value: "recall-en" } });
+    assert.equal(h.select().props.value, "deepgram-en");
+    assert.equal(h.calls.some(([name]) => name === "save"), false);
+    h.select().props.onChange({ target: { value: "deepgram-zh" } });
+    assert.equal(h.select().props.value, "deepgram-zh");
+    assert.equal(h.calls.some(([name]) => name === "save"), false, "draft remains local until Save");
+    h.save().props.onClick(); await h.settle();
+    assert.deepEqual(h.calls.filter(([name]) => name === "save"), [["save", { profileId: "deepgram-zh" }]]);
+    assert.match(h.message(), /下次新会话生效/);
+    assert.equal(h.save().props.disabled, true);
+    h.select().props.onChange({ target: { value: "deepgram-en" } });
+    h.api.saveTranscriptionSettings = async input => ({ success: true, settings: { ...settings, ...input, captureProvider: "recall-v2" } });
+    h.save().props.onClick(); await h.settle();
+    assert.match(h.message(), /不同的语音设置/);
+    assert.equal(h.save().props.disabled, false);
+  } finally { h.cleanup(); }
+});
+
+test("advanced legacy shape keeps three options and invalid capability responses stay unresolved", async () => {
+  const legacy = controller();
+  try {
+    await legacy.settle();
+    assert.deepEqual(elements(legacy.select()).filter(node => node.type === "option").map(node => node.props.value), ["recall-en", "deepgram-zh", "recall-zh"]);
+  } finally { legacy.cleanup(); }
+  for (const settings of [
+    { profileId: "deepgram-en", availableProfileIds: [], captureProvider: "native-deepgram" },
+    { profileId: "deepgram-en", availableProfileIds: ["deepgram-zh"], captureProvider: "native-deepgram" },
+    { profileId: "recall-en", availableProfileIds: ["recall-en"], captureProvider: "native-deepgram" },
+  ]) {
+    const h = controller({ async getTranscriptionSettings() { return settings; } });
+    try {
+      await h.settle();
+      assert.equal(h.select().props.value, "");
+      assert.equal(h.select().props.disabled, true);
+      assert.equal(h.save().props.disabled, true);
+      assert.match(h.message(), /无法识别/);
+    } finally { h.cleanup(); }
+  }
 });

@@ -1,6 +1,8 @@
 const path = require("node:path")
 const fs = require("node:fs")
 const { spawnSync } = require("node:child_process")
+const { Arch } = require("builder-util")
+const { build: buildAudioHelper } = require("./build-macos-audio-helper")
 
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: "inherit" })
@@ -116,14 +118,38 @@ function signAdHocApp(appPath, entitlements, execute = run) {
   return plan
 }
 
-module.exports = async function afterPackMacOS(context) {
+module.exports = async function afterPackMacOS(context, verify) {
   if (context.electronPlatformName !== "darwin") return
+  const arch = context.arch === Arch.x64 ? "x86_64" : context.arch === Arch.arm64 ? "arm64" : null
+  if (!arch) throw new Error("Native macOS audio requires an explicit x64 or arm64 package target.")
+  if (verify !== undefined && typeof verify !== "function") throw new Error("Package verifier must be a function.")
   const appName = context.packager.appInfo.productFilename
+  if (!path.isAbsolute(context.appOutDir) || !appName || path.basename(appName) !== appName) {
+    throw new Error("Packaged app path must be absolute and canonical.")
+  }
   const appPath = path.join(context.appOutDir, `${appName}.app`)
+  if (fs.realpathSync(appPath) !== appPath || !fs.lstatSync(appPath).isDirectory()) {
+    throw new Error("Packaged app path must be absolute and canonical.")
+  }
+  const resources = path.join(appPath, "Contents/Resources")
+  if (fs.realpathSync(resources) !== resources || !fs.lstatSync(resources).isDirectory()) {
+    throw new Error("Packaged resources must be a real canonical directory.")
+  }
+  const audio = path.join(resources, "audio")
+  try { fs.mkdirSync(audio, { mode: 0o755 }) }
+  catch (error) { if (error.code !== "EEXIST") throw error }
+  if (fs.realpathSync(audio) !== audio || !fs.lstatSync(audio).isDirectory()) {
+    throw new Error("Audio helper output must be a real canonical directory.")
+  }
+  // The builder refuses any existing output and validates the exact target arch.
+  // Compile before architecture verification and before any signing operation.
+  const audioHelper = buildAudioHelper({ arch, output: path.join(audio, "PassWiselyAudioHelper") })
+  if (verify) await verify(appPath)
   const entitlements = path.resolve(__dirname, "../build/entitlements.mac.plist")
   // Temporary ad-hoc signing only. electron-builder's normal signing phase and
   // afterSign's mandatory Developer ID/notarization checks remain authoritative.
-  signAdHocApp(appPath, entitlements)
+  const signingPlan = signAdHocApp(appPath, entitlements)
+  return { audioHelper, signingPlan }
 }
 
 module.exports.collectCodePaths = collectCodePaths

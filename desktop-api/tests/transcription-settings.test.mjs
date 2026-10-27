@@ -50,7 +50,7 @@ function sessionFixture(context, extra = {}) {
   const { LiveSessionService } = production()("electron/live/LiveSessionService.ts");
   const service = new LiveSessionService({
     support: { supported: true },
-    async createUpload(sessionId, signal, profileId) { uploads.push({ sessionId, signal, profileId }); return { uploadToken: "fixture", apiUrl: "https://ap-northeast-1.recall.ai", transcriptionProfile: profileId }; },
+    async createSession(sessionId, signal, profileId) { uploads.push({ sessionId, signal, profileId }); return { uploadToken: "fixture", apiUrl: "https://ap-northeast-1.recall.ai", transcriptionProfile: profileId }; },
     createCapture(callbacks) {
       const capture = { calls: [],
         async start() { capture.calls.push("start"); callbacks.onState("recording"); },
@@ -124,7 +124,7 @@ test("new capture freezes profile before pending upload; pause/resume/end keep i
   const pending = deferred(), requests = [];
   const f = sessionFixture(context, {
     transcriptionProfile: () => profileId,
-    createUpload(sessionId, signal, requested) {
+    createSession(sessionId, signal, requested) {
       requests.push({ sessionId, signal, profileId: requested });
       return requests.length === 1 ? pending.promise : Promise.resolve({ uploadToken: "fixture", apiUrl: "https://ap-northeast-1.recall.ai", transcriptionProfile: requested });
     },
@@ -151,23 +151,26 @@ test("new capture freezes profile before pending upload; pause/resume/end keep i
   assert.equal(requests[1].profileId, "recall-en");
 });
 
-test("a changed or omitted Chinese response profile fails before native capture allocation", async context => {
+test("a changed or omitted Chinese response profile never starts capture and disposes the unused adapter", async context => {
   for (const response of [undefined, "recall-en", "recall-zh", null, 42]) {
-    const f = sessionFixture(context, { transcriptionProfile: () => "deepgram-zh", async createUpload() {
+    const f = sessionFixture(context, { transcriptionProfile: () => "deepgram-zh", async createSession() {
       return { uploadToken: "fixture", apiUrl: "https://ap-northeast-1.recall.ai", transcriptionProfile: response };
     } });
     const result = await f.service.start();
     assert.equal(result.success, false); assert.match(result.error, /转录配置/);
-    assert.equal(f.captures.length, 0); assert.equal(f.service.getSnapshot().captureNeedsCleanup, false);
+    assert.equal(f.captures.length, 1);
+    assert.deepEqual(f.captures[0].calls, ["dispose"]);
+    assert.equal(f.service.getSnapshot().captureNeedsCleanup, false);
   }
 });
 
 test("English legacy upload responses remain compatible but explicit mismatches are rejected", async context => {
-  const legacy = sessionFixture(context, { async createUpload() { return { uploadToken: "fixture", apiUrl: "https://ap-northeast-1.recall.ai" }; } });
+  const legacy = sessionFixture(context, { async createSession() { return { uploadToken: "fixture", apiUrl: "https://ap-northeast-1.recall.ai" }; } });
   assert.equal((await legacy.service.start()).success, true);
-  const mismatch = sessionFixture(context, { async createUpload() { return { uploadToken: "fixture", apiUrl: "https://ap-northeast-1.recall.ai", transcriptionProfile: "deepgram-zh" }; } });
+  const mismatch = sessionFixture(context, { async createSession() { return { uploadToken: "fixture", apiUrl: "https://ap-northeast-1.recall.ai", transcriptionProfile: "deepgram-zh" }; } });
   assert.equal((await mismatch.service.start()).success, false);
-  assert.equal(mismatch.captures.length, 0);
+  assert.equal(mismatch.captures.length, 1);
+  assert.deepEqual(mismatch.captures[0].calls, ["dispose"]);
 });
 
 function ipcFixture(settingsOps) {
@@ -197,9 +200,12 @@ function mainSettingsOperations(state) {
   const javascript = ts.transpileModule(`module.exports = (${operations});`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   }).outputText;
-  const module = { exports: {} };
-  new Function("state", "module", javascript)(state, module);
-  return module.exports;
+  const loaded = { exports: {} };
+  const { publicTranscriptionSettings, captureBackend } = production()("electron/live/CaptureSelection.ts");
+  new Function("state", "module", "publicTranscriptionSettings", "captureBackend", "process", javascript)(
+    state, loaded, publicTranscriptionSettings, captureBackend, { platform: "darwin", arch: "arm64" },
+  );
+  return loaded.exports;
 }
 
 test("speech preload IPC reaches independent settings operations and never configures or cancels active AI answers", async context => {
@@ -216,8 +222,9 @@ test("speech preload IPC reaches independent settings operations and never confi
   await tick();
   assert.ok(signal); assert.equal(signal.aborted, false);
   const api = exposed.get("electronAPI");
-  assert.deepEqual(await api.getTranscriptionSettings(), { profileId: "recall-en" });
-  assert.deepEqual(await api.saveTranscriptionSettings({ profileId: "deepgram-zh" }), { success: true, settings: { profileId: "deepgram-zh" } });
+  const capabilities = { availableProfileIds: ["recall-en", "deepgram-en", "deepgram-zh", "recall-zh"], captureProvider: "recall-v2" };
+  assert.deepEqual(await api.getTranscriptionSettings(), { profileId: "recall-en", ...capabilities });
+  assert.deepEqual(await api.saveTranscriptionSettings({ profileId: "deepgram-zh" }), { success: true, settings: { profileId: "deepgram-zh", ...capabilities } });
   assert.equal(signal.aborted, false);
   assert.equal(f.service.getSnapshot().answers[0].status, "preparing");
   assert.equal(configureCalls, 0);

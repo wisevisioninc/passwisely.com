@@ -8,6 +8,7 @@ const lock = require("../package-lock.json")
 
 const CANVAS_PACKAGE = "node_modules/@napi-rs/canvas-darwin-x64"
 const CANVAS_NODE = CANVAS_PACKAGE + "/skia.darwin-x64.node"
+const AUDIO_HELPER = "Contents/Resources/audio/PassWiselyAudioHelper"
 const RECALL_PACKAGE = "node_modules/@recallai/desktop-sdk"
 const EXCLUDED = [
   RECALL_PACKAGE + "/desktop_sdk_macos_exe",
@@ -23,6 +24,12 @@ function exists(file) {
 function verifyMacosIntel(appPath) {
   // Reuse the signing owner's classification, including nested Resources code.
   const plan = collectCodePaths(appPath)
+  const helper = path.join(plan.root, AUDIO_HELPER)
+  if (!exists(helper) || !fs.lstatSync(helper).isFile() ||
+      (fs.lstatSync(helper).mode & 0o100) === 0 || fs.realpathSync(helper) !== helper ||
+      !plan.leaves.some(leaf => leaf.path === helper && leaf.executable)) {
+    throw new Error("Intel audio helper must be a real executable Mach-O in the signing owner's code plan.")
+  }
   const archive = path.join(plan.root, "Contents/Resources/app.asar")
   const unpacked = archive + ".unpacked"
   const entries = asar.listPackage(archive).map(name => name.replace(/^\//, ""))
@@ -70,7 +77,7 @@ function verifyMacosIntel(appPath) {
       throw new Error("Intel native code must include x86_64: " + path.relative(plan.root, leaf.path))
     }
   }
-  return { nativeCodeFiles: plan.leaves.length, canvasVersion: metadata.version, liveAudio: "not_included" }
+  return { nativeCodeFiles: plan.leaves.length, canvasVersion: metadata.version, liveAudio: "included" }
 }
 
 module.exports = { verifyMacosIntel }

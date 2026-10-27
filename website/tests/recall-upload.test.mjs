@@ -248,9 +248,10 @@ test("bounded global concurrency rejects excess work without issuing another upl
   assert.ok((await Promise.all(requests)).every(response => response.status === 200));
 });
 
-test("all three explicit profiles use the shared provider contract with no alternate ASR fallback", async (t) => {
+test("all explicit profiles use the shared provider contract with no alternate ASR fallback", async (t) => {
   const expected = {
     "recall-en": { recallai_streaming: { mode: "prioritize_low_latency", language_code: "en" } },
+    "deepgram-en": { deepgram_streaming: { model: "nova-3", language: "en", interim_results: true, punctuate: true, endpointing: 500 } },
     "deepgram-zh": { deepgram_streaming: { model: "nova-3", language: "zh", interim_results: true, punctuate: true, endpointing: 500 } },
     "recall-zh": { recallai_streaming: { mode: "prioritize_accuracy", language_code: "zh" } },
   };

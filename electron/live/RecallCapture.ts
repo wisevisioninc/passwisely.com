@@ -1,3 +1,4 @@
+import type { CaptureSession } from "./captureContracts";
 import { release } from "node:os";
 import type { CaptureStatus, TranscriptSegment } from "./types";
 import { createRecallTranscriptNormalizer } from "./recallTranscript";
@@ -236,7 +237,8 @@ export class RecallCapture {
     }).finally(() => { this.permissionChanged = undefined; });
   }
 
-  async start(input: { uploadToken: string; apiUrl: string }): Promise<void> {
+  async start(input: CaptureSession): Promise<void> {
+    if (input.kind !== "recall-upload") throw this.failure("Recall 采集器收到不匹配的音频会话。 ");
     const support = RecallCapture.support();
     if (!support.supported) throw this.failure(support.message!);
     if (this.disposed) throw new Error("音频采集器已关闭。");

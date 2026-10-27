@@ -1,8 +1,9 @@
+import type { NativeCaptureSession } from "../shared/captureSession";
 import type { CreditBalanceDetails } from "../shared/billing";
 import { app, safeStorage } from "electron";
 import fs from "node:fs";
 import path from "node:path";
-import { DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile } from "./live/transcription";
+import { DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile, getDeepgramTranscriptionProfile } from "./live/transcription";
 import type { TranscriptionProfileId } from "./live/transcription";
 import type {
   ResumeProcessResponse,
@@ -185,6 +186,40 @@ export class AccountService {
     }
     return { uploadToken: upload.uploadToken, uploadId: upload.uploadId, apiUrl: upload.apiUrl,
       ...(upload.transcriptionProfile === undefined ? {} : { transcriptionProfile: profileId }) };
+  }
+
+  public async createNativeCaptureSession(sessionId: string, signal: AbortSignal, profileId: TranscriptionProfileId): Promise<NativeCaptureSession> {
+    const profile = getDeepgramTranscriptionProfile(profileId);
+    if (!profile) throw new Error("Intel 原生音频请选择 Deepgram 实时转录。");
+    let grant: unknown;
+    try {
+      grant = await this.request<unknown>("/desktop/deepgram/token", {
+        method: "POST", body: JSON.stringify({ sessionId, transcriptionProfile: profile.id }), signal,
+      }, true);
+    } catch (error) {
+      if (signal.aborted) throw new Error("音频启动已取消。");
+      const messages: Record<string, string> = {
+        UNAUTHORIZED: "登录已失效，请重新登录。",
+        DEEPGRAM_NOT_CONFIGURED: "服务器尚未配置原生实时转录。",
+        DEEPGRAM_CREDENTIALS_INVALID: "服务器的 Deepgram 转录凭据不可用，请联系管理员。",
+        DEEPGRAM_SESSION_THROTTLED: "请求过于频繁，请稍后重试。",
+        DEEPGRAM_SESSION_CAPACITY: "实时转录服务繁忙，请稍后重试。",
+        DEEPGRAM_TIMEOUT: "实时转录服务准备超时，请重试。",
+      };
+      const code = error instanceof AccountRequestError ? error.code : undefined;
+      throw new Error(code && Object.prototype.hasOwnProperty.call(messages, code) ? messages[code] : "原生实时转录会话准备失败，请检查网络并重试。");
+    }
+    if (!grant || typeof grant !== "object" || Array.isArray(grant)) throw new Error("Invalid native audio session response.");
+    const value = grant as Record<string, unknown>;
+    const now = Date.now();
+    if (value.kind !== "native-deepgram" || value.transcriptionProfile !== profile.id ||
+        value.language !== profile.language || value.model !== "nova-3" || value.wsUrl !== "wss://api.deepgram.com/v1/listen" ||
+        typeof value.accessToken !== "string" || value.accessToken.length > 8192 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value.accessToken) ||
+        typeof value.expiresAt !== "number" || !Number.isSafeInteger(value.expiresAt) || value.expiresAt <= now + 1000 || value.expiresAt > now + 60_000) {
+      throw new Error("Invalid or expired native audio session response. Please start a new session.");
+    }
+    return { kind: "native-deepgram", accessToken: value.accessToken, expiresAt: value.expiresAt,
+      transcriptionProfile: profile.id, language: profile.language, model: "nova-3", wsUrl: "wss://api.deepgram.com/v1/listen" };
   }
 
   public register(

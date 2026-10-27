@@ -383,3 +383,53 @@ test("both compact language selects exactly match the independent SystemContaine
     assert.deepEqual(h.calls.filter(([name]) => name === "code"), [["code", "rust"]]);
   } finally { h.cleanup(); }
 });
+
+
+test("compact speech consumes native capability facts, shows only en/zh and saves just profileId", async () => {
+  const settings = { profileId: "deepgram-en", availableProfileIds: ["deepgram-en", "deepgram-zh"], captureProvider: "native-deepgram" };
+  const h = controller({ async getTranscriptionSettings() { return settings; }, async saveTranscriptionSettings(input) {
+    h.calls.push(["save-speech", input]); return { success: true, settings: { ...settings, ...input } };
+  } });
+  try {
+    await h.settle();
+    const select = h.select("Meeting Audio Language");
+    assert.equal(select.props.value, "deepgram-en");
+    assert.deepEqual(elements(select).filter(node => node.type === "option").map(node => node.props.value), ["deepgram-en", "deepgram-zh"]);
+    assert.match(text(h.render()), /macOS 原生采集系统声音和麦克风/);
+    assert.match(text(h.render()), /音频发送至 Deepgram/);
+    assert.doesNotMatch(text(h.render()), /Recall|Project ID/);
+    select.props.onChange({ target: { value: "recall-zh" } }); await h.settle();
+    assert.equal(h.calls.some(([name]) => name === "save-speech"), false);
+    h.select("Meeting Audio Language").props.onChange({ target: { value: "deepgram-zh" } }); await h.settle();
+    assert.deepEqual(h.calls.filter(([name]) => name === "save-speech"), [["save-speech", { profileId: "deepgram-zh" }]]);
+    assert.equal(h.select("Meeting Audio Language").props.value, "deepgram-zh");
+    assert.match(h.message(), /下次新会话生效/);
+    h.api.saveTranscriptionSettings = async input => ({ success: true, settings: { profileId: input.profileId, availableProfileIds: ["deepgram-zh"], captureProvider: "native-deepgram" } });
+    h.select("Meeting Audio Language").props.onChange({ target: { value: "deepgram-en" } }); await h.settle();
+    assert.equal(h.select("Meeting Audio Language").props.value, "deepgram-zh");
+    assert.match(h.message(), /不同的语音设置/);
+  } finally { h.cleanup(); }
+});
+
+test("compact legacy responses retain three options; malformed capabilities fail without inventing a selection", async () => {
+  const legacy = controller();
+  try {
+    await legacy.settle();
+    assert.deepEqual(elements(legacy.select("Meeting Audio Language")).filter(node => node.type === "option").map(node => node.props.value), ["recall-en", "deepgram-zh", "recall-zh"]);
+  } finally { legacy.cleanup(); }
+  for (const settings of [
+    { profileId: "deepgram-en", availableProfileIds: [], captureProvider: "native-deepgram" },
+    { profileId: "deepgram-en", availableProfileIds: ["deepgram-zh"], captureProvider: "native-deepgram" },
+    { profileId: "recall-en", availableProfileIds: ["recall-en"], captureProvider: "native-deepgram" },
+    { profileId: "deepgram-en", availableProfileIds: "all", captureProvider: "native-deepgram" },
+  ]) {
+    const h = controller({ async getTranscriptionSettings() { return settings; } });
+    try {
+      await h.settle();
+      assert.equal(h.select("Meeting Audio Language").props.value, "");
+      assert.equal(h.select("Meeting Audio Language").props.disabled, true);
+      assert.match(h.message(), /无法识别/);
+      assert.equal(h.calls.some(([name]) => name === "save-speech"), false);
+    } finally { h.cleanup(); }
+  }
+});

@@ -1,3 +1,4 @@
+import type { PublicTranscriptionSettings } from "./live/CaptureSelection";
 import { contextBridge, ipcRenderer } from "electron";
 import type { LiveSessionAPI, LiveSnapshot } from "./live/types";
 import type { TranscriptionSettings } from "./live/transcription";
@@ -15,8 +16,8 @@ console.log("Preload script starting...");
 
 // Types for the exposed Electron API
 interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
-  getTranscriptionSettings: () => Promise<TranscriptionSettings>;
-  saveTranscriptionSettings: (input: TranscriptionSettings) => Promise<{ success: boolean; settings?: TranscriptionSettings; error?: string }>;
+  getTranscriptionSettings: () => Promise<PublicTranscriptionSettings>;
+  saveTranscriptionSettings: (input: TranscriptionSettings) => Promise<{ success: boolean; settings?: PublicTranscriptionSettings; error?: string }>;
   accountGet: () => Promise<{
     success: boolean;
     user?: { id: string; email: string; locale: "zh" | "en"; credits: number };

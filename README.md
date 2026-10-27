@@ -1,10 +1,10 @@
 # PassWisely
 
-PassWisely is an Electron desktop assistant for live conversation transcription, screenshots, text questions, and streaming AI answers. Programming solutions and the resume workspace remain available. Recall audio capture supports Apple Silicon macOS 14.2+ and Windows x64; Intel Mac and Linux can use the other workspaces but cannot start Recall capture.
+PassWisely is an Electron desktop assistant for live conversation transcription, screenshots, text questions, and streaming AI answers. Programming solutions and the resume workspace remain available. Recall audio capture supports Apple Silicon macOS 14.2+ and Windows x64. Intel macOS 13+ uses a separate native ScreenCaptureKit / AVAudioEngine capture path with Deepgram realtime ASR; the Recall runtime itself remains unsupported on Intel. Linux has no live audio capture.
 
 ## Live conversation workspace
 
-The default workspace provides explicit **Start / Pause / Resume / End** controls. Start immediately opens the conversation panel; pause, resume, end and Start Over retain it. There is no internal Collapse or Expand control; Show/Hide controls visibility of the whole overlay. Starting requests microphone, system-audio and accessibility permissions on supported Macs, obtains a short-lived upload token from the authenticated website, then initializes `@recallai/desktop-sdk` 2.0.39. Recording is shown as active only after the SDK confirms it. Audio is sent and stored in your Recall project for real-time ASR; no audio starts automatically. SDK diagnostic telemetry is explicitly disabled (`telemetryMode: "off"`).
+The default workspace provides explicit **Start / Pause / Resume / End** controls. Start immediately opens the conversation panel; pause, resume, end and Start Over retain it. There is no internal Collapse or Expand control; Show/Hide controls visibility of the whole overlay. On the Recall path, starting requests microphone, system-audio and accessibility permissions on supported Macs, obtains a short-lived upload token from the authenticated website, then initializes `@recallai/desktop-sdk` 2.0.39. Recording is shown as active only after the SDK confirms it. Audio is sent and stored in your Recall project for real-time ASR; no audio starts automatically. SDK diagnostic telemetry is explicitly disabled (`telemetryMode: "off"`).
 
 Speech recognition is selected independently from the AI answer language in Settings → Meeting Audio Language (or AI Models & Settings → Speech). The default remains Recall's built-in English low-latency ASR (`recall-en`). Chinese real-time transcription uses Deepgram Nova-3 with `language: zh` (`deepgram-zh`). Save the speech preference separately; it applies to the next new session, while pause/resume preserves the current session's configuration. A Chinese failure never silently falls back to English. Recall's built-in Chinese accuracy profile (`recall-zh`) is a minute-scale experimental option whose Desktop runtime output has not been verified. System audio and microphone transcripts have separate source labels. Interim text updates in place, final text replaces it, and unknown sources remain unknown. Labels describe the audio source, not verified speaker identity. Pause retains the session; End retains its text for follow-up questions. A failed native shutdown retains ownership and offers cleanup retry instead of starting another capture process.
 
@@ -12,7 +12,7 @@ The transcript view groups adjacent snippets from the same owned audio channel a
 
 On macOS, the translucent transcript/answer body passes mouse input to the app below. Toolbar buttons, tabs, links, copy controls, attachments, resize handles, typed questions and settings retain interaction. Use the [native click-through fixture](test/overlay/README.md) to verify selection and input; DOM-only tests cannot establish cross-window behavior.
 
-Output Language offers the same 22 choices and Code Language the same 16 choices as the inspected SystemContainer 3.0.1 catalog. They affect model instructions independently of the three supported audio profiles. Code Language is remembered locally and shared by conversation and programming workspaces. Ordinary toolbar actions no longer blur a native panel without an owned keyboard-focus request. See the [controls and language verification report](test/reports/mac-controls-languages-2026-10-20.md) for the native Mac results and reusable regression scope.
+Output Language offers the same 22 choices and Code Language the same 16 choices as the inspected SystemContainer 3.0.1 catalog. They affect model instructions independently of the available audio profiles. Code Language is remembered locally and shared by conversation and programming workspaces. Ordinary toolbar actions no longer blur a native panel without an owned keyboard-focus request. See the [controls and language verification report](test/reports/mac-controls-languages-2026-10-20.md) for the native Mac results and reusable regression scope.
 
 The compact gear menu follows the observed SystemContainer layout: output, code and meeting-audio languages, key display mode, conditional multi-display selection, shortcut references and account actions. Keep the PassWisely logo. Output and speech preferences save independently; speech changes apply to the next session and are locked during capture/pause/cleanup. AI Models & Settings opens the existing provider configuration. Compact and advanced editors share one write owner to prevent stale saves across panel changes. See the [comparison and Mac verification report](test/reports/systemcontainer-parity-2026-10-20.md) for evidence and limits.
 
@@ -27,11 +27,21 @@ RECALL_API_KEY=your-own-recall-project-key
 RECALL_API_REGION=ap-northeast-1
 ```
 
-Supported region values are `us-west-2`, `us-east-1`, `eu-central-1`, and `ap-northeast-1`. The region must match the key's project. The authenticated `POST /api/desktop/recall/upload-token` accepts a session UUID and an optional `transcriptionProfile` chosen from `recall-en`, `deepgram-zh`, or `recall-zh`. Omission preserves the English default. Clients cannot supply arbitrary provider options, server keys, or URLs. The response echoes the profile, and Chinese sessions reject an omitted or mismatched profile before native capture. Reusing the same user/session with a different configuration conflicts within the cache lifetime. Upload creation is bounded and retries for the same user/session reuse a short-lived result within one worker; this cache is not shared across instances or restarts.
+Supported region values are `us-west-2`, `us-east-1`, `eu-central-1`, and `ap-northeast-1`. The region must match the key's project. The authenticated `POST /api/desktop/recall/upload-token` accepts a session UUID and an optional `transcriptionProfile` chosen from `recall-en`, `deepgram-en`, `deepgram-zh`, or `recall-zh`. Omission preserves the English default. Clients cannot supply arbitrary provider options, server keys, or URLs. The response echoes the profile, and Chinese sessions reject an omitted or mismatched profile before native capture. Reusing the same user/session with a different configuration conflicts within the cache lifetime. Upload creation is bounded and retries for the same user/session reuse a short-lived result within one worker; this cache is not shared across instances or restarts.
 
 For Chinese realtime ASR, add a Deepgram API Key and matching Project ID to the transcription dashboard of the **same Recall region and workspace** as the server key, and mark the saved credential as Default. Use a Member, Admin, or Owner key; leaving Host blank uses Recall's default Deepgram service. Merely placing `DEEPGRAM_API_KEY` / `DEEPGRAM_PROJECT_ID` in a Wise environment file does not register them with Recall. See [Recall Deepgram setup](https://docs.recall.ai/docs/deepgram).
 
-Audio travels from the native SDK to Recall and transcripts return through its callback; Wise does not proxy raw audio. Wise's authenticated route requests a short-lived upload token from Recall, which issues the token. Wise continues to relay model requests when using its default model key. A personal Kimi key retains direct model requests.
+On the Recall path, audio travels from the native SDK to Recall and transcripts return through its callback; Wise does not proxy raw audio. Wise's authenticated route requests a short-lived upload token from Recall, which issues the token. Wise continues to relay model requests when using its default model key. A personal Kimi key retains direct model requests.
+
+### Intel Mac native audio
+
+Intel uses an independently signed `Contents/Resources/audio/PassWiselyAudioHelper` built for x86_64 with the existing Apple Command Line Tools. It captures system audio through ScreenCaptureKit and the default microphone through AVAudioEngine, converts each source separately to 16 kHz mono signed 16-bit PCM, and sends the streams directly to Deepgram over two TLS WebSockets. No Recall native executable is used on this path. macOS 13 or newer and screen/audio plus microphone permissions are required.
+
+The same owned helper completes permission requests and source discovery **before** the authenticated website issues a 30-second connection JWT. Preparation does not record audio. The server-only configuration is `DEEPGRAM_API_KEY`; use a key with Member or higher permissions for Deepgram's grant endpoint. No API key is shipped to the client, and Recall dashboard credentials are not used by this Intel path. `POST /api/desktop/deepgram/token` accepts only a session UUID and `deepgram-en` or `deepgram-zh`. It returns a short-lived usage token for Deepgram core voice APIs; Deepgram does not restrict it to one model, one session or STT alone. The process-local retry/throttle cache is not a durable quota.
+
+Intel Settings exposes Deepgram realtime English and Chinese. Existing Chinese preferences resolve to Chinese without rewriting the saved preference. English uses Nova-3 `language: en`; Chinese uses `language: zh`. The Answer Language setting remains independent. Final/interim segments retain the actual system/microphone source; these labels do not identify the human speaker. Pause stops native input, drains admitted audio and converter tails, and finalizes both ASR streams. Resume keeps the language and separates the next transcript epoch. Stop waits for actual child/socket closure and retains cleanup ownership if that cannot be confirmed. Audio is not written to disk by this helper, and the server does not relay PCM. Deepgram usage is charged to the configured project, with no new PassWisely ASR credit policy.
+
+Reusable native converter/permission/lifecycle tests live in `desktop-api/tests/`; synthetic upstream ASR checks are documented in `test/audio/native-intel/`. Source tests and Rosetta execution do not establish capture on physical Intel hardware. Release-specific capture evidence belongs in the Intel release report before changing the public download capability notice.
 
 In the conversation workspace `Command/Ctrl + Enter` asks AI using the current draft, and `Command/Ctrl + R` clears only answers. Screenshot and visibility shortcuts remain available. Switching to Programming restores the existing solve/debug workflow. The interface follows observed SystemContainer session interactions using an independent implementation; no SystemContainer code, credentials, or binaries are included.
 
@@ -173,9 +183,10 @@ npx electron-builder --mac --x64 --publish never \
 
 The profile excludes the ARM-only Recall runtime and checks every native binary
 for x86_64, including the unpacked Canvas library used by PDF parsing. The
-existing Developer ID and App/DMG notarization hooks remain mandatory. Intel
-supports screenshots and text questions, with no Recall system/microphone
-capture. See [Intel v2.0.0 release verification](test/reports/release-v2.0.0-intel.md).
+existing Developer ID and App/DMG notarization hooks remain mandatory. The
+profile compiles the native x86_64 audio helper before signing and requires it
+in the packaged architecture audit. Recall system/microphone capture remains
+unavailable on Intel; native capture provides the separate audio path. See [Intel v2.0.0 release verification](test/reports/release-v2.0.0-intel.md).
 
 macOS packaging normalizes all nested Mach-O signatures, including the Recall
 SDK under Resources, before the normal Developer ID signing phase. An ad-hoc
@@ -217,7 +228,7 @@ it is considered finished:
 
 1. Run desktop, website, and live account regression tests.
 2. Increment the desktop version; never overwrite an existing release path.
-3. Build Windows x64, Mac ARM64 and Mac Intel x64 installers with the same desktop version. Use the Intel-specific packaging profile below; Recall audio remains unavailable on Intel Macs.
+3. Build Windows x64, Mac ARM64 and Mac Intel x64 installers with the same desktop version. Use the Intel-specific packaging profile; Intel uses native capture rather than Recall.
 4. Sign macOS artifacts with Developer ID, notarize them, staple the Apple
    tickets, and verify them with `codesign`, `spctl`, and `stapler`.
 5. Upload the verified platform installers to

@@ -63,7 +63,7 @@ function harness({ platform = "win32", arch = "x64", release = platform === "win
     normalizer: () => dependencies["./recallTranscript"].createRecallTranscriptNormalizer(),
   };
 }
-const input = { uploadToken: "fixture-upload-token", apiUrl: "https://ap-northeast-1.recall.ai" };
+const input = { kind: "recall-upload", uploadToken: "fixture-upload-token", apiUrl: "https://ap-northeast-1.recall.ai" };
 const event = (id, text = "hello", partial = false, participant = { id: 1, is_host: true }, start = 0) => ({
   window: { id }, event: partial ? "transcript.partial_data" : "transcript.data",
   data: { data: { words: [{ text, start_timestamp: { relative: start }, end_timestamp: { relative: start + 0.5 } }], participant } },
@@ -599,7 +599,7 @@ function captureSession(context, h) {
   const { LiveSessionService } = productionModules(fileURLToPath(new URL("../../electron/live/LiveSessionService.ts", import.meta.url)));
   const service = new LiveSessionService({
     support: { supported: true }, createCapture: callbacks => h.create(callbacks),
-    async createUpload() { return input; }, pendingScreenshots: () => [], images: async () => [],
+    async createSession() { return input; }, pendingScreenshots: () => [], images: async () => [],
     consumeScreenshots: async () => ({ success: true }), language: () => "zh-CN", publish() {},
     stream: async () => assert.fail("capture boundary test must not request a model"),
   });

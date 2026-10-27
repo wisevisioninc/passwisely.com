@@ -8,22 +8,14 @@ import { DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile } from "./transc
 import type { TranscriptionProfileId } from "./transcription";
 import type { CaptureStatus, LiveAnswer, LiveAskInput, LiveResult, LiveSnapshot, TranscriptSegment } from "./types";
 
-export interface CaptureCallbacks {
-  onTranscript: (segment: TranscriptSegment) => void;
-  onState: (status: CaptureStatus) => void;
-  onError: (message: string) => void;
-}
-export interface AudioCapture {
-  start: (upload: { uploadToken: string; apiUrl: string }) => Promise<void>;
-  pause: () => Promise<void>;
-  resume: () => Promise<void>;
-  stop: () => Promise<void>;
-  dispose: () => Promise<void>;
-}
+import type { AudioCapture, CaptureCallbacks, CaptureSession } from "./captureContracts";
+import type { CaptureProvider } from "./CaptureSelection";
+export type { AudioCapture, CaptureCallbacks } from "./captureContracts";
 interface Dependencies {
   support: { supported: boolean; message?: string };
+  provider?: CaptureProvider;
   createCapture: (callbacks: CaptureCallbacks) => AudioCapture;
-  createUpload: (sessionId: string, signal: AbortSignal, profileId: TranscriptionProfileId) => Promise<{ uploadToken: string; apiUrl: string; transcriptionProfile?: TranscriptionProfileId }>;
+  createSession: (sessionId: string, signal: AbortSignal, profileId: TranscriptionProfileId) => Promise<CaptureSession>;
   transcriptionProfile?: () => TranscriptionProfileId;
   stream: (messages: OpenAI.Chat.ChatCompletionMessageParam[], signal: AbortSignal, update: (text: string, model: string) => void) => Promise<OpenAI.Chat.ChatCompletion>;
   pendingScreenshots: () => string[];
@@ -64,7 +56,7 @@ export class LiveSessionService {
   private empty(): LiveSnapshot {
     const transcription = getTranscriptionProfile(this.deps.transcriptionProfile?.() || DEFAULT_TRANSCRIPTION_PROFILE);
     if (!transcription) throw new Error("Unknown transcription profile.");
-    return { sessionId: randomUUID(), revision: this.revision, provider: "recall-v2", transcription: { ...transcription }, captureStatus: "idle", transcripts: [], answers: [], transcriptTruncated: false, captureNeedsCleanup: false, platformSupported: this.deps.support.supported, platformMessage: this.deps.support.message };
+    return { sessionId: randomUUID(), revision: this.revision, provider: this.deps.provider || "recall-v2", transcription: { ...transcription }, captureStatus: "idle", transcripts: [], answers: [], transcriptTruncated: false, captureNeedsCleanup: false, platformSupported: this.deps.support.supported, platformMessage: this.deps.support.message };
   }
   getSnapshot(): LiveSnapshot { return structuredClone(this.state); }
   private emit(immediate = false): void {
@@ -111,15 +103,6 @@ export class LiveSessionService {
     this.starting = controller;
     const current = () => sessionId === this.state.sessionId && generation === this.generation && !controller.signal.aborted;
     try {
-      const upload = await this.deps.createUpload(sessionId, controller.signal, profileId);
-      controller.signal.throwIfAborted();
-      if (!current()) return { success: false, error: "启动已取消。" };
-      // Older English-only servers may omit this field. Never let a requested
-      // Chinese profile silently become a different transcription session.
-      if (upload.transcriptionProfile !== profileId &&
-          !(profileId === DEFAULT_TRANSCRIPTION_PROFILE && upload.transcriptionProfile === undefined)) {
-        throw new Error("转录配置与请求不一致，请检查服务器设置后重试。");
-      }
       const capture = this.deps.createCapture({
         onTranscript: segment => { if (current()) this.receive(segment); },
         onState: status => {
@@ -132,11 +115,33 @@ export class LiveSessionService {
         onError: error => { if (current()) { this.state.error = error; this.state.captureStatus = "error"; this.emit(true); } },
       });
       this.capture = capture;
+      this.state.captureNeedsCleanup = Boolean(capture.prepare);
+      // Permissions belong to the actual native process. Complete them before
+      // issuing a short-lived ASR connection credential, without recording audio.
+      if (capture.prepare) await capture.prepare(controller.signal);
+      controller.signal.throwIfAborted();
+      if (!current()) return { success: false, error: "启动已取消。" };
+      const upload = await this.deps.createSession(sessionId, controller.signal, profileId);
+      controller.signal.throwIfAborted();
+      if (!current()) return { success: false, error: "启动已取消。" };
+      // Older English-only servers may omit this field. Never let a requested
+      // Chinese profile silently become a different transcription session.
+      if (upload.transcriptionProfile !== profileId &&
+          !(profileId === DEFAULT_TRANSCRIPTION_PROFILE && upload.transcriptionProfile === undefined)) {
+        throw new Error("转录配置与请求不一致，请检查服务器设置后重试。");
+      }
       this.state.captureNeedsCleanup = true;
       await capture.start(upload);
       if (!current()) return { success: false, error: "启动已取消。" };
       return { success: true };
     } catch (error) {
+      // A constructor alone owns no native resources; failed authorization on
+      // the Recall path can be retried without retaining an unused adapter.
+      if (current() && this.capture && !this.state.captureNeedsCleanup) {
+        const unused = this.capture;
+        try { await unused.dispose(); if (this.capture === unused) this.capture = null; }
+        catch { this.state.captureNeedsCleanup = true; }
+      }
       if (current()) { this.state.captureStatus = "error"; this.state.error = message(error); this.emit(true); }
       return { success: false, error: controller.signal.aborted ? "启动已取消。" : message(error) };
     } finally { if (this.starting === controller) this.starting = null; }

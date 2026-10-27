@@ -41,7 +41,7 @@ function fixture(context, overrides = {}) {
   const captures = [], uploads = [], streams = [], publications = [], consumed = [];
   const deps = {
     support: { supported: true },
-    async createUpload(sessionId, signal) { uploads.push({ sessionId, signal }); return { uploadToken: "fixture-upload", apiUrl: "https://us-west-2.recall.ai" }; },
+    async createSession(sessionId, signal) { uploads.push({ sessionId, signal }); return { uploadToken: "fixture-upload", apiUrl: "https://us-west-2.recall.ai" }; },
     createCapture(callbacks) {
       const calls = [];
       const capture = {
@@ -95,14 +95,15 @@ test("session replaces partials with final text and preserves both capture sourc
 test("stopping during upload creation cancels startup and suppresses an eventual upload response", async context => {
   const upload = deferred();
   let uploadSignal;
-  const f = fixture(context, { createUpload(_sessionId, signal) { uploadSignal = signal; return upload.promise; } });
+  const f = fixture(context, { createSession(_sessionId, signal) { uploadSignal = signal; return upload.promise; } });
   const starting = f.service.start();
   assert.equal(f.service.getSnapshot().captureStatus, "starting");
   assert.equal((await f.service.stop()).success, true);
   assert.equal(uploadSignal.aborted, true);
   upload.resolve({ uploadToken: "late-upload", apiUrl: "https://us-west-2.recall.ai" });
   assert.equal((await starting).success, false);
-  assert.equal(f.captures.length, 0);
+  assert.equal(f.captures.length, 1);
+  assert.deepEqual(f.captures[0].calls.map(([name]) => name), ["stop", "dispose"]);
   assert.equal(f.service.getSnapshot().captureStatus, "ended");
 });
 
@@ -110,13 +111,14 @@ test("stopping while native startup is pending cleans the owned capture and reje
   const f = fixture(context);
   const originalFactory = f.deps.createCapture;
   const nativeStart = deferred();
+  let nativeStartEntered = false;
   f.deps.createCapture = callbacks => {
     const capture = originalFactory(callbacks);
-    capture.start = async () => { await nativeStart.promise; callbacks.onState("recording"); };
+    capture.start = async () => { nativeStartEntered = true; await nativeStart.promise; callbacks.onState("recording"); };
     return capture;
   };
   const starting = f.service.start();
-  await settled(() => f.captures.length === 1);
+  await settled(() => nativeStartEntered);
   assert.equal((await f.service.stop()).success, true);
   nativeStart.resolve();
   assert.equal((await starting).success, false);
@@ -470,7 +472,7 @@ test("cancelled image loading does not consume; an in-flight accepted-image clea
 
 test("Start Over during upload preparation keeps startup owned and permits its eventual recording", async context => {
   const upload = deferred(); let uploadSignal;
-  const f = fixture(context, { createUpload(_sessionId, signal) { uploadSignal = signal; return upload.promise; } });
+  const f = fixture(context, { createSession(_sessionId, signal) { uploadSignal = signal; return upload.promise; } });
   const starting = f.service.start();
   const previous = f.service.getSnapshot();
   assert.equal((await f.service.startOver()).success, true);
@@ -553,4 +555,37 @@ test("a failed resume attempt is a conservative epoch barrier and the next sessi
   await f.service.stop(); await f.service.start();
   f.captures[1].callbacks.onTranscript(segment("fresh", "新会话"));
   assert.equal(f.service.getSnapshot().transcripts[0].captureEpoch, 0);
+});
+
+
+test("Recall authorization failure disposes an unused object and permits a fresh retry without native preparation", async context => {
+  let attempts = 0;
+  const f = fixture(context, { async createSession() {
+    if (++attempts === 1) throw new Error("safe authorization refusal");
+    return { kind: "recall-upload", uploadToken: "fixture-upload", apiUrl: "https://us-west-2.recall.ai" };
+  } });
+  assert.equal((await f.service.start()).success, false);
+  assert.deepEqual(f.captures[0].calls.map(([name]) => name), ["dispose"]);
+  assert.equal(f.service.getSnapshot().captureNeedsCleanup, false);
+  assert.equal((await f.service.start()).success, true);
+  assert.equal(f.captures.length, 2);
+  assert.deepEqual(f.captures[1].calls.map(([name]) => name), ["start"]);
+});
+
+test("failed disposal of an unused Recall adapter retains cleanup ownership instead of losing it", async context => {
+  const f = fixture(context, { async createSession() { throw new Error("safe authorization refusal"); } });
+  const factory = f.deps.createCapture;
+  let attempts = 0;
+  f.deps.createCapture = callbacks => {
+    const capture = factory(callbacks), dispose = capture.dispose;
+    capture.dispose = async () => { if (++attempts === 1) throw new Error("safe cleanup refusal"); return dispose(); };
+    return capture;
+  };
+  assert.equal((await f.service.start()).success, false);
+  assert.equal(f.service.getSnapshot().captureNeedsCleanup, true);
+  assert.equal((await f.service.start()).success, false);
+  assert.equal((await f.service.stop()).success, true);
+  assert.equal(attempts, 2);
+  assert.equal(f.service.getSnapshot().captureNeedsCleanup, false);
+  assert.equal(f.captures[0].calls.some(([name]) => name === "start"), false);
 });

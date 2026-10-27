@@ -1,3 +1,4 @@
+import type { CaptureProvider } from "./CaptureSelection";
 import type { CodeLanguage } from "../languages";
 import type { TranscriptionProfile } from "./transcription";
 
@@ -34,7 +35,7 @@ export interface LiveSnapshot {
   transcription?: TranscriptionProfile;
   sessionId: string;
   revision: number;
-  provider: "recall-v2";
+  provider: CaptureProvider;
   captureStatus: CaptureStatus;
   startedAt?: number;
   endedAt?: number;

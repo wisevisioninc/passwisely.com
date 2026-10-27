@@ -1,4 +1,3 @@
-const path = require("node:path")
 const { Arch } = require("builder-util")
 const base = require("../package.json").build
 const afterPackMacOS = require("../scripts/after-pack-macos")
@@ -26,8 +25,6 @@ module.exports = {
     if (context.electronPlatformName !== "darwin" || context.arch !== Arch.x64) {
       throw new Error("The mac-x64 profile requires a darwin/x64 target.")
     }
-    const appPath = path.join(context.appOutDir, context.packager.appInfo.productFilename + ".app")
-    verifyMacosIntel(appPath)
-    await afterPackMacOS(context)
+    await afterPackMacOS(context, verifyMacosIntel)
   },
 }

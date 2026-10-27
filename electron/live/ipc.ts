@@ -1,11 +1,12 @@
+import type { PublicTranscriptionSettings } from "./CaptureSelection";
 import { BrowserWindow, clipboard, ipcMain } from "electron";
 import type { LiveSessionService } from "./LiveSessionService";
 import { getTranscriptionProfile } from "./transcription";
 import type { TranscriptionSettings } from "./transcription";
 
 interface TranscriptionSettingsOperations {
-  get: () => TranscriptionSettings;
-  save: (input: TranscriptionSettings) => TranscriptionSettings;
+  get: () => PublicTranscriptionSettings;
+  save: (input: TranscriptionSettings) => PublicTranscriptionSettings;
 }
 
 export function initializeLiveIpc(service: LiveSessionService, getWindow: () => BrowserWindow | null, setWorkspace: (visible: boolean) => void, isAuthenticated: () => boolean, settingsOps?: TranscriptionSettingsOperations): void {

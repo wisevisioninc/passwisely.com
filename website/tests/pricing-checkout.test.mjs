@@ -4,6 +4,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import test from "node:test";
 import ts from "typescript";
+import { lazyComponents } from "./helpers/lazy-components.mjs";
 
 const website = path.resolve(import.meta.dirname, "..");
 const require = createRequire(path.join(website, "package.json"));
@@ -434,21 +435,25 @@ test("historical Stripe callback delegates only order identity to the real trans
 function componentHarness(relative, name, props = {}, overrides = {}) {
   const values = [], refs = [], effectSlots = [];
   let stateIndex = 0, refIndex = 0, effectIndex = 0, pendingEffects = [], stateUpdates = 0;
-  const hooks = { useState(initial) { const index = stateIndex++; if (!(index in values)) values[index] = typeof initial === "function" ? initial() : initial; return [values[index], value => { stateUpdates++; values[index] = typeof value === "function" ? value(values[index]) : value; }]; },
+  const views = lazyComponents();
+  const hooks = { lazy: views.lazy, Component: React.Component, useState(initial) { const index = stateIndex++; if (!(index in values)) values[index] = typeof initial === "function" ? initial() : initial; return [values[index], value => { stateUpdates++; values[index] = typeof value === "function" ? value(values[index]) : value; }]; },
     useRef(initial) { const index = refIndex++; return refs[index] ||= { current: initial }; }, useMemo: callback => callback(), useCallback: callback => callback,
     useEffect(callback, deps) { const index = effectIndex++; const previous = effectSlots[index]; if (!previous || !deps || deps.some((value, i) => !Object.is(value, previous.deps?.[i]))) pendingEffects.push(() => { previous?.cleanup?.(); effectSlots[index] = { deps, callback, cleanup: callback() }; }); },
   };
   const Component = sourceModule(relative, { ...overrides, react: hooks })[name];
   return {
-    render() { stateIndex = refIndex = effectIndex = 0; return Component(props); },
+    ready: () => views.ready(),
+    render() { stateIndex = refIndex = effectIndex = 0; return views.unwrap(Component(props)); },
     flushEffects() { const batch = pendingEffects; pendingEffects = []; for (const run of batch) run(); },
     replayEffects() { for (const effect of effectSlots) { effect.cleanup?.(); effect.cleanup = effect.callback(); } },
     cleanup() { for (const effect of effectSlots) effect?.cleanup?.(); },
     get stateUpdates() { return stateUpdates; },
   };
 }
-function siteHarness(props = {}) {
-  return componentHarness("app/PassWiselySite.tsx", "PassWiselySite", props);
+async function siteHarness(props = {}) {
+  const app = componentHarness("app/PassWiselySite.tsx", "PassWiselySite", props);
+  await app.ready();
+  return app;
 }
 
 async function settle() { await new Promise(resolve => setImmediate(resolve)); await new Promise(resolve => setImmediate(resolve)); }
@@ -463,14 +468,14 @@ function browser(t, locale = "en") {
 }
 
 test("actual site trial CTA opens registration with20 and never checkout", async t => {
-  const app = siteHarness(); const calls = []; t.mock.method(globalThis, "fetch", async (...args) => { calls.push(args); return Response.json({}); });
+  const app = await siteHarness(); const calls = []; t.mock.method(globalThis, "fetch", async (...args) => { calls.push(args); return Response.json({}); });
   const tree = app.render(); walk(tree, e => e.type?.name === "LandingPage")[0].props.onRegisterTrial();
   const next = app.render(); assert.equal(walk(next, e => e.props?.role === "dialog")[0].props["aria-label"], "创建账户");
   assert.match(text(next), /注册并领取 20 积分/); assert.equal(calls.length, 0);
 });
 
 for (const locale of ["zh", "en"]) for (const provider of ["alipay", "wechat"]) test(`actual ${locale} payment modal offers both channels and completes the ${provider} checkout UI`, async t => {
-  const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t, locale); const calls = [];
+  const app = await siteHarness(); t.after(() => app.cleanup()); const b = browser(t, locale); const calls = [];
   let paid = false;
   t.mock.method(globalThis, "fetch", async (url, init) => {
     calls.push([url, init]);
@@ -490,6 +495,12 @@ for (const locale of ["zh", "en"]) for (const provider of ["alipay", "wechat"]) 
     assert.deepEqual(b.assigned, []);
     assert.equal(walk(tree, e => e.props?.className === "modal wechat-qr-modal").length, 1);
     const qr = walk(tree, e => e.props?.value === "weixin://fixture-payment"); assert.equal(qr.length, 1);
+    const boundary = walk(tree, e => e.type?.name === "DeferredViewBoundary")[0];
+    assert.equal(boundary.props.kind, "qr"); assert.equal(boundary.props.locale, locale);
+    assert.equal(walk(boundary, e => e.props?.value === "weixin://fixture-payment").length, 1);
+    assert.equal(walk(boundary, e => e.props?.className === "modal-close").length, 0);
+    const modal = walk(tree, e => e.props?.className === "modal wechat-qr-modal")[0];
+    assert.equal(typeof walk(modal, e => e.props?.className === "modal-close")[0].props.onClick, "function");
     assert.equal(b.intervals.size, 1);
     const poll = [...b.intervals.values()][0]; assert.equal(poll.delay, 2000);
     await poll.callback(); tree = app.render(); app.flushEffects();
@@ -503,7 +514,7 @@ for (const locale of ["zh", "en"]) for (const provider of ["alipay", "wechat"]) 
 });
 
 test("actual purchase client sends versioned ID and makes pricing-change recovery explicit", async t => {
-  const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t); const calls = [];
+  const app = await siteHarness(); t.after(() => app.cleanup()); const b = browser(t); const calls = [];
   t.mock.method(globalThis, "fetch", async (url, init) => { calls.push([url, init]); return url === "/api/account" ? Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: 20 }, transactions: [] }) : Response.json({ error: "Changed", code: "PRICING_CHANGED" }, { status: 409 }); });
   app.render(); app.flushEffects(); await settle(); let tree = app.render();
   walk(tree, e => e.type?.name === "LandingPage")[0].props.onBuy("unlimited_monthly_v2"); tree = app.render(); app.flushEffects();
@@ -515,7 +526,7 @@ test("actual purchase client sends versioned ID and makes pricing-change recover
 });
 
 for (const locale of ["zh", "en"]) for (const provider of ["alipay", "wechat"]) for (const code of ["PAYMENT_UNAVAILABLE", "PAYMENT_METHOD_UNAVAILABLE"]) test(`actual ${locale} ${provider} checkout client describes ${code} as unavailable, without implying a payment attempt`, async t => {
-  const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t, locale);
+  const app = await siteHarness(); t.after(() => app.cleanup()); const b = browser(t, locale);
   t.mock.method(globalThis, "fetch", async url => url === "/api/account"
     ? Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: 20 }, transactions: [] })
     : Response.json({ error: "fixture internal configuration detail", code }, { status: 503 }));
@@ -531,7 +542,7 @@ for (const locale of ["zh", "en"]) for (const provider of ["alipay", "wechat"]) 
 });
 
 for (const locale of ["zh", "en"]) test(`actual ${locale} checkout client treats an uncertain result neutrally and preserves the support reference`, async t => {
-  const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t, locale);
+  const app = await siteHarness(); t.after(() => app.cleanup()); const b = browser(t, locale);
   t.mock.method(globalThis, "fetch", async url => url === "/api/account"
     ? Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: 20 }, transactions: [] })
     : Response.json({ error: "fixture raw provider exception", code: "CHECKOUT_UNCONFIRMED", orderId: "fixture-pending-order" }, { status: 503 }));
@@ -547,7 +558,7 @@ for (const locale of ["zh", "en"]) test(`actual ${locale} checkout client treats
 });
 
 test("a lost checkout response does not tell the user to retry a potentially accepted payment", async t => {
-  const app = siteHarness(); t.after(() => app.cleanup()); const b = browser(t);
+  const app = await siteHarness(); t.after(() => app.cleanup()); const b = browser(t);
   t.mock.method(globalThis, "fetch", async url => {
     if (url === "/api/account") return Response.json({ user: { id: "fixture-user", email: "fixture@example.test", credits: 20 }, transactions: [] });
     throw new TypeError("fixture transport interrupted after submission");
@@ -562,7 +573,7 @@ test("a lost checkout response does not tell the user to retry a potentially acc
 });
 
 test("Dashboard account open and homepage focus read server-owned balances and only nearest expiry", async t => {
-  const app = siteHarness({ initialDashboard: true }), home = siteHarness(); t.after(() => { app.cleanup(); home.cleanup(); }); const b = browser(t);
+  const app = await siteHarness({ initialDashboard: true }), home = await siteHarness(); t.after(() => { app.cleanup(); home.cleanup(); }); const b = browser(t);
   let balance = { balance: 220, permanentBalance: 20, expiringBalance: 200, nextExpiry: "2026-11-19T09:00:00.000Z" }; const requests = [];
   const account = () => ({ user: { id: "fixture-user", email: "fixture@example.test", credits: balance.balance, creditBalance: balance }, transactions: [] });
   t.mock.method(globalThis, "fetch", async (url, init) => { requests.push([url, init]); return Response.json(account()); });
@@ -580,7 +591,7 @@ test("Dashboard account open and homepage focus read server-owned balances and o
 });
 
 test("a pending Dashboard account refresh cannot restore the account after sign-out completes", async t => {
-  const app = siteHarness({ initialDashboard: true }); t.after(() => app.cleanup()); const b = browser(t);
+  const app = await siteHarness({ initialDashboard: true }); t.after(() => app.cleanup()); const b = browser(t);
   let accountCalls = 0, releaseLogout, releaseAccount;
   const snapshot = { id: "fixture-user", email: "fixture@example.test", credits: 220 };
   const account = () => Response.json({ user: snapshot, transactions: [] });

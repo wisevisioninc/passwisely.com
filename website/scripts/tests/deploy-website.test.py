@@ -149,8 +149,34 @@ class ReleaseTests(unittest.TestCase):
    return result.stdout
   with patch.object(m,'BASE_COMMIT',base),patch.object(m,'PENDING_COMMIT',pending),patch.object(m,'command',side_effect=read_command),patch.object(m,'live_source_pin'):
    with self.assertRaisesRegex(m.DeployError,'Unpublished WeChat'):m.source_preflight(args,manifest)
- def test_current_public_ip_is_preserved_in_transport_diagnostics(self):
-  self.assertEqual(m.probe_context(m.PUBLIC_BASE,'/api/download/mac-x64','HEAD','open')['base'],'http://47.95.66.86')
+ def test_current_public_cn_origin_is_preserved_in_transport_diagnostics(self):
+  self.assertEqual(m.PUBLIC_BASE,'https://passwisely.cn')
+  self.assertEqual(m.probe_context(m.PUBLIC_BASE,'/api/download/mac-x64','HEAD','open')['base'],'https://passwisely.cn')
+  self.assertEqual(m.probe_context('http://47.95.66.86','/api/download/mac-x64','HEAD','open')['base'],'unrecognized')
+ def test_cn_domain_scope_adds_only_exact_reviewed_paths_and_keeps_payment_excluded(self):
+  expected={'website/lib/public-site.ts','website/app/layout.tsx','website/.env.example','website/README.md','website/tests/public-site-origin.test.mjs','website/tests/live-account.mjs','website/tests/live-ai.mjs','website/tests/live-ai-vision.mjs'}
+  self.assertEqual(m.CN_DOMAIN_RELEASE_PATHS,expected)
+  self.assertTrue(expected<=m.DOWNLOAD_ONLY_PATHS)
+  self.assertNotIn('website/app/api/checkout/route.ts',m.DOWNLOAD_ONLY_PATHS)
+  self.assertNotIn('website/app/api/payments/wechat/notify/route.ts',m.DOWNLOAD_ONLY_PATHS)
+  self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
+ def test_home_performance_scope_adds_exact_views_and_tests_without_payment_authority(self):
+  expected={'website/app/PassWiselySite.tsx','website/app/DeferredViewBoundary.tsx','website/tests/helpers/lazy-components.mjs','website/tests/lazy-views.test.mjs','website/tests/fixtures/lazy-import-failure.tsx','website/tests/verify-lazy-failures.mjs'}
+  self.assertEqual(m.HOME_PERFORMANCE_RELEASE_PATHS,expected)
+  self.assertTrue(expected<=m.DOWNLOAD_ONLY_PATHS)
+  args,manifest,_=self.fixture()
+  def command(argv,**kwargs):
+   if argv[0]=='git' and argv[2]==str(self.repo):return 'b'*40
+   if 'rev-parse' in argv:return 'HEAD' if '--abbrev-ref' in argv else 'a'*40
+   if 'rev-list' in argv:return 'a'*40
+   if '--name-only' in argv:return '\n'.join(['website/lib/download-artifacts.json',*sorted(expected)])
+   if 'ls-files' in argv:return '\n'.join(row['path'] for row in manifest['sourceFiles'])
+   return ''
+  with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):
+   m.source_preflight(args,manifest)
+  for name in ['website/app/api/checkout/route.ts','website/app/api/payments/wechat/notify/route.ts','website/lib/payments/config.ts','website/lib/payments/catalog.ts','website/.env.production','desktop-api/server.mjs']:
+   self.assertNotIn(name,m.DOWNLOAD_ONLY_PATHS)
+  self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
  def test_preserves_runtime_binding_bytes_without_staging_current_configuration(self):
   active=self.website/'dist';binding=self.binding(active);original=binding.read_bytes()
   env=self.write(self.website/'.env.production','PENDING_CONFIGURATION="not-staged"\n');before=env.read_bytes()

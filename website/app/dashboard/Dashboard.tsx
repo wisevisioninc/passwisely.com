@@ -6,7 +6,6 @@ import type { AccountUser } from "@/lib/auth";
 import type { AccountUsageReport } from "../../../shared/account-usage";
 import { CREDIT_PACKS, type CreditPackId } from "../../lib/payments/catalog";
 import { DOWNLOAD_ARTIFACTS, type DownloadPlatform } from "../../lib/downloads";
-import "./dashboard.css";
 
 export interface DashboardProps {
   locale: "zh" | "en";

@@ -15,7 +15,7 @@ BASE_COMMIT='d48cc7dcc551f1533bcee2573b374fa2fb68872b'
 PENDING_COMMIT='35a12a339567fe4c5435b9db3e7a169d664f8f14'
 LIVE_UNIT=Path('/etc/systemd/system/passwisely-web.service')
 LIVE_UNIT_SHA='62fc334603d7db85cadb993e760d1f7a0b84c42a42ea35fd608d0328ee9feef9'
-PUBLIC_BASE='http://47.95.66.86'
+PUBLIC_BASE='https://passwisely.cn'
 DOWNLOAD_ONLY_PATHS={
  'website/app/LandingPage.tsx','website/app/landing.css',
  'website/app/dashboard/Dashboard.tsx','website/app/dashboard/dashboard.css','website/tests/dashboard-navigation.test.mjs','website/tests/admin-observability.test.mjs',
@@ -30,6 +30,22 @@ BROKER_RELEASE_PATHS={
  'shared/captureSession.ts','electron/live/transcription.ts',
 }
 DOWNLOAD_ONLY_PATHS |= BROKER_RELEASE_PATHS
+# This exact domain-only change is layered on the active isolated release.
+# It does not admit checkout, payment configuration, or pending WeChat changes.
+CN_DOMAIN_RELEASE_PATHS={
+ 'website/lib/public-site.ts','website/app/layout.tsx','website/.env.example','website/README.md',
+ 'website/tests/public-site-origin.test.mjs','website/tests/live-account.mjs',
+ 'website/tests/live-ai.mjs','website/tests/live-ai-vision.mjs',
+}
+DOWNLOAD_ONLY_PATHS |= CN_DOMAIN_RELEASE_PATHS
+# Public-home code splitting and its local recovery/verification only.
+# This does not widen payment routes, configuration or pending WeChat authority.
+HOME_PERFORMANCE_RELEASE_PATHS={
+ 'website/app/PassWiselySite.tsx','website/app/DeferredViewBoundary.tsx',
+ 'website/tests/helpers/lazy-components.mjs','website/tests/lazy-views.test.mjs',
+ 'website/tests/fixtures/lazy-import-failure.tsx','website/tests/verify-lazy-failures.mjs',
+}
+DOWNLOAD_ONLY_PATHS |= HOME_PERFORMANCE_RELEASE_PATHS
 BROKER_SOURCE_PATHS={'website/lib/deepgram.ts','website/app/api/desktop/deepgram/token/route.ts','shared/captureSession.ts'}
 DEEPGRAM_ROUTE='/api/desktop/deepgram/token'
 _PRESERVED_BINDING=None
@@ -445,7 +461,7 @@ def public_download_health(downloads,seconds):
    for platform,artifact in downloads.items():
     status,headers,_=response(PUBLIC_BASE,'/api/download/'+platform,'HEAD')
     check(status==307 and headers.get('Location')==artifact['url'] and headers.get('x-passwisely-release-version')==artifact['version'] and headers.get('x-passwisely-artifact-sha256')==artifact['sha256'],'Public download proxy does not match the approved artifact.')
-   return {'base':PUBLIC_BASE,'downloadPlatforms':list(downloads),'homepageNotPartOfWiseActivation':True,'tlsNotExercised':True,'trackingEventNotCreated':True}
+   return {'base':PUBLIC_BASE,'downloadPlatforms':list(downloads),'homepageNotPartOfWiseActivation':True,'tlsNotExercised':False,'trackingEventNotCreated':True}
   except DeployError as error:last=error
   if time.monotonic()>=deadline:raise last
   time.sleep(1)

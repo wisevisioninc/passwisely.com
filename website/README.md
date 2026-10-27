@@ -78,9 +78,8 @@ same origin owner. Add `https://passwisely.cn/?reset=password` to the Supabase
 project's allowed recovery redirect URLs, and retain any valid `.com` URLs
 needed by installed clients or issued emails. Domain preparation alone does
 not verify the Supabase allowlist or change an installed desktop client's
-embedded service defaults. See
-[`test/reports/domain-cn-preparation.md`](../test/reports/domain-cn-preparation.md)
-for the executed offline checks and separate production verification scope.
+embedded service defaults. Verify the compiled public origin and installed
+client endpoints separately from the DNS and certificate deployment.
 
 Local HTTP development requests still produce the default public HTTPS links
 when this binding is omitted. Configure an explicit HTTPS test domain/local TLS
@@ -98,14 +97,14 @@ uncertain provider result preserves it as pending for a later verified callback.
 Signed asynchronous callbacks verify merchant/app IDs, order number, currency, and
 amount before an idempotent credit entry is written. Callback URLs are:
 
-- `https://passwisely.com/api/payments/alipay/notify`
-- `https://passwisely.com/api/payments/wechat/notify`
+- `https://passwisely.cn/api/payments/alipay/notify`
+- `https://passwisely.cn/api/payments/wechat/notify`
 
 The free new-user trial is **¥0 / 20 credits**, once on registration, without a payment order. Paid plans are **Pro: ¥99/month / 200 credits** (`pro_monthly_v2`) and **Unlimited: ¥299/month / 1,000 credits** (`unlimited_monthly_v2`). “Unlimited” is a plan name, not unlimited credits.
 
 Paid packs use manual repurchase, without automatic renewal. Each pack expires 30 days after its credits first arrive; purchasing another pack does not extend an earlier one. New checkout requests reject retired `starter`, `pro`, and `max` IDs. Historical pending orders retain their original immutable price/credit entitlement and remain payable under that snapshot.
 
-The desktop app uses `https://passwisely.com/api` by default. For local or
+New desktop builds use `https://passwisely.cn/api` and TLS gRPC `passwisely.cn:443` by default. For local or
 staging builds, override it with `PASSWISELY_API_URL`.
 
 ## Credit rules
@@ -123,7 +122,7 @@ Every usage request includes a unique request ID. Database transactions bind tha
 
 ## wise production deployment
 
-The public domain points to `8.219.140.215`. The application listens only on
+The `passwisely.cn` public domain points to Wise at `8.219.140.215`. The application listens only on
 `127.0.0.1:3011`; Nginx is the public HTTP/HTTPS entry point. The production
 service has its own systemd unit and does not modify the units or Nginx files
 used by WiseVision, WiseDrama, or other sites on the same server.

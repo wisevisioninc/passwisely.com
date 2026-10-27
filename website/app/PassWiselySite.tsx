@@ -1,11 +1,18 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { FormEvent, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AccountUser } from "../lib/auth";
-import { Dashboard } from "./dashboard/Dashboard";
+import { DeferredViewBoundary } from "./DeferredViewBoundary";
+// Vinext only advertises statically reachable client CSS during SSR. Keep the
+// Dashboard styles eager so its server-rendered shell never flashes unstyled.
+import "./dashboard/dashboard.css";
 import { LandingPage } from "./LandingPage";
 import { CREDIT_PACKS, TRIAL_CREDITS, isCheckoutProvider, type CreditPackId, type PaymentProvider } from "../lib/payments/catalog";
+
+// These views are only needed after navigation or starting a QR checkout.
+// Keep the public landing page eager so its full content is server rendered.
+const Dashboard = lazy(() => import("./dashboard/Dashboard").then(module => ({ default: module.Dashboard })));
+const QRCodeSVG = lazy(() => import("qrcode.react").then(module => ({ default: module.QRCodeSVG })));
 
 type Locale = "zh" | "en";
 type AuthMode = "login" | "register" | "forgot" | "reset" | "change";
@@ -464,7 +471,7 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
 
   return (
     <div id="top" className="passwisely-site">
-      {initialDashboard ? <Dashboard
+      {initialDashboard ? <DeferredViewBoundary kind="dashboard" locale={locale}><Suspense fallback={<main className="pw-container" aria-busy="true"><p role="status">{locale === "zh" ? "正在加载控制台…" : "Loading dashboard…"}</p></main>}><Dashboard
         locale={locale}
         onLocale={chooseLocale}
         onAccount={() => setAccountOpen(true)}
@@ -473,7 +480,7 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
         onUser={receiveDashboardUser}
         onUnauthorized={dashboardUnauthorized}
         refreshRevision={dashboardRefreshRevision}
-      /> : <LandingPage
+      /></Suspense></DeferredViewBoundary> : <LandingPage
         locale={locale}
         onLocale={chooseLocale}
         accountLabel={user ? `${user.credits} · Dashboard` : t.signIn}
@@ -745,7 +752,11 @@ export function PassWiselySite({ initialDashboard = false }: { initialDashboard?
             </button>
             <h2>{locale === "zh" ? "微信扫码支付" : "Scan with WeChat"}</h2>
             <div className="wechat-qr">
-              <QRCodeSVG value={wechatPayment.url} size={224} level="M" />
+              <DeferredViewBoundary kind="qr" locale={locale}>
+              <Suspense fallback={<p role="status" style={{ width: 224, minHeight: 224 }}>{locale === "zh" ? "正在生成二维码…" : "Preparing QR code…"}</p>}>
+                <QRCodeSVG value={wechatPayment.url} size={224} level="M" />
+              </Suspense>
+              </DeferredViewBoundary>
             </div>
             <p>
               {locale === "zh"

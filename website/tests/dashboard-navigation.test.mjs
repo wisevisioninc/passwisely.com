@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { Component } from "react";
+import { lazyComponents } from "./helpers/lazy-components.mjs";
 import { createProductionTsLoader } from "../../desktop-api/tests/helpers/production-typescript.mjs";
 
 const website = new URL("../", import.meta.url);
@@ -40,7 +42,9 @@ function application(t, siteProps = {}, artifactManifest = downloadManifest) {
   const frames = new Map(); let frame; const effects = [];
   const slot = () => { const index = frame.index++; return [frame, index]; };
   const same = (a, b) => a && b && a.length === b.length && a.every((value, i) => Object.is(value, b[i]));
+  const views = lazyComponents();
   const hooks = {
+    lazy: views.lazy, Component,
     useState(initial) { const [owner, index] = slot(); if (!(index in owner.slots)) owner.slots[index] = typeof initial === "function" ? initial() : initial;
       return [owner.slots[index], value => { owner.slots[index] = typeof value === "function" ? value(owner.slots[index]) : value; }]; },
     useRef(initial) { const [owner, index] = slot(); return owner.slots[index] ||= { current: initial }; },
@@ -57,8 +61,9 @@ function application(t, siteProps = {}, artifactManifest = downloadManifest) {
     try { return Component(props); } finally { frame = undefined; }
   }
   const app = {
+    ready: () => views.ready(),
     artifacts: load(fileURLToPath(new URL("lib/downloads.ts", website))).DOWNLOAD_ARTIFACTS,
-    render() { const root = render(PassWiselySite, siteProps, "site"); const dashboard = walk(root, e => e.type === Dashboard)[0]; return dashboard ? [root, render(Dashboard, dashboard.props, "dashboard")] : root; },
+    render() { const root = views.unwrap(render(PassWiselySite, siteProps, "site")); const dashboard = walk(root, e => e.type === Dashboard)[0]; return dashboard ? [root, render(Dashboard, dashboard.props, "dashboard")] : root; },
     dashboard(props) { return render(Dashboard, props, "standalone-dashboard"); },
     page() { return load(fileURLToPath(new URL("app/dashboard/page.tsx", website))); },
     flushEffects() { const batch = effects.splice(0); for (const effect of batch) effect(); },
@@ -83,7 +88,7 @@ function browser(t, { search = "", hash = "", pathname = "/" } = {}) {
   return { assigned, replaced, dispatch(name) { for (const callback of [...(listeners.get(name) || [])]) callback(); } };
 }
 const submit = async tree => { const form = walk(tree, e => e.type === "form")[0]; assert.ok(form); await form.props.onSubmit({ preventDefault: noop, currentTarget: { fields: { email: "account-a@example.invalid", password: "fixture-password-123" } } }); };
-async function mounted(app) { app.render(); app.flushEffects(); await settle(); const tree = app.render(); app.flushEffects(); return tree; }
+async function mounted(app) { await app.ready(); app.render(); app.flushEffects(); await settle(); const tree = app.render(); app.flushEffects(); return tree; }
 
 for (const mode of ["login", "register"]) test(`website ${mode} authenticates using cookies then navigates to Dashboard`, async t => {
   const b = browser(t, mode === "login" ? { search: "?login=1" } : {}), calls = [];
@@ -125,6 +130,9 @@ test("Dashboard page is a public noindex shell; it fetches one combined authenti
   let tree = await mounted(app); assert.equal(calls.length, 1); assert.equal(calls[0][0], "/api/account/usage?days=30");
   assert.equal(calls[0][1].cache, "no-store"); assert.equal(calls[0][1].credentials, "same-origin"); assert.ok(calls[0][1].signal instanceof AbortSignal);
   assert.match(text(tree), /account-a@example.invalid/); assert.match(text(tree), /No AI requests recorded in this period/);
+  const boundary = element(tree, "DeferredViewBoundary");
+  assert.equal(boundary.props.kind, "dashboard"); assert.equal(boundary.props.locale, "en");
+  assert.equal(walk(boundary, e => e.type?.name === "Dashboard").length, 1);
   const callbacks = element(tree, "Dashboard").props; tree = app.render(); app.flushEffects(); await settle();
   assert.equal(element(tree, "Dashboard").props.onUser, callbacks.onUser); assert.equal(element(tree, "Dashboard").props.onUnauthorized, callbacks.onUnauthorized); assert.equal(calls.length, 1);
 });

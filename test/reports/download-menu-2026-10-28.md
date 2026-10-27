@@ -1,6 +1,6 @@
 # 官网下载菜单 — 2026-10-28
 
-状态：**已实现，Mac 浏览器与 Wise Linux 验证完成；两台服务器候选均已准备，等待用户执行 Wise sudo 激活，尚未上线**。
+状态：**下载区改版已同步上线两台服务器；线上补验发现的固定导航遮挡问题已修复，补丁通过 Mac 与 Wise Linux 各 249 项测试及浏览器验收，等待用户执行最终发布切换**。
 
 首页与页尾复用同一下载组件，主入口改为并排的 `Get for Windows` 和 `Get for Mac`。点击 Mac 展开 Apple Silicon、Intel 芯片两项；已可靠检测的芯片标为推荐并正常显示，另一项置灰但仍可手动下载。浏览器不提供芯片信息时两项均保留正常选择，不将 `MacIntel` 兼容字符串误判为 Intel。
 
@@ -35,3 +35,18 @@ canonical 提交 `8be1759` 保留现有代码及未发布微信修改。生产�
 SHA256 `0126f7b7c0e8a069bef694a7de81525d8d91dd34c7f3ac072317c809418466fd`；Bash 语法检查通过，最新 `sudo -n` 返回 1，需用户交互式认证。入口严格检查当前 .cn HTTPS、owner 指纹、当前运行树及候选 manifest，先计划再激活，使用原部署 owner 的健康检查和运行包回滚；无数据库迁移或模型设置操作。Wise 当前运行绑定 6742 字节、SHA256 `826c8bbf9a147091d525000d3f1da2bc9a2252732194cdc35f8a88f27eb0a0b8` 经只读核验保持一致，值未输出。
 
 用户执行后，应核验 Wise 运行包与公网 12 项路由，再使用已审阅的前端镜像 owner 同步另一官网服务器，并在实际线上页面复验菜单。两机准备回执明确为未激活；不得据此声称已上线。
+
+## 首次上线与导航边界补丁
+
+用户执行 `8be9853` 激活入口后，Wise 运行包事务 SHA256 `385a2cc9cbf58e0ffe0e3aed3e3a4c524b0c818f62b331b5860f72a6f18bdd0a` 匹配。独立核验 Wise 与前端镜像均运行 49 文件、树 `8ab6d1af258135c5e9effbf913b6818eb3deed2ce1b3ac8603832153649a4ce0`；镜像事务 SHA256 `a40d2dc1e658387cd16d9b8c2ea2508d36bced4a80e20922c816c74e20a28416`，24 项资源校验通过，原配置与路由保持。公网 `.cn` HTTPS、鉴权、gRPC 与三平台下载 **12/12** 通过，未访问下载追踪 GET 或发起模型/付款请求。见 [首次上线回执](releases/2.0.0/r5/download-menu-initial-active.json)。
+
+实际线上 Mac 菜单成功识别 Apple 芯片并将 Intel 置灰，两项均为 v2.0.0、支持实时音频；390×844 无横溢。随后发现特定桌面布局中，菜单虽在视口内，但向上展开落入固定导航占用区，开头被遮挡。
+
+修复 producing boundary：`fitMenu` 在自己的 `.pw-landing` 中读取 `.pw-header` 当前可视矩形，扣除导航实际占用高度和边距，再比较向上/向下可用空间。没有提高全局 z-index 或写死导航高度。canonical 补丁 `2448daa`，隔离候选 `b7d8a44930482bfe4fb0201a9ba99f3678a9b1cb`，仅新增两路径增量。相关 **74/74**；干净候选完整网站 **249/249**、owner **18/18**、TypeScript 通过。
+
+候选浏览器验证 1280×720、390×844、1280×650。在矮屏案例，固定导航 bottom=92，菜单改为向下 240px 内滚动，实际 y397.8～637.8，首个选项 hit 属于菜单，error/warn 0。字体加载是否造成前述位置变化没有充分证据，本次未扩展字体监听或轮询。补丁 manifest `052b72b8fdd23f047b48e2914a85aa12b7cbc90f83fd60e6211b9c7005275fe3`、树 `8aecf4605ab3706238ee76b70b5af2a1203acdd8d2e6b4a4ef945b406c7f658d`，49 文件、5,361,547 字节。以上是本地候选验证，尚不代表补丁已经上线。
+
+
+导航补丁 Wise Linux **249/249**、owner **18/18**、TypeScript 全部通过；运行绑定、模型与数据库保持不变。最终入口 `/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-nav-b7d8a44/activate-reviewed.sh`，SHA256 `ebde432422946f3f4fd6c68fbb0814871f48300fbce5bd21c5454a5307b85d08`，Bash 语法核验通过。入口以首次已上线 `8ab6d1…` 树为基线，继续使用原隔离部署 owner，先计划再激活。已将准确命令交付用户；本回执明确为 prepared，不声称补丁已激活。见 [导航补丁准备回执](releases/2.0.0/r5/download-menu-header-fix-prepared.json)。
+
+只读核查发现旧免密 UI 入口会 fast-forward/merge 主工作树，并使用旧 `.com` 健康检查，无法保持本次 pending WeChat 隔离与精确指纹约束。因此没有运行或改写该入口，也没有扩大 sudo 权限；仍由用户本人执行安全的隔离发布入口。

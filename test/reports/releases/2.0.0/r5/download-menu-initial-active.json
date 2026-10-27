@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "success": true,
+  "sourceCommit": "8be985357bd3596dbb4fc62d478e5225fc93800a",
+  "sameCompiledRuntimeOnWiseAndMirror": true,
+  "activeTree": "8ab6d1af258135c5e9effbf913b6818eb3deed2ce1b3ac8603832153649a4ce0",
+  "compiledFiles": 49,
+  "wiseTransactionSha256": "385a2cc9cbf58e0ffe0e3aed3e3a4c524b0c818f62b331b5860f72a6f18bdd0a",
+  "frontendTransactionSha256": "a40d2dc1e658387cd16d9b8c2ea2508d36bced4a80e20922c816c74e20a28416",
+  "frontendHealth": {
+    "homepageEndpoints": 3,
+    "assetChecks": 24,
+    "allAssetsMatchedManifest": true
+  },
+  "wiseBindingsPreservedExactly": true,
+  "frontendPublicOriginBindingPreserved": true,
+  "nginxAndUnitPinsPreserved": true,
+  "wiseWebAndDesktopServicesHealthy": true,
+  "frontendServiceHealthy": true,
+  "modelConfigurationWrites": 0,
+  "databaseWrites": 0,
+  "paymentRequests": 0,
+  "providerCalls": 0,
+  "trackingRequests": 0,
+  "files": {
+    "frontend-fresh-plan.json": {
+      "sha256": "4690b2279de9b901ca61fd791435cb495ea86d20780162cacffe0419a4162751",
+      "bytes": 1647
+    },
+    "frontend-verification.json": {
+      "sha256": "47ae43557667f241b999b13ffc310ea05f5210dd301460454bf4b81dd3bc635f",
+      "bytes": 933
+    },
+    "frontend-activation.json": {
+      "sha256": "5b4524bd6a63a29a905a36dd24f9cd737acf016efbb6ead068b83f3b09314a00",
+      "bytes": 1164
+    },
+    "frontend-transaction.json": {
+      "sha256": "a40d2dc1e658387cd16d9b8c2ea2508d36bced4a80e20922c816c74e20a28416",
+      "bytes": 1035
+    },
+    "wise-verification.json": {
+      "sha256": "4c9b1debddce520531f989cbf1ff6fdc7d40c2fe327babf79bbe99f086a8294e",
+      "bytes": 1389
+    },
+    "frontend-activation-result.json": {
+      "sha256": "788e1637ba5415ac79bdd727914d29c4a791a179a20c4f8893696b8e93adce9c",
+      "bytes": 1199
+    },
+    "wise-transaction.json": {
+      "sha256": "385a2cc9cbf58e0ffe0e3aed3e3a4c524b0c818f62b331b5860f72a6f18bdd0a",
+      "bytes": 4273
+    }
+  },
+  "uiAcceptanceStatus": "live_core_behaviors_verified_header_overlap_found_fix_in_progress",
+  "publicVerification": {
+    "schemaVersion": 1,
+    "startedAtUtc": "2026-10-27T21:38:56.117Z",
+    "origin": "https://passwisely.cn",
+    "grpcAuthority": "passwisely.cn:443",
+    "mode": "public-read-only",
+    "success": true,
+    "checks": [
+      {
+        "id": "https-homepage",
+        "success": true,
+        "httpStatus": 200,
+        "heroLocale": "zh",
+        "certificate": {
+          "authorized": true,
+          "protocol": "TLSv1.3",
+          "fingerprint256": "6B:7F:37:E8:8C:91:F8:7A:8C:E2:1C:D4:F9:C6:B7:56:DB:0C:68:59:6F:F3:C4:E6:CE:32:1B:F1:B2:84:7F:04",
+          "validFrom": "Oct 27 09:39:01 2026 GMT",
+          "validTo": "Jan 25 09:39:00 2027 GMT",
+          "subjectCN": "passwisely.cn",
+          "issuerCN": "YR1",
+          "subjectAltName": "DNS:passwisely.cn, DNS:www.passwisely.cn"
+        },
+        "elapsedMs": 556.512375
+      },
+      {
+        "id": "http-redirect-preserves-route",
+        "success": true,
+        "httpStatus": 301,
+        "target": "https://passwisely.cn/api/account?route_probe=1",
+        "elapsedMs": 197.315834
+      },
+      {
+        "id": "GET /api/account",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 296.4304159999999
+      },
+      {
+        "id": "POST /api/desktop/recall/upload-token",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 256.74649999999997
+      },
+      {
+        "id": "POST /api/desktop/deepgram/token",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 290.4191659999999
+      },
+      {
+        "id": "POST /api/ai/chat/completions",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 276.366708
+      },
+      {
+        "id": "download-mac-arm64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg",
+        "elapsedMs": 291.87991699999975
+      },
+      {
+        "id": "download-mac-x64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg",
+        "elapsedMs": 294.01200000000017
+      },
+      {
+        "id": "download-windows-x64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe",
+        "elapsedMs": 263.42629199999965
+      },
+      {
+        "id": "grpc-health",
+        "success": true,
+        "status": "SERVING",
+        "transport": "grpc+protobuf",
+        "elapsedMs": 373.8682909999998
+      },
+      {
+        "id": "grpc-chat-auth-first",
+        "success": true,
+        "grpcCode": 16,
+        "elapsedMs": 84.16712499999994
+      },
+      {
+        "id": "grpc-chat-stream-auth-first",
+        "success": true,
+        "grpcCode": 16,
+        "receivedData": false,
+        "elapsedMs": 90.11249999999973
+      }
+    ],
+    "releaseVersion": "2.0.0",
+    "expectedDownloads": [
+      {
+        "platform": "mac-arm64",
+        "version": "2.0.0",
+        "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg",
+        "bytes": 159694334
+      },
+      {
+        "platform": "mac-x64",
+        "version": "2.0.0",
+        "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg",
+        "bytes": 119247160
+      },
+      {
+        "platform": "windows-x64",
+        "version": "2.0.0",
+        "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe",
+        "bytes": 123221074
+      }
+    ],
+    "elapsedMs": 3276.0067919999997,
+    "publicVerificationPerformed": true
+  },
+  "headerIssue": {
+    "viewport": [
+      1280,
+      720
+    ],
+    "menuTop": 17.3515625,
+    "menuBottom": 354.265625,
+    "cause": "Above placement did not subtract the sticky navigation occupied area",
+    "nextAction": "Fix at fitMenu boundary, rebuild and stage follow-up"
+  },
+  "providerCallsByThisAcceptance": 0,
+  "paymentRequestsByThisAcceptance": 0
+}

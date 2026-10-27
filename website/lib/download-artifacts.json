@@ -13,14 +13,14 @@
     "mac-x64": {
       "version": "2.0.0",
       "filename": "PassWisely-macOS-x64.dmg",
-      "sha256": "e30dc451454880f4115ee25b6760dd7299f50f970e64061faa0bf59699325ae2",
-      "bytes": 119500997,
+      "sha256": "66c982d013b0814d8501123543f9300d7e31e9072a5db5107752021dcf914fa4",
+      "bytes": 119246394,
       "legacy": false,
-      "liveAudio": "not_included",
-      "revision": 3,
+      "liveAudio": "included",
+      "revision": 4,
       "notice": {
-        "zh": "Intel 版 v2.0.0，支持截图与文字问答；不含实时音频，Recall 暂不支持 Intel Mac。",
-        "en": "Intel v2.0.0 supports screenshots and text questions; no live audio, as Recall does not support Intel Macs."
+        "zh": "原生音频需 macOS 13 或更新版本。",
+        "en": "Native live audio requires macOS 13 or later."
       }
     },
     "windows-x64": {

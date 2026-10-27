@@ -112,6 +112,8 @@ for (const locale of ["zh", "en"]) test(`real ${locale} downloads recommend the 
     const intel = links.find(link => link.includes('data-platform="mac-x64"'));
     assert.ok(intel.includes(`v${DOWNLOAD_ARTIFACTS["mac-x64"].version}`));
     if (DOWNLOAD_ARTIFACTS["mac-x64"].liveAudio === "not_included") assert.match(intel, locale === "zh" ? /不含实时音频/ : /no live audio/i);
+    else assert.doesNotMatch(intel, /不含实时音频|no live audio/i);
+    assert.ok(html.includes(DOWNLOAD_ARTIFACTS["mac-x64"].notice[locale]));
     if (!DOWNLOAD_ARTIFACTS["mac-x64"].legacy) assert.doesNotMatch(intel, /旧版|Legacy/);
   }
 });

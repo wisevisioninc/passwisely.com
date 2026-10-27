@@ -224,6 +224,7 @@ for (const locale of ["zh", "en"]) test(`real ${locale} Dashboard offers all thr
       assert.match(links[0].props["aria-label"], platform === "mac-arm64" ? /macOS Apple silicon/ : platform === "mac-x64" ? /macOS Intel/ : /Windows x64/);
     } else assert.equal(links.length, 0);
     if (artifact.liveAudio === "not_included") assert.match(text(card), locale === "zh" ? /不含实时音频/ : /No live audio/);
+    else assert.doesNotMatch(text(card), /不含实时音频|no live audio/i);
     if (artifact.legacy) assert.match(text(card), locale === "zh" ? /旧版/ : /Legacy/);
     else assert.doesNotMatch(text(card), /旧版|legacy/i);
     if (artifact.notice) assert.ok(text(card).includes(artifact.notice[locale]));
@@ -234,6 +235,7 @@ for (const locale of ["zh", "en"]) test(`real ${locale} Dashboard Intel v2 stays
   browser(t);
   const v2 = { ...downloadManifest, artifacts: Object.fromEntries(Object.entries(downloadManifest.artifacts).map(([platform, artifact]) => [platform, {
     ...artifact, version: "2.0.0", legacy: false, sha256: "a".repeat(64), bytes: 1234,
+    liveAudio: platform === "mac-x64" ? "not_included" : artifact.liveAudio,
     notice: platform === "mac-x64" ? { zh: "Intel v2 不含实时音频。", en: "Intel v2 has no live audio." } : artifact.notice,
   }])) };
   for (const pendingPlatform of [null, "mac-arm64", "mac-x64", "windows-x64"]) {

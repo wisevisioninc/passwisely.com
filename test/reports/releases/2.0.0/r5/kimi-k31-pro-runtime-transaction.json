@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "2.0.0",
+  "sourceCommit": "f96b17787d9c8c97ba1b8bf30326f43c1ef3c406",
+  "manifestSha256": "7e23eaf556a8d41273b592ce15df6ca08f763c379f0fe4e0c99a85121e7b00cd",
+  "ownerUid": 1000,
+  "ownerGid": 1000,
+  "retainedRuntime": "/home/jerry/codebase/passwisely/website/.release-candidates/v2.0.0-kimi-k31-pro-f96b177/dist",
+  "oldFingerprint": "7e681be092a67c2de2879484ba988fa7adf7a959ee0e28754f3692db34307c92",
+  "newFingerprint": "813c15d59e2ac9a3357bd461a7304a2e1971fdc5c953f640e0b88e660599d633",
+  "oldNginxSha256": "99050372081d3a6c242815238d80549916f273aff7c37d6076b822bb645f71b6",
+  "newNginxSha256": "99050372081d3a6c242815238d80549916f273aff7c37d6076b822bb645f71b6",
+  "nginxBackup": "/home/jerry/codebase/passwisely/website/.release-backups/v2.0.0-20261027T203751Z-a6ecfba8/nginx.before.conf",
+  "nginxMode": 420,
+  "nginxUid": 0,
+  "nginxGid": 0,
+  "webTouched": true,
+  "stopRequested": true,
+  "runtimeExchanged": true,
+  "nginxInstalled": false,
+  "nginxInstallRequested": false,
+  "status": "active",
+  "productionDataModified": false,
+  "desktopApiModified": false,
+  "baselineHealth": [
+    {
+      "base": "http://127.0.0.1:3011",
+      "downloads": {
+        "mac-arm64": {
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg"
+        },
+        "mac-x64": {
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg"
+        },
+        "windows-x64": {
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe"
+        }
+      }
+    },
+    {
+      "base": "https://passwisely.cn",
+      "downloads": {
+        "mac-arm64": {
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg"
+        },
+        "mac-x64": {
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg"
+        },
+        "windows-x64": {
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe"
+        }
+      }
+    }
+  ],
+  "configurationPreflight": {
+    "scope": "preserved-running-binding-bytes",
+    "bindingBytes": 6742,
+    "bindingValuesReturned": false,
+    "sourceEnvironmentRead": false,
+    "productionFileWrites": 0,
+    "exactBytesMatch": true
+  },
+  "sourceRepo": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-kimi-k31-pro-f96b177",
+  "liveSourceCommit": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+  "bindingBefore": {
+    "sha256": "826c8bbf9a147091d525000d3f1da2bc9a2252732194cdc35f8a88f27eb0a0b8",
+    "bytes": 6742,
+    "uid": 1000,
+    "gid": 1000,
+    "mode": 384
+  },
+  "bindingsPresent": {
+    "scope": "preserved-running-binding-bytes",
+    "bindingBytes": 6742,
+    "bindingValuesReturned": false,
+    "sourceEnvironmentRead": false,
+    "productionFileWrites": 0,
+    "exactBytesMatch": true
+  },
+  "localHealth": {
+    "base": "http://127.0.0.1:3011",
+    "homepage": 200,
+    "pricing": {
+      "trialCredits": 20,
+      "paidPacks": [
+        {
+          "priceCny": 99,
+          "credits": 200
+        },
+        {
+          "priceCny": 299,
+          "credits": 1000
+        }
+      ],
+      "paidValidityDays": 30,
+      "automaticRenewal": false
+    },
+    "downloadPlatforms": [
+      "mac-arm64",
+      "mac-x64",
+      "windows-x64"
+    ],
+    "unauthenticatedRecallAndAi": 401,
+    "unauthenticatedDeepgram": 401,
+    "unauthenticatedCheckout": 401,
+    "checkoutGet": 405,
+    "retiredPackAuthenticatedRejection": "not_exercised_by_unauthenticated_probe",
+    "unknownPlatform": 404,
+    "providerCalls": 0,
+    "paymentOrdersCreated": 0
+  },
+  "publicHealth": {
+    "base": "https://passwisely.cn",
+    "downloadPlatforms": [
+      "mac-arm64",
+      "mac-x64",
+      "windows-x64"
+    ],
+    "homepageNotPartOfWiseActivation": true,
+    "tlsNotExercised": false,
+    "trackingEventNotCreated": true
+  }
+}

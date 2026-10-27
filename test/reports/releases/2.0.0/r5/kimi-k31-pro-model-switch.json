@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "runId": "64c010b7-4e8f-40cd-8379-4dcb39f7e0a5",
+  "startedAt": "2026-10-27T20:37:54.483Z",
+  "mode": "apply",
+  "origin": "http://127.0.0.1:3011",
+  "targetModel": "kimi-k3.1-pro",
+  "success": true,
+  "status": "active",
+  "before": {
+    "provider": "kimi",
+    "model": "kimi-k3"
+  },
+  "after": {
+    "provider": "kimi",
+    "model": "kimi-k3.1-pro"
+  },
+  "backup": "/home/jerry/.passwisely-private/model-switch-backups/kimi-k31-pro-ljLz3D/previous-model.json",
+  "databaseWriteCount": 1,
+  "settingsPutAttempts": 1,
+  "otherMaskedSettingsUnchanged": true,
+  "credentialValuesReturned": false,
+  "secretSettingsPersisted": false,
+  "environmentWrites": 0,
+  "providerCalls": 0,
+  "serviceRestarts": 0,
+  "automaticRollbackAttempted": false,
+  "conditionalWriteAtomic": false,
+  "completedAt": "2026-10-27T20:37:54.741Z"
+}

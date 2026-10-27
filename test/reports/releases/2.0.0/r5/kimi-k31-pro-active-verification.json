@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "success": true,
+  "sourceCommit": "f96b17787d9c8c97ba1b8bf30326f43c1ef3c406",
+  "sourceDetached": true,
+  "sourceWorkingTreeClean": true,
+  "activeCompiledFiles": 49,
+  "activeTree": "813c15d59e2ac9a3357bd461a7304a2e1971fdc5c953f640e0b88e660599d633",
+  "bindingBytes": 6742,
+  "bindingSha256": "826c8bbf9a147091d525000d3f1da2bc9a2252732194cdc35f8a88f27eb0a0b8",
+  "bindingValuesReturned": false,
+  "liveCheckoutCommit": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+  "nginxSha256": "99050372081d3a6c242815238d80549916f273aff7c37d6076b822bb645f71b6",
+  "liveUnitSha256": "62fc334603d7db85cadb993e760d1f7a0b84c42a42ea35fd608d0328ee9feef9",
+  "webService": {
+    "Result": "success",
+    "ExecMainStatus": 0,
+    "ActiveState": "active",
+    "SubState": "running"
+  },
+  "desktopApiService": "active",
+  "model": {
+    "provider": "kimi",
+    "model": "kimi-k3.1-pro"
+  },
+  "modelSwitchRunId": "64c010b7-4e8f-40cd-8379-4dcb39f7e0a5",
+  "modelConfigurationWriteCountFromActivationReceipt": 1,
+  "otherMaskedSettingsUnchanged": true,
+  "verificationProductionWrites": 0,
+  "verificationProviderCalls": 0,
+  "verificationServiceOperations": 0,
+  "readOnlyVerification": true,
+  "sourceEnvironmentRead": false,
+  "credentialValuesReturned": false,
+  "receipts": [
+    {
+      "path": "transaction.json",
+      "bytes": 4275,
+      "sha256": "e69b20200f5fea22d1d6b7e56de7d5cad5a0f19135f5b135161162e440d00582"
+    },
+    {
+      "path": "model-switch-receipt.json",
+      "bytes": 847,
+      "sha256": "d1d0d0ccd8d0fb98a42a1898d3b7557d6b2b34ac938acc1b5b28377a4434e24f"
+    }
+  ]
+}

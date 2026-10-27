@@ -35,6 +35,8 @@ On the Recall path, audio travels from the native SDK to Recall and transcripts 
 
 ### Intel Mac native audio
 
+The implementation described here is the new source candidate. Public r3 Intel downloads still carry the no-audio notice until the new broker and native capture pass acceptance; see the [candidate verification and pending release work](test/reports/release-v2.0.0-intel-native-audio.md).
+
 Intel uses an independently signed `Contents/Resources/audio/PassWiselyAudioHelper` built for x86_64 with the existing Apple Command Line Tools. It captures system audio through ScreenCaptureKit and the default microphone through AVAudioEngine, converts each source separately to 16 kHz mono signed 16-bit PCM, and sends the streams directly to Deepgram over two TLS WebSockets. No Recall native executable is used on this path. macOS 13 or newer and screen/audio plus microphone permissions are required.
 
 The same owned helper completes permission requests and source discovery **before** the authenticated website issues a 30-second connection JWT. Preparation does not record audio. The server-only configuration is `DEEPGRAM_API_KEY`; use a key with Member or higher permissions for Deepgram's grant endpoint. No API key is shipped to the client, and Recall dashboard credentials are not used by this Intel path. `POST /api/desktop/deepgram/token` accepts only a session UUID and `deepgram-en` or `deepgram-zh`. It returns a short-lived usage token for Deepgram core voice APIs; Deepgram does not restrict it to one model, one session or STT alone. The process-local retry/throttle cache is not a durable quota.

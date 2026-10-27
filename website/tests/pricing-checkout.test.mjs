@@ -237,6 +237,7 @@ test("open Mac menus fit current viewport bounds on toggle, resize and scroll, w
   const nativeListeners = new Map();
   const element = {
     open: false,
+    closest: () => null,
     addEventListener(name, callback) { nativeListeners.set(name, callback); },
     removeEventListener(name, callback) { assert.equal(nativeListeners.get(name), callback); nativeListeners.delete(name); },
   };
@@ -266,6 +267,50 @@ test("open Mac menus fit current viewport bounds on toggle, resize and scroll, w
   app.cleanup();
   assert.equal(nativeListeners.size, 0);
   assert.equal(b.listeners.size, 0, "resize and captured scroll listeners are released");
+});
+
+test("Mac menus reserve their own visible sticky header area before choosing an upward placement", t => {
+  const b = browser(t);
+  window.innerHeight = 720;
+  const app = componentHarness("app/LandingPage.tsx", "Downloads", { locale: "en" });
+  const tree = app.render();
+  const details = walk(tree, element => element.type === "details")[0];
+  const summary = walk(tree, element => element.type === "summary")[0];
+  const panel = walk(tree, element => element.props?.className === "pw-mac-download-menu")[0];
+  const nativeListeners = new Map();
+  let headerBounds = { top: 0, bottom: 92 };
+  const landing = { querySelector(selector) {
+    assert.equal(selector, ".pw-header");
+    return { getBoundingClientRect: () => headerBounds };
+  } };
+  const element = {
+    open: true,
+    closest(selector) { assert.equal(selector, ".pw-landing"); return landing; },
+    addEventListener(name, callback) { nativeListeners.set(name, callback); },
+    removeEventListener(name, callback) { assert.equal(nativeListeners.get(name), callback); nativeListeners.delete(name); },
+  };
+  let bounds = { top: 364.3, bottom: 420.3 };
+  const properties = new Map();
+  const menu = { scrollHeight: 335, dataset: {}, style: { setProperty(name, value) { properties.set(name, value); } } };
+  details.props.ref.current = element;
+  summary.props.ref.current = { getBoundingClientRect: () => bounds };
+  panel.props.ref.current = menu;
+  app.flushEffects();
+  assert.equal(menu.dataset.placement, "below", "the header makes the space above smaller than the unobstructed space below");
+  assert.equal(properties.get("--pw-download-menu-max-height"), "277px", "the original 1280×720 layout scrolls below the button without navigation overlap");
+  bounds = { top: 650, bottom: 706 };
+  b.listeners.get("scroll")();
+  assert.equal(menu.dataset.placement, "above");
+  assert.equal(properties.get("--pw-download-menu-max-height"), "536px");
+  headerBounds = { top: 0, bottom: 140 };
+  b.listeners.get("resize")();
+  assert.equal(properties.get("--pw-download-menu-max-height"), "488px", "the current header rectangle owns the inset, not a fixed pixel height");
+  headerBounds = { top: -100, bottom: -8 };
+  b.listeners.get("scroll")();
+  assert.equal(properties.get("--pw-download-menu-max-height"), "628px", "an offscreen header does not reserve nonexistent visible space");
+  app.cleanup();
+  assert.equal(nativeListeners.size, 0);
+  assert.equal(b.listeners.size, 0);
 });
 
 const landingProps = { locale: "zh", onLocale: noop, accountLabel: "Account", onAccount: noop, onBuy: noop, onRegisterTrial: noop, busy: false };

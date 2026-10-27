@@ -148,7 +148,12 @@ export function Downloads({
       const gap = 10;
       const edge = 12;
       const below = Math.max(0, viewport.innerHeight - bounds.bottom - gap - edge);
-      const above = Math.max(0, bounds.top - gap - edge);
+      // The landing header owns the sticky navigation area above either disclosure.
+      const header = details.closest(".pw-landing")?.querySelector(".pw-header")?.getBoundingClientRect();
+      const visibleTop = header && header.bottom > 0 && header.top < viewport.innerHeight
+        ? Math.max(edge, Math.min(viewport.innerHeight, header.bottom + edge))
+        : edge;
+      const above = Math.max(0, bounds.top - gap - visibleTop);
       const openAbove = menu.current.scrollHeight > below && above > below;
       menu.current.dataset.placement = openAbove ? "above" : "below";
       menu.current.style.setProperty("--pw-download-menu-max-height", `${Math.floor(openAbove ? above : below)}px`);

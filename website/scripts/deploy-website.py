@@ -23,6 +23,15 @@ DOWNLOAD_ONLY_PATHS={
  'website/tests/oss-download.test.mjs','website/tests/download-platform.test.mjs','website/tests/pricing-checkout.test.mjs',
  'website/README.md','website/scripts/deploy-website.py','website/scripts/tests/deploy-website.test.py',
 }
+# The release branch may contain only these additional broker/profile changes.
+BROKER_RELEASE_PATHS={
+ 'website/lib/deepgram.ts','website/app/api/desktop/deepgram/token/route.ts',
+ 'website/tests/deepgram-token.test.mjs','website/tests/recall-upload.test.mjs',
+ 'shared/captureSession.ts','electron/live/transcription.ts',
+}
+DOWNLOAD_ONLY_PATHS |= BROKER_RELEASE_PATHS
+BROKER_SOURCE_PATHS={'website/lib/deepgram.ts','website/app/api/desktop/deepgram/token/route.ts','shared/captureSession.ts'}
+DEEPGRAM_ROUTE='/api/desktop/deepgram/token'
 _PRESERVED_BINDING=None
 _BINDING_INFO=None
 NODE='/home/jerry/.nvm/versions/node/v22.15.0/bin/node'
@@ -133,7 +142,7 @@ class ProbeError(DeployError):
 def probe_context(base,path,method,phase):
  # Only reviewed route identifiers enter retained errors, never request URLs,
  # query strings, userinfo, payloads, response headers or exception messages.
- paths={'/','/api/checkout','/api/desktop/recall/upload-token','/api/ai/chat/completions','/api/download/__proto__',*('/api/download/'+platform for platform in PLATFORMS)}
+ paths={DEEPGRAM_ROUTE,'/','/api/checkout','/api/desktop/recall/upload-token','/api/ai/chat/completions','/api/download/__proto__',*('/api/download/'+platform for platform in PLATFORMS)}
  return {'base':base if base in {'http://127.0.0.1:3011','https://passwisely.com',PUBLIC_BASE} else 'unrecognized',
   'method':method if method in {'HEAD','GET','POST'} else 'unrecognized',
   'path':path if path in paths else 'unrecognized','phase':phase if phase in {'request_build','open','body_read','close','health'} else 'unrecognized'}
@@ -259,34 +268,34 @@ def verify_pricing(body):
  check('并非无限额度' in visible or 'not unlimited usage' in visible,'Unlimited pack credit-limit explanation missing.')
  return {'trialCredits':20,'paidPacks':[{'priceCny':99,'credits':200},{'priceCny':299,'credits':1000}],'paidValidityDays':30,'automaticRenewal':False}
 
-def health_once(base,downloads):
+def health_once(base,downloads,include_deepgram=False):
  with health_stage(base,'/','GET','homepage'):
   status,headers,body=response(base,'/','GET');check(status==200 and 'pw-hero-title' in body,'Homepage is not healthy.')
  with health_stage(base,'/','GET','homepage_pricing'):pricing=verify_pricing(body)
  with health_stage(base,'/','GET','homepage_release_labels'):
   release_text=html.unescape(body)
   check(all(artifact['version'] in release_text for artifact in downloads.values()),'Homepage release labels do not match.')
-  notice=downloads['windows-x64'].get('notice') or {}
-  check(any(text and text in release_text for text in [notice.get('zh'),notice.get('en')]),'Windows release limitation notice missing.')
-  check('不含实时音频' in release_text or 'no live audio' in release_text,'Intel live-audio limitation missing.')
+  for platform in ['windows-x64','mac-x64']:
+   notice=downloads[platform].get('notice')
+   if notice is not None:check(any(text and text in release_text for text in [notice.get('zh'),notice.get('en')]),'Catalog release notice missing: '+platform)
  for platform,artifact in downloads.items():
   with health_stage(base,'/api/download/'+platform,'HEAD','download'):
    status,headers,_=response(base,'/api/download/'+platform)
    check(status==307 and headers.get('Location')==artifact['url'],'Download URL mismatch: '+platform)
    check(headers.get('x-passwisely-release-version')==artifact['version'],'Download version mismatch: '+platform)
    if artifact.get('sha256'):check(headers.get('x-passwisely-artifact-sha256')==artifact['sha256'],'Download digest header mismatch: '+platform)
- for path in ['/api/desktop/recall/upload-token','/api/ai/chat/completions']:
+ for path in ['/api/desktop/recall/upload-token','/api/ai/chat/completions']+([DEEPGRAM_ROUTE] if include_deepgram else []):
   with health_stage(base,path,'POST','unauthenticated_route'):check(response(base,path,'POST')[0]==401,'Unauthenticated route is missing or not protected.')
  with health_stage(base,'/api/checkout','GET','checkout_method'):check(response(base,'/api/checkout','GET')[0]==405,'Checkout unexpectedly accepts GET.')
  for retired in ['starter','pro','max']:
   with health_stage(base,'/api/checkout','POST','unauthenticated_checkout'):check(response(base,'/api/checkout','POST',{'packId':retired,'provider':'alipay'})[0]==401,'Unauthenticated checkout is not protected.')
  with health_stage(base,'/api/download/__proto__','HEAD','unknown_download'):check(response(base,'/api/download/__proto__')[0]==404,'Unknown download platform was accepted.')
- return {'base':base,'homepage':200,'pricing':pricing,'downloadPlatforms':list(downloads),'unauthenticatedRecallAndAi':401,'unauthenticatedCheckout':401,'checkoutGet':405,'retiredPackAuthenticatedRejection':'not_exercised_by_unauthenticated_probe','unknownPlatform':404,'providerCalls':0,'paymentOrdersCreated':0}
+ return {'base':base,'homepage':200,'pricing':pricing,'downloadPlatforms':list(downloads),'unauthenticatedRecallAndAi':401,**({'unauthenticatedDeepgram':401} if include_deepgram else {}),'unauthenticatedCheckout':401,'checkoutGet':405,'retiredPackAuthenticatedRejection':'not_exercised_by_unauthenticated_probe','unknownPlatform':404,'providerCalls':0,'paymentOrdersCreated':0}
 
-def wait_health(base,downloads,seconds):
+def wait_health(base,downloads,seconds,include_deepgram=False):
  deadline=time.monotonic()+seconds
  while True:
-  try:return health_once(base,downloads)
+  try:return health_once(base,downloads,include_deepgram)
   except ProbeError as error:last=error
   except DeployError:last=ProbeError({**probe_context(base,'unrecognized','unrecognized','health'),'kind':'semantic','stage':'health','reason':'health_validation_failed'})
   if time.monotonic()>=deadline:raise last
@@ -313,6 +322,28 @@ def verify_baseline(baseline,seconds=60):
   if time.monotonic()>=deadline:raise last
   time.sleep(1)
 
+def has_deepgram_broker(manifest):
+ paths={item['path'] for item in manifest.get('sourceFiles',[])}
+ present=BROKER_SOURCE_PATHS & paths
+ check(not present or present==BROKER_SOURCE_PATHS,'Incomplete Deepgram broker source provenance.')
+ return bool(present)
+
+def match_source_catalog(downloads):
+ # Bind the build producer's parsed catalog to the pinned public source facts.
+ # Capabilities come from liveAudio, never from notice wording or CPU guesses.
+ raw=json.loads((SOURCE_REPO/'website/lib/download-artifacts.json').read_text())
+ check(isinstance(raw,dict) and raw.get('releaseVersion')=='2.0.0' and isinstance(raw.get('artifacts'),dict) and set(raw['artifacts'])==set(PLATFORMS),'Invalid source download catalog.')
+ for platform,item in downloads.items():
+  source=raw['artifacts'][platform]
+  check(isinstance(source,dict),'Invalid source download artifact.')
+  for field in ['version','filename','sha256','bytes','legacy','liveAudio']:
+   check(type(source.get(field)) is type(item.get(field)) and source.get(field)==item.get(field),'Deployment download catalog differs from pinned source: '+platform+'/'+field)
+  notice=source.get('notice')
+  if notice is not None:
+   check(isinstance(notice,dict),'Invalid source artifact notice.')
+   notice={locale:notice.get(locale) for locale in ['zh','en']}
+  check(type(source.get('revision',1)) is int and item.get('revision',1)==source.get('revision',1) and item.get('notice')==notice,'Deployment download catalog differs from pinned source: '+platform+'/metadata')
+
 def validate_manifest(args):
  path=canonical_path(args.manifest);check(path.is_file() and path.stat().st_size<=8*1024*1024,'Invalid or oversized deployment manifest.')
  check(digest(path)==args.manifest_sha256,'Deployment manifest digest mismatch.')
@@ -332,7 +363,7 @@ def validate_manifest(args):
  for item in source_items:
   rel=safe_relative(item['path']);check(not forbidden_source(rel),'Unexpected source manifest entry.')
   source=SOURCE_REPO/str(rel);check(source.is_file() and not source.is_symlink() and digest(source)==item['sha256'],'Source file drift: '+str(rel))
- check(manifest.get('sourceFiles'),'Missing source provenance.')
+ check(manifest.get('sourceFiles'),'Missing source provenance.');has_deepgram_broker(manifest)
  downloads=manifest.get('downloads',{});check(set(downloads)==set(PLATFORMS),'Incomplete platform catalog.')
  for platform,item in downloads.items():
   check(item.get('available') is True,'Artifact not ready: '+platform)
@@ -346,8 +377,12 @@ def validate_manifest(args):
   check(item.get('platform')==platform and item.get('filename')==names[platform] and type(revision) is int and revision>=1,'Artifact architecture/identity mismatch.')
   expected_url='https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/'+(('r'+str(revision)+'/') if revision>1 else '')+names[platform]
   check(item['url']==expected_url,'Artifact URL does not match its platform/revision.')
-  check(item.get('liveAudio')==('not_included' if platform=='mac-x64' else 'included'),'Wrong live-audio scope.')
- notice=downloads['mac-x64'].get('notice');check(isinstance(notice,dict) and all(isinstance(notice.get(locale),str) and notice[locale] for locale in ['zh','en']),'Missing Intel release limitation notice.')
+  check(item.get('liveAudio') in {'included','not_included'},'Unknown live-audio scope.')
+  if platform!='mac-x64':check(item['liveAudio']=='included','Wrong live-audio scope.')
+  notice=item.get('notice')
+  if notice is not None:check(isinstance(notice,dict) and all(isinstance(notice.get(locale),str) and notice[locale] for locale in ['zh','en']),'Malformed bilingual release notice.')
+  if platform=='mac-x64' and item['liveAudio']=='not_included':check(notice is not None,'Missing Intel release limitation notice.')
+ match_source_catalog(downloads)
  return manifest,candidate
 
 def configuration_probe(runtime=False):
@@ -398,7 +433,7 @@ def source_preflight(args,manifest):
  history=command(['git','-C',str(SOURCE_REPO),'rev-list','HEAD','^'+BASE_COMMIT],as_jerry=True).splitlines()
  check(PENDING_COMMIT not in history,'Unpublished WeChat commit is not an authorized source ancestor.')
  changed=set(command(['git','-C',str(SOURCE_REPO),'diff','--name-only',BASE_COMMIT,'HEAD'],as_jerry=True).splitlines())
- check(changed and changed<=DOWNLOAD_ONLY_PATHS and 'website/lib/download-artifacts.json' in changed,'Release source exceeds the reviewed download-only scope.')
+ check(changed and changed<=DOWNLOAD_ONLY_PATHS and 'website/lib/download-artifacts.json' in changed,'Release source exceeds the reviewed download/broker scope.')
  actual=set(command(['git','-C',str(SOURCE_REPO),'ls-files','website','electron/live/transcription.ts','shared','package.json'],as_jerry=True).strip().splitlines())
  check(actual=={item['path'] for item in manifest['sourceFiles']},'Source provenance file set is incomplete.')
  live_source_pin(args.expected_live_commit)
@@ -495,7 +530,7 @@ def activate(args):
   with critical():exchange(current,candidate);state['runtimeExchanged']=True;record_state(path,state)
   state['bindingsPresent']=fresh_production_bindings();record_state(path,state)
   command(['systemctl','start',WEB]);emit('web_started')
-  state['localHealth']=wait_health('http://127.0.0.1:3011',manifest['downloads'],args.health_timeout);record_state(path,state)
+  state['localHealth']=wait_health('http://127.0.0.1:3011',manifest['downloads'],args.health_timeout,include_deepgram=has_deepgram_broker(manifest));record_state(path,state)
   check(digest(NGINX)==state['oldNginxSha256'],'Nginx changed during activation.')
   if count:
    state['nginxInstallRequested']=True;record_state(path,state)
@@ -531,7 +566,7 @@ def main():
   check(fingerprint(file_tree(WEBSITE/'dist',allow_runtime_binding=True))==args.expected_active_tree,'Current runtime fingerprint changed.')
   check(digest(NGINX)==args.expected_nginx_sha256 and remove_download_locations(NGINX.read_text())[1]==0,'Nginx differs from the authorized unchanged configuration.')
   scope=configuration_probe()
-  emit('read_only_plan',productionFileWrites=0,sourceCommit=args.expected_current_commit,liveSourceCommit=args.expected_live_commit,sourceRepo=str(SOURCE_REPO),compiledFiles=len(manifest['files']),treeFingerprint=manifest['treeFingerprint'],bindings=scope,servicesToRestart=[WEB],nginxChanges=False,desktopChanges=False)
+  emit('read_only_plan',productionFileWrites=0,sourceCommit=args.expected_current_commit,liveSourceCommit=args.expected_live_commit,sourceRepo=str(SOURCE_REPO),compiledFiles=len(manifest['files']),treeFingerprint=manifest['treeFingerprint'],bindings=scope,servicesToRestart=[WEB],nginxChanges=False,desktopChanges=False,unauthenticatedDeepgramProbe=has_deepgram_broker(manifest))
   return
  lock=WEBSITE/'.release-activation.lock';fd=os.open(lock,os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW,0o600)
  with os.fdopen(fd,'w') as stream:

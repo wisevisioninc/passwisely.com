@@ -28,6 +28,9 @@ class ReleaseTests(unittest.TestCase):
   downloads={}
   for platform,name in [('mac-arm64','PassWisely-macOS-arm64.dmg'),('mac-x64','PassWisely-macOS-x64.dmg'),('windows-x64','PassWisely-Windows-x64.exe')]:
    downloads[platform]={'platform':platform,'version':'2.0.0','revision':2,'filename':name,'sha256':'a'*64,'bytes':1234,'legacy':False,'available':True,'liveAudio':'not_included' if platform=='mac-x64' else 'included','notice':{'zh':'安装限制','en':'Installer limitation'},'url':'https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r2/'+name}
+  catalog={'releaseVersion':'2.0.0','artifacts':{platform:{key:item[key] for key in ['version','revision','filename','sha256','bytes','legacy','liveAudio','notice']} for platform,item in downloads.items()}}
+  self.write(self.source/'website/lib/download-artifacts.json',json.dumps(catalog))
+  for item in sources:item['sha256']=m.digest(self.source/item['path'])
   files=m.file_tree(candidate);manifest={'schemaVersion':1,'releaseVersion':'2.0.0','credentialsIncluded':False,'sourceCommit':'a'*40,'files':files,'treeFingerprint':m.fingerprint(files),'sourceFiles':sources,'downloads':downloads}
   path=candidate.parent/'web-manifest.json';self.write(path,json.dumps(manifest))
   args=argparse.Namespace(candidate_dist=str(candidate),manifest=str(path),manifest_sha256=m.digest(path),expected_current_commit='a'*40,expected_live_commit='b'*40)
@@ -39,16 +42,70 @@ class ReleaseTests(unittest.TestCase):
   with self.assertRaisesRegex(m.DeployError,'Source file drift'):m.validate_manifest(args)
  def test_v2_intel_contract_rejects_legacy_unverified_wrong_arch_and_audio_claims(self):
   args,manifest,_=self.fixture();path=Path(args.manifest)
-  for change in [{'version':'1.2.6','legacy':True},{'sha256':None},{'bytes':None},{'legacy':True},{'liveAudio':'included'},{'filename':'PassWisely-macOS-arm64.dmg'},{'url':manifest['downloads']['mac-arm64']['url']},{'notice':None}]:
+  for change in [{'version':'1.2.6','legacy':True},{'sha256':None},{'bytes':None},{'legacy':True},{'liveAudio':'pending'},{'filename':'PassWisely-macOS-arm64.dmg'},{'url':manifest['downloads']['mac-arm64']['url']},{'notice':None}]:
    value=json.loads(json.dumps(manifest));value['downloads']['mac-x64'].update(change);path.write_text(json.dumps(value));args.manifest_sha256=m.digest(path)
    with self.subTest(change=change),self.assertRaises(m.DeployError):m.validate_manifest(args)
- def test_source_pin_requires_detached_clean_download_only_history(self):
+ def save_manifest(self,args,manifest,source_catalog=False):
+  if source_catalog:
+   catalog={'releaseVersion':'2.0.0','artifacts':{platform:{key:item[key] for key in ['version','revision','filename','sha256','bytes','legacy','liveAudio','notice']} for platform,item in manifest['downloads'].items()}}
+   self.write(self.source/'website/lib/download-artifacts.json',json.dumps(catalog))
+   for item in manifest['sourceFiles']:item['sha256']=m.digest(self.source/item['path'])
+  Path(args.manifest).write_text(json.dumps(manifest));args.manifest_sha256=m.digest(args.manifest)
+ def add_broker(self,manifest):
+  existing={item['path'] for item in manifest['sourceFiles']}
+  for name in sorted(m.BROKER_RELEASE_PATHS-existing):
+   source=self.write(self.source/name,'broker source fixture '+name);manifest['sourceFiles'].append({'path':name,'sha256':m.digest(source)})
+ def test_intel_catalog_accepts_explicit_r3_without_audio_and_new_r4_with_audio_facts(self):
+  args,manifest,_=self.fixture();self.assertEqual(m.validate_manifest(args)[0]['downloads']['mac-x64']['liveAudio'],'not_included')
+  intel=manifest['downloads']['mac-x64'];intel.update(revision=4,liveAudio='included',sha256='c'*64,bytes=5678,notice={'zh':'Intel 原生音频说明','en':'Intel native audio facts'})
+  intel['url']=intel['url'].replace('/r2/','/r4/')
+  self.save_manifest(args,manifest,source_catalog=True)
+  self.assertEqual(m.validate_manifest(args)[0]['downloads']['mac-x64']['liveAudio'],'included')
+  intel['notice']=None;self.save_manifest(args,manifest,source_catalog=True);m.validate_manifest(args)
+ def test_manifest_download_facts_cannot_disagree_with_the_pinned_public_source_catalog(self):
   args,manifest,_=self.fixture()
+  for change in [{'sha256':'c'*64},{'bytes':5678},{'liveAudio':'included'},{'notice':{'zh':'不同事实','en':'Different facts'}}]:
+   changed=json.loads(json.dumps(manifest));changed['downloads']['mac-x64'].update(change);self.save_manifest(args,changed)
+   with self.subTest(change=change),self.assertRaisesRegex(m.DeployError,'catalog differs from pinned source'):m.validate_manifest(args)
+ def test_broker_provenance_is_all_or_none_and_adds_only_the_reviewed_source_paths(self):
+  args,manifest,_=self.fixture();self.assertFalse(m.has_deepgram_broker(manifest))
+  self.add_broker(manifest);self.save_manifest(args,manifest)
+  self.assertTrue(m.has_deepgram_broker(m.validate_manifest(args)[0]))
+  expected={'website/lib/deepgram.ts','website/app/api/desktop/deepgram/token/route.ts','website/tests/deepgram-token.test.mjs','website/tests/recall-upload.test.mjs','shared/captureSession.ts','electron/live/transcription.ts'}
+  self.assertEqual(m.BROKER_RELEASE_PATHS,expected)
+  self.assertTrue(expected<=m.DOWNLOAD_ONLY_PATHS)
+  self.assertNotIn('website/app/api/payments/wechat/notify/route.ts',m.DOWNLOAD_ONLY_PATHS)
+  self.assertNotIn('desktop-api/server.mjs',m.DOWNLOAD_ONLY_PATHS)
+  partial=json.loads(json.dumps(manifest));partial['sourceFiles']=[item for item in partial['sourceFiles'] if item['path']!='shared/captureSession.ts'];self.save_manifest(args,partial)
+  with self.assertRaisesRegex(m.DeployError,'Incomplete Deepgram'):m.validate_manifest(args)
+ def test_health_uses_catalog_notice_and_probes_deepgram_only_when_present(self):
+  _,manifest,_=self.fixture();downloads=manifest['downloads'];calls=[]
+  downloads['mac-x64'].update(liveAudio='included',notice={'zh':'Intel 支持原生音频','en':'Native audio is available for Intel'})
+  def response(base,path,method='HEAD',payload=None):
+   calls.append((path,method,payload))
+   if path=='/':return 200,{},'pw-hero-title 2.0.0 '+downloads['windows-x64']['notice']['en']+' '+downloads['mac-x64']['notice']['en']
+   if path=='/api/download/__proto__':return 404,{},''
+   if path.startswith('/api/download/'):
+    item=downloads[path.rsplit('/',1)[1]];return 307,{'Location':item['url'],'x-passwisely-release-version':item['version'],'x-passwisely-artifact-sha256':item['sha256']},''
+   if path=='/api/checkout' and method=='GET':return 405,{},''
+   return 401,{},''
+  with patch.object(m,'response',side_effect=response),patch.object(m,'verify_pricing',return_value={}):
+   old=m.health_once('http://127.0.0.1:3011',downloads)
+   self.assertNotIn('unauthenticatedDeepgram',old);self.assertFalse(any(row[0]==m.DEEPGRAM_ROUTE for row in calls))
+   calls.clear();new=m.health_once('http://127.0.0.1:3011',downloads,include_deepgram=True)
+   self.assertEqual(new['unauthenticatedDeepgram'],401);self.assertEqual(new['providerCalls'],0)
+   self.assertIn((m.DEEPGRAM_ROUTE,'POST',None),calls)
+  def absent(base,path,method='HEAD',payload=None):return (404,{},'') if path==m.DEEPGRAM_ROUTE else response(base,path,method,payload)
+  with patch.object(m,'response',side_effect=absent),patch.object(m,'verify_pricing',return_value={}):
+   with self.assertRaises(m.ProbeError) as error:m.health_once('http://127.0.0.1:3011',downloads,include_deepgram=True)
+  self.assertEqual(error.exception.diagnostic['path'],m.DEEPGRAM_ROUTE)
+ def test_source_pin_requires_detached_clean_download_only_history(self):
+  args,manifest,_=self.fixture();self.add_broker(manifest)
   def command(argv,**kwargs):
    if argv[0]=='git' and argv[2]==str(self.repo):return 'b'*40
    if 'rev-parse' in argv:return 'HEAD' if '--abbrev-ref' in argv else 'a'*40
    if 'rev-list' in argv:return 'a'*40
-   if '--name-only' in argv:return 'website/lib/download-artifacts.json'
+   if '--name-only' in argv:return '\n'.join(['website/lib/download-artifacts.json',*sorted(m.BROKER_RELEASE_PATHS)])
    if 'ls-files' in argv:return '\n'.join(row['path'] for row in manifest['sourceFiles'])
    return ''
   with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):
@@ -134,5 +191,14 @@ class ReleaseTests(unittest.TestCase):
    m.main()
   report=json.loads(output.getvalue());self.assertEqual(report['phase'],'read_only_plan');self.assertEqual(report['productionFileWrites'],0)
   self.assertNotIn('preserved-value',output.getvalue());self.assertFalse((self.website/'.release-activation.lock').exists());self.assertFalse((self.website/'.release-backups').exists())
+
+ def test_active_tree_pin_is_caller_selected_and_drift_refuses_without_writes(self):
+  args,_,_=self.fixture();self.write(self.website/'dist/server/index.js','active ec04 fixture');self.binding(self.website/'dist')
+  nginx=self.write(self.root/'nginx','unchanged nginx');args.operation='plan';args.source_repo=str(self.source)
+  args.expected_active_tree='0'*64;args.expected_nginx_sha256=m.digest(nginx)
+  with patch.object(m,'NGINX',nginx),patch.object(m,'parse',return_value=args),patch.object(m.sys,'platform','linux'),patch.object(m.os,'geteuid',return_value=0),patch.object(m,'source_preflight'),patch.object(m,'configuration_probe') as probe:
+   with self.assertRaisesRegex(m.DeployError,'runtime fingerprint changed'):m.main()
+   probe.assert_not_called()
+  self.assertFalse((self.website/'.release-activation.lock').exists());self.assertFalse((self.website/'.release-backups').exists())
 
 if __name__=='__main__':unittest.main()

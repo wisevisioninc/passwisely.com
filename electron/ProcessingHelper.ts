@@ -16,6 +16,7 @@ import {
 } from "./resumeTypes";
 import { ScreenshotHelper } from "./ScreenshotHelper";
 import { WiseGrpcClient, WiseGrpcError } from "./WiseGrpcClient";
+import { getServiceEndpoints } from "./serviceEndpoints";
 import { IProcessingHelperDeps } from "./main"; // Assuming main.ts exports this
 
 // Load environment variables from .env file
@@ -103,12 +104,10 @@ export class ProcessingHelper {
     }
 
     try {
-      const wiseBaseUrl =
-        (process.env.PASSWISELY_API_URL?.replace(/\/api\/?$/, "") ||
-          "https://passwisely.com") + "/api/ai";
+      const { aiBase } = getServiceEndpoints();
       this.openaiClient = new OpenAI({
         apiKey: route === "wise" ? this.config.wiseAccessToken || "signed-out" : apiKey,
-        baseURL: route === "wise" ? wiseBaseUrl : baseUrl,
+        baseURL: route === "wise" ? aiBase : baseUrl,
         defaultHeaders:
           route === "wise"
             ? {

@@ -15,7 +15,7 @@ pnpm test
 
 ## Runtime bindings
 
-- `PUBLIC_SITE_URL`: canonical public HTTPS origin; defaults to `https://passwisely.com` only when omitted. See public links below.
+- `PUBLIC_SITE_URL`: canonical public HTTPS origin; defaults to `https://passwisely.cn` only when omitted. See public links below.
 - `DB`: legacy Cloudflare D1 account migration store. Its migrations are in `drizzle/`; it does not register current accounts.
 - `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_ANON_KEY`, and `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY`: current server-side accounts, credit ledger, and purchases. Their PostgreSQL migrations are in `supabase/migrations/`.
 - `DOWNLOADS`: Cloudflare R2 bucket for signed desktop installers.
@@ -70,6 +70,17 @@ An explicit blank or invalid value fails checkout with 503 before creating an
 order, blocks recovery email delivery, and degrades the affected health checks
 without probing that destination. Invalid explicit configuration never falls
 back to the production domain.
+
+For the Wise `.cn` deployment, set `PUBLIC_SITE_URL=https://passwisely.cn`
+only after DNS and trusted HTTPS are available. Existing explicit `.com`
+bindings override the source default until changed. Root metadata shares this
+same origin owner. Add `https://passwisely.cn/?reset=password` to the Supabase
+project's allowed recovery redirect URLs, and retain any valid `.com` URLs
+needed by installed clients or issued emails. Domain preparation alone does
+not verify the Supabase allowlist or change an installed desktop client's
+embedded service defaults. See
+[`test/reports/domain-cn-preparation.md`](../test/reports/domain-cn-preparation.md)
+for the executed offline checks and separate production verification scope.
 
 Local HTTP development requests still produce the default public HTTPS links
 when this binding is omitted. Configure an explicit HTTPS test domain/local TLS

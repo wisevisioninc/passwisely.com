@@ -3,6 +3,7 @@ import { app } from "electron";
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import { OpenAI } from "openai";
+import { getServiceEndpoints } from "./serviceEndpoints";
 
 type GrpcClient = grpc.Client & {
   ChatStream: (request: Record<string, unknown>, metadata: grpc.Metadata, options: grpc.CallOptions) => grpc.ClientReadableStream<any>;
@@ -80,12 +81,10 @@ export class WiseGrpcClient {
     const loaded = grpc.loadPackageDefinition(
       definition,
     ) as unknown as DesktopPackage;
-    const address =
-      process.env.PASSWISELY_GRPC_URL?.trim() || "passwisely.com:443";
-    const insecure = process.env.PASSWISELY_GRPC_INSECURE === "1";
+    const { grpcAddress, grpcInsecure } = getServiceEndpoints();
     this.client = new loaded.passwisely.desktop.v1.DesktopAI(
-      address,
-      insecure ? grpc.credentials.createInsecure() : grpc.credentials.createSsl(),
+      grpcAddress,
+      grpcInsecure ? grpc.credentials.createInsecure() : grpc.credentials.createSsl(),
       {
         "grpc.max_send_message_length": 16 * 1024 * 1024,
         "grpc.max_receive_message_length": 16 * 1024 * 1024,

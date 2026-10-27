@@ -23,6 +23,16 @@ test("CLI fails closed without explicit live authorization and transport; help/d
   assert.throws(() => parseArgs([...liveArgs, "--live"]), /Duplicate option/);
 });
 
+test("default live routes select the CN service consistently without network or token reads", () => {
+  const http = parseArgs(liveArgs);
+  assert.equal(http.baseUrl, "https://passwisely.cn/api");
+  assert.equal(http.grpcAddress, "passwisely.cn:443");
+  const grpc = parseArgs(["--live", "--transport", "grpc", "--out", "/private/tmp/unused"]);
+  assert.equal(grpc.baseUrl, "https://passwisely.cn/api");
+  assert.equal(grpc.grpcAddress, "passwisely.cn:443");
+  assert.throws(() => parseArgs(["--live", "--transport", "grpc", "--out", "/private/tmp/unused", "--base-url", "https://passwisely.com/api"]), /explicit --grpc-address/);
+});
+
 test("transport choices cannot leak credentials over non-loopback plaintext or mix stage with remote gRPC", () => {
   assert.equal(validateBaseUrl("http://127.0.0.1:3014").href, "http://127.0.0.1:3014/api");
   assert.equal(validateBaseUrl("http://[::1]:3014/api").hostname, "[::1]");

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { getPublicSiteOrigin } from "@/lib/public-site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://passwisely.com"),
+  metadataBase: new URL(getPublicSiteOrigin()),
   title: {
     default: "PassWisely — AI Interview Copilot",
     template: "%s · PassWisely",

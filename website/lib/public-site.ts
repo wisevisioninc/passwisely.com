@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 
-const DEFAULT_PUBLIC_SITE_ORIGIN = "https://passwisely.com";
+const DEFAULT_PUBLIC_SITE_ORIGIN = "https://passwisely.cn";
 
 /** Server-owned public origin for links that leave this application.
  * Request URLs/forwarding headers are neither canonical nor trusted: the local

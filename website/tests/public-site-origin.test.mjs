@@ -24,7 +24,7 @@ const invalidOrigins = [
 test("public origin is canonical HTTPS configuration; only omission uses the production default", () => {
   const env = {};
   const { getPublicSiteOrigin } = originOwner(env);
-  assert.equal(getPublicSiteOrigin(), "https://passwisely.com");
+  assert.equal(getPublicSiteOrigin(), "https://passwisely.cn");
   for (const [raw, expected] of [
     ["https://test.example.invalid", "https://test.example.invalid"],
     [" https://TEST.example.invalid:443/ ", "https://test.example.invalid"],
@@ -39,7 +39,60 @@ test("public origin is canonical HTTPS configuration; only omission uses the pro
     assert.throws(getPublicSiteOrigin, { message: "Invalid PUBLIC_SITE_URL configuration." });
   }
   delete env.PUBLIC_SITE_URL;
-  assert.equal(getPublicSiteOrigin(), "https://passwisely.com");
+  assert.equal(getPublicSiteOrigin(), "https://passwisely.cn");
+});
+
+test("metadata shares the canonical public-origin owner, including explicit compatibility origin", () => {
+  for (const [environment, expected] of [
+    [{}, "https://passwisely.cn/"],
+    [{ PUBLIC_SITE_URL: "https://passwisely.com/" }, "https://passwisely.com/"],
+  ]) {
+    const { metadata } = createProductionTsLoader({ mocks: {
+      "@/lib/public-site": originOwner(environment),
+    } })(filename("app/layout.tsx"));
+    assert.equal(metadata.metadataBase.href, expected);
+  }
+});
+
+test("payment adapters use the canonical CN or explicitly configured origin for notification and return URLs", async t => {
+  // Exercise the production URL producers with synthetic signing seams. No
+  // credential is loaded, no database order is created, and no request leaves
+  // the fetch boundary below.
+  const captured = [];
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    assert.equal(url, "https://api.mch.weixin.qq.com/v3/pay/transactions/native");
+    captured.push(JSON.parse(init.body));
+    return Response.json({ code_url: "weixin://synthetic-payment" }, { headers: {
+      "wechatpay-timestamp": String(Math.floor(Date.now() / 1000)),
+      "wechatpay-nonce": "synthetic-nonce",
+      "wechatpay-serial": "PUB_KEY_ID_fixture",
+      "wechatpay-signature": "synthetic-signature",
+    } });
+  });
+  const config = {
+    getAlipayConfig: () => ({ appId: "synthetic-app", privateKey: "synthetic-private", gateway: "https://payment.example.invalid/gateway.do" }),
+    getWechatPayConfig: () => ({ appId: "synthetic-app", mchId: "synthetic-merchant", merchantPrivateKey: "synthetic-private", merchantSerialNo: "synthetic-serial", wechatPayPublicKeyId: "PUB_KEY_ID_fixture" }),
+  };
+  const adapters = createProductionTsLoader({ mocks: {
+    "./config": config,
+    "./crypto": { rsaSha256Sign: async () => "synthetic-signature", rsaSha256Verify: async () => true },
+  } });
+  const alipay = adapters(filename("lib/payments/alipay.ts"));
+  const wechat = adapters(filename("lib/payments/wechat.ts"));
+  for (const [environment, expected] of [
+    [{}, "https://passwisely.cn"],
+    [{ PUBLIC_SITE_URL: "https://passwisely.com" }, "https://passwisely.com"],
+  ]) {
+    const origin = originOwner(environment).getPublicSiteOrigin();
+    const input = { origin, merchantOrderNo: "synthetic-only", subject: "synthetic", description: "synthetic", amountFen: 9900 };
+    const page = new URL((await alipay.createAlipayPagePayment(input)).redirectUrl);
+    assert.equal(page.origin, "https://payment.example.invalid");
+    assert.equal(page.searchParams.get("notify_url"), `${expected}/api/payments/alipay/notify`);
+    assert.equal(page.searchParams.get("return_url"), `${expected}/?payment=return#account`);
+    assert.deepEqual(await wechat.createWechatNativePayment(input), { codeUrl: "weixin://synthetic-payment" });
+    assert.equal(captured.at(-1).notify_url, `${expected}/api/payments/wechat/notify`);
+  }
+  assert.equal(captured.length, 2);
 });
 
 function application(environment) {
@@ -137,10 +190,10 @@ async function loopback(t, app) {
   return { post, observedUrls };
 }
 
-for (const configured of [undefined, "https://TEST.example.invalid:443/"]) {
-  test(`HTTP proxy and hostile Host/forwarding headers cannot select external links (${configured === undefined ? "default" : "configured"})`, async t => {
+for (const configured of [undefined, "https://TEST.example.invalid:443/", "https://passwisely.com"]) {
+  test(`HTTP proxy and hostile Host/forwarding headers cannot select external links (${configured === undefined ? "default" : configured})`, async t => {
     const environment = configured === undefined ? {} : { PUBLIC_SITE_URL: configured };
-    const expected = configured === undefined ? "https://passwisely.com" : "https://test.example.invalid";
+    const expected = configured === undefined ? "https://passwisely.cn" : new URL(configured).origin;
     const app = application(environment);
     const { post, observedUrls } = await loopback(t, app);
     for (const headers of [

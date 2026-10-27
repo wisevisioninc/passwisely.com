@@ -19,7 +19,7 @@ Options:
                          before any RPC; it uses the real production HTTP branch.
   --token-file PATH      JSON {"token":"..."}, regular file with mode 0600 (no symlinks).
                          Otherwise use PASSWISELY_BENCH_TOKEN; no account cache is read.
-  --base-url URL         Wise base URL, default https://passwisely.com/api.
+  --base-url URL         Wise base URL, default https://passwisely.cn/api.
                          HTTP is accepted only for literal loopback addresses.
   --grpc-address HOST:PORT  Defaults to the base URL host and scheme port.
   --grpc-insecure        Explicit plaintext gRPC, literal loopback addresses only.
@@ -39,7 +39,7 @@ const sha256 = value => createHash("sha256").update(value).digest("hex");
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 
 export function parseArgs(argv) {
-  const options = { live: false, baseUrl: "https://passwisely.com/api", grpcInsecure: false, maxCases: 20 };
+  const options = { live: false, baseUrl: "https://passwisely.cn/api", grpcInsecure: false, maxCases: 20 };
   const values = new Map([["--base-url", "baseUrl"], ["--transport", "transport"], ["--grpc-address", "grpcAddress"], ["--token-file", "tokenFile"], ["--slugs", "slugs"], ["--max-cases", "maxCases"], ["--out", "out"]]);
   const seen = new Set();
   for (let index = 0; index < argv.length; index++) {
@@ -67,7 +67,7 @@ export function parseArgs(argv) {
   const base = validateBaseUrl(options.baseUrl);
   options.baseUrl = base.href.replace(/\/$/, "");
   if (options.transport === "http-stream" && (options.grpcAddress || options.grpcInsecure)) throw new Error("HTTP transport does not accept --grpc-address or --grpc-insecure.");
-  if (options.transport === "grpc" && base.origin !== "https://passwisely.com" && !options.grpcAddress) throw new Error("A custom base URL requires an explicit --grpc-address to prevent mixed environments.");
+  if (options.transport === "grpc" && base.origin !== "https://passwisely.cn" && !options.grpcAddress) throw new Error("A custom base URL requires an explicit --grpc-address to prevent mixed environments.");
   options.grpcAddress ||= `${base.hostname.includes(":") && !base.hostname.startsWith("[") ? `[${base.hostname}]` : base.hostname}:${base.port || (base.protocol === "https:" ? "443" : "80")}`;
   validateGrpcAddress(options.grpcAddress, options.grpcInsecure);
   if (options.transport === "grpc" && base.protocol === "http:" && !options.grpcInsecure) throw new Error("A loopback HTTP base requires explicit --grpc-insecure for its gRPC route.");

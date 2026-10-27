@@ -1,4 +1,5 @@
 import type { NativeCaptureSession } from "../shared/captureSession";
+import { getServiceEndpoints } from "./serviceEndpoints";
 import type { CreditBalanceDetails } from "../shared/billing";
 import { app, safeStorage } from "electron";
 import fs from "node:fs";
@@ -44,9 +45,7 @@ interface StoredAccount {
 export class AccountService {
   private invalidated = false;
   constructor(private readonly authenticationLost: () => void = () => {}) {}
-  private readonly apiBase =
-    process.env.PASSWISELY_API_URL?.replace(/\/+$/, "") ||
-    "https://passwisely.com/api";
+  private readonly endpoints = getServiceEndpoints();
   private readonly filePath = path.join(app.getPath("userData"), "account.json");
   private readonly resumeHistoryPath = path.join(
     app.getPath("userData"),
@@ -111,7 +110,7 @@ export class AccountService {
       requestToken = token;
       headers.set("authorization", `Bearer ${token}`);
     }
-    const response = await fetch(`${this.apiBase}${endpoint}`, {
+    const response = await fetch(`${this.endpoints.apiBase}${endpoint}`, {
       ...init,
       headers,
       signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000),
@@ -407,6 +406,6 @@ export class AccountService {
   }
 
   public getAccountUrl(): string {
-    return this.apiBase.replace(/\/api$/, "/#account");
+    return this.endpoints.accountUrl;
   }
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 const apiBase = (
-  process.env.PASSWISELY_TEST_API_URL || "https://passwisely.com/api"
+  process.env.PASSWISELY_TEST_API_URL || "https://passwisely.cn/api"
 ).replace(/\/+$/, "");
 const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 const email = `supabase-e2e-${suffix}@example.com`;

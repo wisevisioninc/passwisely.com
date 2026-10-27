@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const apiBase = (
-  process.env.PASSWISELY_TEST_API_URL || "https://passwisely.com/api"
+  process.env.PASSWISELY_TEST_API_URL || "https://passwisely.cn/api"
 ).replace(/\/+$/, "");
 const imagePath = process.env.PASSWISELY_TEST_IMAGE;
 const imageMimeType = imagePath?.toLowerCase().endsWith(".png")
@@ -90,7 +90,7 @@ try {
   });
   const loaded = grpc.loadPackageDefinition(definition);
   const Client = loaded.passwisely.desktop.v1.DesktopAI;
-  client = new Client("passwisely.com:443", grpc.credentials.createSsl());
+  client = new Client("passwisely.cn:443", grpc.credentials.createSsl());
   const metadata = new grpc.Metadata();
   metadata.set("authorization", `Bearer ${token}`);
 

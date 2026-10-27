@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "startedAtUtc": "2026-10-27T20:08:30.328Z",
+  "origin": "https://passwisely.cn",
+  "grpcAuthority": "passwisely.cn:443",
+  "mode": "public-read-only",
+  "success": true,
+  "checks": [
+    {
+      "id": "https-homepage",
+      "success": true,
+      "httpStatus": 200,
+      "heroLocale": "zh",
+      "certificate": {
+        "authorized": true,
+        "protocol": "TLSv1.3",
+        "fingerprint256": "6B:7F:37:E8:8C:91:F8:7A:8C:E2:1C:D4:F9:C6:B7:56:DB:0C:68:59:6F:F3:C4:E6:CE:32:1B:F1:B2:84:7F:04",
+        "validFrom": "Oct 27 09:39:01 2026 GMT",
+        "validTo": "Jan 25 09:39:00 2027 GMT",
+        "subjectCN": "passwisely.cn",
+        "issuerCN": "YR1",
+        "subjectAltName": "DNS:passwisely.cn, DNS:www.passwisely.cn"
+      },
+      "elapsedMs": 611.0771669999999
+    },
+    {
+      "id": "http-redirect-preserves-route",
+      "success": true,
+      "httpStatus": 301,
+      "target": "https://passwisely.cn/api/account?route_probe=1",
+      "elapsedMs": 196.6958330000001
+    },
+    {
+      "id": "GET /api/account",
+      "success": true,
+      "httpStatus": 401,
+      "elapsedMs": 327.9432499999999
+    },
+    {
+      "id": "POST /api/desktop/recall/upload-token",
+      "success": true,
+      "httpStatus": 401,
+      "elapsedMs": 297.72787500000004
+    },
+    {
+      "id": "POST /api/desktop/deepgram/token",
+      "success": true,
+      "httpStatus": 401,
+      "elapsedMs": 604.2510830000001
+    },
+    {
+      "id": "POST /api/ai/chat/completions",
+      "success": true,
+      "httpStatus": 401,
+      "elapsedMs": 1293.255791
+    },
+    {
+      "id": "download-mac-arm64",
+      "success": true,
+      "httpStatus": 307,
+      "version": "2.0.0",
+      "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg",
+      "elapsedMs": 310.86979199999996
+    },
+    {
+      "id": "download-mac-x64",
+      "success": true,
+      "httpStatus": 307,
+      "version": "2.0.0",
+      "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg",
+      "elapsedMs": 308.210333
+    },
+    {
+      "id": "download-windows-x64",
+      "success": true,
+      "httpStatus": 307,
+      "version": "2.0.0",
+      "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe",
+      "elapsedMs": 326.9375409999993
+    },
+    {
+      "id": "grpc-health",
+      "success": true,
+      "status": "SERVING",
+      "transport": "grpc+protobuf",
+      "elapsedMs": 606.9803750000001
+    },
+    {
+      "id": "grpc-chat-auth-first",
+      "success": true,
+      "grpcCode": 16,
+      "elapsedMs": 113.32062499999938
+    },
+    {
+      "id": "grpc-chat-stream-auth-first",
+      "success": true,
+      "grpcCode": 16,
+      "receivedData": false,
+      "elapsedMs": 83.18312499999956
+    }
+  ],
+  "releaseVersion": "2.0.0",
+  "expectedDownloads": [
+    {
+      "platform": "mac-arm64",
+      "version": "2.0.0",
+      "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg",
+      "bytes": 159694334
+    },
+    {
+      "platform": "mac-x64",
+      "version": "2.0.0",
+      "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg",
+      "bytes": 119247160
+    },
+    {
+      "platform": "windows-x64",
+      "version": "2.0.0",
+      "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe",
+      "bytes": 123221074
+    }
+  ],
+  "elapsedMs": 5084.549292,
+  "publicVerificationPerformed": true
+}

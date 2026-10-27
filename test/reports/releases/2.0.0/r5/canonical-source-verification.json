@@ -1,0 +1,112 @@
+{
+  "verifiedAtUtc": "2026-10-27T20:15:36.420750+00:00",
+  "canonicalHead": "47a1a8993709e76810551ef7be8959821b64b656",
+  "patchSha256": "f542cb757e4a97660376c29237c837594717fbd35e9217138e2f6dabd2660816",
+  "committed": false,
+  "productionMutations": false,
+  "canonicalBuildInvoked": false,
+  "stageRuntimeEnvInvoked": false,
+  "environmentContentsRead": false,
+  "preserved": [
+    "all canonical pending WeChat payment code/config/catalog and tests",
+    "Claude source changes via contextual patch application",
+    "47a1a899 runner and native-test source changes",
+    "preexisting README/download-artifacts/OSS changes and untracked user files"
+  ],
+  "pricingMerge": "Kept all canonical channel/callback tests. Added real lazy-import readiness/unwrap at the producing component harness and awaited all siteHarness consumers. Integrated QR local recovery-boundary and outside-close-control assertions into the existing bilingual WeChat UI loop; did not add the candidate Alipay-only catalog assertion.",
+  "executed": {
+    "canonicalNodeSourceTests": {
+      "passed": 86,
+      "failed": 0,
+      "files": [
+        "website/tests/dashboard-navigation.test.mjs",
+        "website/tests/pricing-checkout.test.mjs",
+        "website/tests/public-site-origin.test.mjs",
+        "website/tests/oss-download.test.mjs"
+      ]
+    },
+    "lazyTests": {
+      "passed": 3,
+      "failed": 0,
+      "fixture": "/private/tmp/passwisely-canonical-lazy-tests-20261028-87q62b9z",
+      "sourceSSR": "two tests loaded canonical app/lib/shared source",
+      "compiledClosure": "one test examined the existing isolated a087b33 production artifact; canonical dist was not rebuilt or changed",
+      "initialFixtureRepair": "First temporary fixture lacked shared/ import root and two SSR tests could not resolve shared/billing; added the canonical shared symlink and reran 3/3 successfully. No product source repair was needed."
+    },
+    "websiteTypecheck": {
+      "exitCode": 0,
+      "command": "node node_modules/typescript/bin/tsc --noEmit --incremental false"
+    },
+    "deploymentOwnerTests": {
+      "passed": 17,
+      "failed": 0,
+      "command": "python3 website/scripts/tests/deploy-website.test.py",
+      "scope": "local filesystem fixtures; no production apply"
+    },
+    "diffCheck": {
+      "exitCode": 0,
+      "command": "git diff --check"
+    }
+  },
+  "files": [
+    {
+      "path": "website/app/PassWiselySite.tsx",
+      "sha256": "5e69855142e448386d7357b45172e89ddd464c55e196ac82a549851872e9e14e",
+      "sameAsPerformanceCandidate": false
+    },
+    {
+      "path": "website/app/dashboard/Dashboard.tsx",
+      "sha256": "7155bcd364541d124623aaf98241b1f16832f01e6d97d07c42e61d1664c61a9b",
+      "sameAsPerformanceCandidate": true
+    },
+    {
+      "path": "website/tests/dashboard-navigation.test.mjs",
+      "sha256": "fa1f1a0a6bef9e62ef6f94f0c7d00ced7f1d51597f5f30fa898b224d9c6b0772",
+      "sameAsPerformanceCandidate": true
+    },
+    {
+      "path": "website/tests/pricing-checkout.test.mjs",
+      "sha256": "f59128f2b464061d754cbcb41d8f291893973c081452e677be79fc6c2c0456cb",
+      "sameAsPerformanceCandidate": false
+    },
+    {
+      "path": "website/tests/helpers/lazy-components.mjs",
+      "sha256": "1e0110e85bbdbccc78ec49c0f337714b0aa2cb796408545f716927b1f8e34a8c",
+      "sameAsPerformanceCandidate": true
+    },
+    {
+      "path": "website/tests/lazy-views.test.mjs",
+      "sha256": "7b02c8bc7d8e6634cca28df756b4baa793b0b59f1863b046584b33be8a4e707f",
+      "sameAsPerformanceCandidate": true
+    },
+    {
+      "path": "website/app/DeferredViewBoundary.tsx",
+      "sha256": "e91a38a564dc8b87d4b10edc1d23760857551045aff594474e67d4570131f05d",
+      "sameAsPerformanceCandidate": true
+    },
+    {
+      "path": "website/tests/fixtures/lazy-import-failure.tsx",
+      "sha256": "9ae23329efc5b73ed97cb0eb4434e222bedca097fa2d1f83cbde4d6facc1af5c",
+      "sameAsPerformanceCandidate": true
+    },
+    {
+      "path": "website/tests/verify-lazy-failures.mjs",
+      "sha256": "e973a7237ca7d4577905a984202ad7f4bccabc292a230f6c880ac30feb7a18db",
+      "sameAsPerformanceCandidate": true
+    },
+    {
+      "path": "website/scripts/deploy-website.py",
+      "sha256": "b8345e327f16c3f91d3cd4c787a8a10a6cf02decf43d7767cd26ba1848ef7f0e",
+      "sameAsPerformanceCandidate": null
+    },
+    {
+      "path": "website/scripts/tests/deploy-website.test.py",
+      "sha256": "7962a561b37f9cbfbc4a6d1617717f2acda73eb2db07025d9cff49a99b49b570",
+      "sameAsPerformanceCandidate": null
+    }
+  ],
+  "limits": [
+    "No canonical build or environment staging was performed. The pending-WeChat canonical tree has not been compiled or deployed by this merge task.",
+    "The existing isolated candidate/browser/performance evidence remains separate; no new phone LCP or actual canonical bundle size was measured."
+  ]
+}

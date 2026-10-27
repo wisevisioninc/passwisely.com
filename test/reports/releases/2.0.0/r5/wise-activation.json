@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptSource": "User-provided Wise terminal output, followed by independent public verification",
+  "status": "active",
+  "version": "2.0.0",
+  "revision": "r5",
+  "sourceCommit": "a087b332713df5ad4d5fa1b2def8cb472f641b88",
+  "liveSourceCommit": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+  "sourceRepo": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-cn-home-r5-a087b33",
+  "compiledFiles": 49,
+  "treeFingerprint": "7e681be092a67c2de2879484ba988fa7adf7a959ee0e28754f3692db34307c92",
+  "bindings": {
+    "scope": "preserved-running-binding-bytes",
+    "bindingBytes": 6742,
+    "bindingValuesReturned": false,
+    "sourceEnvironmentRead": false,
+    "exactBytesMatch": true
+  },
+  "servicesRestarted": [
+    "passwisely-web.service"
+  ],
+  "nginxChanges": false,
+  "desktopChanges": false,
+  "databaseMigrationPerformed": false,
+  "providerCalls": 0,
+  "activationScript": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-cn-home-r5-a087b33/activate-reviewed.sh",
+  "productionTransaction": "/home/jerry/codebase/passwisely/website/.release-backups/v2.0.0-20261027T200700Z-797769bf/transaction.json",
+  "transactionSha256": "854dc31e909f330a9b1cee50cc11b0b174cd74204d181eece7da624df70646ff",
+  "localSourceIntegrationCommit": "8d2740b",
+  "canonicalSourceIsNotDeployedCheckout": true,
+  "publicVerification": "public-service-verification.json",
+  "limitations": [
+    "Activation transaction facts here are transcribed from the user terminal receipt. The referenced public route report is a separate independently executed network check.",
+    "Canonical source retains pending WeChat changes; production was built from the isolated a087b33 release source."
+  ]
+}

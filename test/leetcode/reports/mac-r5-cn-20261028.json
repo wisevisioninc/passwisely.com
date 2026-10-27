@@ -1,0 +1,417 @@
+{
+  "schemaVersion": 1,
+  "auditedAtUtc": "2026-10-27T20:15:50.497872+00:00",
+  "appVersion": "2.0.0",
+  "revision": "r5",
+  "appPath": "/Applications/PassWisely.app",
+  "appSourceCommit": "308cc37994411cab3ed9f8bf9496b075dbf9eeb2",
+  "installedAsarSha256": "9ce35048d53e1b9b6c23f1bf3ef053235bd81de8cbd36e533f063f066089863c",
+  "serviceOrigin": "https://passwisely.cn",
+  "modelLabel": "kimi-k3",
+  "mode": "native-pure-text",
+  "submitted": 20,
+  "responsesCaptured": 20,
+  "observedFetchFailures": 0,
+  "providerCompletionFinishReasons": null,
+  "modelRetries": 0,
+  "recordingStarted": false,
+  "screenshotSubmissions": 0,
+  "captureStatusCorrection": {
+    "rawRecordsPreserved": true,
+    "rawCompletedIsNotProviderSuccess": true,
+    "meaning": "Raw status=completed and copiedFullMarkdown=20 only record stopped UI generation plus available Copy control and retrieved text; they do not prove provider finish_reason=stop or complete executable code. q2472 has an unfinished fenced block. This audit supersedes completion claims in the raw UI summary."
+  },
+  "fixed": {
+    "problemsPassed": 18,
+    "problemsFailed": 1,
+    "problemsUnverified": 1,
+    "casesPassed": 155,
+    "casesExpected": 169,
+    "casesReported": 159,
+    "casesNotExecuted": 10
+  },
+  "withBoundary": {
+    "problemsPassed": 17,
+    "problemsFailed": 2,
+    "problemsUnverified": 1,
+    "casesPassed": 156,
+    "casesExpected": 172,
+    "casesReported": 161,
+    "casesNotExecuted": 11
+  },
+  "sandbox": {
+    "python": "3.12.14",
+    "preflightPassed": true,
+    "recursionLimitChanged": false,
+    "generatedCodeExecutedOutsideSandbox": false
+  },
+  "findings": [
+    {
+      "id": "2699",
+      "kind": "algorithm-error",
+      "fixed": "4/8 passed",
+      "cause": "All unknown weights set to 1 already meet target, but answer replaces them with 2e9; adjusted graphs are returned without validating final shortest path."
+    },
+    {
+      "id": "2472",
+      "kind": "unverified-incomplete-captured-response",
+      "utf8Bytes": 7854,
+      "answerSha256": "4d26980c6e71e7ecc6dfcc85754ec2621ee1694b8d1562424cc2f59fb0ddc947",
+      "completePythonFencedBlocks": 0,
+      "cause": null,
+      "unknown": "Provider finish reason was not captured; generation truncation versus native-copy capture truncation cannot be determined from saved text."
+    },
+    {
+      "id": "1372",
+      "kind": "boundary-runtime-error",
+      "fixed": "9/9 passed",
+      "boundary": "2000-node alternating chain raises RecursionError under local Python 3.12 default recursion configuration; LeetCode production recursion configuration not established."
+    }
+  ],
+  "limitations": [
+    "One request per question, saved historical authored cases only; no exhaustive correctness or complexity claim.",
+    "No time-to-first-token or model-latency measurement; UI/operator time excluded.",
+    "No ASR, screenshot inference, payment, password-reset delivery or physical-phone-network acceptance in this run."
+  ],
+  "resultsDirectory": "test/leetcode/results/mac-r5-cn-20261028",
+  "results": [
+    {
+      "id": "1326",
+      "slug": "minimum-number-of-taps-to-open-to-water-a-garden",
+      "title": "灌溉花园的最少水龙头数目",
+      "fixtureHash": "4df5546a96a87c4e0115553834e02dbfc34276f0b6133cf195f242e0e154820c",
+      "answerSha256": "87d034099292e039e8735d08835c200607a20943cc6f68dc0e16eae2852ce986",
+      "fixed": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      }
+    },
+    {
+      "id": "2582",
+      "slug": "pass-the-pillow",
+      "title": "递枕头",
+      "fixtureHash": "c7a735ff777d6fd060c4da82cb31eb1caaecfe0ab706ba532b457b1d20a74b9d",
+      "answerSha256": "a2aeb0b556447afdf2284744fdfacc80e1428e32a485aa327ab9cbcb1146a602",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "1402",
+      "slug": "reducing-dishes",
+      "title": "做菜顺序",
+      "fixtureHash": "8c17c122b679c6bcb32833af5ded919b8038777d3102ed94fa9b8d18632bc6a3",
+      "answerSha256": "8e3a4768d21c82ac82b11bfc665670aefa98218b0b44d375d9ddbb9079ca438b",
+      "fixed": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      }
+    },
+    {
+      "id": "3274",
+      "slug": "check-if-two-chessboard-squares-have-the-same-color",
+      "title": "检查棋盘方格颜色是否相同",
+      "fixtureHash": "671268aef08a451f8b83d883df8ab3cc4f0572213343f6bf195735bee373c884",
+      "answerSha256": "182d58dbcae62a3e9a1ec098d3719fbe1d02d24435359ef92e5f6df1e6a39a25",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "2770",
+      "slug": "maximum-number-of-jumps-to-reach-the-last-index",
+      "title": "达到末尾下标所需的最大跳跃次数",
+      "fixtureHash": "78bb2513ab6e3ecdf8952d50eb60078c41b188b530df09c501b928a8186affe1",
+      "answerSha256": "80d10b4aa07ad609d423342dd0381a112f03c85f84183b771a2b47beaf9226a8",
+      "fixed": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      }
+    },
+    {
+      "id": "740",
+      "slug": "delete-and-earn",
+      "title": "删除并获得点数",
+      "fixtureHash": "d7a4f5e52a292e4ead3ce2dc09132f5e96095babe96d227d34090e350e1bc8d7",
+      "answerSha256": "0fff9d5fa54dd1986fbd2cfc689132079499c04a175005c220db6fcd73814ea5",
+      "fixed": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      }
+    },
+    {
+      "id": "1221",
+      "slug": "split-a-string-in-balanced-strings",
+      "title": "分割平衡字符串",
+      "fixtureHash": "d7e17fe60e9af1cbcd63e240aee6d4c40333158b5f611f3e63c072fcd896d4d8",
+      "answerSha256": "0603c7d5e22f77bb978e65db7a9e427308b0a44fea298221dcca8129711fbc55",
+      "fixed": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      }
+    },
+    {
+      "id": "1925",
+      "slug": "count-square-sum-triples",
+      "title": "统计平方和三元组的数目",
+      "fixtureHash": "6c08a7a190ce74a223133f79e4382680ca2b1d11f16e0f5560d7844a9ffb7fe1",
+      "answerSha256": "10ab2351dd01eb7697fa98f62791c703d554eafef232acbe4e1dddb152ab83f2",
+      "fixed": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      }
+    },
+    {
+      "id": "1372",
+      "slug": "longest-zigzag-path-in-a-binary-tree",
+      "title": "二叉树中的最长交错路径",
+      "fixtureHash": "7f37e21a76306505f85c1a0e09c677cdf9ef4301fb840e27dc65e7d3684e1a3b",
+      "answerSha256": "4088f0d92e176b4f9e669c9c86910fcd7940551421577ec51fb3c1a50491ee71",
+      "fixed": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      },
+      "withBoundary": {
+        "status": "failed",
+        "passed": 9,
+        "total": 10
+      }
+    },
+    {
+      "id": "2472",
+      "slug": "maximum-number-of-non-overlapping-palindrome-substrings",
+      "title": "不重叠回文子字符串的最大数目",
+      "fixtureHash": "6d7758bb72bc2ae853d9654b063302159efc7c70e48bf82d010f28395cc57939",
+      "answerSha256": "4d26980c6e71e7ecc6dfcc85754ec2621ee1694b8d1562424cc2f59fb0ddc947",
+      "fixed": {
+        "status": "unverified",
+        "reason": "no Python fenced code block"
+      },
+      "withBoundary": {
+        "status": "unverified",
+        "reason": "no Python fenced code block"
+      }
+    },
+    {
+      "id": "2699",
+      "slug": "modify-graph-edge-weights",
+      "title": "修改图中的边权",
+      "fixtureHash": "5d2cbbf29eee52290315c6aaf35cca3882fbfaac4d747b33da886382dd9b063e",
+      "answerSha256": "da2902ba5bc6487175d2c680a499c3ece50f18805915ed10b3ead17679310523",
+      "fixed": {
+        "status": "failed",
+        "passed": 4,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "failed",
+        "passed": 4,
+        "total": 8
+      }
+    },
+    {
+      "id": "3644",
+      "slug": "maximum-k-to-sort-a-permutation",
+      "title": "排序排列",
+      "fixtureHash": "82bf9417dbd04b483815f672585561c9eee5950e2ffc0bd994cc2e5bc97c75b1",
+      "answerSha256": "864ba76ed8016c52f678e7639518857b3dc7531106d228325eaec5ee3e4bcbd8",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "1443",
+      "slug": "minimum-time-to-collect-all-apples-in-a-tree",
+      "title": "收集树上所有苹果的最少时间",
+      "fixtureHash": "b13cb2f5f72adaa3f23320e2b6a7bc12e4c90a22e53d4c126e9a16334bc69639",
+      "answerSha256": "bc4dab86987b85e22978b4cf5bffcb8de60dcf1afb5397e37abb8cbd3766d030",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 9,
+        "total": 9
+      }
+    },
+    {
+      "id": "1249",
+      "slug": "minimum-remove-to-make-valid-parentheses",
+      "title": "移除无效的括号",
+      "fixtureHash": "f27e06878b4964492c34993ee71ce4268f5976ccf2f5ef87482933fe0e149fd1",
+      "answerSha256": "e6fe316c19ece60cbcb9ee2c1dd56e0997e74d61f0d8cad01414308c9429b256",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "721",
+      "slug": "accounts-merge",
+      "title": "账户合并",
+      "fixtureHash": "c341045cc6d8ea45ce720f1a2843e29e627334773ea5dbe7d7b423ac764e6369",
+      "answerSha256": "ac7c5d2e47fbf80c7fe5d5b5b8bdbc12021b37e070ab22558ac470bef9a42382",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "2595",
+      "slug": "number-of-even-and-odd-bits",
+      "title": "奇偶位数",
+      "fixtureHash": "b3a81da92ea3e47157f38ffa6625aa24f0572539d12d734d2f34e3987fda340d",
+      "answerSha256": "6774e929f734f0b65803adfadb6626c559f2189723371da38554066196ba93ee",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "2124",
+      "slug": "check-if-all-as-appears-before-all-bs",
+      "title": "检查是否所有 A 都在 B 之前",
+      "fixtureHash": "746a9e649b288b00875b4e5bccd9b1203258b181740e1379a455aaace37fa1e4",
+      "answerSha256": "9c249ab74896a3ea3066653d6ae73e32287b2a754aad6fb93784aad2552f09c2",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "3092",
+      "slug": "most-frequent-ids",
+      "title": "最高频率的 ID",
+      "fixtureHash": "653344e2ad30265da82d7cfcca4920386fc3878172b88ee042fe7de19a802bb7",
+      "answerSha256": "13c14616e21beded80ba5d2a6663f3cf18decc2b3aa7a95eee2a760db50578ee",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "169",
+      "slug": "majority-element",
+      "title": "多数元素",
+      "fixtureHash": "72289a93c4e142e204b4b3ba21270e76f61c7091044ef801c9068a2365acd5e2",
+      "answerSha256": "b29a72977ce3dc12ea3de231096df528fece4355cec9e401ba5c5de546d326ed",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    },
+    {
+      "id": "3033",
+      "slug": "modify-the-matrix",
+      "title": "修改矩阵",
+      "fixtureHash": "11a6b7e0870eb6cd9e9bc4dcafe3f2425fd8b0f597139a5c096c3ff6a7262edb",
+      "answerSha256": "2d57a88050c3aaf4755f86e2e579528a4dc24f104ce2773af8ec9c047e9fc3bd",
+      "fixed": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      },
+      "withBoundary": {
+        "status": "passed",
+        "passed": 8,
+        "total": 8
+      }
+    }
+  ]
+}

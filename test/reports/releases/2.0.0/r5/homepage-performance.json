@@ -1,0 +1,666 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-10-27T20:11:15.158792+00:00",
+  "source": "macos-client",
+  "root": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm",
+  "scope": "Read-only public post-deploy performance verification. Three fresh connections for homepage; each necessary anonymous static JS/CSS/icon asset fetched once. No login, model, order, route mutation, physical phone or mobile LCP test.",
+  "applicationCandidate": "a087 as stated by deployment operator; not inferred from public HTML",
+  "homepage": [
+    {
+      "url": "https://passwisely.cn/",
+      "label": "homepage-new-connection-1",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.001399",
+        "time_connect": "0.254473",
+        "time_appconnect": "0.399419",
+        "time_pretransfer": "0.399523",
+        "time_starttransfer": "0.505623",
+        "time_total": "0.595034",
+        "size_download": "14285"
+      },
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-encoding": "gzip",
+        "vary": "RSC, Accept, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Next-Url, X-Vinext-Interception-Context, X-Vinext-Mounted-Slots, X-Vinext-Rsc-Render-Mode"
+      },
+      "decodedBodyBytes": 66236,
+      "sha256": "e0690dcf0ee0544ab85bb8069e572aeede84ad4e7479df7f3c0cb60cc3abdca3",
+      "gzipLevel6Bytes": 14043,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/01-body",
+      "phases": {
+        "dnsMs": 1.399,
+        "tcpMs": 253.074,
+        "tlsMs": 144.946,
+        "ttfbMs": 505.623,
+        "totalMs": 595.034
+      }
+    },
+    {
+      "url": "https://passwisely.cn/",
+      "label": "homepage-new-connection-2",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.002785",
+        "time_connect": "0.082086",
+        "time_appconnect": "0.169650",
+        "time_pretransfer": "0.169714",
+        "time_starttransfer": "0.309709",
+        "time_total": "0.397475",
+        "size_download": "14285"
+      },
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-encoding": "gzip",
+        "vary": "RSC, Accept, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Next-Url, X-Vinext-Interception-Context, X-Vinext-Mounted-Slots, X-Vinext-Rsc-Render-Mode"
+      },
+      "decodedBodyBytes": 66236,
+      "sha256": "e0690dcf0ee0544ab85bb8069e572aeede84ad4e7479df7f3c0cb60cc3abdca3",
+      "gzipLevel6Bytes": 14043,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/02-body",
+      "phases": {
+        "dnsMs": 2.785,
+        "tcpMs": 79.301,
+        "tlsMs": 87.564,
+        "ttfbMs": 309.709,
+        "totalMs": 397.475
+      }
+    },
+    {
+      "url": "https://passwisely.cn/",
+      "label": "homepage-new-connection-3",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.002467",
+        "time_connect": "0.090934",
+        "time_appconnect": "0.180263",
+        "time_pretransfer": "0.180366",
+        "time_starttransfer": "0.282615",
+        "time_total": "0.421943",
+        "size_download": "14285"
+      },
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-encoding": "gzip",
+        "vary": "RSC, Accept, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Next-Url, X-Vinext-Interception-Context, X-Vinext-Mounted-Slots, X-Vinext-Rsc-Render-Mode"
+      },
+      "decodedBodyBytes": 66236,
+      "sha256": "e0690dcf0ee0544ab85bb8069e572aeede84ad4e7479df7f3c0cb60cc3abdca3",
+      "gzipLevel6Bytes": 14043,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/03-body",
+      "phases": {
+        "dnsMs": 2.467,
+        "tcpMs": 88.467,
+        "tlsMs": 89.329,
+        "ttfbMs": 282.615,
+        "totalMs": 421.943
+      }
+    }
+  ],
+  "assets": [
+    {
+      "url": "https://passwisely.cn/assets/index-DATaFRD3.css",
+      "label": "initial-css",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.001701",
+        "time_connect": "0.099754",
+        "time_appconnect": "0.277713",
+        "time_pretransfer": "0.277834",
+        "time_starttransfer": "0.382860",
+        "time_total": "0.500678",
+        "size_download": "15330"
+      },
+      "headers": {
+        "content-type": "text/css; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-encoding": "gzip",
+        "etag": "\"1546618f78ed3a7ca4fffe80512069c8\""
+      },
+      "decodedBodyBytes": 65993,
+      "sha256": "dc79a04080d826ee4f54c8e283d6d47cd6f0e15a7e5ed6feaa3c2fea6b8d77a2",
+      "gzipLevel6Bytes": 15380,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/04-body",
+      "phases": {
+        "dnsMs": 1.701,
+        "tcpMs": 98.053,
+        "tlsMs": 177.959,
+        "ttfbMs": 382.86,
+        "totalMs": 500.678
+      }
+    },
+    {
+      "url": "https://passwisely.cn/assets/PassWiselySite-CFnGWyHZ.css",
+      "label": "initial-css",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.002301",
+        "time_connect": "0.096990",
+        "time_appconnect": "0.202694",
+        "time_pretransfer": "0.202804",
+        "time_starttransfer": "0.298099",
+        "time_total": "0.394474",
+        "size_download": "18502"
+      },
+      "headers": {
+        "content-type": "text/css; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-encoding": "gzip",
+        "etag": "\"b422b0472299233f09ac0201ed981afd\""
+      },
+      "decodedBodyBytes": 85172,
+      "sha256": "95102ad9611dbb8567abf42d06dd20a6989e3b57ce88a66099fec8e7ca89094d",
+      "gzipLevel6Bytes": 18588,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/05-body",
+      "phases": {
+        "dnsMs": 2.301,
+        "tcpMs": 94.689,
+        "tlsMs": 105.704,
+        "ttfbMs": 298.099,
+        "totalMs": 394.474
+      }
+    },
+    {
+      "url": "https://passwisely.cn/assets/layout-segment-context-DrkNc3W0.js",
+      "label": "initial-js",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.002433",
+        "time_connect": "0.093787",
+        "time_appconnect": "0.190286",
+        "time_pretransfer": "0.190381",
+        "time_starttransfer": "0.290372",
+        "time_total": "0.290756",
+        "size_download": "225"
+      },
+      "headers": {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-encoding": "gzip",
+        "etag": "\"989e7d92be1daec333dfc0f71abbf37e\""
+      },
+      "decodedBodyBytes": 288,
+      "sha256": "46085e18fc159dd68c4b375b6be6699a15f93b772cc2e29493cad8e119ab9a55",
+      "gzipLevel6Bytes": 225,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/06-body",
+      "phases": {
+        "dnsMs": 2.433,
+        "tcpMs": 91.354,
+        "tlsMs": 96.499,
+        "ttfbMs": 290.372,
+        "totalMs": 290.756
+      },
+      "staticImportSpecifiers": [
+        "./rolldown-runtime-S-ySWqyJ.js",
+        "./framework-CXnKph_e.js",
+        "./index-BmUkaNtc.js"
+      ],
+      "dynamicImportSpecifiers": []
+    },
+    {
+      "url": "https://passwisely.cn/assets/rolldown-runtime-S-ySWqyJ.js",
+      "label": "initial-js",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.001487",
+        "time_connect": "0.099272",
+        "time_appconnect": "0.209264",
+        "time_pretransfer": "0.209342",
+        "time_starttransfer": "0.405084",
+        "time_total": "0.411866",
+        "size_download": "422"
+      },
+      "headers": {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-encoding": "gzip",
+        "etag": "\"5b410b186394566e61973a87eec3eff4\""
+      },
+      "decodedBodyBytes": 694,
+      "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75",
+      "gzipLevel6Bytes": 423,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/07-body",
+      "phases": {
+        "dnsMs": 1.487,
+        "tcpMs": 97.785,
+        "tlsMs": 109.992,
+        "ttfbMs": 405.084,
+        "totalMs": 411.866
+      },
+      "staticImportSpecifiers": [],
+      "dynamicImportSpecifiers": []
+    },
+    {
+      "url": "https://passwisely.cn/assets/index-BmUkaNtc.js",
+      "label": "initial-js",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.001499",
+        "time_connect": "0.089891",
+        "time_appconnect": "0.199888",
+        "time_pretransfer": "0.199983",
+        "time_starttransfer": "0.293777",
+        "time_total": "0.395368",
+        "size_download": "24544"
+      },
+      "headers": {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-encoding": "gzip",
+        "etag": "\"132970f65f439135436c325b25447a87\""
+      },
+      "decodedBodyBytes": 81231,
+      "sha256": "f29534c9c5ab00d62fb4e32b24289933ec1dac29583ce97afb0f084383d3ea5c",
+      "gzipLevel6Bytes": 24531,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/08-body",
+      "phases": {
+        "dnsMs": 1.499,
+        "tcpMs": 88.392,
+        "tlsMs": 109.997,
+        "ttfbMs": 293.777,
+        "totalMs": 395.368
+      },
+      "staticImportSpecifiers": [
+        "./rolldown-runtime-S-ySWqyJ.js",
+        "./framework-CXnKph_e.js"
+      ],
+      "dynamicImportSpecifiers": []
+    },
+    {
+      "url": "https://passwisely.cn/assets/framework-CXnKph_e.js",
+      "label": "initial-js",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.001513",
+        "time_connect": "0.084908",
+        "time_appconnect": "0.183897",
+        "time_pretransfer": "0.183976",
+        "time_starttransfer": "0.275250",
+        "time_total": "0.479068",
+        "size_download": "59029"
+      },
+      "headers": {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-encoding": "gzip",
+        "etag": "\"d39ed349b09f8e5a0343596ed1483dc1\""
+      },
+      "decodedBodyBytes": 189805,
+      "sha256": "73b45b606448e4dc310fbe851d8089ee752f3eb081980b3a6fec88988820ee12",
+      "gzipLevel6Bytes": 59014,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/09-body",
+      "phases": {
+        "dnsMs": 1.513,
+        "tcpMs": 83.395,
+        "tlsMs": 98.989,
+        "ttfbMs": 275.25,
+        "totalMs": 479.068
+      },
+      "staticImportSpecifiers": [
+        "./rolldown-runtime-S-ySWqyJ.js"
+      ],
+      "dynamicImportSpecifiers": []
+    },
+    {
+      "url": "https://passwisely.cn/assets/PassWiselySite-CXGROcBz.js",
+      "label": "initial-js",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.001446",
+        "time_connect": "0.142094",
+        "time_appconnect": "0.267093",
+        "time_pretransfer": "0.267175",
+        "time_starttransfer": "0.349978",
+        "time_total": "0.432436",
+        "size_download": "29506"
+      },
+      "headers": {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-encoding": "gzip",
+        "etag": "\"a1d2a2be40cf665ba4165e535c5ddc1e\""
+      },
+      "decodedBodyBytes": 89517,
+      "sha256": "44a2a3cb5a203095c4e013633bd26aa7f7ee563f06a21d6628fe732d5b8dbc1c",
+      "gzipLevel6Bytes": 29137,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/10-body",
+      "phases": {
+        "dnsMs": 1.446,
+        "tcpMs": 140.648,
+        "tlsMs": 124.999,
+        "ttfbMs": 349.978,
+        "totalMs": 432.436
+      },
+      "staticImportSpecifiers": [
+        "./rolldown-runtime-S-ySWqyJ.js",
+        "./framework-CXnKph_e.js",
+        "./index-BmUkaNtc.js",
+        "./catalog-FLoMGBFE.js"
+      ],
+      "dynamicImportSpecifiers": []
+    },
+    {
+      "url": "https://passwisely.cn/assets/catalog-FLoMGBFE.js",
+      "label": "initial-js",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.001454",
+        "time_connect": "0.111422",
+        "time_appconnect": "0.225391",
+        "time_pretransfer": "0.225475",
+        "time_starttransfer": "0.639828",
+        "time_total": "0.648894",
+        "size_download": "1393"
+      },
+      "headers": {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-encoding": "gzip",
+        "etag": "\"473fdda8a424eb41c77a64498b2b7493\""
+      },
+      "decodedBodyBytes": 2823,
+      "sha256": "e7fff75e68572dadd794a8704974ce01789783a8db04565829991094d4f823f0",
+      "gzipLevel6Bytes": 1390,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/11-body",
+      "phases": {
+        "dnsMs": 1.454,
+        "tcpMs": 109.968,
+        "tlsMs": 113.969,
+        "ttfbMs": 639.828,
+        "totalMs": 648.894
+      },
+      "staticImportSpecifiers": [],
+      "dynamicImportSpecifiers": []
+    }
+  ],
+  "icons": [
+    {
+      "rel": "shortcut icon",
+      "href": "https://passwisely.cn/favicon.ico",
+      "curlExitCode": 0,
+      "httpCode": "200",
+      "sslVerifyResult": "0"
+    },
+    {
+      "rel": "icon",
+      "href": "https://passwisely.cn/favicon.ico",
+      "curlExitCode": 0,
+      "httpCode": "200",
+      "sslVerifyResult": "0"
+    },
+    {
+      "rel": "icon",
+      "href": "https://passwisely.cn/passwisely-logo-192.png",
+      "curlExitCode": 0,
+      "httpCode": "200",
+      "sslVerifyResult": "0"
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://passwisely.cn/passwisely-logo-192.png",
+      "curlExitCode": 0,
+      "httpCode": "200",
+      "sslVerifyResult": "0"
+    }
+  ],
+  "errors": [],
+  "externalDependencies": [],
+  "unfetchedDynamicImports": [],
+  "renderedInitialReferences": [
+    "https://passwisely.cn/assets/index-DATaFRD3.css",
+    "https://passwisely.cn/assets/PassWiselySite-CFnGWyHZ.css",
+    "https://passwisely.cn/assets/layout-segment-context-DrkNc3W0.js",
+    "https://passwisely.cn/assets/rolldown-runtime-S-ySWqyJ.js",
+    "https://passwisely.cn/assets/index-BmUkaNtc.js",
+    "https://passwisely.cn/assets/framework-CXnKph_e.js",
+    "https://passwisely.cn/assets/PassWiselySite-CXGROcBz.js",
+    "https://passwisely.cn/assets/catalog-FLoMGBFE.js"
+  ],
+  "renderedIconLinks": [
+    {
+      "rel": "shortcut icon",
+      "href": "https://passwisely.cn/favicon.ico"
+    },
+    {
+      "rel": "icon",
+      "href": "https://passwisely.cn/favicon.ico"
+    },
+    {
+      "rel": "icon",
+      "href": "https://passwisely.cn/passwisely-logo-192.png"
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://passwisely.cn/passwisely-logo-192.png"
+    }
+  ],
+  "iconUniqueRequests": [
+    {
+      "url": "https://passwisely.cn/favicon.ico",
+      "label": "icon",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.001493",
+        "time_connect": "0.088820",
+        "time_appconnect": "0.188268",
+        "time_pretransfer": "0.188362",
+        "time_starttransfer": "0.307582",
+        "time_total": "0.308133",
+        "size_download": "10181"
+      },
+      "headers": {
+        "content-type": "image/vnd.microsoft.icon",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-encoding": "gzip",
+        "etag": "\"4c54230b62410411319efd5d9ad38560\""
+      },
+      "decodedBodyBytes": 19603,
+      "sha256": "c0fbb20ca9df072a524ebe810b617a584d11238e1f0b9be6bf97e0894778a113",
+      "gzipLevel6Bytes": 10185,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/12-body",
+      "phases": {
+        "dnsMs": 1.493,
+        "tcpMs": 87.327,
+        "tlsMs": 99.448,
+        "ttfbMs": 307.582,
+        "totalMs": 308.133
+      }
+    },
+    {
+      "url": "https://passwisely.cn/passwisely-logo-192.png",
+      "label": "icon",
+      "curlExitCode": 0,
+      "metrics": {
+        "http_code": "200",
+        "ssl_verify_result": "0",
+        "http_version": "2",
+        "remote_ip": "8.219.140.215",
+        "num_connects": "1",
+        "time_namelookup": "0.002699",
+        "time_connect": "0.100525",
+        "time_appconnect": "0.209186",
+        "time_pretransfer": "0.209282",
+        "time_starttransfer": "0.307847",
+        "time_total": "0.404343",
+        "size_download": "24382"
+      },
+      "headers": {
+        "content-type": "image/png",
+        "content-length": "24382",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "etag": "\"16bb69899236156887db4807b2161285\""
+      },
+      "decodedBodyBytes": 24382,
+      "sha256": "c4dc37b969e1e2d0fdbe276b5d58e0fcc176a760c1af5de6c860704465999dbd",
+      "gzipLevel6Bytes": 24410,
+      "bodyFile": "/private/tmp/passwisely-cn-postdeploy-performance-20261028-cnzsznbm/13-body",
+      "phases": {
+        "dnsMs": 2.699,
+        "tcpMs": 97.826,
+        "tlsMs": 108.661,
+        "ttfbMs": 307.847,
+        "totalMs": 404.343
+      }
+    }
+  ],
+  "initialStaticTotals": {
+    "jsResources": 6,
+    "cssResources": 2,
+    "jsDecodedBytes": 364358,
+    "jsGzipLevel6Bytes": 114720,
+    "cssDecodedBytes": 151165,
+    "cssGzipLevel6Bytes": 33968,
+    "wireBytes": 148951.0
+  },
+  "equivalentPreLazyBundleComparison": {
+    "baselineSource": "298fec24b31510eb309fde4fc095f1e8bb562f71 isolated real SSR and Vite static-import closure; not the capped historical public asset sample",
+    "method": "Same semantic closure: rendered initial JS/modulepreload references recursively following static imports, excludes dynamic imports. Decoded responses independently recompressed at gzip level6/mtime0. Baseline manifest parser vs current deployed JavaScript syntax parser.",
+    "baselineJsResources": 6,
+    "baselineJsDecodedBytes": 415379,
+    "baselineJsGzipLevel6Bytes": 130800,
+    "currentJsDecodedBytes": 364358,
+    "currentJsGzipLevel6Bytes": 114720,
+    "jsSavedDecodedBytes": 51021,
+    "jsSavedGzipBytes": 16080,
+    "jsGzipReductionPercent": 12.29,
+    "baselineCssGzipLevel6Bytes": 33959,
+    "currentCssGzipLevel6Bytes": 33968
+  },
+  "homepageNewConnectionSummary": {
+    "samples": 3,
+    "medianIndependentPhases": {
+      "dnsMs": 2.467,
+      "tcpMs": 88.467,
+      "tlsMs": 89.329,
+      "ttfbMs": 309.709,
+      "totalMs": 421.943
+    },
+    "totalRangeMs": [
+      397.475,
+      595.034
+    ],
+    "note": "Phase medians are independent; do not sum them as a single request. Fresh connections do not clear server/OS/browser caches."
+  },
+  "historicalPublicTimingContext": {
+    "report": "/private/tmp/passwisely-cn-latency-macos-20261027.json",
+    "checkedAt": "2026-10-27T14:09:04.690949+00:00",
+    "samples": 3,
+    "medianTtfbMs": 418.708,
+    "medianTotalMs": 509.892,
+    "inference": "Different-time n=3 network snapshots; not a controlled speed experiment or a mobile LCP claim."
+  },
+  "elapsedSeconds": 6.596,
+  "limits": [
+    "No actual phone/carrier, browser JS execution, LCP or rendering CPU timing",
+    "Do not add fresh-connection resource durations into a browser waterfall; HTTP/2 connections are reused there",
+    "Dynamic Dashboard/QR chunks are intentionally not fetched",
+    "Only the public anonymous homepage and necessary public JS/CSS/icons were requested"
+  ],
+  "producerSha256": "36afe200243852e447469e86286838f3e7ef0ceb582bc86393d936e1ea06d245",
+  "publicStaticAssetsMatchReviewedCandidate": {
+    "sourceDirectory": "/private/tmp/passwisely-home-lazy-298fec2-agtck_sv/source/website/dist/client",
+    "allMatch": true,
+    "checks": [
+      {
+        "url": "https://passwisely.cn/assets/index-DATaFRD3.css",
+        "candidateFileExists": true,
+        "sha256Equal": true
+      },
+      {
+        "url": "https://passwisely.cn/assets/PassWiselySite-CFnGWyHZ.css",
+        "candidateFileExists": true,
+        "sha256Equal": true
+      },
+      {
+        "url": "https://passwisely.cn/assets/layout-segment-context-DrkNc3W0.js",
+        "candidateFileExists": true,
+        "sha256Equal": true
+      },
+      {
+        "url": "https://passwisely.cn/assets/rolldown-runtime-S-ySWqyJ.js",
+        "candidateFileExists": true,
+        "sha256Equal": true
+      },
+      {
+        "url": "https://passwisely.cn/assets/index-BmUkaNtc.js",
+        "candidateFileExists": true,
+        "sha256Equal": true
+      },
+      {
+        "url": "https://passwisely.cn/assets/framework-CXnKph_e.js",
+        "candidateFileExists": true,
+        "sha256Equal": true
+      },
+      {
+        "url": "https://passwisely.cn/assets/PassWiselySite-CXGROcBz.js",
+        "candidateFileExists": true,
+        "sha256Equal": true
+      },
+      {
+        "url": "https://passwisely.cn/assets/catalog-FLoMGBFE.js",
+        "candidateFileExists": true,
+        "sha256Equal": true
+      }
+    ]
+  }
+}

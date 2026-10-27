@@ -1,0 +1,53 @@
+{
+  "status": "frontend_mirror_active_and_artifact_verified",
+  "sourceCommit": "a087b332713df5ad4d5fa1b2def8cb472f641b88",
+  "treeFingerprint": "7e681be092a67c2de2879484ba988fa7adf7a959ee0e28754f3692db34307c92",
+  "manifestSha256": "704353b5f70760a09a104ad302d49eeeff64025252fa6f6a5d6dab6f5607949d",
+  "transaction": "/opt/passwisely/.frontend-release-backups/20261027T201229Z-569f79878d3b4e28ab05e066574beb16/transaction.json",
+  "transactionSha256": "82aaa6c649cdd7ae31aad749f8649f7dde624eda8480e79b27949944690ca83f",
+  "transactionLocalFile": "/private/tmp/passwisely-cn-home-frontend-20261028/transaction.json",
+  "frontendOnlyRestarted": "passwisely-frontend.service",
+  "backendWrites": 0,
+  "configurationWrites": 0,
+  "bindingPreservedExactly": true,
+  "bindingSha256": "a6a666d97348fc3e378e8b3975d17fea6630c5de0f636128f6b1c3c6aaba6ea4",
+  "allNginxPinsMatch": true,
+  "oldRuntimeRetainedAndVerified": true,
+  "externalIP": {
+    "homepageStatus": 200,
+    "homepageSha256": "e128c8937c5e71cfb88f500fa15229447e7058fe75b7fe6871060f6dc20a6e40",
+    "resourceHashesVerified": 13,
+    "r5DownloadHeadsVerified": 3
+  },
+  "serverLocalFrontendHealth": {
+    "allAssetsMatchedManifest": true,
+    "assetChecks": 24,
+    "homepageEndpoints": 3,
+    "previousOwnerHealthCompletedBeforeThisHeadDiagnostic": true
+  },
+  "internalHostComProxyR5HeadsVerified": 3,
+  "domainComAvailability": {
+    "externalHttpStatus": 403,
+    "serverHeader": "Beaver",
+    "publicErrorTitle": "Non-compliance ICP Filing",
+    "externalHostComResourcesAndDownloadsNotExercised": true,
+    "serverPublicHttpDownloadStatuses": [
+      301,
+      301,
+      301
+    ],
+    "serverPublicHttpDownloadRedirectOrigin": "https://passwisely.com",
+    "routingUnchanged": true,
+    "bindingUnchanged": true
+  },
+  "evidenceFiles": {
+    "activation-result.json": "/private/tmp/passwisely-cn-home-frontend-20261028/activation-result.json",
+    "fresh-reviewed-plan.json": "/private/tmp/passwisely-cn-home-frontend-20261028/fresh-reviewed-plan.json",
+    "post-activation-state.json": "/private/tmp/passwisely-cn-home-frontend-20261028/post-activation-state.json",
+    "transaction.json": "/private/tmp/passwisely-cn-home-frontend-20261028/transaction.json",
+    "public-mirror-verification.json": "/private/tmp/passwisely-cn-home-frontend-20261028/public-mirror-verification.json",
+    "server-proxy-download-verification.json": "/private/tmp/passwisely-cn-home-frontend-20261028/server-proxy-download-verification.json",
+    "public-host-com-blocked.html": "/private/tmp/passwisely-cn-home-frontend-20261028/public-host-com-blocked.html"
+  },
+  "noFurtherNetworkProbesPlanned": true
+}

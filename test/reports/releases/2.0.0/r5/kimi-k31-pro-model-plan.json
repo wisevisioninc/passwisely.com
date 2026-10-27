@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "runId": "6044483c-1ff4-4dd2-a1c2-bb60ff26e2e8",
+  "startedAt": "2026-10-27T20:29:41.525Z",
+  "mode": "plan",
+  "origin": "http://127.0.0.1:3011",
+  "targetModel": "kimi-k3.1-pro",
+  "success": true,
+  "status": "planned",
+  "before": {
+    "provider": "kimi",
+    "model": "kimi-k3"
+  },
+  "after": {
+    "provider": "kimi",
+    "model": "kimi-k3"
+  },
+  "backup": null,
+  "databaseWriteCount": 0,
+  "settingsPutAttempts": 0,
+  "otherMaskedSettingsUnchanged": true,
+  "credentialValuesReturned": false,
+  "secretSettingsPersisted": false,
+  "environmentWrites": 0,
+  "providerCalls": 0,
+  "serviceRestarts": 0,
+  "automaticRollbackAttempted": false,
+  "conditionalWriteAtomic": false,
+  "plannedMutation": {
+    "ai_default_model": "kimi-k3.1-pro"
+  },
+  "plannedDatabaseWriteCount": 1,
+  "completedAt": "2026-10-27T20:29:41.824Z"
+}

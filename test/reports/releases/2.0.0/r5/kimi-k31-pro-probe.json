@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "runId": "4a14bcce-89b2-4ae7-945d-a999115a2f10",
+  "startedAt": "2026-10-27T20:23:57.124Z",
+  "scope": "read-only-default-config-and-one-synthetic-provider-probe",
+  "configurationWrites": 0,
+  "userSessionAccess": false,
+  "providerChatCalls": 1,
+  "ownerFingerprints": {
+    "ai-config": "04cdfaff29f55cbf8412a2b822d6d9cdb5acd40f8ab433af1c0d761d34fa5816",
+    "ai-catalog": "c096b35abba0fd237b4082b0d90b84647bb26fea077c8136a81b0a7da6522fec",
+    "admin-secrets": "9e3912e2eb2e74352e6105a2a4a4172aa7dca74afb4e5cef73233e62e7bfdad9",
+    "admin-auth": "b3bb96999cd1bef49b217d09abe39a04637589b0dcda32f4e60897faa0dc730a",
+    "supabase": "fc40d272a03d286b48a23ca77868b25b8c1837def3b21cc8b6192201237f9b6c",
+    "openai-gateway": "c48a87806aa03ec45f2d6b90923ccbd0858cd9a9320c77a1475ef3b19e8c2f74"
+  },
+  "current": {
+    "provider": "kimi",
+    "model": "kimi-k3",
+    "origin": "https://api.moonshot.cn/v1/chat/completions",
+    "source": "supabase",
+    "hasKey": true,
+    "configurationOwnerReads": 1
+  },
+  "models": {
+    "httpStatus": 200,
+    "elapsedMs": 431,
+    "requestedModel": "kimi-k3.1-pro",
+    "modelPresent": true
+  },
+  "chat": {
+    "requestedModel": "kimi-k3.1-pro",
+    "httpStatus": 200,
+    "elapsedMs": 3089,
+    "actualModel": "kimi-k3.1-pro",
+    "finishReason": "stop",
+    "contentOK": true,
+    "hasReasoning": true,
+    "usage": {
+      "prompt_tokens": 91,
+      "completion_tokens": 24,
+      "total_tokens": 115,
+      "completion_tokens_details": {
+        "reasoning_tokens": 8
+      },
+      "prompt_tokens_details": {
+        "cache_write_tokens": 0
+      }
+    }
+  },
+  "loaderAdapter": {
+    "sourceSha256": "663cd406e18dd368dd6b9a82f4c4e8fe7da54e867855346d99469e5b0ebe9a1d",
+    "adjustedImportOnly": "typescript",
+    "dependencyVersion": "5.9.3",
+    "productionFileWrites": 0
+  },
+  "bindingSha256": "826c8bbf9a147091d525000d3f1da2bc9a2252732194cdc35f8a88f27eb0a0b8",
+  "success": true,
+  "completedAt": "2026-10-27T20:24:01.400Z"
+}

@@ -1,0 +1,64 @@
+{
+  "success": true,
+  "sourceCommit": "f96b17787d9c8c97ba1b8bf30326f43c1ef3c406",
+  "sourceRepository": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-kimi-k31-pro-f96b177",
+  "sourceDetached": true,
+  "candidate": "/home/jerry/codebase/passwisely/website/.release-candidates/v2.0.0-kimi-k31-pro-f96b177/dist",
+  "manifest": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-kimi-k31-pro-f96b177/web/web-manifest.json",
+  "manifestSha256": "7e23eaf556a8d41273b592ce15df6ca08f763c379f0fe4e0c99a85121e7b00cd",
+  "compiledTree": "813c15d59e2ac9a3357bd461a7304a2e1971fdc5c953f640e0b88e660599d633",
+  "compiledFilesVerified": 49,
+  "compiledBytesVerified": 5353026,
+  "sourceFilesVerified": 169,
+  "mainHeadPreserved": true,
+  "mainHead": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+  "configurationChanged": false,
+  "bindingSha256": "826c8bbf9a147091d525000d3f1da2bc9a2252732194cdc35f8a88f27eb0a0b8",
+  "bindingBytes": 6742,
+  "bindingPreservedExactly": true,
+  "bindingValuesReturned": false,
+  "sourceEnvironmentRead": false,
+  "linuxOwnerTestsPassed": 18,
+  "linuxFocusedWebsiteTestsPassed": 81,
+  "linuxWebsiteSuiteFull": false,
+  "linuxWebsiteTestScope": [
+    "kimi-model.test.mjs",
+    "ai-provider-fallback.test.mjs",
+    "admin-ai-configuration.test.mjs",
+    "chat-stream.test.mjs",
+    "openai-gateway.test.mjs",
+    "public-site-origin.test.mjs",
+    "oss-download.test.mjs",
+    "rendered-html.test.mjs",
+    "pricing-checkout.test.mjs"
+  ],
+  "dependencyFacades": [
+    {
+      "path": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-kimi-k31-pro-f96b177/node_modules",
+      "installedEntriesReused": 181,
+      "installationPerformed": false,
+      "additionalReusedTestDependency": {
+        "name": "typescript",
+        "version": "5.9.3",
+        "source": "/home/jerry/codebase/passwisely/website/node_modules/typescript"
+      }
+    },
+    {
+      "path": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-kimi-k31-pro-f96b177/website/node_modules",
+      "installedEntriesReused": 24,
+      "installationPerformed": false
+    }
+  ],
+  "rootPlanExecuted": false,
+  "unprivilegedSharedOwnerPreflightPassed": true,
+  "productionActivated": false,
+  "productionRuntimeWrites": 0,
+  "privateStagingWrites": true,
+  "gitReleaseMetadataWritten": true,
+  "ownerSha256": "911f75ed95374802a7a99e2ac53672c865637d7cc815d49a5fd4fe76f49b2ead",
+  "activationWrapperSha256": "5f83362733d1099162ba519b0dbd3653bec67b39e79ca0bd44185616cce215ee",
+  "activationCommand": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-kimi-k31-pro-f96b177/activate-reviewed.sh",
+  "requiresPublicCnHttpsBeforeActivation": true,
+  "automaticRollback": "Existing reviewed owner preserves exact runtime bindings, retains the old runtime, and rolls back runtime/routing on failed health checks; no database migration.",
+  "publicHealthUsesHttps": true
+}

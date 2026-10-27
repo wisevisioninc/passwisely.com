@@ -15,6 +15,28 @@ npm run test:leetcode:oracles
 
 前者核对20题、抽样顺序、哈希和169个固定期望值，并测试真实会话代码的加载与合成临时转录排除。后者使用独立穷举/随机小输入交叉核验参考实现。Python3、Node>=22及仓库现有依赖即可，不新增依赖。参考实现有意偏重可核验性，不能把其速度当模型性能标准。
 
+## 已保存20题的纯文本链路回归（本机，不调用真实模型）
+
+```sh
+node --test test/leetcode/scripts/run-live.test.mjs
+# 仅执行20题纯文本回放：
+node --test --test-name-pattern="all 20 historical cases" test/leetcode/scripts/run-live.test.mjs
+```
+
+回归直接读取现有 `manifest.json` 和20个 `cases/*.json`，使用生产
+`LiveSessionService → ConversationContext → ProcessingHelper → OpenAI SDK → fetch`
+到真实本机 HTTP SSE 服务；不替换生产的会话、提示组装或流解析代码。
+账户令牌、采集适配器及返回内容均为合成样本，fetch 仅允许访问该次测试
+拥有的 loopback 监听地址，失败也不会改用公网或真实模型。SSE 字节分片、
+每题单次请求、完整文本还原、Python 语言指令、样本哈希及无转录上下文均会核对。
+另有三题合成转录回放保留401拒绝、长度截断、不完整流的具体失败原因，验证
+不会静默重试或把部分答案标记为完成。监听端、连接、会话、计时器和临时结果
+在测试结束后释放；测试不会读取 App 账户缓存或钥匙串。
+
+**这20次回放只验证传输链路和历史样本兼容性，不是20题答案正确率、Kimi响应速度、
+真实公网可用率或原生界面实测。** 合成返回内容明确标记 `TRANSPORT_REPLAY_ONLY`，
+临时结果测试后删除；已有真实模型报告仍保留在 `reports/`，不能混用两类结果。
+
 ## Mac 截图题面和原生测试
 
 ```sh
@@ -36,8 +58,8 @@ npm run test:leetcode:fixtures
 ## 可复用真实问答脚本（会消耗模型额度）
 
 ```sh
-node test/leetcode/scripts/run-live.mjs --dry-run
-node test/leetcode/scripts/run-live.mjs --live --transport http-stream \
+node test/leetcode/scripts/run-live.mjs --dry-run --context text
+node test/leetcode/scripts/run-live.mjs --live --transport http-stream --context text \
   --base-url http://127.0.0.1:3014/api \
   --token-file /private/tmp/passwisely-test-token.json \
   --out /private/tmp/passwisely-test-run-NEW
@@ -45,7 +67,7 @@ node test/leetcode/scripts/run-live.mjs --live --transport http-stream \
 
 令牌文件需为显式提供的0600 JSON文件 `{"token":"..."}`，也可提供 `PASSWISELY_BENCH_TOKEN` 环境变量；不要提交或贴出令牌。脚本不读取App账户缓存，不解密钥匙串。`--help` 提供gRPC及题目过滤参数。结果目录必须不存在；串行执行，无应用层自动重试或换模型。
 
-脚本复用生产 `ConversationContext → LiveSessionService → ProcessingHelper`。HTTP流式模式显式关闭尚未发请求的gRPC通道；gRPC模式显式指定目标，避免混用测试和生产服务。按题号交替覆盖纯文本与标明的合成系统/麦克风最终文本，并验证临时文本不进入模型。这些是合成转录回放，不启动Recall或真实采集，也不覆盖原生渲染。
+脚本复用生产 `ConversationContext → LiveSessionService → ProcessingHelper`。HTTP流式模式显式关闭尚未发请求的gRPC通道；gRPC模式显式指定目标，避免混用测试和生产服务。`--context text` 对全部选中题目只提交题面和代码模板；不传该参数时默认 `--context synthetic`，保留原来的按题号交替纯文本与标明的合成系统/麦克风最终文本，并验证临时文本不进入模型。这些是合成转录回放，不启动Recall或真实采集，也不覆盖原生渲染。
 
 保存完整答案、实际模型、请求ID、样本哈希、首内容及总耗时、可获得的usage、失败原因。生成完成不等于答案正确；报告必须分开模型可用率和代码判定。
 

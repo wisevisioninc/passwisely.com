@@ -25,6 +25,8 @@ Options:
   --grpc-insecure        Explicit plaintext gRPC, literal loopback addresses only.
   --slugs A,B            Only these manifest slugs; unknown/duplicate values fail.
   --max-cases N          Serial cases, 1..20 (default 20).
+  --context MODE         text: pure question text; synthetic (default): existing
+                         alternating text / synthetic final-transcript contexts.
   --out NEW_DIRECTORY   Required; refuses an existing directory.
   --help                 No token read and no network.
 
@@ -39,8 +41,8 @@ const sha256 = value => createHash("sha256").update(value).digest("hex");
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 
 export function parseArgs(argv) {
-  const options = { live: false, baseUrl: "https://passwisely.cn/api", grpcInsecure: false, maxCases: 20 };
-  const values = new Map([["--base-url", "baseUrl"], ["--transport", "transport"], ["--grpc-address", "grpcAddress"], ["--token-file", "tokenFile"], ["--slugs", "slugs"], ["--max-cases", "maxCases"], ["--out", "out"]]);
+  const options = { live: false, baseUrl: "https://passwisely.cn/api", grpcInsecure: false, maxCases: 20, context: "synthetic" };
+  const values = new Map([["--base-url", "baseUrl"], ["--transport", "transport"], ["--grpc-address", "grpcAddress"], ["--token-file", "tokenFile"], ["--slugs", "slugs"], ["--max-cases", "maxCases"], ["--context", "context"], ["--out", "out"]]);
   const seen = new Set();
   for (let index = 0; index < argv.length; index++) {
     const flag = argv[index];
@@ -64,6 +66,7 @@ export function parseArgs(argv) {
   if (options.transport && !["grpc", "http-stream"].includes(options.transport)) throw new Error("--transport must be grpc or http-stream.");
   if (!/^\d+$/.test(String(options.maxCases)) || Number(options.maxCases) < 1 || Number(options.maxCases) > 20) throw new Error("--max-cases must be an integer from 1 to 20.");
   options.maxCases = Number(options.maxCases);
+  if (!["text", "synthetic"].includes(options.context)) throw new Error("--context must be text or synthetic.");
   const base = validateBaseUrl(options.baseUrl);
   options.baseUrl = base.href.replace(/\/$/, "");
   if (options.transport === "http-stream" && (options.grpcAddress || options.grpcInsecure)) throw new Error("HTTP transport does not accept --grpc-address or --grpc-insecure.");
@@ -170,6 +173,8 @@ const quantile = (values, q) => {
 
 export async function runBenchmark(root, options, token) {
   if (options.live !== true || !["grpc", "http-stream"].includes(options.transport)) throw new Error("Live benchmark requires explicit --live and --transport authorization.");
+  const contextSelection = options.context ?? "synthetic";
+  if (!["text", "synthetic"].includes(contextSelection)) throw new Error("--context must be text or synthetic.");
   // Validate every case and destination before importing networking code.
   const batch = loadFixtureBatch(root, options);
   const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
@@ -195,7 +200,7 @@ export async function runBenchmark(root, options, token) {
       let callbacks, completion, firstContentMs = null, latestModel = null, streamSettled;
       const streamFinished = new Promise(resolve => { streamSettled = resolve; });
       const transportRequests = [];
-      const segments = syntheticSegments(index, item.slug);
+      const segments = contextSelection === "text" ? [] : syntheticSegments(index, item.slug);
       const context = { mode: segments.length ? "text+synthetic-transcript" : "text", realAudioCapture: false, realAsr: false, screenshots: false, includeScreenshots: false, suppliedSegments: segments, finalSegments: segments.filter(x => x.isFinal), partialSegmentsExcluded: null, serializedMessagesHash: null, truncated: null };
       const helper = new production.ProcessingHelper({
         getScreenshotHelper: () => ({}), getWiseAccessToken: () => token, getMainWindow: () => null,
@@ -246,7 +251,10 @@ export async function runBenchmark(root, options, token) {
       const begin = performance.now(), startTime = new Date().toISOString();
       const service = new production.LiveSessionService({
         support: { supported: true, message: "Synthetic capture only; this benchmark does not exercise Recall or ASR." },
-        createUpload: async () => ({ uploadToken: "synthetic-not-a-credential", apiUrl: "https://synthetic.invalid" }),
+        createSession: async (_sessionId, signal, profileId) => {
+          signal.throwIfAborted();
+          return { kind: "recall-upload", uploadToken: "synthetic-not-a-credential", apiUrl: "https://synthetic.invalid", transcriptionProfile: profileId };
+        },
         createCapture: current => {
           callbacks = current;
           return { start: async () => current.onState("recording"), pause: async () => current.onState("paused"), resume: async () => current.onState("recording"), stop: async () => current.onState("ended"), dispose: async () => {} };
@@ -280,7 +288,7 @@ export async function runBenchmark(root, options, token) {
           if (!started.success) throw new Error(started.error || "Synthetic session start failed.");
           for (const segment of segments) callbacks.onTranscript(segment);
         }
-        const accepted = await service.ask({ question: item.question, includeScreenshots: false });
+        const accepted = await service.ask({ question: item.question, includeScreenshots: false, codeLanguage: "python" });
         if (!accepted.success) throw new Error(accepted.error || "Question rejected.");
         serviceRequestId = accepted.requestId;
         // Use the real terminal publication, including context preparation
@@ -322,7 +330,7 @@ export async function runBenchmark(root, options, token) {
     for (const key of environmentKeys) {
       if (previousEnvironment[key] === undefined) delete process.env[key]; else process.env[key] = previousEnvironment[key];
     }
-    const summary = { schemaVersion: 1, startedAt, endedAt: new Date().toISOString(), sourceCommit, trackedSourceDirty, manifestHash: batch.manifestHash, requestedModel: "kimi-k3", route: "wise", usesWiseDefaultKey: true, baseUrl: options.baseUrl, selectedTransport: options.transport, grpcAddress: options.transport === "grpc" ? options.grpcAddress : null, grpcInsecure: options.transport === "grpc" ? options.grpcInsecure : null, audioCapture: false, asr: false, screenshots: false, modes: ["text", "text+synthetic-transcript"], requestedCases: batch.cases.length, attemptedCases: results.length, completed: results.filter(x => x.status === "completed").length, errors: results.filter(x => x.status === "error").length, cancelled: results.filter(x => x.status === "cancelled").length, interrupted, modelMismatches: results.filter(x => x.modelMismatch).map(x => x.slug), responseFirstContentMs: { p50: quantile(results.map(x => x.firstContentMs).filter(Number.isFinite), .5), p95: quantile(results.map(x => x.firstContentMs).filter(Number.isFinite), .95) }, responseTotalMs: { p50: quantile(results.map(x => x.totalMs), .5), p95: quantile(results.map(x => x.totalMs), .95) }, correctness: "Not graded by this runner. Use the fixture judge; completed responses do not imply correct solutions.", results: results.map(({ slug, status, firstContentMs, totalMs, model }) => ({ slug, status, firstContentMs, totalMs, model })), logs };
+    const summary = { schemaVersion: 1, startedAt, endedAt: new Date().toISOString(), sourceCommit, trackedSourceDirty, manifestHash: batch.manifestHash, requestedModel: "kimi-k3", route: "wise", usesWiseDefaultKey: true, baseUrl: options.baseUrl, selectedTransport: options.transport, grpcAddress: options.transport === "grpc" ? options.grpcAddress : null, grpcInsecure: options.transport === "grpc" ? options.grpcInsecure : null, audioCapture: false, asr: false, screenshots: false, contextSelection, modes: contextSelection === "text" ? ["text"] : ["text", "text+synthetic-transcript"], requestedCases: batch.cases.length, attemptedCases: results.length, completed: results.filter(x => x.status === "completed").length, errors: results.filter(x => x.status === "error").length, cancelled: results.filter(x => x.status === "cancelled").length, interrupted, modelMismatches: results.filter(x => x.modelMismatch).map(x => x.slug), responseFirstContentMs: { p50: quantile(results.map(x => x.firstContentMs).filter(Number.isFinite), .5), p95: quantile(results.map(x => x.firstContentMs).filter(Number.isFinite), .95) }, responseTotalMs: { p50: quantile(results.map(x => x.totalMs), .5), p95: quantile(results.map(x => x.totalMs), .95) }, correctness: "Not graded by this runner. Use the fixture judge; completed responses do not imply correct solutions.", results: results.map(({ slug, status, firstContentMs, totalMs, model }) => ({ slug, status, firstContentMs, totalMs, model })), logs };
     write("summary.json", summary);
   }
   return { output, interrupted, completed: results.filter(x => x.status === "completed").length, attempted: results.length };
@@ -334,7 +342,7 @@ async function main() {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   if (options.dryRun) {
     const batch = loadFixtureBatch(root, options);
-    process.stdout.write(JSON.stringify({ mode: "dry-run", network: false, tokenRead: false, cases: batch.cases.map(({ slug, fixtureHash }) => ({ slug, fixtureHash })), manifestHash: batch.manifestHash }, null, 2) + "\n");
+    process.stdout.write(JSON.stringify({ mode: "dry-run", contextSelection: options.context, network: false, tokenRead: false, cases: batch.cases.map(({ slug, fixtureHash }) => ({ slug, fixtureHash })), manifestHash: batch.manifestHash }, null, 2) + "\n");
     return;
   }
   const token = loadToken(options.tokenFile);

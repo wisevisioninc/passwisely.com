@@ -60,6 +60,6 @@ Official protocol references: [token auth](https://developers.deepgram.com/refer
 ## Recorded runs
 
 - [Chinese synthetic WSS result](reports/2026-10-27-direct-deepgram-synthetic.md) records the actual two-route protocol smoke, observed transcripts and timing. The protocol passed; transcription contained errors.
-- [English synthetic attempt](reports/2026-10-27-direct-deepgram-english-synthetic.md) records locally synthesized Samantha fixtures and the single connection attempt, blocked by SSH timeout before token minting or WSS; English ASR remains unverified.
+- [English synthetic WSS result](reports/2026-10-27-direct-deepgram-english-synthetic.md) records the successful `deepgram-en` run with locally synthesized Samantha files after renewed authorization. Both replays returned the authored words, with one missing final period; the earlier SSH timeout remains documented.
 
 Neither run establishes physical capture or a general recognition accuracy claim.

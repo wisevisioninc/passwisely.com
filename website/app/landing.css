@@ -267,82 +267,135 @@
   text-wrap: pretty;
 }
 .pw-downloads {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
   margin: 26px auto 0;
   max-width: 960px;
+  text-align: center;
+}
+.pw-download-actions {
+  display: inline-flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 16px;
 }
 .pw-download {
   display: flex;
-  gap: 11px;
+  gap: 12px;
   align-items: center;
-  padding: 5px 16px 5px 5px;
+  padding: 6px 20px 6px 6px;
   border: 1px solid var(--pw-yellow);
   border-radius: 99px;
   background: var(--pw-yellow);
   color: #111 !important;
-  font-size: 13px;
+  white-space: nowrap;
+  font-size: 17px;
   font-weight: 600;
-  transition:
-    background 0.18s,
-    transform 0.18s;
-}
-.pw-download-label {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
   line-height: 1.35;
-}
-.pw-download-label small {
-  font-size: 10px;
-  font-weight: 500;
+  transition: background 0.18s;
 }
 .pw-download[data-recommended="true"] {
   box-shadow: 0 0 0 3px #f3d43b35;
 }
 .pw-download-badge {
-  padding: 3px 7px;
+  display: inline-block;
+  padding: 2px 6px;
+  margin: 6px 0;
   border-radius: 99px;
-  color: var(--pw-yellow);
-  background: #111;
+  color: #111;
+  background: var(--pw-yellow);
   font-size: 10px;
-}
-.pw-landing .pw-download-detection {
-  flex-basis: 100%;
-  max-width: 680px;
-  margin: 0 0 3px;
-  color: #b9b9b5;
-  font-size: 12px;
-  line-height: 1.7;
+  font-weight: 600;
 }
 .pw-download:hover {
   background: #ffe564;
-  transform: translateY(-2px);
 }
 .pw-platform {
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: #111;
   color: #fff;
 }
-.pw-download > svg {
-  display: none;
-}
 .pw-download[aria-disabled="true"] {
   opacity: 0.6;
-  cursor: wait;
+  cursor: not-allowed;
+}
+.pw-mac-download {
+  position: relative;
+  text-align: left;
+}
+.pw-mac-download > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.pw-mac-download > summary::-webkit-details-marker {
+  display: none;
+}
+.pw-mac-download-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 50;
+  width: 286px;
+  max-width: calc(100vw - 40px);
+  max-height: var(--pw-download-menu-max-height, calc(100dvh - 24px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px;
+  border: 1px solid #343434;
+  border-radius: 16px;
+  background: #1b1b1b;
+  box-shadow: 0 20px 50px #0008;
+}
+.pw-mac-download-menu[data-placement="above"] {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+.pw-mac-download:not([open]) > .pw-mac-download-menu {
+  display: none;
+}
+.pw-landing .pw-download-detection {
+  margin: 5px 10px 9px;
+  color: #aaa9a3;
+  font-size: 11px;
+  line-height: 1.65;
+}
+.pw-mac-download-option {
+  display: block;
+  padding: 12px;
+  border-radius: 9px;
+  color: #f5f5f2;
+  line-height: 1.4;
+}
+.pw-mac-download-title {
+  display: block;
+  font-size: 18px;
+}
+.pw-mac-download-option small {
+  display: block;
+  margin-top: 4px;
+  color: #a5a5a0;
+  font-size: 12px;
+}
+.pw-mac-download-option[data-muted="true"] {
+  color: #85857f;
+}
+.pw-mac-download-option[data-muted="true"] small {
+  color: #777771;
+}
+.pw-mac-download-option:hover {
+  background: #282828;
+  color: #fff;
+}
+.pw-mac-download-option[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .pw-landing .pw-download-notice {
-  flex-basis: 100%;
   max-width: 620px;
-  margin: 0 auto;
+  margin: 9px auto 0;
   color: #8f8f89;
   font-size: 10px;
   line-height: 1.6;
@@ -1194,16 +1247,18 @@
   }
   .pw-downloads {
     margin-top: 23px;
-    gap: 9px;
+  }
+  .pw-download-actions {
+    gap: 12px;
   }
   .pw-download {
-    font-size: 11px;
-    padding-right: 12px;
+    font-size: 13px;
+    padding: 4px 11px 4px 4px;
     gap: 8px;
   }
   .pw-platform {
-    height: 29px;
-    width: 29px;
+    height: 30px;
+    width: 30px;
   }
   .pw-platform svg {
     height: 16px;

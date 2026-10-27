@@ -49,6 +49,10 @@ const noop = () => {};
 const { CREDIT_PACKS, TRIAL_CREDITS } = sourceModule("lib/payments/catalog.ts");
 const { PricingPlans, LandingPage, Downloads } = sourceModule("app/LandingPage.tsx");
 const { DOWNLOAD_ARTIFACTS } = sourceModule("lib/downloads.ts");
+const artifactLinks = html => [...html.matchAll(/<a\b[^]*?<\/a>/g)]
+  .map(match => match[0]).filter(link => link.includes("data-platform="));
+const platformLink = (html, platform) => artifactLinks(html).find(link => link.includes(`data-platform="${platform}"`));
+
 
 for (const locale of ["zh", "en"]) test(`real ${locale} pricing renders 0/99/299, trial20 and exact monthly terms`, () => {
   const html = renderToStaticMarkup(React.createElement(LandingPage, { locale, onLocale: noop, accountLabel: "Account", onAccount: noop, onBuy: noop, onRegisterTrial: noop, busy: false }));
@@ -65,20 +69,29 @@ for (const locale of ["zh", "en"]) test(`real ${locale} pricing renders 0/99/299
   assert.match(html, locale === "zh" ? /无自动续费/ : /no auto-renewal/);
   assert.match(html, locale === "zh" ? /并非无限额度/ : /not unlimited usage/);
   assert.match(html, locale === "zh" ? /旧余额长期有效/ : /existing permanent balances do not expire/);
-  const downloadLinks = [...html.matchAll(/<a class="pw-download"[^]*?<\/a>/g)].map(match => match[0]);
+  const downloadLinks = artifactLinks(html);
+  assert.equal([...html.matchAll(/<summary class="pw-download"/g)].length, 2, "both sections offer a native Mac disclosure");
+  assert.equal([...html.matchAll(/<a class="pw-download"/g)].length, 2, "Windows is the only direct main download link");
+  assert.equal([...html.matchAll(/<details class="pw-mac-download"/g)].length, 2);
+  assert.doesNotMatch(html, /<details[^>]*\sopen(?:\s|>)/, "Mac choices stay collapsed in the initial HTML");
   for (const platform of ["mac-arm64", "mac-x64", "windows-x64"]) {
     const artifact = DOWNLOAD_ARTIFACTS[platform];
-    const name = platform === "windows-x64" ? "Windows x64" : platform === "mac-x64" ? "Mac Intel" : locale === "zh" ? "Mac Apple 芯片" : "Mac Apple silicon";
-    const expectedName = `${name} · v${artifact.version}`;
-    const matching = downloadLinks.filter(link => link.replace(/<svg[^]*?<\/svg>/g, "").replace(/<[^>]+>/g, "").includes(expectedName));
-    assert.equal(matching.length, 2, `Both download sections must include ${expectedName}`);
+    const matching = downloadLinks.filter(link => link.includes(`data-platform="${platform}"`));
+    assert.equal(matching.length, 2, `Both download sections must include ${platform}`);
     for (const link of matching) {
+      assert.ok(link.includes(`v${artifact.version}`));
       assert.ok(link.includes(`aria-disabled="${!artifact.available}"`));
       if (artifact.available) assert.ok(link.includes(`href="/api/track-download/${platform}"`));
       else assert.doesNotMatch(link, /href=/);
     }
     if (artifact.notice) assert.ok(html.includes(artifact.notice[locale]));
   }
+  assert.equal([...html.matchAll(/Get for Windows/g)].length, 2);
+  assert.equal([...html.matchAll(/Get for Mac/g)].length, 6);
+  const controls = [...html.matchAll(/<summary class="pw-download" aria-controls="([^"]+)"/g)].map(match => match[1]);
+  assert.equal(controls.length, 2);
+  assert.equal(new Set(controls).size, 2, "the two Mac disclosures have independent IDs");
+  for (const id of controls) assert.ok(html.includes(`id="${id}"`));
   assert.doesNotMatch(html, /data-recommended="true"/, "SSR leaves every available package as an explicit choice");
   assert.doesNotMatch(html, /Starter|轻量包|冲刺包|10 free welcome credits|注册即送 10/);
 });
@@ -101,7 +114,7 @@ for (const locale of ["zh", "en"]) test(`real ${locale} downloads recommend the 
   for (const [recommendedPlatform, architecture] of [["mac-arm64", "arm64"], ["mac-x64", "x64"], ["windows-x64", "unknown"]]) {
     const detection = { os: recommendedPlatform.startsWith("mac-") ? "macos" : "windows", architecture, recommendedPlatform, source: "client-hints" };
     const html = renderToStaticMarkup(React.createElement(Downloads, { locale, detection }));
-    const links = [...html.matchAll(/<a class="pw-download"[^]*?<\/a>/g)].map(match => match[0]);
+    const links = artifactLinks(html);
     assert.equal(links.length, 3);
     assert.equal(links.filter(link => link.includes('data-recommended="true"')).length, DOWNLOAD_ARTIFACTS[recommendedPlatform].available ? 1 : 0);
     for (const platform of ["mac-arm64", "mac-x64", "windows-x64"]) {
@@ -109,6 +122,10 @@ for (const locale of ["zh", "en"]) test(`real ${locale} downloads recommend the 
       if (DOWNLOAD_ARTIFACTS[platform].available) assert.ok(link.includes(`href="/api/track-download/${platform}"`));
       else assert.doesNotMatch(link, /href=/);
       assert.ok(link.includes(`data-recommended="${platform === recommendedPlatform && DOWNLOAD_ARTIFACTS[platform].available}"`));
+      if (platform.startsWith("mac-")) {
+        assert.ok(link.includes(`data-muted="${detection.os === "macos" && platform !== recommendedPlatform}"`));
+        assert.ok(link.includes('aria-disabled="false"'), "a grey alternative remains a usable manual choice");
+      }
     }
     const intel = links.find(link => link.includes('data-platform="mac-x64"'));
     assert.ok(intel.includes(`v${DOWNLOAD_ARTIFACTS["mac-x64"].version}`));
@@ -123,7 +140,7 @@ for (const locale of ["zh", "en"]) test(`real ${locale} downloads stay usable be
   for (const detection of [null, { os: "macos", architecture: "unknown", recommendedPlatform: null, source: "user-agent" }]) {
     const html = renderToStaticMarkup(React.createElement(Downloads, { locale, detection }));
     assert.equal([...html.matchAll(/href="\/api\/track-download\//g)].length, Object.values(DOWNLOAD_ARTIFACTS).filter(artifact => artifact.available).length);
-    assert.doesNotMatch(html, /data-recommended="true"/);
+    assert.doesNotMatch(html, /data-recommended="true"|data-muted="true"/);
     if (detection) assert.match(html, locale === "zh" ? /关于本机/ : /About This Mac/);
   }
 });
@@ -134,7 +151,7 @@ for (const locale of ["zh", "en"]) test(`real ${locale} unavailable detected ins
     const { Downloads: PendingDownloads } = sourceModule("app/LandingPage.tsx", { "../lib/downloads": { DOWNLOAD_ARTIFACTS: artifacts } });
     const detection = { os: platform.startsWith("mac-") ? "macos" : "windows", architecture: platform === "mac-arm64" ? "arm64" : platform === "mac-x64" ? "x64" : "unknown", recommendedPlatform: platform, source: "client-hints" };
     const html = renderToStaticMarkup(React.createElement(PendingDownloads, { locale, detection }));
-    const link = [...html.matchAll(/<a class="pw-download"[^]*?<\/a>/g)].map(match => match[0]).find(value => value.includes(`data-platform="${platform}"`));
+    const link = platformLink(html, platform);
     assert.ok(link.includes('aria-disabled="true"'));
     assert.doesNotMatch(link, /href=|data-recommended="true"/);
     const guidance = html.match(/<p class="pw-download-detection"[^]*?<\/p>/)[0];
@@ -148,12 +165,107 @@ for (const locale of ["zh", "en"]) test(`real ${locale} Intel v2 audio limits re
   const { Downloads: IntelDownloads } = sourceModule("app/LandingPage.tsx", { "../lib/downloads": { DOWNLOAD_ARTIFACTS: artifacts } });
   for (const props of [{ showNotice: false }, { compact: true }]) {
     const html = renderToStaticMarkup(React.createElement(IntelDownloads, { locale, ...props }));
-    const intel = [...html.matchAll(/<a class="pw-download"[^]*?<\/a>/g)].map(match => match[0]).find(link => link.includes('data-platform="mac-x64"'));
+    const intel = platformLink(html, "mac-x64");
     assert.match(intel, /v2\.0\.0/);
     assert.match(intel, locale === "zh" ? /不含实时音频/ : /No live audio/);
     assert.doesNotMatch(intel, /旧版|Legacy/);
     if (props.compact) assert.ok(html.includes(artifacts["mac-x64"].notice[locale]));
   }
+});
+
+for (const locale of ["zh", "en"]) test(`real ${locale} Mac disclosure keeps native no-JavaScript download choices`, () => {
+  const html = renderToStaticMarkup(React.createElement(Downloads, { locale }));
+  assert.match(html, /<details class="pw-mac-download"><summary class="pw-download" aria-controls=/);
+  assert.match(html, /Get for Windows/);
+  assert.match(html, /Get for Mac/);
+  assert.match(html, /Apple Silicon/);
+  assert.match(html, locale === "zh" ? /Intel 芯片/ : /\(Intel\)/);
+  assert.equal(artifactLinks(html).length, 3);
+  for (const platform of ["mac-arm64", "mac-x64"]) {
+    const link = platformLink(html, platform);
+    assert.ok(link.includes('data-muted="false"'));
+    assert.ok(link.includes(`href="/api/track-download/${platform}"`));
+  }
+});
+
+test("native Mac disclosure closes on outside pointer and Escape, restores Escape focus and removes listeners", t => {
+  browser(t);
+  const listeners = new Map();
+  t.mock.method(document, "addEventListener", (name, callback) => listeners.set(name, callback));
+  t.mock.method(document, "removeEventListener", (name, callback) => {
+    assert.equal(listeners.get(name), callback);
+    listeners.delete(name);
+  });
+  const app = componentHarness("app/LandingPage.tsx", "Downloads", { locale: "en" });
+  const tree = app.render();
+  const details = walk(tree, element => element.type === "details")[0];
+  const summary = walk(tree, element => element.type === "summary")[0];
+  const inside = {}, outside = {};
+  const element = { open: true, contains: node => node === inside, addEventListener: noop, removeEventListener: noop };
+  let focusCount = 0, preventions = 0;
+  details.props.ref.current = element;
+  summary.props.ref.current = { focus() { focusCount++; } };
+  app.flushEffects();
+  assert.deepEqual([...listeners.keys()], ["pointerdown", "keydown"]);
+  listeners.get("pointerdown")({ target: inside });
+  assert.equal(element.open, true);
+  listeners.get("pointerdown")({ target: outside });
+  assert.equal(element.open, false);
+  assert.equal(focusCount, 0, "outside clicks retain their intended focus target");
+  element.open = true;
+  listeners.get("keydown")({ key: "Enter", preventDefault() { preventions++; } });
+  assert.equal(element.open, true);
+  listeners.get("keydown")({ key: "Escape", preventDefault() { preventions++; } });
+  assert.equal(element.open, false);
+  assert.equal(focusCount, 1);
+  assert.equal(preventions, 1);
+  listeners.get("keydown")({ key: "Escape", preventDefault() { preventions++; } });
+  assert.equal(focusCount, 1, "an already closed disclosure does not steal focus");
+  assert.equal(preventions, 1);
+  app.cleanup();
+  assert.equal(listeners.size, 0);
+});
+
+test("open Mac menus fit current viewport bounds on toggle, resize and scroll, with listener cleanup", t => {
+  const b = browser(t);
+  window.innerHeight = 720;
+  const app = componentHarness("app/LandingPage.tsx", "Downloads", { locale: "en" });
+  const tree = app.render();
+  const details = walk(tree, element => element.type === "details")[0];
+  const summary = walk(tree, element => element.type === "summary")[0];
+  const panel = walk(tree, element => element.props?.className === "pw-mac-download-menu")[0];
+  const nativeListeners = new Map();
+  const element = {
+    open: false,
+    addEventListener(name, callback) { nativeListeners.set(name, callback); },
+    removeEventListener(name, callback) { assert.equal(nativeListeners.get(name), callback); nativeListeners.delete(name); },
+  };
+  let bounds = { top: 342, bottom: 398 }, measures = 0;
+  const properties = new Map();
+  const menu = { scrollHeight: 337, dataset: {}, style: { setProperty(name, value) { properties.set(name, value); } } };
+  details.props.ref.current = element;
+  summary.props.ref.current = { getBoundingClientRect() { measures++; return bounds; } };
+  panel.props.ref.current = menu;
+  app.flushEffects();
+  assert.equal(measures, 0, "closed menus do not measure or reflow the page");
+  element.open = true;
+  nativeListeners.get("toggle")();
+  assert.equal(menu.dataset.placement, "above", "use the larger side when the menu does not fit below");
+  assert.equal(properties.get("--pw-download-menu-max-height"), "320px");
+  window.innerHeight = 844;
+  b.listeners.get("resize")();
+  assert.equal(menu.dataset.placement, "below");
+  assert.equal(properties.get("--pw-download-menu-max-height"), "424px");
+  bounds = { top: 100, bottom: 156 };
+  b.listeners.get("scroll")();
+  assert.equal(menu.dataset.placement, "below");
+  assert.equal(properties.get("--pw-download-menu-max-height"), "666px");
+  element.open = false;
+  b.listeners.get("scroll")();
+  assert.equal(measures, 3, "scrolling with a closed menu does not measure bounds");
+  app.cleanup();
+  assert.equal(nativeListeners.size, 0);
+  assert.equal(b.listeners.size, 0, "resize and captured scroll listeners are released");
 });
 
 const landingProps = { locale: "zh", onLocale: noop, accountLabel: "Account", onAccount: noop, onBuy: noop, onRegisterTrial: noop, busy: false };
@@ -433,17 +545,18 @@ test("historical Stripe callback delegates only order identity to the real trans
 });
 
 function componentHarness(relative, name, props = {}, overrides = {}) {
-  const values = [], refs = [], effectSlots = [];
-  let stateIndex = 0, refIndex = 0, effectIndex = 0, pendingEffects = [], stateUpdates = 0;
+  const values = [], refs = [], ids = [], effectSlots = [];
+  let stateIndex = 0, refIndex = 0, idIndex = 0, effectIndex = 0, pendingEffects = [], stateUpdates = 0;
   const views = lazyComponents();
   const hooks = { lazy: views.lazy, Component: React.Component, useState(initial) { const index = stateIndex++; if (!(index in values)) values[index] = typeof initial === "function" ? initial() : initial; return [values[index], value => { stateUpdates++; values[index] = typeof value === "function" ? value(values[index]) : value; }]; },
-    useRef(initial) { const index = refIndex++; return refs[index] ||= { current: initial }; }, useMemo: callback => callback(), useCallback: callback => callback,
+    useRef(initial) { const index = refIndex++; return refs[index] ||= { current: initial }; },
+    useId() { const index = idIndex++; return ids[index] ||= `fixture-disclosure-${index}`; }, useMemo: callback => callback(), useCallback: callback => callback,
     useEffect(callback, deps) { const index = effectIndex++; const previous = effectSlots[index]; if (!previous || !deps || deps.some((value, i) => !Object.is(value, previous.deps?.[i]))) pendingEffects.push(() => { previous?.cleanup?.(); effectSlots[index] = { deps, callback, cleanup: callback() }; }); },
   };
   const Component = sourceModule(relative, { ...overrides, react: hooks })[name];
   return {
     ready: () => views.ready(),
-    render() { stateIndex = refIndex = effectIndex = 0; return views.unwrap(Component(props)); },
+    render() { stateIndex = refIndex = idIndex = effectIndex = 0; return views.unwrap(Component(props)); },
     flushEffects() { const batch = pendingEffects; pendingEffects = []; for (const run of batch) run(); },
     replayEffects() { for (const effect of effectSlots) { effect.cleanup?.(); effect.cleanup = effect.callback(); } },
     cleanup() { for (const effect of effectSlots) effect?.cleanup?.(); },

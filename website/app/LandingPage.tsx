@@ -4,7 +4,7 @@
 /* Small, local brand assets do not need a remote image optimizer. */
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { LandingDemo } from "./LandingDemo";
 import { LandingPrivacy } from "./LandingPrivacy";
 import { DEMO_VIDEO } from "./demo-video";
@@ -134,19 +134,67 @@ export function Downloads({
   compact?: boolean;
   showNotice?: boolean;
 }) {
+  const disclosure = useRef<HTMLDetailsElement>(null);
+  const trigger = useRef<HTMLElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  useEffect(() => {
+    const owner = document;
+    const viewport = window;
+    const details = disclosure.current;
+    const fitMenu = () => {
+      if (!details?.open || !trigger.current || !menu.current) return;
+      const bounds = trigger.current.getBoundingClientRect();
+      const gap = 10;
+      const edge = 12;
+      const below = Math.max(0, viewport.innerHeight - bounds.bottom - gap - edge);
+      const above = Math.max(0, bounds.top - gap - edge);
+      const openAbove = menu.current.scrollHeight > below && above > below;
+      menu.current.dataset.placement = openAbove ? "above" : "below";
+      menu.current.style.setProperty("--pw-download-menu-max-height", `${Math.floor(openAbove ? above : below)}px`);
+    };
+    const closeOutside = (event: PointerEvent) => {
+      if (disclosure.current?.open && !disclosure.current.contains(event.target as Node)) {
+        disclosure.current.open = false;
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && disclosure.current?.open) {
+        event.preventDefault();
+        disclosure.current.open = false;
+        trigger.current?.focus();
+      }
+    };
+    owner.addEventListener("pointerdown", closeOutside);
+    owner.addEventListener("keydown", closeOnEscape);
+    details?.addEventListener("toggle", fitMenu);
+    viewport.addEventListener("resize", fitMenu);
+    viewport.addEventListener("scroll", fitMenu, { capture: true, passive: true });
+    fitMenu();
+    return () => {
+      owner.removeEventListener("pointerdown", closeOutside);
+      owner.removeEventListener("keydown", closeOnEscape);
+      details?.removeEventListener("toggle", fitMenu);
+      viewport.removeEventListener("resize", fitMenu);
+      viewport.removeEventListener("scroll", fitMenu, true);
+    };
+  }, []);
+
   const zh = locale === "zh";
   const recommended = detection?.recommendedPlatform;
   const names = downloadNames(locale);
   const platforms: DownloadPlatform[] = ["mac-arm64", "mac-x64", "windows-x64"];
-  let guidance = zh ? "选择你的系统与 Mac 芯片版本" : "Choose your system and Mac chip";
+  const macPlatforms = ["mac-arm64", "mac-x64"] as const;
+  const detectedMac = detection?.os === "macos" &&
+    (recommended === "mac-arm64" || recommended === "mac-x64");
+  const windows = DOWNLOAD_ARTIFACTS["windows-x64"];
+  let guidance = zh ? "请选择 Mac 芯片版本。可在  → 关于本机查看“芯片”或“处理器”。" : "Choose your Mac chip; check Chip or Processor in  → About This Mac.";
   if (detection?.os === "macos") {
     guidance = recommended === "mac-arm64"
       ? (zh ? "已识别 Apple 芯片 Mac，已标出推荐版本。" : "Apple silicon Mac detected. Your recommended version is marked.")
       : recommended === "mac-x64"
         ? (zh ? "已识别 Intel Mac，已标出兼容版本。" : "Intel Mac detected. Your compatible version is marked.")
         : (zh ? "浏览器未提供芯片信息，请手动选择。可在  → 关于本机查看“芯片”或“处理器”。" : "Your browser did not provide chip information. Choose a version below; check Chip or Processor in  → About This Mac.");
-  } else if (recommended === "windows-x64") {
-    guidance = zh ? "已识别 Windows，已标出推荐版本。" : "Windows detected. Your recommended version is marked.";
   }
   if (recommended && !DOWNLOAD_ARTIFACTS[recommended].available) {
     guidance = zh
@@ -155,35 +203,55 @@ export function Downloads({
   }
   return (
     <div className={`pw-downloads${compact ? " pw-downloads-compact" : ""}`}>
-      <p className="pw-download-detection" role={compact ? undefined : "status"}>{guidance}</p>
-      {platforms.map((platform) => {
-        const artifact = DOWNLOAD_ARTIFACTS[platform];
-        const preferred = artifact.available && platform === recommended;
-        return (
-          <a
-            key={platform}
-            className="pw-download"
-            data-platform={platform}
-            data-recommended={preferred}
-            href={artifact.available ? `/api/track-download/${platform}` : undefined}
-            aria-disabled={!artifact.available}
-          >
-            <span className="pw-platform"><Icon name={platform === "windows-x64" ? "windows" : "apple"} size={18} /></span>
-            <span className="pw-download-label">
-              <span>{names[platform]} · v{artifact.version}{artifact.available ? "" : zh ? " · 准备中" : " · Pending"}</span>
-              {(artifact.legacy || artifact.liveAudio === "not_included") && (
-                <small>{artifact.liveAudio === "not_included"
-                  ? artifact.legacy
-                    ? (zh ? "旧版（不含实时音频）" : "Legacy (no live audio)")
-                    : (zh ? "不含实时音频" : "No live audio")
-                  : (zh ? "旧版" : "Legacy")}</small>
-              )}
-            </span>
-            {preferred && <span className="pw-download-badge">{zh ? "推荐" : "Recommended"}</span>}
-            <Icon name="arrow" size={17} />
-          </a>
-        );
-      })}
+      <div className="pw-download-actions">
+        <a
+          className="pw-download"
+          data-platform="windows-x64"
+          data-recommended={windows.available && recommended === "windows-x64"}
+          href={windows.available ? "/api/track-download/windows-x64" : undefined}
+          aria-disabled={!windows.available}
+          title={`Windows x64 · v${windows.version}`}
+        >
+          <span className="pw-platform"><Icon name="windows" size={22} /></span>
+          <span>Get for Windows</span>
+        </a>
+        <details className="pw-mac-download" ref={disclosure}>
+          <summary className="pw-download" aria-controls={menuId} ref={trigger}>
+            <span className="pw-platform"><Icon name="apple" size={22} /></span>
+            <span>Get for Mac</span>
+          </summary>
+          <div className="pw-mac-download-menu" id={menuId} ref={menu}>
+            <p className="pw-download-detection" role={compact ? undefined : "status"}>{guidance}</p>
+            {macPlatforms.map((platform) => {
+              const artifact = DOWNLOAD_ARTIFACTS[platform];
+              const preferred = artifact.available && platform === recommended;
+              return (
+                <a
+                  key={platform}
+                  className="pw-mac-download-option"
+                  data-platform={platform}
+                  data-recommended={preferred}
+                  data-muted={detectedMac && platform !== recommended}
+                  href={artifact.available ? `/api/track-download/${platform}` : undefined}
+                  aria-disabled={!artifact.available}
+                >
+                  <span className="pw-mac-download-title">Get for Mac<br />({platform === "mac-arm64" ? "Apple Silicon" : zh ? "Intel 芯片" : "Intel"})</span>
+                  {preferred && <span className="pw-download-badge">{zh ? "推荐" : "Recommended"}</span>}
+                  <small>v{artifact.version}{artifact.available ? "" : zh ? " · 准备中" : " · Pending"}</small>
+                  {(artifact.legacy || artifact.liveAudio === "not_included") ? (
+                    <small>{artifact.liveAudio === "not_included"
+                      ? artifact.legacy
+                        ? (zh ? "旧版（不含实时音频）" : "Legacy (no live audio)")
+                        : (zh ? "不含实时音频" : "No live audio")
+                      : (zh ? "旧版" : "Legacy")}</small>
+                  ) : artifact.liveAudio === "included" ? <small>{zh ? "支持实时音频" : "Full audio support"}</small> : null}
+                  {artifact.notice && <small className="pw-mac-download-notice">{artifact.notice[locale]}</small>}
+                </a>
+              );
+            })}
+          </div>
+        </details>
+      </div>
       {showNotice && platforms.map((platform) => {
         const notice = DOWNLOAD_ARTIFACTS[platform].notice;
         return notice ? <p key={platform} className="pw-download-notice">{notice[locale]}</p> : null;

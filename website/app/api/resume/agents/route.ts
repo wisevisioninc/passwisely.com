@@ -1,3 +1,4 @@
+import { prepareKimiChatBody } from "../../../../../shared/kimi";
 import { env } from "cloudflare:workers";
 import { getApiUser, jsonError } from "@/lib/auth";
 import { adminRest, adminRpc } from "@/lib/supabase";
@@ -160,8 +161,8 @@ async function callDefaultModel(
           temperature: 0.2,
           max_tokens: maxTokens,
         }
-      : config.provider === "kimi" && config.model === "kimi-k3"
-        ? { ...openAiBody, temperature: 0.6, thinking: { type: "disabled" } }
+      : config.provider === "kimi"
+        ? prepareKimiChatBody(openAiBody)
         : config.provider === "qwen"
           ? { ...openAiBody, enable_thinking: false, stream: false }
         : config.provider === "openai"

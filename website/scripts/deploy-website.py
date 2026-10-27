@@ -46,6 +46,14 @@ HOME_PERFORMANCE_RELEASE_PATHS={
  'website/tests/fixtures/lazy-import-failure.tsx','website/tests/verify-lazy-failures.mjs',
 }
 DOWNLOAD_ONLY_PATHS |= HOME_PERFORMANCE_RELEASE_PATHS
+# Shared Kimi request parameters and server defaults only. Desktop settings,
+# production configuration and payment changes remain outside this release.
+KIMI_MODEL_RELEASE_PATHS={
+ 'shared/kimi.ts','website/lib/ai-catalog.ts',
+ 'website/app/api/ai/chat/completions/route.ts','website/app/api/resume/agents/route.ts',
+ 'website/tests/kimi-model.test.mjs','website/tests/ai-provider-fallback.test.mjs',
+}
+DOWNLOAD_ONLY_PATHS |= KIMI_MODEL_RELEASE_PATHS
 BROKER_SOURCE_PATHS={'website/lib/deepgram.ts','website/app/api/desktop/deepgram/token/route.ts','shared/captureSession.ts'}
 DEEPGRAM_ROUTE='/api/desktop/deepgram/token'
 _PRESERVED_BINDING=None
@@ -449,7 +457,7 @@ def source_preflight(args,manifest):
  history=command(['git','-C',str(SOURCE_REPO),'rev-list','HEAD','^'+BASE_COMMIT],as_jerry=True).splitlines()
  check(PENDING_COMMIT not in history,'Unpublished WeChat commit is not an authorized source ancestor.')
  changed=set(command(['git','-C',str(SOURCE_REPO),'diff','--name-only',BASE_COMMIT,'HEAD'],as_jerry=True).splitlines())
- check(changed and changed<=DOWNLOAD_ONLY_PATHS and 'website/lib/download-artifacts.json' in changed,'Release source exceeds the reviewed download/broker scope.')
+ check(changed and changed<=DOWNLOAD_ONLY_PATHS and 'website/lib/download-artifacts.json' in changed,'Release source exceeds the reviewed release scope.')
  actual=set(command(['git','-C',str(SOURCE_REPO),'ls-files','website','electron/live/transcription.ts','shared','package.json'],as_jerry=True).strip().splitlines())
  check(actual=={item['path'] for item in manifest['sourceFiles']},'Source provenance file set is incomplete.')
  live_source_pin(args.expected_live_commit)

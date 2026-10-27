@@ -177,6 +177,28 @@ class ReleaseTests(unittest.TestCase):
   for name in ['website/app/api/checkout/route.ts','website/app/api/payments/wechat/notify/route.ts','website/lib/payments/config.ts','website/lib/payments/catalog.ts','website/.env.production','desktop-api/server.mjs']:
    self.assertNotIn(name,m.DOWNLOAD_ONLY_PATHS)
   self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
+ def test_kimi_model_release_scope_accepts_exact_server_policy_without_configuration_or_payment_authority(self):
+  expected={'shared/kimi.ts','website/lib/ai-catalog.ts','website/app/api/ai/chat/completions/route.ts','website/app/api/resume/agents/route.ts','website/tests/kimi-model.test.mjs','website/tests/ai-provider-fallback.test.mjs'}
+  self.assertEqual(m.KIMI_MODEL_RELEASE_PATHS,expected)
+  self.assertTrue(expected<=m.DOWNLOAD_ONLY_PATHS)
+  args,manifest,_=self.fixture()
+  def command(argv,**kwargs):
+   if argv[0]=='git' and argv[2]==str(self.repo):return 'b'*40
+   if 'rev-parse' in argv:return 'HEAD' if '--abbrev-ref' in argv else 'a'*40
+   if 'rev-list' in argv:return 'a'*40
+   if '--name-only' in argv:return '\n'.join(['website/lib/download-artifacts.json',*sorted(expected)])
+   if 'ls-files' in argv:return '\n'.join(row['path'] for row in manifest['sourceFiles'])
+   return ''
+  with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):
+   m.source_preflight(args,manifest)
+  excluded=['website/app/api/checkout/route.ts','website/app/api/payments/alipay/notify/route.ts','website/app/api/payments/wechat/notify/route.ts','website/lib/ai-config.ts','website/lib/payments/config.ts','website/.env.production','electron/aiProviders.ts','electron/ProcessingHelper.ts','desktop-api/server.mjs']
+  for name in excluded:
+   self.assertNotIn(name,m.DOWNLOAD_ONLY_PATHS)
+   def unauthorized(argv,**kwargs):
+    return '\n'.join(['website/lib/download-artifacts.json',name]) if '--name-only' in argv else command(argv,**kwargs)
+   with self.subTest(path=name),patch.object(m,'command',side_effect=unauthorized),patch.object(m,'live_unit_pin'),self.assertRaisesRegex(m.DeployError,'reviewed release scope'):
+    m.source_preflight(args,manifest)
+  self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
  def test_preserves_runtime_binding_bytes_without_staging_current_configuration(self):
   active=self.website/'dist';binding=self.binding(active);original=binding.read_bytes()
   env=self.write(self.website/'.env.production','PENDING_CONFIGURATION="not-staged"\n');before=env.read_bytes()

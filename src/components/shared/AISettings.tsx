@@ -315,7 +315,7 @@ const AIProviderSettings: React.FC<SettingsWriteProps> = ({ runSettingsWrite = d
       <p className="text-[9px] leading-relaxed text-white/40">
         {activeProvider.route === "wise"
           ? activeProvider.usesWiseDefaultKey
-            ? "未配置 Kimi Key，当前通过 Wise 使用 Kimi K3 默认 Key；按请求的最大输入/输出 token 预算扣除积分。"
+            ? "未配置 Kimi Key，当前通过 Wise 使用 Kimi K3.1 Pro 默认 Key；按请求的最大输入/输出 token 预算扣除积分。"
             : activeProvider.hasApiKey
             ? "国外模型由 Wise 服务中转；当前使用你的 API Key，不扣积分。"
             : "该模型通过 Wise 服务中转，但需要配置你自己的 API Key；Wise 不提供共享 Key。"

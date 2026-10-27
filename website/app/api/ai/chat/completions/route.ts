@@ -11,14 +11,15 @@ import { getDefaultAiConfig } from "@/lib/ai-config";
 import { fetchModelProvider } from "@/lib/model-fetch";
 import { prepareOpenAiChatBody } from "@/lib/openai-gateway";
 
+import { isKimiK3Model, prepareKimiChatBody } from "../../../../../../shared/kimi";
+
 import { chatStreamResponse } from "@/lib/chat-stream";
 
 type Json = Record<string, unknown>;
 
-// The cheapest pack sells one credit for ¥0.059. Valuing a credit at only
-// ¥0.05 leaves margin for payment fees. K3 is priced conservatively at its
-// non-cached input rate (¥20/M) and output rate (¥100/M).
-function kimiK3MaximumCredits(body: Json): number {
+// Preserve the existing K3-family token-budget credit policy during the model
+// upgrade. These policy coefficients are not a current provider price quote.
+function kimiMaximumCredits(body: Json): number {
   let textBytes = 0;
   let imageCount = 0;
   const messages = Array.isArray(body.messages) ? body.messages : [];
@@ -173,8 +174,8 @@ export async function POST(request: Request) {
     : crypto.randomUUID();
   if (!suppliedKey) {
     const cost =
-      provider === "kimi" && model === "kimi-k3"
-        ? kimiK3MaximumCredits(effectiveBody)
+      provider === "kimi" && isKimiK3Model(model)
+        ? kimiMaximumCredits(effectiveBody)
         : 1;
     const result = await adminRpc<
       Array<{ success: boolean; balance: number; duplicate: boolean }>
@@ -196,11 +197,9 @@ export async function POST(request: Request) {
     headers.set("authorization", `Bearer ${apiKey}`);
   }
 
-  // Disable K3's long reasoning phase for latency-sensitive desktop actions.
-  // The current API requires temperature=0.6 when thinking is disabled.
   const upstreamBody =
-    provider === "kimi" && model === "kimi-k3"
-      ? { ...effectiveBody, temperature: 0.6, thinking: { type: "disabled" } }
+    provider === "kimi"
+      ? prepareKimiChatBody(effectiveBody)
       : provider === "qwen"
         ? { ...effectiveBody, enable_thinking: false, stream: streaming }
       : provider === "openai"

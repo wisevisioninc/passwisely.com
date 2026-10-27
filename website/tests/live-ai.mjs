@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { KIMI_DEFAULT_MODEL } from "./helpers/kimi-model.mjs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,10 +11,10 @@ const apiBase = (
   process.env.PASSWISELY_TEST_API_URL || "https://passwisely.cn/api"
 ).replace(/\/+$/, "");
 const requestedProvider = process.env.PASSWISELY_TEST_PROVIDER || "kimi";
-const requestedModel = process.env.PASSWISELY_TEST_MODEL || "kimi-k3";
+const requestedModel = process.env.PASSWISELY_TEST_MODEL || KIMI_DEFAULT_MODEL;
 const expectedProvider = process.env.PASSWISELY_TEST_EXPECT_PROVIDER || "kimi";
 const expectedModel = new RegExp(
-  process.env.PASSWISELY_TEST_EXPECT_MODEL || "kimi-k3",
+  process.env.PASSWISELY_TEST_EXPECT_MODEL || `^${requestedModel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
   "i",
 );
 const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
@@ -57,6 +58,8 @@ try {
   userId = registration.payload.user?.id || "";
   assert.ok(token);
   assert.ok(userId);
+  const initialCredits = registration.payload.user.credits;
+  assert.ok(Number.isSafeInteger(initialCredits) && initialCredits >= 0);
 
   const protoPath = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -72,10 +75,11 @@ try {
   const metadata = new grpc.Metadata();
   metadata.set("authorization", `Bearer ${token}`);
 
+  const requestId = `ai_e2e_${crypto.randomUUID().replaceAll("-", "")}`;
   const result = await new Promise((resolve, reject) => {
     client.Chat(
       {
-        requestId: `ai_e2e_${crypto.randomUUID().replaceAll("-", "")}`,
+        requestId,
         provider: requestedProvider,
         model: requestedModel,
         messages: [
@@ -97,8 +101,15 @@ try {
 
   const account = await api("/account", {}, token);
   assert.equal(account.response.status, 200);
-  assert.equal(account.payload.user.credits, 9);
-  assert.equal(account.payload.transactions[0].type, `ai_${expectedProvider}`);
+  const debits = account.payload.transactions.filter(transaction =>
+    transaction.reference === `ai:${userId}:${requestId}`,
+  );
+  assert.equal(debits.length, 1, "The model request must have exactly one matching debit.");
+  const debit = debits[0];
+  assert.equal(debit.type, `ai_${expectedProvider}`);
+  assert.ok(Number.isSafeInteger(debit.amount) && debit.amount < 0);
+  assert.equal(account.payload.user.credits, initialCredits + debit.amount);
+  assert.equal(debit.balanceAfter, account.payload.user.credits);
 
   console.log(
     JSON.stringify({
@@ -109,6 +120,8 @@ try {
       provider: expectedProvider,
       model: result.model,
       nonEmptyAnswer: true,
+      initialCredits,
+      creditsCharged: -debit.amount,
       creditsAfterRequest: account.payload.user.credits,
     }),
   );

@@ -8,6 +8,7 @@ import { OpenAI } from "openai";
 
 import { partialSolution, solutionFormat, solutionSystem } from "./solutionStream";
 import { AiRuntimeConfig } from "./aiProviders";
+import { KIMI_DEFAULT_MODEL, prepareKimiChatBody } from "../shared/kimi";
 import { requireCodeLanguage, responseLanguageInstruction } from "./languages";
 import type { CodeLanguage } from "./languages";
 import {
@@ -31,7 +32,7 @@ export class ProcessingHelper {
     provider: "kimi",
     providerLabel: "Kimi / Moonshot",
     apiKey: "",
-    model: "kimi-k3",
+    model: KIMI_DEFAULT_MODEL,
     baseUrl: "https://api.moonshot.cn/v1",
     supportsVision: true,
     supportsJsonMode: true,
@@ -164,19 +165,9 @@ export class ProcessingHelper {
       throw new Error(`${this.config.providerLabel} client is not initialized.`);
     }
 
-    // Kimi K3 enables a long internal reasoning phase by default. For an
-    // interactive interview assistant that can consume the output budget
-    // before the JSON answer starts, especially on dynamic-programming
-    // problems. Disabling thinking makes screenshot answers substantially
-    // faster and requires temperature 0.6 in the current K3 API.
-    const requestBody =
-      this.config.provider === "kimi" && this.config.model === "kimi-k3"
-        ? ({
-            ...body,
-            temperature: 0.6,
-            thinking: { type: "disabled" },
-          } as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming)
-        : body;
+    const requestBody = this.config.provider === "kimi"
+      ? prepareKimiChatBody(body)
+      : body;
     if (this.config.route === "wise" && this.wiseGrpcClient) {
       try {
         return await this.wiseGrpcClient.chat(requestBody, {
@@ -248,6 +239,7 @@ export class ProcessingHelper {
     // Capture the route and clients once. configure() aborts this operation
     // before replacing them, so a late result cannot use the next settings.
     const config = this.config;
+    const requestBody = config.provider === "kimi" ? prepareKimiChatBody(body) : body;
     const client = this.openaiClient;
     const grpcClient = config.route === "wise" ? this.wiseGrpcClient : null;
     const operation = new AbortController();
@@ -255,7 +247,7 @@ export class ProcessingHelper {
     const timer = setTimeout(() => timeout.abort(new Error("模型请求超时，请重试。")), 90_000);
     const requestSignal = AbortSignal.any([signal, operation.signal, timeout.signal]);
     this.activeStreamControllers.add(operation);
-    let latest = "", actualModel = body.model;
+    let latest = "", actualModel = requestBody.model;
     const update = (content: string, model: string) => {
       requestSignal.throwIfAborted();
       if (Buffer.byteLength(content) > 12 * 1024 * 1024) throw new Error("模型响应过大。");
@@ -267,7 +259,7 @@ export class ProcessingHelper {
       let completion: OpenAI.Chat.ChatCompletion | undefined;
       if (grpcClient) {
         try {
-          completion = await grpcClient.streamChat(body, { signal: requestSignal, requestId,
+          completion = await grpcClient.streamChat(requestBody, { signal: requestSignal, requestId,
             token: this.deps.getWiseAccessToken(), provider: config.provider, providerApiKey: config.apiKey || undefined }, update);
         } catch (error) {
           // Only a method-not-found response is safe to retry through HTTP.
@@ -278,8 +270,7 @@ export class ProcessingHelper {
       if (!completion) {
         requestSignal.throwIfAborted();
         if (!client) throw new Error(`${config.providerLabel} client is not initialized.`);
-        const request: any = { ...body, stream: true, stream_options: { include_usage: true } };
-        if (config.provider === "kimi" && body.model === "kimi-k3") Object.assign(request, { temperature: 0.6, thinking: { type: "disabled" } });
+        const request: any = { ...requestBody, stream: true, stream_options: { include_usage: true } };
         if (config.provider === "qwen") request.enable_thinking = false;
         const stream = await client.chat.completions.create(request, { signal: requestSignal, maxRetries: 0, timeout: 90_000,
           headers: config.route === "wise" ? { "x-wise-request-id": requestId } : undefined });

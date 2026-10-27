@@ -1,10 +1,12 @@
+import { KIMI_DEFAULT_MODEL, KIMI_MODEL_IDS } from "../../shared/kimi";
+
 export const AI_PROVIDER_CATALOG = {
   kimi: {
     label: "Kimi / Moonshot",
     origin: "https://api.moonshot.cn/v1/chat/completions",
     keyEnvs: ["KIMI_API_KEY"],
-    defaultModel: "kimi-k3",
-    models: ["kimi-k3", "kimi-k2.5"],
+    defaultModel: KIMI_DEFAULT_MODEL,
+    models: [...KIMI_MODEL_IDS, "kimi-k2.5"],
   },
   openai: {
     label: "OpenAI",

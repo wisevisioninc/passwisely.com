@@ -31,7 +31,7 @@ Options:
   --help                 No token read and no network.
 
 Uses production ConversationContext -> LiveSessionService -> ProcessingHelper,
-Wise shared default key / Kimi K3, no personal provider key. No screenshots,
+Wise shared default key / the configured desktop Kimi default, no personal provider key. No screenshots,
 audio capture, Recall, or ASR are exercised: only text and explicitly synthetic
 system/microphone transcript segments. No application-level retries or model
 fallbacks. The production transport may use its existing HTTP compatibility
@@ -184,6 +184,9 @@ export async function runBenchmark(root, options, token) {
   const scrub = text => String(text).split(token).join("[redacted-benchmark-token]");
   const logs = [];
   const production = loadProduction(root, (level, text) => logs.push({ level, message: scrub(text) }));
+  const kimiProvider = production.AI_PROVIDERS.find(provider => provider.id === "kimi");
+  if (!kimiProvider?.defaultModel) throw new Error("The production Kimi default model is not configured.");
+  const requestedModel = kimiProvider.defaultModel;
   const environmentKeys = ["PASSWISELY_API_URL", "PASSWISELY_GRPC_URL", "PASSWISELY_GRPC_INSECURE"];
   const previousEnvironment = Object.fromEntries(environmentKeys.map(key => [key, process.env[key]]));
   process.env.PASSWISELY_API_URL = options.baseUrl;
@@ -207,7 +210,7 @@ export async function runBenchmark(root, options, token) {
         setHasDebugged() {}, setProblemInfo() {}, setView() {}, onAuthenticationFailure() {},
       });
       activeHelper = helper;
-      helper.configure({ provider: "kimi", providerLabel: "Kimi / Moonshot", apiKey: "", model: "kimi-k3", baseUrl: "https://api.moonshot.cn/v1", supportsVision: true, supportsJsonMode: true, responseLanguage: "zh-CN", route: "wise", usesWiseDefaultKey: true });
+      helper.configure({ provider: "kimi", providerLabel: "Kimi / Moonshot", apiKey: "", model: requestedModel, baseUrl: kimiProvider.defaultBaseUrl, supportsVision: true, supportsJsonMode: true, responseLanguage: "zh-CN", route: "wise", usesWiseDefaultKey: true });
       if (options.transport === "grpc" && !helper.wiseGrpcClient) {
         helper.cancelOngoingRequests();
         throw new Error("Selected gRPC transport could not initialize; no HTTP model request was sent.");
@@ -320,17 +323,17 @@ export async function runBenchmark(root, options, token) {
           result.error = scrub([result.error, ...cleanupErrors].filter(Boolean).join("; "));
         }
       }
-      const record = { schemaVersion: 1, benchmarkId: randomUUID(), slug: item.slug, sourceUrl: item.fixture.source?.url || null, sourceCommit, trackedSourceDirty, fixtureHash: item.fixtureHash, requestedModel: "kimi-k3", route: "wise", usesWiseDefaultKey: true, modelMismatch: !!result.model && result.model !== "kimi-k3", startTime, firstContentMs, totalMs: performance.now() - begin, ...result, context, qualityEvaluation: "Pending execution against fixture judge; response generation alone is not a correctness pass." };
+      const record = { schemaVersion: 1, benchmarkId: randomUUID(), slug: item.slug, sourceUrl: item.fixture.source?.url || null, sourceCommit, trackedSourceDirty, fixtureHash: item.fixtureHash, requestedModel, route: "wise", usesWiseDefaultKey: true, modelMismatch: !!result.model && result.model !== requestedModel, startTime, firstContentMs, totalMs: performance.now() - begin, ...result, context, qualityEvaluation: "Pending execution against fixture judge; response generation alone is not a correctness pass." };
       write(`${String(index + 1).padStart(2, "0")}-${item.slug}.answer.json`, record);
       results.push(record);
-      process.stdout.write(`${index + 1}/${batch.cases.length} ${item.slug}: ${record.status}; first content ${firstContentMs === null ? "unavailable" : Math.round(firstContentMs) + " ms"}; total ${Math.round(record.totalMs)} ms${record.modelMismatch ? "; actual model differs from requested Kimi K3" : ""}\n`);
+      process.stdout.write(`${index + 1}/${batch.cases.length} ${item.slug}: ${record.status}; first content ${firstContentMs === null ? "unavailable" : Math.round(firstContentMs) + " ms"}; total ${Math.round(record.totalMs)} ms${record.modelMismatch ? `; actual model differs from requested ${requestedModel}` : ""}\n`);
     }
   } finally {
     process.removeListener("SIGINT", interrupt); process.removeListener("SIGTERM", interrupt);
     for (const key of environmentKeys) {
       if (previousEnvironment[key] === undefined) delete process.env[key]; else process.env[key] = previousEnvironment[key];
     }
-    const summary = { schemaVersion: 1, startedAt, endedAt: new Date().toISOString(), sourceCommit, trackedSourceDirty, manifestHash: batch.manifestHash, requestedModel: "kimi-k3", route: "wise", usesWiseDefaultKey: true, baseUrl: options.baseUrl, selectedTransport: options.transport, grpcAddress: options.transport === "grpc" ? options.grpcAddress : null, grpcInsecure: options.transport === "grpc" ? options.grpcInsecure : null, audioCapture: false, asr: false, screenshots: false, contextSelection, modes: contextSelection === "text" ? ["text"] : ["text", "text+synthetic-transcript"], requestedCases: batch.cases.length, attemptedCases: results.length, completed: results.filter(x => x.status === "completed").length, errors: results.filter(x => x.status === "error").length, cancelled: results.filter(x => x.status === "cancelled").length, interrupted, modelMismatches: results.filter(x => x.modelMismatch).map(x => x.slug), responseFirstContentMs: { p50: quantile(results.map(x => x.firstContentMs).filter(Number.isFinite), .5), p95: quantile(results.map(x => x.firstContentMs).filter(Number.isFinite), .95) }, responseTotalMs: { p50: quantile(results.map(x => x.totalMs), .5), p95: quantile(results.map(x => x.totalMs), .95) }, correctness: "Not graded by this runner. Use the fixture judge; completed responses do not imply correct solutions.", results: results.map(({ slug, status, firstContentMs, totalMs, model }) => ({ slug, status, firstContentMs, totalMs, model })), logs };
+    const summary = { schemaVersion: 1, startedAt, endedAt: new Date().toISOString(), sourceCommit, trackedSourceDirty, manifestHash: batch.manifestHash, requestedModel, route: "wise", usesWiseDefaultKey: true, baseUrl: options.baseUrl, selectedTransport: options.transport, grpcAddress: options.transport === "grpc" ? options.grpcAddress : null, grpcInsecure: options.transport === "grpc" ? options.grpcInsecure : null, audioCapture: false, asr: false, screenshots: false, contextSelection, modes: contextSelection === "text" ? ["text"] : ["text", "text+synthetic-transcript"], requestedCases: batch.cases.length, attemptedCases: results.length, completed: results.filter(x => x.status === "completed").length, errors: results.filter(x => x.status === "error").length, cancelled: results.filter(x => x.status === "cancelled").length, interrupted, modelMismatches: results.filter(x => x.modelMismatch).map(x => x.slug), responseFirstContentMs: { p50: quantile(results.map(x => x.firstContentMs).filter(Number.isFinite), .5), p95: quantile(results.map(x => x.firstContentMs).filter(Number.isFinite), .95) }, responseTotalMs: { p50: quantile(results.map(x => x.totalMs), .5), p95: quantile(results.map(x => x.totalMs), .95) }, correctness: "Not graded by this runner. Use the fixture judge; completed responses do not imply correct solutions.", results: results.map(({ slug, status, firstContentMs, totalMs, model }) => ({ slug, status, firstContentMs, totalMs, model })), logs };
     write("summary.json", summary);
   }
   return { output, interrupted, completed: results.filter(x => x.status === "completed").length, attempted: results.length };

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { KIMI_DEFAULT_MODEL } from "./helpers/kimi-model.mjs";
 import { createRequire } from "node:module";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -15,6 +16,7 @@ const imageMimeType = imagePath?.toLowerCase().endsWith(".png")
   ? "image/png"
   : "image/jpeg";
 const testLabel = process.env.PASSWISELY_TEST_LABEL || "LeetCode vision";
+const requestedModel = process.env.PASSWISELY_TEST_MODEL || KIMI_DEFAULT_MODEL;
 const expectedProblem = new RegExp(
   process.env.PASSWISELY_TEST_EXPECT || "(?:两数之和|nums|target)",
   "i",
@@ -103,7 +105,7 @@ Return exactly one JSON object with problem_statement, complete compilable code 
       {
         requestId: `vision_e2e_${crypto.randomUUID().replaceAll("-", "")}`,
         provider: "kimi",
-        model: "kimi-k3",
+        model: requestedModel,
         messages: [
           {
             role: "system",
@@ -127,6 +129,7 @@ Return exactly one JSON object with problem_statement, complete compilable code 
     );
   });
   const elapsedMs = Date.now() - startedAt;
+  assert.equal(result.model, requestedModel);
   assert.equal(result.finishReason, "stop");
   const payload = JSON.parse(result.content);
   assert.match(payload.problem_statement, expectedProblem);
@@ -144,6 +147,8 @@ Return exactly one JSON object with problem_statement, complete compilable code 
     JSON.stringify({
       success: true,
       testLabel,
+      requestedModel,
+      model: result.model,
       transport: "grpc+protobuf",
       cleanProblem: true,
       nonEmptySolution: true,

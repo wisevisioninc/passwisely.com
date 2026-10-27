@@ -1,29 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
 import { fileURLToPath } from "node:url";
-import path from "node:path";
-import ts from "typescript";
-
-const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const modules = new Map();
-function load(name) {
-  if (modules.has(name)) return modules.get(name);
-  const filename = path.join(root, "electron", `${name}.ts`);
-  const js = ts.transpileModule(readFileSync(filename, "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
-  }).outputText;
-  const module = { exports: {} };
-  new Function("require", "module", "exports", js)(id => {
-    if (id === "electron") return { app: { getAppPath: () => root, getVersion: () => "fixture" } };
-    if (id.startsWith("./")) return load(id.slice(2));
-    return require(id);
-  }, module, module.exports);
-  modules.set(name, module.exports);
-  return module.exports;
-}
+const production = createProductionTsLoader({ env: {}, mocks: {
+  electron: { app: { getAppPath: () => root, getVersion: () => "fixture" } },
+  dotenv: { config() {} },
+} });
+const load = name => production(fileURLToPath(new URL(`../../electron/${name}.ts`, import.meta.url)));
 const { ProcessingHelper } = load("ProcessingHelper");
 const { WiseGrpcError } = load("WiseGrpcClient");
 const messages = [{ role: "user", content: "请根据刚才的对话回答。" }];
@@ -36,7 +21,7 @@ function fixture(route = "direct") {
     getMainWindow: () => null, setHasDebugged() {}, setProblemInfo() {},
   });
   helper.config = {
-    route, provider: "kimi", providerLabel: "Kimi / Moonshot", model: "kimi-k3",
+    route, provider: "kimi", providerLabel: "Kimi / Moonshot", model: "kimi-k3.1-pro",
     apiKey: "fixture-key", supportsVision: true, responseLanguage: "zh-CN",
   };
   const calls = [];
@@ -65,8 +50,9 @@ test("conversation streams ordinary multimodal text through the direct route wit
   assert.deepEqual(calls[0].body.messages, mixed);
   assert.equal(calls[0].body.response_format, undefined);
   assert.equal(calls[0].body.stream, true);
-  assert.equal(calls[0].body.temperature, 0.6);
-  assert.deepEqual(calls[0].body.thinking, { type: "disabled" });
+  assert.equal(calls[0].body.temperature, undefined);
+  assert.equal(calls[0].body.thinking, undefined);
+  assert.equal(calls[0].body.reasoning_effort, "low");
   assert.equal(calls[0].options.maxRetries, 0);
   assert.equal(calls[0].options.timeout, 90_000);
   assert.equal(helper.activeStreamControllers.size, 0);
@@ -77,6 +63,8 @@ test("conversation reuses Wise stream and current account token, preserving its 
   helper.wiseGrpcClient = { async streamChat(body, options, update) {
     assert.deepEqual(body.messages, messages);
     assert.equal(body.response_format, undefined);
+    assert.equal(body.reasoning_effort, "low");
+    assert.equal(body.temperature, undefined);
     assert.equal(options.token, "session-token");
     assert.equal(options.provider, "kimi");
     assert.equal(options.providerApiKey, "fixture-key");

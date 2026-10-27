@@ -9,6 +9,9 @@ import { parseArgs, validateBaseUrl, validateGrpcAddress, loadToken, loadFixture
 import { loadProduction } from "./production-loader.mjs";
 
 const repoRoot = process.env.PASSWISELY_BENCH_TEST_ROOT || fileURLToPath(new URL("../../../", import.meta.url));
+const { AI_PROVIDERS } = loadProduction(repoRoot);
+const kimiProvider = AI_PROVIDERS.find(provider => provider.id === "kimi");
+const requestedModel = kimiProvider.defaultModel;
 const exampleFixture = { slug: "synthetic-example", title: "合成接口", statement: "给定整数 x，返回 x。", python: { template: "class Solution:\n    def echo(self, x: int) -> int:\n        pass" }, judge: { expected: "PRIVATE_EXPECTED_MUST_NOT_ENTER_PROMPT" } };
 const liveArgs = ["--live", "--transport", "http-stream", "--out", "/private/tmp/unused-benchmark-destination"];
 
@@ -129,7 +132,7 @@ async function replayServer(t, respond) {
         chunks.push(chunk);
       }
       const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-      assert.equal(body.model, "kimi-k3");
+      assert.equal(body.model, requestedModel);
       assert.equal(body.stream, true);
       assert.equal(body.stream_options.include_usage, true);
       assert.ok(Array.isArray(body.messages) && body.messages.length >= 2);
@@ -159,10 +162,10 @@ async function replayServer(t, respond) {
   return { origin, observations, failures };
 }
 
-function sendReplaySse(response, text, { finish = "stop", done = true } = {}) {
+function sendReplaySse(response, text, { finish = "stop", done = true, model = requestedModel } = {}) {
   response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-store" });
   const event = (content, finishReason = null, usage = undefined) => `data: ${JSON.stringify({
-    id: "synthetic-loopback-completion", object: "chat.completion.chunk", created: 1, model: "kimi-k3",
+    id: "synthetic-loopback-completion", object: "chat.completion.chunk", created: 1, model,
     choices: [{ index: 0, delta: content ? { content } : {}, finish_reason: finishReason }], ...(usage ? { usage } : {}),
   })}\n\n`;
   const middle = Math.floor(text.length / 2);
@@ -208,11 +211,15 @@ test("all 20 historical cases replay as pure text through real production HTTP S
   assert.equal(server.observations.length, 20, "Exactly one real HTTP stream per historical case; no retries");
   assert.equal(new Set(server.observations.map(item => item.requestId)).size, 20);
   const summary = JSON.parse(fs.readFileSync(path.join(output, "summary.json")));
+  assert.equal(summary.requestedModel, requestedModel);
+  assert.deepEqual(summary.modelMismatches, []);
   assert.equal(summary.contextSelection, "text"); assert.deepEqual(summary.modes, ["text"]);
   assert.equal(summary.completed, 20); assert.equal(summary.errors, 0); assert.match(summary.correctness, /Not graded/);
   for (const [index, item] of batch.cases.entries()) {
     const record = JSON.parse(fs.readFileSync(path.join(output, `${String(index + 1).padStart(2, "0")}-${item.slug}.answer.json`)));
     assert.equal(record.fullAnswer, replies[index]); assert.equal(record.status, "completed");
+    assert.equal(record.requestedModel, requestedModel); assert.equal(record.model, requestedModel);
+    assert.equal(record.transportRequests[0].requestedModel, requestedModel); assert.equal(record.modelMismatch, false);
     assert.equal(record.fixtureHash, item.fixtureHash); assert.equal(record.context.mode, "text");
     assert.deepEqual(record.context.suppliedSegments, []); assert.equal(record.context.realAudioCapture, false);
     assert.equal(record.context.partialSegmentsExcluded, true); assert.equal(record.context.truncated, false);
@@ -247,4 +254,28 @@ test("historical mixed contexts use the current session contract and preserve au
   assert.match(records[2].error, /数据流提前结束/); assert.equal(records[2].fullAnswer, "SYNTHETIC_REPLAY_EARLY_END_PARTIAL");
   assert.equal(records[1].context.mode, "text+synthetic-transcript"); assert.equal(records[2].context.mode, "text+synthetic-transcript");
   assert.ok(records.slice(1).every(record => record.context.partialSegmentsExcluded));
+});
+
+
+test("a shared server model override remains visible instead of being mistaken for the requested default", { timeout: 20_000 }, async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "pw-historical-model-mismatch-"));
+  t.after(() => fs.rmSync(directory, { recursive: true }));
+  const actualModel = "kimi-k3";
+  assert.notEqual(requestedModel, actualModel);
+  const server = await replayServer(t, async response => {
+    sendReplaySse(response, "TRANSPORT_REPLAY_ONLY: model override", { model: actualModel });
+  });
+  const output = path.join(directory, "results");
+  const result = await boundedReplay(t, replayOptions(server.origin, output, ["--context", "text", "--max-cases", "1"]));
+  assert.deepEqual(server.failures, []);
+  assert.equal(server.observations.length, 1);
+  assert.equal(result.completed, 1);
+  const summary = JSON.parse(fs.readFileSync(path.join(output, "summary.json")));
+  const slug = summary.results[0].slug;
+  const record = JSON.parse(fs.readFileSync(path.join(output, `01-${slug}.answer.json`)));
+  assert.equal(record.requestedModel, requestedModel);
+  assert.equal(record.transportRequests[0].requestedModel, requestedModel);
+  assert.equal(record.model, actualModel);
+  assert.equal(record.modelMismatch, true);
+  assert.deepEqual(summary.modelMismatches, [slug]);
 });

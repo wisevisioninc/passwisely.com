@@ -1,3 +1,5 @@
+import { KIMI_DEFAULT_MODEL } from "../shared/kimi";
+
 export const AI_PROVIDER_IDS = [
   "kimi",
   "glm",
@@ -66,11 +68,16 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     id: "kimi",
     label: "Kimi / Moonshot",
     defaultBaseUrl: "https://api.moonshot.cn/v1",
-    defaultModel: "kimi-k3",
+    defaultModel: KIMI_DEFAULT_MODEL,
     defaultSupportsVision: true,
     supportsJsonMode: true,
     apiKeyPlaceholder: "sk-...",
     models: [
+      {
+        id: KIMI_DEFAULT_MODEL,
+        label: "Kimi K3.1 Pro · 1M context",
+        supportsVision: true,
+      },
       {
         id: "kimi-k3",
         label: "Kimi K3 · 1M context",

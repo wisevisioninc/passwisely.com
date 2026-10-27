@@ -11,7 +11,6 @@ test("screenshot solve extracts only the programming problem in one model call",
   assert.match(processing, /Extract ONLY the programming problem itself/);
   assert.match(processing, /Exclude browser menus, tabs, URLs/);
   assert.match(processing, /parsed.problem_statement/);
-  assert.match(processing, /thinking: \{ type: "disabled" \}/);
   assert.match(processing, /extractJsonStringField/);
   assert.match(processing, /Completing the solution/);
   assert.match(processing, /reportsNoProblem/);

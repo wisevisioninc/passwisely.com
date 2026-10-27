@@ -23,6 +23,7 @@ const timers = new Set();
 const safe = code => Object.assign(new Error(code), { safeCode: code });
 const elapsed = () => Math.round(performance.now() - started);
 let authorization;
+let publicSession;
 let tokenPath;
 let tokenOwned = false;
 let output;
@@ -163,6 +164,7 @@ try {
   if (require("ws/package.json").version !== "8.22.0") throw safe("WS_VERSION_UNEXPECTED");
   const [system, microphone] = await Promise.all([wav(args["--system-wav"]), wav(args["--microphone-wav"])]);
   authorization = await privateAuthorization(tokenPath);
+  publicSession = { transcriptionProfile: authorization.transcriptionProfile, language: authorization.language, model: authorization.model };
   const channels = [connect("system", system), connect("microphone", microphone)];
   await Promise.all(channels.map(state => state.opened));
   await Promise.all(channels.map(replay));
@@ -198,14 +200,14 @@ try {
   authorization = undefined;
 }
 const report = { schemaVersion: 1, kind: "direct-deepgram-synthetic-file-replay", status, ...(failureCode ? { failureCode } : {}),
-  createdAt: new Date().toISOString(), durationMs: elapsed(), endpoint: fixed.wsUrl,
+  createdAt: new Date().toISOString(), durationMs: elapsed(), endpoint: fixed.wsUrl, ...publicSession,
   limitations: ["No microphone capture, system-audio capture, native helper, Electron, permissions or packaged Intel binary was exercised.",
     "Source labels are assigned synthetic routes; they do not prove microphone/system hardware attribution.",
     "First-result timings start at initial PCM transmission and are observations for these fixtures, not service latency guarantees.",
     "providerFinalWordTokens counts provider word entries, not model billing tokens or distinct words."],
   routes: states.map(state => state.report) };
 if (output) await writeFile(output, JSON.stringify(report, null, 2) + "\n", { flag: "wx", mode: 0o600 });
-process.stdout.write(JSON.stringify({ status, ...(failureCode ? { failureCode } : {}), durationMs: report.durationMs,
+process.stdout.write(JSON.stringify({ status, transcriptionProfile: report.transcriptionProfile, language: report.language, ...(failureCode ? { failureCode } : {}), durationMs: report.durationMs,
   routes: report.routes.map(route => ({ route: route.route, interims: route.providerInterims, finals: route.providerFinals, wordEntries: route.providerFinalWordTokens,
     pauseMs: route.pause?.elapsedMs, audioBytesDuringPause: route.pause?.sentAudioBytes, closeCode: route.closeCode })) }) + "\n");
 process.exitCode = status === "passed" ? 0 : 1;

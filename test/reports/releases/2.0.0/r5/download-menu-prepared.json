@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "status": "prepared_local_browser_verified_not_activated",
+  "canonicalCommit": "8be1759",
+  "productionBase": "f96b17787d9c8c97ba1b8bf30326f43c1ef3c406",
+  "candidateCommit": "8be985357bd3596dbb4fc62d478e5225fc93800a",
+  "manifestSha256": "697c846a361f765a1e069c8e30bf72a9993d2c98d88958183f130ebca80379d4",
+  "treeFingerprint": "8ab6d1af258135c5e9effbf913b6818eb3deed2ce1b3ac8603832153649a4ce0",
+  "compiledFiles": 49,
+  "compiledBytes": 5361054,
+  "tests": {
+    "canonicalRelated": 73,
+    "isolatedWebsite": 248,
+    "isolatedOwner": 18,
+    "websiteTypes": "passed"
+  },
+  "browser": {
+    "realArchitecture": "arm64",
+    "viewportSizes": [
+      [
+        1280,
+        720
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "intelAndUnknown": "fixture simulations, not Intel hardware validation",
+    "consoleErrorsAndWarnings": 0,
+    "downloadEndpointNavigations": 0
+  },
+  "installerVersion": "2.0.0 r5 unchanged",
+  "modelConfigurationChanged": false,
+  "paymentConfigurationChanged": false,
+  "productionActivated": false,
+  "evidence": [
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/browser.json",
+      "sha256": "10931cf4d516e8a2f7aa73fb385db51da6f3158c3c09f99c1e7dfda41c96d6dc",
+      "bytes": 6838
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/desktop.png",
+      "sha256": "46774ecd94f6636f4a8ad688e83b680cd922d605124a5d2636f50fdef4a78853",
+      "bytes": 62008
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/mobile.png",
+      "sha256": "b830a5447665ef858eacb6c17df882cc62c1587b3d82dc7acbbbda81f8844048",
+      "bytes": 6127
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/source-selection.json",
+      "sha256": "72250655138afdd79c2603a82715a8aa21802858fa7c754f3eabdae4eb24ae74",
+      "bytes": 1026
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/local-checks.json",
+      "sha256": "206d363eccff3996bdecf033db2052f48b7a9a5c1de0dca001d09512f4f917c6",
+      "bytes": 772
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/build.json",
+      "sha256": "78dd75342ec712f12aa304e6f91f6f769148c0ced39692247e9539963fff71f8",
+      "bytes": 3558
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/web-manifest.json",
+      "sha256": "697c846a361f765a1e069c8e30bf72a9993d2c98d88958183f130ebca80379d4",
+      "bytes": 35477
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/website-tests.log",
+      "sha256": "cb6915c9f4ac9af42d8b82a411e5ac3c8b4eb6ec330950e704da4701e674d736",
+      "bytes": 24328
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/website-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/owner-tests.log",
+      "sha256": "06e306075a0865d43f8aefa947cd6668d4baaf36fa069b875aa0e76b20d4c2b5",
+      "bytes": 117
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "status": "prepared_local_browser_verified_not_activated",
+  "status": "prepared_local_and_linux_verified_pending_user_sudo_activation",
   "canonicalCommit": "8be1759",
   "productionBase": "f96b17787d9c8c97ba1b8bf30326f43c1ef3c406",
   "candidateCommit": "8be985357bd3596dbb4fc62d478e5225fc93800a",
@@ -12,7 +12,12 @@
     "canonicalRelated": 73,
     "isolatedWebsite": 248,
     "isolatedOwner": 18,
-    "websiteTypes": "passed"
+    "websiteTypes": "passed",
+    "wiseLinuxWebsite": 248,
+    "wiseLinuxOwner": 18,
+    "wiseLinuxTypes": "passed",
+    "frontendLinuxOwner": 19,
+    "frontendBaselineAssetChecks": 24
   },
   "browser": {
     "realArchitecture": "arm64",
@@ -41,19 +46,39 @@
       "bytes": 6838
     },
     {
+      "path": "release/v2.0.0/r5/verification/download-menu/build.json",
+      "sha256": "78dd75342ec712f12aa304e6f91f6f769148c0ced39692247e9539963fff71f8",
+      "bytes": 3558
+    },
+    {
       "path": "release/v2.0.0/r5/verification/download-menu/desktop.png",
       "sha256": "46774ecd94f6636f4a8ad688e83b680cd922d605124a5d2636f50fdef4a78853",
       "bytes": 62008
     },
     {
-      "path": "release/v2.0.0/r5/verification/download-menu/mobile.png",
-      "sha256": "b830a5447665ef858eacb6c17df882cc62c1587b3d82dc7acbbbda81f8844048",
-      "bytes": 6127
+      "path": "release/v2.0.0/r5/verification/download-menu/frontend-mirror/activate_frontend.py",
+      "sha256": "6c5b530557664ca28bc0bf92a857955d1174efe294eada8e2a50cccab3f12d07",
+      "bytes": 26307
     },
     {
-      "path": "release/v2.0.0/r5/verification/download-menu/source-selection.json",
-      "sha256": "72250655138afdd79c2603a82715a8aa21802858fa7c754f3eabdae4eb24ae74",
-      "bytes": 1026
+      "path": "release/v2.0.0/r5/verification/download-menu/frontend-mirror/adaptation.json",
+      "sha256": "5831ee7daa4ce5f98a96fbb9e5e5a3e8bd807ef94f634bd51f050e995c5e7459",
+      "bytes": 566
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/frontend-mirror/linux-checks.json",
+      "sha256": "defa33bb6959dd5924c07464e22afd242865167508149b313d203e702393e961",
+      "bytes": 1010
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/frontend-mirror/preparation-summary.json",
+      "sha256": "92af4e56eed253f4307c3dc75af730bbfa20c1ae6a4a460c1d217c5ed9c7f7cb",
+      "bytes": 1235
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/frontend-mirror/read-only-plan.log",
+      "sha256": "8ee3ea00bdb3f91388b679ffd4c1f916200883b2b55543636b4261de1991f90f",
+      "bytes": 672
     },
     {
       "path": "release/v2.0.0/r5/verification/download-menu/local-checks.json",
@@ -61,9 +86,64 @@
       "bytes": 772
     },
     {
-      "path": "release/v2.0.0/r5/verification/download-menu/build.json",
-      "sha256": "78dd75342ec712f12aa304e6f91f6f769148c0ced39692247e9539963fff71f8",
-      "bytes": 3558
+      "path": "release/v2.0.0/r5/verification/download-menu/mobile.png",
+      "sha256": "b830a5447665ef858eacb6c17df882cc62c1587b3d82dc7acbbbda81f8844048",
+      "bytes": 6127
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/owner-tests.log",
+      "sha256": "06e306075a0865d43f8aefa947cd6668d4baaf36fa069b875aa0e76b20d4c2b5",
+      "bytes": 117
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/activate-reviewed.sh",
+      "sha256": "0126f7b7c0e8a069bef694a7de81525d8d91dd34c7f3ac072317c809418466fd",
+      "bytes": 2250
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/final-preparation-summary.json",
+      "sha256": "5662371bc70b3a90fdb87ec517b4808f8b4f4367d896e417019f439ab3192ac9",
+      "bytes": 2107
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/linux-focused-website-tests.log",
+      "sha256": "00da2cb6d966f847db6f555f6ab4c22b7bd67c43aba3c84036efc11b1fb088e3",
+      "bytes": 57844
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/linux-initial-full-website-tests.log",
+      "sha256": "3dde1e303439eca261fafbe409091e95a4dcb29c99f8f30870620dc7a1a29e7e",
+      "bytes": 54873
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/linux-owner-tests.log",
+      "sha256": "c54096d7b59a66dc9fd00bc403e5918be911d4570d82ff389b5470c61e1312ce",
+      "bytes": 117
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/linux-website-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/prepared-web.json",
+      "sha256": "5b15aa30d35127a29db3329ce78a08798049c395fe7e54d773d0985dd296ce70",
+      "bytes": 4181
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/test-dependency-prepared.json",
+      "sha256": "62a9f348a4c5d73df1fabe57330c1ec9b3460038aa3b44c8549dd7f8fb475c29",
+      "bytes": 570
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/release-stage/test-dependency-verification.json",
+      "sha256": "154b27b2124a94c161e14957eb40ea0dcf2685ba2e0773ff4bde5f65ac53a668",
+      "bytes": 52212
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/source-selection.json",
+      "sha256": "72250655138afdd79c2603a82715a8aa21802858fa7c754f3eabdae4eb24ae74",
+      "bytes": 1026
     },
     {
       "path": "release/v2.0.0/r5/verification/download-menu/web-manifest.json",
@@ -79,11 +159,140 @@
       "path": "release/v2.0.0/r5/verification/download-menu/website-types.log",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "bytes": 0
-    },
-    {
-      "path": "release/v2.0.0/r5/verification/download-menu/owner-tests.log",
-      "sha256": "06e306075a0865d43f8aefa947cd6668d4baaf36fa069b875aa0e76b20d4c2b5",
-      "bytes": 117
     }
-  ]
+  ],
+  "wisePreparation": {
+    "success": true,
+    "sourceCommit": "8be985357bd3596dbb4fc62d478e5225fc93800a",
+    "sourceRepository": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-download-ui-8be9853",
+    "sourceDetached": true,
+    "candidate": "/home/jerry/codebase/passwisely/website/.release-candidates/v2.0.0-download-ui-8be9853/dist",
+    "manifest": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-ui-8be9853/web/web-manifest.json",
+    "manifestSha256": "697c846a361f765a1e069c8e30bf72a9993d2c98d88958183f130ebca80379d4",
+    "compiledTree": "8ab6d1af258135c5e9effbf913b6818eb3deed2ce1b3ac8603832153649a4ce0",
+    "compiledFilesVerified": 49,
+    "compiledBytesVerified": 5361054,
+    "sourceFilesVerified": 169,
+    "mainHeadPreserved": true,
+    "mainHead": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+    "configurationChanged": false,
+    "modelConfigurationChanged": false,
+    "databaseWrites": 0,
+    "bindingSha256": "826c8bbf9a147091d525000d3f1da2bc9a2252732194cdc35f8a88f27eb0a0b8",
+    "bindingBytes": 6742,
+    "bindingPreservedExactly": true,
+    "bindingValuesReturned": false,
+    "sourceEnvironmentRead": false,
+    "linuxOwnerTestsPassed": 18,
+    "linuxFocusedWebsiteTestsPassed": 248,
+    "linuxWebsiteSuiteFull": true,
+    "linuxTypecheckPassed": true,
+    "linuxWebsiteTestScope": [
+      "account-usage.test.mjs",
+      "admin-ai-configuration.test.mjs",
+      "admin-nginx.test.mjs",
+      "admin-observability.test.mjs",
+      "ai-provider-fallback.test.mjs",
+      "alipay-notification.test.mjs",
+      "alipay-signature.test.mjs",
+      "chat-stream.test.mjs",
+      "credit-balance.test.mjs",
+      "dashboard-fixtures.test.mjs",
+      "dashboard-navigation.test.mjs",
+      "deepgram-token.test.mjs",
+      "download-performance-probe.test.mjs",
+      "download-platform.test.mjs",
+      "kimi-model.test.mjs",
+      "lazy-views.test.mjs",
+      "model-fetch.test.mjs",
+      "monthly-credit-ledger.test.mjs",
+      "openai-gateway.test.mjs",
+      "oss-download.test.mjs",
+      "password-management.test.mjs",
+      "pricing-checkout.test.mjs",
+      "public-site-origin.test.mjs",
+      "recall-upload.test.mjs",
+      "rendered-html.test.mjs",
+      "stage-runtime-env.test.mjs",
+      "supabase-healthcheck.test.mjs",
+      "supabase-schema.test.mjs",
+      "worker-request-body.test.mjs"
+    ],
+    "initialFullSuitePrerequisiteFailure": {
+      "files": [
+        "account-usage.test.mjs",
+        "monthly-credit-ledger.test.mjs"
+      ],
+      "cause": "Exact locked test dependency absent from production dependency tree",
+      "passed": 224,
+      "failedFileStartup": 2,
+      "log": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-ui-8be9853/linux-initial-full-website-tests.log"
+    },
+    "testDependency": {
+      "package": "@electric-sql/pglite",
+      "version": "0.3.14",
+      "scope": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-ui-8be9853/test-dependencies/pglite-0.3.14",
+      "registryAndLockIntegrityVerified": true,
+      "productionDependenciesModified": false,
+      "installationPerformed": false
+    },
+    "dependencyFacades": [
+      {
+        "path": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-download-ui-8be9853/node_modules",
+        "installedEntriesReused": 181,
+        "installationPerformed": false
+      },
+      {
+        "path": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-download-ui-8be9853/website/node_modules",
+        "installedEntriesReused": 24,
+        "installationPerformed": false
+      }
+    ],
+    "rootPlanExecuted": false,
+    "unprivilegedSharedOwnerPreflightPassed": true,
+    "productionActivated": false,
+    "productionRuntimeWrites": 0,
+    "privateStagingWrites": true,
+    "gitReleaseMetadataWritten": true,
+    "ownerSha256": "911f75ed95374802a7a99e2ac53672c865637d7cc815d49a5fd4fe76f49b2ead",
+    "activationWrapperSha256": "0126f7b7c0e8a069bef694a7de81525d8d91dd34c7f3ac072317c809418466fd",
+    "activationCommand": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-ui-8be9853/activate-reviewed.sh",
+    "requiresPublicCnHttpsBeforeActivation": true,
+    "automaticRollback": "Existing reviewed owner preserves exact runtime bindings, retains the old runtime, and rolls back runtime/routing on failed health checks; no database migration.",
+    "publicHealthUsesHttps": true
+  },
+  "activationSyntaxAndSudo": {
+    "bashSyntaxExitCode": 0,
+    "sudoNonInteractiveAvailable": false
+  },
+  "frontendPreparation": {
+    "success": true,
+    "sourceCommit": "8be985357bd3596dbb4fc62d478e5225fc93800a",
+    "candidateParent": "/root/passwisely-deployment-20261028-download-ui/prepared-8be9853",
+    "manifestSha256": "697c846a361f765a1e069c8e30bf72a9993d2c98d88958183f130ebca80379d4",
+    "treeFingerprint": "8ab6d1af258135c5e9effbf913b6818eb3deed2ce1b3ac8603832153649a4ce0",
+    "compiledFiles": 49,
+    "compiledBytes": 5361054,
+    "archiveSha256": "3f0efdc40a1eef1439189ab63d376787ba4b7dad34278df743baa90c2db752f2",
+    "archiveBytes": 3377212,
+    "ownerSha256": "6c5b530557664ca28bc0bf92a857955d1174efe294eada8e2a50cccab3f12d07",
+    "ownerAstEquivalentExceptReleasePins": true,
+    "linuxOwnerTestsPassed": 19,
+    "linuxOwnerTestsSkipped": 0,
+    "readOnlyPlanPassed": true,
+    "baselineHealth": {
+      "homepageEndpoints": 3,
+      "assetChecks": 24,
+      "allAssetsMatchedManifest": true
+    },
+    "oldTree": "7e681be092a67c2de2879484ba988fa7adf7a959ee0e28754f3692db34307c92",
+    "productionActivated": false,
+    "productionWrites": 0,
+    "backendWrites": 0,
+    "configurationWrites": 0,
+    "modelConfigurationChanged": false,
+    "bindingsRuleUnchanged": true,
+    "preservedOnlyBinding": "PUBLIC_SITE_URL=https://passwisely.com",
+    "wouldRestartOnly": "passwisely-frontend.service"
+  }
 }

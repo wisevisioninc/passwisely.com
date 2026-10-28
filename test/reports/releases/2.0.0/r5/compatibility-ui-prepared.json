@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "status": "prepared-awaiting-wise-sudo",
+  "observedAt": "2026-10-28T07:34:06Z",
+  "sourceCommit": "bbdd8429717774b2c780f43971641b16949363be",
+  "canonicalChanges": [
+    "587e0b8215802fa8c5bc43cc2a4b17315090ecd8",
+    "2cbd458ae5c004fa64b9ac8e150181a723154ca8"
+  ],
+  "productionBase": "b7d8a44930482bfe4fb0201a9ba99f3678a9b1cb",
+  "testRecord": {
+    "source": "user-confirmation",
+    "testedDate": "2026-10-28",
+    "platforms": [
+      "Mac",
+      "Windows"
+    ],
+    "reportedAt": "2026-10-28T03:47:16Z",
+    "reportedHoursAgo": 5,
+    "testedAt": "2026-10-27T22:47:16Z",
+    "automaticTestExecution": false,
+    "independentlyRepeatedByAgent": false
+  },
+  "apps": [
+    "Microsoft Teams",
+    "Zoom",
+    "Google Meet",
+    "Amazon Chime",
+    "Cisco Webex",
+    "Lark/Feishu",
+    "HackerRank",
+    "CoderPad",
+    "Codility"
+  ],
+  "ui": {
+    "title": "每日测试面试软件的兼容性，不可检测性",
+    "recencyTemplate": "最新检测时间{elapsed}小时前",
+    "status": "不可检测",
+    "localIcons": 8,
+    "webexFallback": "W tile",
+    "relativeTimeAdvancesFromFixedRecord": true,
+    "initialServerRender": "absolute test date",
+    "details": "native keyboard-accessible disclosure"
+  },
+  "verification": {
+    "websiteTests": {
+      "local": 253,
+      "wiseLinux": 253
+    },
+    "typescript": {
+      "local": true,
+      "wiseLinux": true
+    },
+    "releaseOwnerTests": {
+      "local": 19,
+      "wiseLinux": 19,
+      "mirrorLinux": 19
+    },
+    "browserViewports": [
+      {
+        "width": 1280,
+        "locale": "zh"
+      },
+      {
+        "width": 800,
+        "locale": "zh/en"
+      },
+      {
+        "width": 390,
+        "locale": "zh"
+      },
+      {
+        "width": 320,
+        "locale": "en"
+      }
+    ],
+    "browserNoHorizontalOverflow": true,
+    "browserEightIconsDecoded": true,
+    "keyboardExpandAndClickCollapse": true,
+    "finalArtifactBrowserBoot": true,
+    "browserErrorsObserved": 0
+  },
+  "artifact": {
+    "manifestSha256": "32d051405a5f093d536773a419e1525cb9d57355ab58783246df49ef4c7639a8",
+    "treeFingerprint": "eb9806541bf5b5eb49af3fb00b041764b4ccba75b575428f7ae2f79f4f8bffb2",
+    "files": 57,
+    "bytes": 5511463
+  },
+  "productionActivated": false,
+  "configurationWrites": 0,
+  "providerCalls": 0,
+  "databaseWrites": 0,
+  "pendingWeChatChangesIncluded": false,
+  "authTemplateFixIncluded": false,
+  "initialFailure": {
+    "type": "new test depended on unpublished payment test helper",
+    "passed": 252,
+    "total": 253,
+    "resolution": "isolated interval-call spy in new compatibility clock test",
+    "initialLogsRetained": true
+  },
+  "screenshotSha256": "ce254684eac55c433323cc9ad7d6f485b7f086733928dd1d856a79258a3e9fd8"
+}

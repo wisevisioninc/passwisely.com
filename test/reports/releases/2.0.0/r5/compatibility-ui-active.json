@@ -1,0 +1,184 @@
+{
+  "schema": 1,
+  "status": "active",
+  "sourceCommit": "bbdd8429717774b2c780f43971641b16949363be",
+  "manifestSha256": "32d051405a5f093d536773a419e1525cb9d57355ab58783246df49ef4c7639a8",
+  "treeFingerprint": "eb9806541bf5b5eb49af3fb00b041764b4ccba75b575428f7ae2f79f4f8bffb2",
+  "productionBase": "b7d8a44930482bfe4fb0201a9ba99f3678a9b1cb",
+  "wise": {
+    "transactionSha256": "e9aaea35be534c7f3395b6e1fcaae8cec480e79b041956db87639c8ed63ed276",
+    "bindingBytesPreserved": 6742,
+    "configurationPreserved": true,
+    "services": {
+      "passwisely-web.service": {
+        "Result": "success",
+        "ActiveState": "active",
+        "SubState": "running"
+      },
+      "passwisely-desktop-api.service": {
+        "Result": "success",
+        "ActiveState": "active",
+        "SubState": "running"
+      }
+    }
+  },
+  "frontendMirror": {
+    "transactionSha256": "9f200c073161f8534789d319f9a8911f9a8437621f482c85190d719cdbaac163",
+    "sameArtifact": true,
+    "configurationPreserved": true,
+    "localHomepageHttpStatus": 200,
+    "iconsMatchingManifest": 8,
+    "healthHomepageEndpoints": 3,
+    "healthAssets": 24
+  },
+  "publicVerification": {
+    "schemaVersion": 1,
+    "startedAtUtc": "2026-10-28T07:37:10.866Z",
+    "origin": "https://passwisely.cn",
+    "grpcAuthority": "passwisely.cn:443",
+    "mode": "public-read-only",
+    "success": true,
+    "checks": [
+      {
+        "id": "https-homepage",
+        "success": true,
+        "httpStatus": 200,
+        "heroLocale": "zh",
+        "certificate": {
+          "authorized": true,
+          "protocol": "TLSv1.3",
+          "fingerprint256": "6B:7F:37:E8:8C:91:F8:7A:8C:E2:1C:D4:F9:C6:B7:56:DB:0C:68:59:6F:F3:C4:E6:CE:32:1B:F1:B2:84:7F:04",
+          "validFrom": "Oct 27 09:39:01 2026 GMT",
+          "validTo": "Jan 25 09:39:00 2027 GMT",
+          "subjectCN": "passwisely.cn",
+          "issuerCN": "YR1",
+          "subjectAltName": "DNS:passwisely.cn, DNS:www.passwisely.cn"
+        },
+        "elapsedMs": 12812.753292
+      },
+      {
+        "id": "http-redirect-preserves-route",
+        "success": true,
+        "httpStatus": 301,
+        "target": "https://passwisely.cn/api/account?route_probe=1",
+        "elapsedMs": 478.31554099999994
+      },
+      {
+        "id": "GET /api/account",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 5092.711458999998
+      },
+      {
+        "id": "POST /api/desktop/recall/upload-token",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 2746.171707999998
+      },
+      {
+        "id": "POST /api/desktop/deepgram/token",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 2450.2782499999994
+      },
+      {
+        "id": "POST /api/ai/chat/completions",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 1475.048999999999
+      },
+      {
+        "id": "download-mac-arm64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg",
+        "elapsedMs": 1329.8537909999977
+      },
+      {
+        "id": "download-mac-x64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg",
+        "elapsedMs": 2305.096292000002
+      },
+      {
+        "id": "download-windows-x64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe",
+        "elapsedMs": 2355.1784590000025
+      },
+      {
+        "id": "grpc-health",
+        "success": true,
+        "status": "SERVING",
+        "transport": "grpc+protobuf",
+        "elapsedMs": 3614.2709170000016
+      },
+      {
+        "id": "grpc-chat-auth-first",
+        "success": true,
+        "grpcCode": 16,
+        "elapsedMs": 146.8391249999986
+      },
+      {
+        "id": "grpc-chat-stream-auth-first",
+        "success": true,
+        "grpcCode": 16,
+        "receivedData": false,
+        "elapsedMs": 530.744458000001
+      }
+    ],
+    "releaseVersion": "2.0.0",
+    "expectedDownloads": [
+      {
+        "platform": "mac-arm64",
+        "version": "2.0.0",
+        "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg",
+        "bytes": 159694334
+      },
+      {
+        "platform": "mac-x64",
+        "version": "2.0.0",
+        "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg",
+        "bytes": 119247160
+      },
+      {
+        "platform": "windows-x64",
+        "version": "2.0.0",
+        "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe",
+        "bytes": 123221074
+      }
+    ],
+    "elapsedMs": 35342.239625,
+    "publicVerificationPerformed": true
+  },
+  "liveBrowser": {
+    "origin": "https://passwisely.cn",
+    "rows": 9,
+    "status": "不可检测",
+    "recencyObserved": "最新检测时间8小时前",
+    "eightIconsDecoded": true,
+    "nativeDisclosurePassed": true,
+    "mobileViewport": 390,
+    "mobileHorizontalOverflow": false,
+    "viewportRestored": true,
+    "screenshotSha256": "85488ad9d656e3c0d4d1606209b2006edef9a6f51faf57b7f833fc76e08f660b"
+  },
+  "claimedPlatformTestSource": "user-confirmation",
+  "independentNinePlatformTestsPerformedByAgent": false,
+  "modelConfigurationChanged": false,
+  "paymentConfigurationChanged": false,
+  "installerVersionsChanged": false,
+  "databaseWrites": 0,
+  "providerCalls": 0
+}

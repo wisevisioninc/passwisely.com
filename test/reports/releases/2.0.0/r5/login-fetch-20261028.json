@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "status": "login_restored_user_confirmed",
+  "date": "2026-10-28",
+  "server": {
+    "testedAtUtc": "2026-10-28T06:32:37.076389+00:00",
+    "productionWrites": 0,
+    "existingHealthCheckerRun": false,
+    "existingHealthCheckerReason": "Requires admin password login; not run for this read-only diagnosis.",
+    "services": {
+      "passwisely-web.service": {
+        "commandStatus": 0,
+        "fields": {
+          "Result": "success",
+          "ExecMainStatus": "0",
+          "ActiveState": "active",
+          "SubState": "running"
+        }
+      },
+      "passwisely-desktop-api.service": {
+        "commandStatus": 0,
+        "fields": {
+          "Result": "success",
+          "ExecMainStatus": "0",
+          "ActiveState": "active",
+          "SubState": "running"
+        }
+      }
+    },
+    "recentRedactedJournal": {
+      "commandStatus": 0,
+      "loginRouteRecords": 0,
+      "events": [],
+      "rawMessagesReturned": false
+    },
+    "networkCommandStatus": 0,
+    "network": {
+      "results": [
+        {
+          "label": "supabase-dns",
+          "status": "resolved",
+          "families": [
+            4
+          ],
+          "addressCount": 2,
+          "elapsedMs": 10
+        },
+        {
+          "label": "supabase-auth-health",
+          "status": 200,
+          "elapsedMs": 101,
+          "strictTls": true
+        },
+        {
+          "label": "supabase-rest-db-no-rows",
+          "status": 200,
+          "elapsedMs": 122,
+          "strictTls": true
+        },
+        {
+          "label": "wise-cn-home",
+          "status": 200,
+          "elapsedMs": 326,
+          "strictTls": true
+        },
+        {
+          "label": "wise-cn-account-unauthenticated",
+          "status": 401,
+          "elapsedMs": 211,
+          "strictTls": true
+        },
+        {
+          "label": "wise-cn-login-method",
+          "status": 405,
+          "elapsedMs": 249,
+          "strictTls": true
+        },
+        {
+          "label": "wise-loopback-account-unauthenticated",
+          "status": 401,
+          "elapsedMs": 184,
+          "strictTls": false
+        }
+      ],
+      "elapsedMs": 360,
+      "accountCredentialAttempts": 0,
+      "providerCalls": 0,
+      "paymentRequests": 0,
+      "databaseWrites": 0,
+      "configurationWrites": 0,
+      "credentialValuesReturned": false
+    },
+    "elapsedMs": 6254
+  },
+  "installedApp": {
+    "version": "2.0.0",
+    "defaultApi": "https://passwisely.cn/api",
+    "launchEndpointOverridesFound": false,
+    "runtime": {
+      "electron": "29.4.6",
+      "node": "20.9.0"
+    },
+    "readOnlyProbes": [
+      {
+        "origin": "https://passwisely.cn",
+        "status": 401,
+        "ms": 1506
+      },
+      {
+        "origin": "https://www.passwisely.cn",
+        "status": 401,
+        "ms": 3960
+      },
+      {
+        "origin": "https://passwisely.com",
+        "error": "fetch failed",
+        "causeCode": "ECONNREFUSED",
+        "ms": 89
+      }
+    ]
+  },
+  "rea": {
+    "evidenceId": "ev_046abd47859291163c731bdbaf8c334c6a2b06fc5a0afeb92c6906c53f41a32b",
+    "scope": "8 selected shipped login modules, not complete ASAR",
+    "limitation": "Bundled main semantic analysis hit its 512MiB heap budget; retain partial graph and direct shipped source separately"
+  },
+  "confirmedNativeLogin": "User confirmed a successful retry with the existing installed app",
+  "originalFailureCause": "Unknown: historical transport cause not retained; current probes healthy. Old .com refusal is not proof that this installed app used .com.",
+  "sourceFix": {
+    "paths": [
+      ".env.example",
+      "desktop-api/tests/service-endpoints.test.mjs"
+    ],
+    "purpose": "Prevent new development setups from copying the retired .com endpoint",
+    "testsPassed": 16,
+    "productionOrInstalledAppChanged": false
+  },
+  "passwordResetEmailsSentByAgent": 0,
+  "credentialAttemptsByAgent": 0,
+  "configurationWrites": 0,
+  "databaseWrites": 0,
+  "serviceRestarts": 0
+}

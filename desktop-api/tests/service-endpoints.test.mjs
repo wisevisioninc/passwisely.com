@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
+import { readFileSync } from "node:fs";
+import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
@@ -117,4 +119,23 @@ test("empty overrides preserve production defaults and direct model routes retai
   assert.equal(f.httpClients[0].apiKey, "fixture-personal-key");
   assert.equal(f.httpClients[0].fetch, undefined);
   assert.equal(f.grpcClients.length, 0);
+});
+
+
+test("copying the development environment template preserves the production login and AI endpoint owner", async t => {
+  const environment = dotenv.parse(readFileSync(entry(".env.example"), "utf8"));
+  const f = fixture(environment);
+  const defaults = f.getServiceEndpoints({});
+  assert.deepEqual(f.getServiceEndpoints(), defaults, "the example must not override production routing with a retired service domain");
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    calls.push({ url, method: init.method });
+    return Response.json({ token: "fixture-template-token", user: { id: "fixture-template-user" } });
+  });
+  assert.equal((await f.account.login("template@example.test", "fixture-password")).success, true);
+  assert.deepEqual(calls, [{ url: `${defaults.apiBase}/auth/login`, method: "POST" }]);
+  assert.equal(f.account.getAccountUrl(), defaults.accountUrl);
+  f.processing.configure(wiseConfig);
+  assert.equal(f.httpClients[0].baseURL, defaults.aiBase);
+  assert.equal(f.grpcClients[0].address, defaults.grpcAddress);
 });

@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "status": "active",
+  "canonicalCommit": "2ee0cc383450652f3121063750be0a3aba557d12",
+  "sourceCommit": "dadd41f9646609d7a2dfa1b76c836dcb1683dbb2",
+  "manifestSha256": "d2da7057d75e2f7986eb00b4268533281fe9c02e5ed52d0878663947b507ec4c",
+  "treeFingerprint": "d29d6cba35f5a5df47d8949b6c64b2bb835856d6fe3ded396caeb75e6123bd6e",
+  "sameArtifactOnBothServers": true,
+  "title": "每日实测",
+  "subtitle": "覆盖主流面试软件, 确保不可检测性",
+  "compatibilityRows": 9,
+  "order": [
+    "privacy",
+    "compatibility",
+    "how"
+  ],
+  "testTimestampChanged": false,
+  "wiseTransactionSha256": "93d6f27cb716c8ee97738fbf789ec1d66208988344501138c1f91314296611ab",
+  "mirrorTransactionSha256": "aa4ece27a5b7b868038f9aeb57fe510107a426943eed7d1f0242a711bff4462a",
+  "productionBindingPreserved": true,
+  "oldBackupVerified": true,
+  "mirrorLoopbackHtml": {
+    "url": "http://127.0.0.1:8080/",
+    "hostHeader": "passwisely.com",
+    "status": 200,
+    "bytes": 73225,
+    "sha256": "f730643d3aab67674f8ca1317539322ddd67b85c4a72a8725f96a638f3e059d0",
+    "sectionOrder": [
+      "privacy",
+      "compatibility",
+      "how"
+    ],
+    "compatibilityUnique": true,
+    "compatibilityRows": 9,
+    "compatibilityRowIds": [
+      "microsoft-teams",
+      "zoom",
+      "google-meet",
+      "amazon-chime",
+      "cisco-webex",
+      "lark-feishu",
+      "hackerrank",
+      "coderpad",
+      "codility"
+    ],
+    "mainHeading": "每日实测",
+    "subHeading": "覆盖主流面试软件, 确保不可检测性"
+  },
+  "liveBrowser": {
+    "origin": "https://passwisely.cn",
+    "desktopVerified": true,
+    "mobile": {
+      "next": "how",
+      "previous": "privacy",
+      "rows": 9,
+      "scrollWidth": 390,
+      "subtitle": "覆盖主流面试软件, 确保不可检测性",
+      "title": "每日实测",
+      "viewport": 390
+    },
+    "verifiedAt": "2026-10-28T10:38:11.161Z"
+  },
+  "websiteTests": {
+    "local": 253,
+    "wiseLinux": 253
+  },
+  "typescriptPassed": true,
+  "ownerTests": {
+    "local": 19,
+    "wiseLinux": 19,
+    "mirrorLinux": 19
+  },
+  "configurationWrites": 0,
+  "databaseWrites": 0,
+  "providerCalls": 0,
+  "screenshotSha256": "f52da2bdb86b42ab3c64ee3358df1a8c447518d4db8324c8840cd339c6dc344c"
+}

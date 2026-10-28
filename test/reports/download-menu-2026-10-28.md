@@ -1,6 +1,6 @@
 # 官网下载菜单 — 2026-10-28
 
-状态：**下载区改版已同步上线两台服务器；线上补验发现的固定导航遮挡问题已修复，补丁通过 Mac 与 Wise Linux 各 249 项测试及浏览器验收，等待用户执行最终发布切换**。
+状态：**已全部上线并完成最终验收。Wise 与官网镜像均运行导航修复后的 `b7d8a44`；桌面、手机菜单及公网 12 项链路检查通过。**
 
 首页与页尾复用同一下载组件，主入口改为并排的 `Get for Windows` 和 `Get for Mac`。点击 Mac 展开 Apple Silicon、Intel 芯片两项；已可靠检测的芯片标为推荐并正常显示，另一项置灰但仍可手动下载。浏览器不提供芯片信息时两项均保留正常选择，不将 `MacIntel` 兼容字符串误判为 Intel。
 
@@ -50,3 +50,14 @@ SHA256 `0126f7b7c0e8a069bef694a7de81525d8d91dd34c7f3ac072317c809418466fd`；Bash
 导航补丁 Wise Linux **249/249**、owner **18/18**、TypeScript 全部通过；运行绑定、模型与数据库保持不变。最终入口 `/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-nav-b7d8a44/activate-reviewed.sh`，SHA256 `ebde432422946f3f4fd6c68fbb0814871f48300fbce5bd21c5454a5307b85d08`，Bash 语法核验通过。入口以首次已上线 `8ab6d1…` 树为基线，继续使用原隔离部署 owner，先计划再激活。已将准确命令交付用户；本回执明确为 prepared，不声称补丁已激活。见 [导航补丁准备回执](releases/2.0.0/r5/download-menu-header-fix-prepared.json)。
 
 只读核查发现旧免密 UI 入口会 fast-forward/merge 主工作树，并使用旧 `.com` 健康检查，无法保持本次 pending WeChat 隔离与精确指纹约束。因此没有运行或改写该入口，也没有扩大 sudo 权限；仍由用户本人执行安全的隔离发布入口。
+
+
+## 最终上线验收
+
+用户已执行导航补丁入口。Wise 事务 SHA256 `67d22f99f774c9117b9c9985312d4076962892e3168a5996d3953133c4a0ed16`，独立核验匹配。随后按已审阅镜像 owner 完成同产物同步，镜像事务 SHA256 `728f97493bd4703cffde7497bdb5c45c4e9d59a25bcac8eaa2a48f818c612410`，3 个首页端点和 24 项静态资源校验通过。两机均为 `b7d8a44930482bfe4fb0201a9ba99f3678a9b1cb`、49 文件、5,361,547 字节及同一个 `8aecf460…` 编译树。原绑定、Nginx、服务配置与待发布工作树保持，模型/数据库/支付写入为 0。
+
+最终 `.cn` 公网 HTTPS、鉴权、TLS gRPC 及三平台下载 **12/12** 再次通过。实际线上浏览器确认主入口只有 `Get for Windows`、`Get for Mac`，Apple 芯片被正确标为推荐、Intel 灰色但可手动选择；两者 v2.0.0，均显示支持实时音频。1280×650 矮屏中菜单向下限高滚动，首项命中属于菜单，不被导航遮挡；390×844 scrollWidth=390，菜单在视口内。Escape 收起并归还焦点，最终 error/warn 日志为空。没有实际点击安装包追踪链接，没有新增模型或付款请求。
+
+最终公开验收入口为 `https://passwisely.cn/`；另一台官网服务器运行包一致性的核验不替代 `.com` 的公网备案状态验收。本轮不修改域名或备案配置。
+
+[最终运行与浏览器回执](releases/2.0.0/r5/download-menu-final-active.json)。最终截图与原字节事务保存在本地忽略目录 `release/v2.0.0/r5/verification/download-menu/final-live/`；此前 prepared 及初次上线回执按当时状态保留，不覆盖历史证据。

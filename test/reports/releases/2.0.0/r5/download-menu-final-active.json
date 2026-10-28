@@ -1,0 +1,300 @@
+{
+  "success": true,
+  "sourceCommit": "b7d8a44930482bfe4fb0201a9ba99f3678a9b1cb",
+  "sameCompiledRuntimeOnWiseAndMirror": true,
+  "activeFiles": 49,
+  "activeBytes": 5361547,
+  "activeTree": "8aecf4605ab3706238ee76b70b5af2a1203acdd8d2e6b4a4ef945b406c7f658d",
+  "wiseTransactionSha256": "67d22f99f774c9117b9c9985312d4076962892e3168a5996d3953133c4a0ed16",
+  "frontendTransactionSha256": "728f97493bd4703cffde7497bdb5c45c4e9d59a25bcac8eaa2a48f818c612410",
+  "frontendHealth": {
+    "homepageEndpoints": 3,
+    "assetChecks": 24,
+    "allAssetsMatchedManifest": true
+  },
+  "wiseBindingsPreservedExactly": true,
+  "frontendPublicOriginBindingPreserved": true,
+  "nginxAndServicePinsPreserved": true,
+  "modelConfigurationWrites": 0,
+  "databaseWrites": 0,
+  "providerCalls": 0,
+  "paymentRequests": 0,
+  "trackingRequests": 0,
+  "schema": 1,
+  "status": "active_and_final_browser_verified",
+  "canonicalUiCommit": "2448daa",
+  "browser": {
+    "schema": 1,
+    "sourceCommit": "b7d8a44930482bfe4fb0201a9ba99f3678a9b1cb",
+    "desktop": {
+      "actions": [
+        "Get for Windows",
+        "Get for Mac"
+      ],
+      "firstOptionOwnsHit": true,
+      "guidance": "已识别 Apple 芯片 Mac，已标出推荐版本。",
+      "header": {
+        "bottom": 92,
+        "height": 92,
+        "right": 1280,
+        "width": 1280,
+        "x": 0,
+        "y": 0
+      },
+      "menu": {
+        "bottom": 637.765625,
+        "height": 275,
+        "right": 845.6171875,
+        "width": 286,
+        "x": 559.6171875,
+        "y": 362.765625
+      },
+      "options": [
+        {
+          "color": "rgb(245, 245, 242)",
+          "href": "/api/track-download/mac-arm64",
+          "muted": "false",
+          "recommended": "true",
+          "text": "Get for Mac\n(Apple Silicon)\n推荐\nv2.0.0\n支持实时音频"
+        },
+        {
+          "color": "rgb(133, 133, 127)",
+          "href": "/api/track-download/mac-x64",
+          "muted": "true",
+          "recommended": "false",
+          "text": "Get for Mac\n(Intel 芯片)\nv2.0.0\n支持实时音频\n原生音频需 macOS 13 或更新版本。"
+        }
+      ],
+      "origin": "https://passwisely.cn",
+      "placement": "below",
+      "summary": {
+        "bottom": 352.765625,
+        "height": 56,
+        "right": 845.6171875,
+        "width": 177.765625,
+        "x": 667.8515625,
+        "y": 296.765625
+      },
+      "viewport": {
+        "height": 650,
+        "scrollWidth": 1280,
+        "width": 1280
+      }
+    },
+    "mobile": {
+      "height": 844,
+      "menu": {
+        "bottom": 673.453125,
+        "left": 58.4140625,
+        "right": 344.4140625,
+        "top": 336.5390625
+      },
+      "open": true,
+      "placement": "below",
+      "scrollWidth": 390,
+      "width": 390
+    },
+    "escape": {
+      "closed": true,
+      "focusReturned": true
+    },
+    "logs": [],
+    "downloadNavigations": 0,
+    "providerCalls": 0,
+    "paymentRequests": 0
+  },
+  "publicVerification": {
+    "schemaVersion": 1,
+    "startedAtUtc": "2026-10-28T02:18:58.795Z",
+    "origin": "https://passwisely.cn",
+    "grpcAuthority": "passwisely.cn:443",
+    "mode": "public-read-only",
+    "success": true,
+    "checks": [
+      {
+        "id": "https-homepage",
+        "success": true,
+        "httpStatus": 200,
+        "heroLocale": "zh",
+        "certificate": {
+          "authorized": true,
+          "protocol": "TLSv1.3",
+          "fingerprint256": "6B:7F:37:E8:8C:91:F8:7A:8C:E2:1C:D4:F9:C6:B7:56:DB:0C:68:59:6F:F3:C4:E6:CE:32:1B:F1:B2:84:7F:04",
+          "validFrom": "Oct 27 09:39:01 2026 GMT",
+          "validTo": "Jan 25 09:39:00 2027 GMT",
+          "subjectCN": "passwisely.cn",
+          "issuerCN": "YR1",
+          "subjectAltName": "DNS:passwisely.cn, DNS:www.passwisely.cn"
+        },
+        "elapsedMs": 5598.738208
+      },
+      {
+        "id": "http-redirect-preserves-route",
+        "success": true,
+        "httpStatus": 301,
+        "target": "https://passwisely.cn/api/account?route_probe=1",
+        "elapsedMs": 573.9765829999997
+      },
+      {
+        "id": "GET /api/account",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 2072.579540999999
+      },
+      {
+        "id": "POST /api/desktop/recall/upload-token",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 1624.7632080000003
+      },
+      {
+        "id": "POST /api/desktop/deepgram/token",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 2750.2494589999988
+      },
+      {
+        "id": "POST /api/ai/chat/completions",
+        "success": true,
+        "httpStatus": 401,
+        "elapsedMs": 1366.726084
+      },
+      {
+        "id": "download-mac-arm64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg",
+        "elapsedMs": 796.5229580000014
+      },
+      {
+        "id": "download-mac-x64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg",
+        "elapsedMs": 384.55774999999994
+      },
+      {
+        "id": "download-windows-x64",
+        "success": true,
+        "httpStatus": 307,
+        "version": "2.0.0",
+        "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
+        "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe",
+        "elapsedMs": 3806.807041
+      },
+      {
+        "id": "grpc-health",
+        "success": true,
+        "status": "SERVING",
+        "transport": "grpc+protobuf",
+        "elapsedMs": 2075.3365000000013
+      },
+      {
+        "id": "grpc-chat-auth-first",
+        "success": true,
+        "grpcCode": 16,
+        "elapsedMs": 452.2653329999994
+      },
+      {
+        "id": "grpc-chat-stream-auth-first",
+        "success": true,
+        "grpcCode": 16,
+        "receivedData": false,
+        "elapsedMs": 1151.885875
+      }
+    ],
+    "releaseVersion": "2.0.0",
+    "expectedDownloads": [
+      {
+        "platform": "mac-arm64",
+        "version": "2.0.0",
+        "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-arm64.dmg",
+        "bytes": 159694334
+      },
+      {
+        "platform": "mac-x64",
+        "version": "2.0.0",
+        "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-macOS-x64.dmg",
+        "bytes": 119247160
+      },
+      {
+        "platform": "windows-x64",
+        "version": "2.0.0",
+        "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r5/PassWisely-Windows-x64.exe",
+        "bytes": 123221074
+      }
+    ],
+    "elapsedMs": 22657.442417,
+    "publicVerificationPerformed": true
+  },
+  "installerVersion": "2.0.0 r5 unchanged",
+  "evidence": [
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/final-verification-summary.json",
+      "bytes": 825,
+      "sha256": "21c96017a6a44732d59ab3f37cd523181835e87cb2c28875d71ff348f0561b49"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/frontend-activation-result.json",
+      "bytes": 1224,
+      "sha256": "b52f3e99b3bb6db316752d9961811adb3128ce96d770651a3631df49f1a0d988"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/frontend-activation.json",
+      "bytes": 1164,
+      "sha256": "d1141d3a2915964c7aaa5c8775356127931cd8d8d8e471855282b7013bafe0df"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/frontend-plan-result.json",
+      "bytes": 790,
+      "sha256": "802345b0d26daedeba0e99a91d530d5b499220be0067b872de8fc0dfc79139e5"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/frontend-transaction.json",
+      "bytes": 1035,
+      "sha256": "728f97493bd4703cffde7497bdb5c45c4e9d59a25bcac8eaa2a48f818c612410"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/frontend-verification.json",
+      "bytes": 861,
+      "sha256": "f894e1a66622656f5775cdb7b5cf9af0fb9e0b34dd1e660fd3bc902fcdf5e610"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/passwisely-download-final-live-20261028.jpg",
+      "bytes": 61032,
+      "sha256": "ca981f85eea7131e5636ee13e33f8e2a2fdcd0263f1cb161ac1861f497c8c14a"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/passwisely-download-final-live-browser-20261028.json",
+      "bytes": 1851,
+      "sha256": "698fe3c69a1790ce5fcb794f8b196a6c9ab5244606bbc70c7c358f94687e1494"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/passwisely-download-final-live-short-20261028.jpg",
+      "bytes": 58482,
+      "sha256": "d0807beaec339f0c0952542b1eb1389b19dfe9c1823b3e9a1b956bc271baf438"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/passwisely-download-nav-final-public-20261028.json",
+      "bytes": 4174,
+      "sha256": "9115f1037f0f15cf7daca7689e20be73f44f8c6d25d8291c2ed00db58e38ea73"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/wise-transaction.json",
+      "bytes": 4275,
+      "sha256": "67d22f99f774c9117b9c9985312d4076962892e3168a5996d3953133c4a0ed16"
+    },
+    {
+      "path": "release/v2.0.0/r5/verification/download-menu/final-live/wise-verification.json",
+      "bytes": 1429,
+      "sha256": "4d1572cc9529fc72d145a8d9cd02645bfe8540cd8e4b93bfc79b0f32cfc79cad"
+    }
+  ]
+}

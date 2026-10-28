@@ -1264,6 +1264,8 @@ export function LandingPage({
 
         <LandingPrivacy locale={locale} />
 
+        <CompatibilitySection locale={locale} />
+
         <DemoVideoSection locale={locale} />
 
         <section className="pw-section pw-shell" id="how">
@@ -1473,8 +1475,6 @@ export function LandingPage({
             </p>
           </div>
         </section>
-
-        <CompatibilitySection locale={locale} />
 
         <section className="pw-section pw-shell pw-faq-section" id="faq">
           <div className="pw-faq-heading">

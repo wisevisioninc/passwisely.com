@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "status": "active",
+  "canonicalCommit": "fca4fab0cb99a615fd085cadfdecf5c2a29083ea",
+  "sourceCommit": "f218a2dd04debdda6d66a2eed13edc4fc2533b7f",
+  "manifestSha256": "b2cf0ef0e88db2f0cea0ffce42f2bdd596e033856d216da3dabdfc881fac2b9c",
+  "treeFingerprint": "d21d3d6309e9ed3a2d7b44aa9450009c72231b52edc3f3cb864e91d035faf93d",
+  "sameArtifactOnBothServers": true,
+  "onlyChangedSourceFile": "website/app/LandingPage.tsx",
+  "order": [
+    "privacy",
+    "compatibility",
+    "how"
+  ],
+  "compatibilityRows": 9,
+  "contentAndTimeLogicChanged": false,
+  "wiseTransactionSha256": "44777fbb2e8eb3db01325d03dec8c76984599dfac1e1970ff3b594086f78197e",
+  "mirrorTransactionSha256": "34da5f669fc15a1b06f4ac93436de30d863cc36ed5618a586e4fe573c8340622",
+  "productionBindingPreserved": true,
+  "mirrorOldBackupVerified": true,
+  "mirrorLoopbackLayout": {
+    "url": "http://127.0.0.1:8080/",
+    "hostHeader": "passwisely.com",
+    "status": 200,
+    "bytes": 73302,
+    "sha256": "edbf2667fec335be4f09bffdaf83955178122dc489d12731e74ec93afb8460f3",
+    "sectionOrder": [
+      "privacy",
+      "compatibility",
+      "how"
+    ],
+    "compatibilityUnique": true,
+    "compatibilityRows": 9,
+    "compatibilityRowIds": [
+      "microsoft-teams",
+      "zoom",
+      "google-meet",
+      "amazon-chime",
+      "cisco-webex",
+      "lark-feishu",
+      "hackerrank",
+      "coderpad",
+      "codility"
+    ]
+  },
+  "liveBrowser": {
+    "origin": "https://passwisely.cn",
+    "desktopOrder": [
+      "privacy",
+      "compatibility",
+      "how"
+    ],
+    "mobile": {
+      "next": "how",
+      "overflow": false,
+      "previous": "privacy",
+      "rows": 9,
+      "scrollWidth": 390,
+      "viewport": 390
+    },
+    "verifiedAt": "2026-10-28T09:02:18.223Z"
+  },
+  "localWebsiteTests": 253,
+  "wiseLinuxWebsiteTests": 253,
+  "localAndWiseTypescriptPassed": true,
+  "releaseOwnerTests": {
+    "local": 19,
+    "wiseLinux": 19,
+    "mirrorLinux": 19
+  },
+  "configurationWrites": 0,
+  "databaseWrites": 0,
+  "providerCalls": 0,
+  "screenshotSha256": "d0af3c4a333cf9ce8eb388c1577dae0e986552e44fb734f3c8b720f0796d69d2"
+}

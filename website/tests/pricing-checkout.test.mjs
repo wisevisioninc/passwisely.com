@@ -351,6 +351,9 @@ test("compatibility elapsed labels follow the fixed reported test instant rather
 
 test("compatibility clock hydrates once and refreshes on visible focus with full listener cleanup", t => {
   const b = browser(t); const documentListeners = new Map(); document.visibilityState = "visible";
+  let intervalCalls = 0;
+  window.setInterval = () => { intervalCalls++; return 1; };
+  window.clearInterval = noop;
   document.addEventListener = (name, callback) => documentListeners.set(name, callback);
   document.removeEventListener = (name, callback) => { assert.equal(documentListeners.get(name), callback); documentListeners.delete(name); };
   const app = componentHarness("app/LandingPage.tsx", "CompatibilitySection", { locale: "zh" });
@@ -362,7 +365,7 @@ test("compatibility clock hydrates once and refreshes on visible focus with full
   document.visibilityState = "hidden"; const updates = app.stateUpdates;
   now += 3600000; documentListeners.get("visibilitychange")(); assert.equal(app.stateUpdates, updates);
   document.visibilityState = "visible"; documentListeners.get("visibilitychange")(); assert.match(text(app.render()), /最新检测时间7小时前/);
-  assert.equal(b.intervals.size, 0, "relative text never creates a daily evidence refresh timer");
+  assert.equal(intervalCalls, 0, "relative text never creates a daily evidence refresh timer");
   assert.equal(record.testedAt, "2026-10-27T22:47:16Z");
   app.cleanup(); assert.equal(b.listeners.size, 0); assert.equal(documentListeners.size, 0);
 });

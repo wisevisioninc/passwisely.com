@@ -18,8 +18,47 @@ import {
 import "./landing.css";
 
 type Locale = "zh" | "en";
+
+/** User-confirmed test record. Rendering or rebuilding never advances the test time. */
+export const COMPATIBILITY_VERIFICATION = {
+  testedAt: "2026-10-27T22:47:16Z",
+  reportedAt: "2026-10-28T03:47:16Z",
+  testedDate: "2026-10-28",
+  source: "user-confirmation",
+} as const;
+
+export const COMPATIBILITY_APPS = [
+  { id: "microsoft-teams", name: "Microsoft Teams", icon: "/compatibility-icons/microsoft-teams.ico" },
+  { id: "zoom", name: "Zoom", icon: "/compatibility-icons/zoom.ico" },
+  { id: "google-meet", name: "Google Meet", icon: "/compatibility-icons/google-meet.png" },
+  { id: "amazon-chime", name: "Amazon Chime", icon: "/compatibility-icons/amazon-chime.png" },
+  { id: "cisco-webex", name: "Cisco Webex", icon: null },
+  { id: "lark-feishu", name: "Lark/Feishu", icon: "/compatibility-icons/lark-feishu.png" },
+  { id: "hackerrank", name: "HackerRank", icon: "/compatibility-icons/hackerrank.png" },
+  { id: "coderpad", name: "CoderPad", icon: "/compatibility-icons/coderpad.png" },
+  { id: "codility", name: "Codility", icon: "/compatibility-icons/codility.ico" },
+] as const;
+
+/** SSR is stable; callers opt into elapsed time with an explicit client clock. */
+export function compatibilityTestTimeLabel(locale: Locale, now?: number | null): string {
+  const testedAt = Date.parse(COMPATIBILITY_VERIFICATION.testedAt);
+  if (typeof now !== "number" || !Number.isFinite(now) || now < testedAt) {
+    return locale === "zh"
+      ? `最新检测时间${COMPATIBILITY_VERIFICATION.testedDate}`
+      : `Last tested ${COMPATIBILITY_VERIFICATION.testedDate}`;
+  }
+  const hours = Math.floor((now - testedAt) / 3_600_000);
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    return locale === "zh" ? `最新检测时间${days}天前` : `Last tested ${days} ${days === 1 ? "day" : "days"} ago`;
+  }
+  if (hours < 1) return locale === "zh" ? "最新检测时间不足1小时前" : "Last tested less than an hour ago";
+  return locale === "zh" ? `最新检测时间${hours}小时前` : `Last tested ${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+}
+
 type IconName =
   | "arrow"
+  | "chevron"
   | "download"
   | "capture"
   | "code"
@@ -35,6 +74,7 @@ type IconName =
 
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, React.ReactNode> = {
+    chevron: <path d="m6 9 6 6 6-6" />,
     arrow: (
       <>
         <path d="M5 12h14M13 6l6 6-6 6" />
@@ -262,6 +302,63 @@ export function Downloads({
         return notice ? <p key={platform} className="pw-download-notice">{notice[locale]}</p> : null;
       })}
     </div>
+  );
+}
+
+export function CompatibilitySection({ locale }: { locale: Locale }) {
+  const [compatibilityNow, setCompatibilityNow] = useState<number | null>(null);
+  useEffect(() => {
+    const page = document;
+    const viewport = window;
+    const updateClock = () => {
+      if (page.visibilityState !== "hidden") setCompatibilityNow(Date.now());
+    };
+    updateClock();
+    viewport.addEventListener("focus", updateClock);
+    page.addEventListener("visibilitychange", updateClock);
+    return () => {
+      viewport.removeEventListener("focus", updateClock);
+      page.removeEventListener("visibilitychange", updateClock);
+    };
+  }, []);
+  const tr = (cn: string, en: string) => (locale === "zh" ? cn : en);
+  return (
+    <section
+      className="pw-section pw-shell pw-compatibility"
+      id="compatibility"
+      data-tested-at={COMPATIBILITY_VERIFICATION.testedAt}
+      data-reported-at={COMPATIBILITY_VERIFICATION.reportedAt}
+      data-evidence-source={COMPATIBILITY_VERIFICATION.source}
+    >
+      <div className="pw-section-heading">
+        <p className="pw-eyebrow">{tr("兼容性与不可检测性", "COMPATIBILITY & UNDETECTABILITY")}</p>
+        <h2>{tr("每日测试面试软件的兼容性，不可检测性", "Interview app compatibility and undetectability, tested daily.")}</h2>
+        <p>{tr("Mac 与 Windows 均已实测。展开查看最近确认的测试日期与范围。", "Tested on Mac and Windows. Expand an app to see the latest confirmed test date and scope.")}</p>
+      </div>
+      <div className="pw-compat-list">
+        {COMPATIBILITY_APPS.map(({ id, name, icon }, index) => (
+          <details key={id} data-app-id={id}>
+            <summary>
+              <span className="pw-check-number">{String(index + 1).padStart(3, "0")}</span>
+              <span className="pw-compat-brand" data-brand-id={id} aria-hidden="true">
+                {icon ? <img src={icon} width="48" height="48" alt="" loading="lazy" decoding="async" /> : <span className="pw-compat-letter">W</span>}
+              </span>
+              <span className="pw-platform-name">{name}</span>
+              <span className="pw-compat-meta">
+                <span className="pw-compat-dot" aria-hidden="true" />
+                <time dateTime={COMPATIBILITY_VERIFICATION.testedAt}>{compatibilityTestTimeLabel(locale, compatibilityNow)}</time>
+              </span>
+              <span className="pw-platform-status is-verified">{tr("不可检测", "Undetectable")}</span>
+              <Icon name="chevron" size={20} />
+            </summary>
+            <div className="pw-compat-details">
+              <p>{tr("已实测平台：Mac / Windows。完整测试日期：", "Tested platforms: Mac / Windows. Full test date: ")}<time dateTime={COMPATIBILITY_VERIFICATION.testedDate}>{COMPATIBILITY_VERIFICATION.testedDate}</time>{tr("。", ".")}</p>
+              <p>{tr("兼容性及不可检测性测试已确认。结果对应该日期已测试的软件版本和使用方式；不同系统版本、共享模式或检测机制的结果可能不同。", "Compatibility and undetectability testing has been confirmed for the software versions and usage modes tested on this date. Results may differ with other OS versions, sharing modes, or detection mechanisms.")}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -976,8 +1073,8 @@ export function LandingPage({
         "Will the overlay appear in a screen share?",
       ),
       tr(
-        "Mac 版已在飞书双设备整屏共享中验证：接收端看不到 PassWisely 浮条和正文，底层页面与时钟正常。此结果仅代表该次环境；其他平台、系统版本和共享模式需要分别验证，不承诺对所有检测方式不可见。",
-        "In a two-device Feishu full-screen sharing test on Mac, the receiving device did not display the PassWisely toolbar or body while the underlying page and clock remained visible. This result applies to that test environment. Other platforms, OS versions, and sharing modes need separate verification; it is not a guarantee against every form of detection.",
+        "Mac 与 Windows 已于 2026-10-28 完成下方九款面试软件的兼容性与不可检测性实测。结果对应已测试的软件版本和使用方式；系统、共享或检测方式变化后，应重新核对。",
+        "Compatibility and undetectability were tested on Mac and Windows for the nine apps listed below on 2026-10-28. Results apply to the tested software versions and usage modes; check again when the OS, sharing method, or detection behavior changes.",
       ),
     ],
     [
@@ -1299,8 +1396,8 @@ export function LandingPage({
               ))}
               <p className="pw-validation-note">
                 {tr(
-                  "Windows 安装包已提供；实时音频与浮层行为仍待 Windows 真机验证。",
-                  "A Windows installer is available. Live audio and overlay behavior still require validation on a Windows device.",
+                  "Mac 与 Windows 的九款面试软件兼容性已实测。实时音频与鼠标穿透的测试范围以上方记录为准。",
+                  "Compatibility with the nine interview apps has been tested on Mac and Windows. Live audio and click-through test coverage is described above.",
                 )}
               </p>
             </div>
@@ -1377,69 +1474,7 @@ export function LandingPage({
           </div>
         </section>
 
-        <section
-          className="pw-section pw-shell pw-compatibility"
-          id="compatibility"
-        >
-          <div className="pw-section-heading">
-            <p className="pw-eyebrow">
-              {tr("共享与浮层", "SHARING & OVERLAYS")}
-            </p>
-            <h2>
-              {tr("兼容性，用实测说明。", "Compatibility, with test context.")}
-            </h2>
-            <p>
-              {tr(
-                "平台、系统和共享方式不同，结果也可能不同。",
-                "Results can vary with the platform, OS, and sharing mode.",
-              )}
-            </p>
-          </div>
-          <div className="pw-compat-list">
-            {[
-              [
-                "Feishu / 飞书",
-                true,
-                tr(
-                  "Mac 双设备整屏共享实测，接收端未显示浮条与正文，底层页面及动态时钟正常。这一结果不覆盖所有系统版本、录屏工具或检测方式。",
-                  "Verified in a two-device full-screen share on Mac: the receiving device did not show the toolbar or body, while the underlying page and animated clock remained visible. This does not cover all OS versions, recording tools, or detection methods.",
-                ),
-              ],
-              [
-                "Zoom / Google Meet",
-                false,
-                tr(
-                  "尚未完成同等条件的接收端测试。请在自己的测试会议中核对整屏共享和窗口共享结果。",
-                  "Equivalent receiving-device tests have not been completed. Check full-screen and window sharing in a test meeting.",
-                ),
-              ],
-              [
-                "Microsoft Teams / Webex",
-                false,
-                tr(
-                  "尚未验证。共享客户端和 macOS 更新可能改变捕获行为，使用前应重新测试。",
-                  "Not yet verified. Updates to sharing clients and macOS can change capture behavior; test again before use.",
-                ),
-              ],
-            ].map(([name, verified, description], index) => (
-              <details key={String(name)} open={index === 0}>
-                <summary>
-                  <span className="pw-check-number">00{index + 1}</span>
-                  <span className="pw-platform-name">{name}</span>
-                  <span
-                    className={`pw-platform-status${verified ? " is-verified" : ""}`}
-                  >
-                    {verified
-                      ? tr("已实测", "Tested")
-                      : tr("待实测", "Not tested")}
-                  </span>
-                  <Icon name="plus" size={20} />
-                </summary>
-                <p>{description}</p>
-              </details>
-            ))}
-          </div>
-        </section>
+        <CompatibilitySection locale={locale} />
 
         <section className="pw-section pw-shell pw-faq-section" id="faq">
           <div className="pw-faq-heading">

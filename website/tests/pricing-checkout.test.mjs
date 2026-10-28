@@ -313,6 +313,60 @@ test("Mac menus reserve their own visible sticky header area before choosing an 
   assert.equal(b.listeners.size, 0);
 });
 
+
+for (const locale of ["zh", "en"]) test(`real ${locale} compatibility section lists nine confirmed platforms with fixed dates and local brands`, () => {
+  const { CompatibilitySection, COMPATIBILITY_APPS, COMPATIBILITY_VERIFICATION } = sourceModule("app/LandingPage.tsx");
+  const html = renderToStaticMarkup(React.createElement(CompatibilitySection, { locale }));
+  const rows = [...html.matchAll(/<details\b[^]*?<\/details>/g)].map(match => match[0]);
+  assert.deepEqual(COMPATIBILITY_APPS.map(app => app.name), ["Microsoft Teams", "Zoom", "Google Meet", "Amazon Chime", "Cisco Webex", "Lark/Feishu", "HackerRank", "CoderPad", "Codility"]);
+  assert.equal(rows.length, 9);
+  assert.match(html, locale === "zh" ? /每日测试面试软件的兼容性，不可检测性/ : /Interview app compatibility and undetectability, tested daily/);
+  for (const [i, app] of COMPATIBILITY_APPS.entries()) {
+    assert.ok(rows[i].includes(`data-app-id="${app.id}"`));
+    assert.ok(rows[i].includes(app.name));
+    assert.match(rows[i], new RegExp(`datetime="${COMPATIBILITY_VERIFICATION.testedAt}"`, "i"));
+    assert.match(rows[i], new RegExp(`datetime="${COMPATIBILITY_VERIFICATION.testedDate}"`, "i"));
+    assert.ok(rows[i].includes("Mac / Windows"));
+    assert.match(rows[i], locale === "zh" ? /不可检测/ : /Undetectable/);
+    if (app.icon) assert.ok(rows[i].includes(`src="${app.icon}"`));
+    else assert.match(rows[i], /pw-compat-letter/);
+    assert.doesNotMatch(rows[i], /<details[^>]*\sopen(?:\s|>)/);
+  }
+  assert.doesNotMatch(html, /Not tested|待实测|not yet verified|https?:\/\//i);
+  assert.equal([...html.matchAll(/<img\b/g)].length, 8);
+});
+
+test("compatibility elapsed labels follow the fixed reported test instant rather than refreshing evidence", () => {
+  const { compatibilityTestTimeLabel: label, COMPATIBILITY_VERIFICATION: record } = sourceModule("app/LandingPage.tsx");
+  const tested = Date.parse(record.testedAt), reported = Date.parse(record.reportedAt);
+  assert.equal(record.testedDate, "2026-10-28");
+  assert.equal(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(tested)), "2026-10-28");
+  assert.equal(reported - tested, 5 * 3600000);
+  assert.equal(label("zh", reported), "最新检测时间5小时前");
+  assert.equal(label("en", reported), "Last tested 5 hours ago");
+  assert.equal(label("zh", reported + 3600000), "最新检测时间6小时前");
+  assert.equal(label("zh", tested + 24 * 3600000), "最新检测时间1天前");
+  for (const invalid of [null, undefined, NaN, Infinity, tested - 1]) assert.equal(label("zh", invalid), "最新检测时间2026-10-28");
+});
+
+test("compatibility clock hydrates once and refreshes on visible focus with full listener cleanup", t => {
+  const b = browser(t); const documentListeners = new Map(); document.visibilityState = "visible";
+  document.addEventListener = (name, callback) => documentListeners.set(name, callback);
+  document.removeEventListener = (name, callback) => { assert.equal(documentListeners.get(name), callback); documentListeners.delete(name); };
+  const app = componentHarness("app/LandingPage.tsx", "CompatibilitySection", { locale: "zh" });
+  const { COMPATIBILITY_VERIFICATION: record } = sourceModule("app/LandingPage.tsx");
+  let now = Date.parse(record.reportedAt); t.mock.method(Date, "now", () => now);
+  assert.match(text(app.render()), /最新检测时间2026-10-28/);
+  app.flushEffects(); assert.match(text(app.render()), /最新检测时间5小时前/);
+  now += 3600000; b.listeners.get("focus")(); assert.match(text(app.render()), /最新检测时间6小时前/);
+  document.visibilityState = "hidden"; const updates = app.stateUpdates;
+  now += 3600000; documentListeners.get("visibilitychange")(); assert.equal(app.stateUpdates, updates);
+  document.visibilityState = "visible"; documentListeners.get("visibilitychange")(); assert.match(text(app.render()), /最新检测时间7小时前/);
+  assert.equal(b.intervals.size, 0, "relative text never creates a daily evidence refresh timer");
+  assert.equal(record.testedAt, "2026-10-27T22:47:16Z");
+  app.cleanup(); assert.equal(b.listeners.size, 0); assert.equal(documentListeners.size, 0);
+});
+
 const landingProps = { locale: "zh", onLocale: noop, accountLabel: "Account", onAccount: noop, onBuy: noop, onRegisterTrial: noop, busy: false };
 const downloadSections = tree => walk(tree, element => element.type?.name === "Downloads");
 

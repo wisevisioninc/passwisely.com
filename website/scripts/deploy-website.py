@@ -46,6 +46,20 @@ HOME_PERFORMANCE_RELEASE_PATHS={
  'website/tests/fixtures/lazy-import-failure.tsx','website/tests/verify-lazy-failures.mjs',
 }
 DOWNLOAD_ONLY_PATHS |= HOME_PERFORMANCE_RELEASE_PATHS
+# Compatibility claims, their existing privacy explanation and exact public
+# brand icons only. No public-directory wildcard or backend authority is added.
+COMPATIBILITY_UI_RELEASE_PATHS={
+ 'website/app/LandingPrivacy.tsx',
+ 'website/public/compatibility-icons/microsoft-teams.ico',
+ 'website/public/compatibility-icons/zoom.ico',
+ 'website/public/compatibility-icons/google-meet.png',
+ 'website/public/compatibility-icons/amazon-chime.png',
+ 'website/public/compatibility-icons/lark-feishu.png',
+ 'website/public/compatibility-icons/hackerrank.png',
+ 'website/public/compatibility-icons/coderpad.png',
+ 'website/public/compatibility-icons/codility.ico',
+}
+DOWNLOAD_ONLY_PATHS |= COMPATIBILITY_UI_RELEASE_PATHS
 # Shared Kimi request parameters and server defaults only. Desktop settings,
 # production configuration and payment changes remain outside this release.
 KIMI_MODEL_RELEASE_PATHS={

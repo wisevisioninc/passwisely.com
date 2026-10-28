@@ -199,6 +199,30 @@ class ReleaseTests(unittest.TestCase):
    with self.subTest(path=name),patch.object(m,'command',side_effect=unauthorized),patch.object(m,'live_unit_pin'),self.assertRaisesRegex(m.DeployError,'reviewed release scope'):
     m.source_preflight(args,manifest)
   self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
+ def test_compatibility_ui_scope_accepts_only_reviewed_explanation_and_eight_brand_icons(self):
+  expected={'website/app/LandingPrivacy.tsx',*[f'website/public/compatibility-icons/{name}' for name in ['microsoft-teams.ico','zoom.ico','google-meet.png','amazon-chime.png','lark-feishu.png','hackerrank.png','coderpad.png','codility.ico']]}
+  self.assertEqual(m.COMPATIBILITY_UI_RELEASE_PATHS,expected)
+  self.assertEqual(len(expected),9)
+  self.assertTrue(expected<=m.DOWNLOAD_ONLY_PATHS)
+  args,manifest,_=self.fixture()
+  def command(argv,**kwargs):
+   if argv[0]=='git' and argv[2]==str(self.repo):return 'b'*40
+   if 'rev-parse' in argv:return 'HEAD' if '--abbrev-ref' in argv else 'a'*40
+   if 'rev-list' in argv:return 'a'*40
+   if '--name-only' in argv:return '\n'.join(['website/lib/download-artifacts.json',*sorted(expected)])
+   if 'ls-files' in argv:return '\n'.join(row['path'] for row in manifest['sourceFiles'])
+   return ''
+  with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):
+   m.source_preflight(args,manifest)
+  excluded=['website/public/compatibility-icons/webex.png','website/public/compatibility-icons/unreviewed.svg','website/public/unrelated.js','website/app/api/checkout/route.ts','website/app/api/payments/wechat/notify/route.ts','website/lib/ai-config.ts','website/.env.production','desktop-api/server.mjs']
+  for name in excluded:
+   self.assertNotIn(name,m.DOWNLOAD_ONLY_PATHS)
+   def unauthorized(argv,**kwargs):
+    return '\n'.join(['website/lib/download-artifacts.json',name]) if '--name-only' in argv else command(argv,**kwargs)
+   with self.subTest(path=name),patch.object(m,'command',side_effect=unauthorized),patch.object(m,'live_unit_pin'),self.assertRaisesRegex(m.DeployError,'reviewed release scope'):
+    m.source_preflight(args,manifest)
+  self.assertFalse(any('*' in name or name.endswith('/') for name in m.COMPATIBILITY_UI_RELEASE_PATHS))
+  self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
  def test_preserves_runtime_binding_bytes_without_staging_current_configuration(self):
   active=self.website/'dist';binding=self.binding(active);original=binding.read_bytes()
   env=self.write(self.website/'.env.production','PENDING_CONFIGURATION="not-staged"\n');before=env.read_bytes()

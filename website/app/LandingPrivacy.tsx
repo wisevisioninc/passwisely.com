@@ -356,8 +356,8 @@ export function LandingPrivacy({ locale }: { locale: Locale }) {
       icon: "shield" as const,
       title: zh ? "共享画面，保护浮层内容" : "Your overlay. Off the shared view.",
       body: zh
-        ? "通过系统窗口内容保护，在兼容的共享方式中排除浮层。Mac 飞书整屏共享已完成双设备验证。"
-        : "System window content protection excludes the overlay from compatible sharing methods. Tested with a two-device, full-screen Feishu share on Mac.",
+        ? "通过系统窗口内容保护，在兼容的共享方式中排除浮层。查看下方九款面试软件在 Mac 与 Windows 上的最新检测结果。"
+        : "System window content protection excludes the overlay from compatible sharing methods. See the latest Mac and Windows checks for nine interview platforms below.",
       visual: <SharingIllustration locale={locale} />,
     },
   ];

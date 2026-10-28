@@ -31,8 +31,8 @@
       "legacy": false,
       "liveAudio": "included",
       "notice": {
-        "zh": "Windows 安装包未签名，录音与浮层交互尚待 Windows 实机验证。",
-        "en": "Unsigned Windows installer. Audio and overlay interactions await testing on a Windows device."
+        "zh": "Windows 安装包未签名；录音功能尚待 Windows 实机验证。",
+        "en": "Unsigned Windows installer. Audio functionality still awaits testing on a Windows device."
       },
       "revision": 5
     }

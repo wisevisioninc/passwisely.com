@@ -127,10 +127,12 @@ test("both landing download locations consume the same version and digest owner"
 });
 
 
-test("Windows download notice preserves unsigned/native-acceptance scope in both locales", () => {
+test("Windows download notice preserves unsigned and audio-validation facts without obsolete overlay status", () => {
   const app = application(verified());
-  assert.match(app.downloadArtifact("windows-x64").notice.zh, /未签名.*实机验证/);
-  assert.match(app.downloadArtifact("windows-x64").notice.en, /Unsigned.*await testing/);
+  assert.match(app.downloadArtifact("windows-x64").notice.zh, /未签名.*录音.*实机验证/);
+  assert.doesNotMatch(app.downloadArtifact("windows-x64").notice.zh, /浮层.*尚待/);
+  assert.match(app.downloadArtifact("windows-x64").notice.en, /Unsigned.*Audio.*awaits testing/);
+  assert.doesNotMatch(app.downloadArtifact("windows-x64").notice.en, /overlay.*await/);
   assert.throws(() => app.versionedArtifact("windows-x64", { ...verified().artifacts["windows-x64"], notice: "invalid" }), /notice/);
 });
 

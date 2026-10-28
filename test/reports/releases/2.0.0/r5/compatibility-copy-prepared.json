@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "status": "prepared-awaiting-wise-sudo",
+  "productionActivated": false,
+  "canonicalCommit": "2ee0cc383450652f3121063750be0a3aba557d12",
+  "sourceCommit": "dadd41f9646609d7a2dfa1b76c836dcb1683dbb2",
+  "productionBase": "f218a2dd04debdda6d66a2eed13edc4fc2533b7f",
+  "changedPaths": [
+    "website/app/LandingPage.tsx",
+    "website/tests/pricing-checkout.test.mjs"
+  ],
+  "copy": {
+    "zh": {
+      "title": "每日实测",
+      "subtitle": "覆盖主流面试软件, 确保不可检测性"
+    },
+    "en": {
+      "title": "Tested daily",
+      "subtitle": "Covering leading interview platforms to ensure undetectability."
+    }
+  },
+  "compatibilityRows": 9,
+  "sectionOrder": [
+    "privacy",
+    "compatibility",
+    "how"
+  ],
+  "cssChanged": false,
+  "testTimestampChanged": false,
+  "browser": {
+    "desktop": 1280,
+    "mobile": 390,
+    "bothLocalesChecked": true,
+    "mobileOverflow": false,
+    "viewportRestored": true
+  },
+  "checks": {
+    "canonicalPageTests": 58,
+    "localWebsiteTests": 253,
+    "wiseLinuxWebsiteTests": 253,
+    "localOwnerTests": 19,
+    "wiseOwnerTests": 19,
+    "mirrorOwnerTests": 19,
+    "localAndWiseTypescriptPassed": true
+  },
+  "artifact": {
+    "manifestSha256": "d2da7057d75e2f7986eb00b4268533281fe9c02e5ed52d0878663947b507ec4c",
+    "treeFingerprint": "d29d6cba35f5a5df47d8949b6c64b2bb835856d6fe3ded396caeb75e6123bd6e",
+    "files": 57,
+    "bytes": 5511157
+  },
+  "configurationWrites": 0,
+  "databaseWrites": 0,
+  "providerCalls": 0,
+  "sourceClone": {
+    "selfContained": true,
+    "alternates": false,
+    "priorObjectDatabasesMutated": false
+  }
+}

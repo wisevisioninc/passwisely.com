@@ -332,8 +332,8 @@ export function CompatibilitySection({ locale }: { locale: Locale }) {
     >
       <div className="pw-section-heading">
         <p className="pw-eyebrow">{tr("兼容性与不可检测性", "COMPATIBILITY & UNDETECTABILITY")}</p>
-        <h2>{tr("每日测试面试软件的兼容性，不可检测性", "Interview app compatibility and undetectability, tested daily.")}</h2>
-        <p>{tr("Mac 与 Windows 均已实测。展开查看最近确认的测试日期与范围。", "Tested on Mac and Windows. Expand an app to see the latest confirmed test date and scope.")}</p>
+        <h2>{tr("每日实测", "Tested daily")}</h2>
+        <p>{tr("覆盖主流面试软件, 确保不可检测性", "Covering leading interview platforms to ensure undetectability.")}</p>
       </div>
       <div className="pw-compat-list">
         {COMPATIBILITY_APPS.map(({ id, name, icon }, index) => (

@@ -320,7 +320,8 @@ for (const locale of ["zh", "en"]) test(`real ${locale} compatibility section li
   const rows = [...html.matchAll(/<details\b[^]*?<\/details>/g)].map(match => match[0]);
   assert.deepEqual(COMPATIBILITY_APPS.map(app => app.name), ["Microsoft Teams", "Zoom", "Google Meet", "Amazon Chime", "Cisco Webex", "Lark/Feishu", "HackerRank", "CoderPad", "Codility"]);
   assert.equal(rows.length, 9);
-  assert.match(html, locale === "zh" ? /每日测试面试软件的兼容性，不可检测性/ : /Interview app compatibility and undetectability, tested daily/);
+  assert.match(html, locale === "zh" ? /每日实测/ : /Tested daily/);
+  assert.match(html, locale === "zh" ? /覆盖主流面试软件, 确保不可检测性/ : /Covering leading interview platforms to ensure undetectability/);
   for (const [i, app] of COMPATIBILITY_APPS.entries()) {
     assert.ok(rows[i].includes(`data-app-id="${app.id}"`));
     assert.ok(rows[i].includes(app.name));

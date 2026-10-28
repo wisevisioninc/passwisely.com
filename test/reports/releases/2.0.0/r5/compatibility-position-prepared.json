@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "status": "prepared-awaiting-wise-sudo",
+  "productionActivated": false,
+  "canonicalCommit": "fca4fab0cb99a615fd085cadfdecf5c2a29083ea",
+  "sourceCommit": "f218a2dd04debdda6d66a2eed13edc4fc2533b7f",
+  "productionBase": "bbdd8429717774b2c780f43971641b16949363be",
+  "changedPaths": [
+    "website/app/LandingPage.tsx"
+  ],
+  "diff": {
+    "insertions": 2,
+    "deletions": 2
+  },
+  "order": [
+    "privacy",
+    "compatibility",
+    "how"
+  ],
+  "compatibilityRows": 9,
+  "contentChanged": false,
+  "cssChanged": false,
+  "testTimestampChanged": false,
+  "browser": {
+    "desktop": 1280,
+    "mobile": 390,
+    "directSiblingOrderVerified": true,
+    "uniqueCompatibilitySection": true,
+    "rows": 9,
+    "mobileOverflow": false,
+    "viewportRestored": true
+  },
+  "tests": {
+    "canonicalPageTests": 58,
+    "isolatedLocalWebsite": 253,
+    "wiseLinuxWebsite": 253,
+    "localOwner": 19,
+    "wiseLinuxOwner": 19,
+    "mirrorLinuxOwner": 19,
+    "typescriptPassed": true
+  },
+  "manifestSha256": "b2cf0ef0e88db2f0cea0ffce42f2bdd596e033856d216da3dabdfc881fac2b9c",
+  "treeFingerprint": "d21d3d6309e9ed3a2d7b44aa9450009c72231b52edc3f3cb864e91d035faf93d",
+  "compiledFiles": 57,
+  "compiledBytes": 5511463,
+  "sudoNonInteractiveProbeExitCode": 1,
+  "configurationWrites": 0,
+  "databaseWrites": 0,
+  "providerCalls": 0
+}

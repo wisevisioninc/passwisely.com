@@ -1,0 +1,365 @@
+{
+  "source": "/Applications/systemcontainer.app/Contents/Resources/app.asar",
+  "asarSha256": "528ea903d8dc6a1b42331ae7658689ab39e37fe63c09eef242475b2fa978fd78",
+  "asarBytes": 206100163,
+  "asarDataByteStart": 4579376,
+  "inventoryCount": 17539,
+  "scope": "first-party JS/CJS/MJS/JSON/HTML/maps only; dependencies/native code excluded; inert extraction; target not executed",
+  "app": {
+    "path": "/Applications/systemcontainer.app",
+    "version": "3.0.1",
+    "bundleIdentifier": "com.interviewcoder.app"
+  },
+  "priorEvidenceId": "ev_f0579ae07d723777fecc7a1fd7bf0fe355941fbfab0cec305d744cf259ddb0c1",
+  "priorAsarMatch": true,
+  "reaVersion": "6.4.0",
+  "evidenceRecords": [
+    {
+      "file": "/private/tmp/systemcontainer-permissions-2026-10-31/rea-main-evidence-retry.json",
+      "fileSha256": "101ab7ef08e365078d9921ef2a4cfec2c63ec5ea9b4e44f66a66bef5bee0c3a6",
+      "evidenceId": "ev_f5c6b6b7728794d2dd1868927334d4f777680132f67f21c193abe6ad9dc03db3",
+      "subject": {
+        "name": "main-only",
+        "digest": {
+          "sha256": "4ac222d4960d5695e66e670b2f0da5cfaec01663b90fe39a98f54b02b6d8d443"
+        },
+        "format": "directory",
+        "architecture": null,
+        "local_path": "/private/tmp/systemcontainer-permissions-2026-10-31/main-only"
+      },
+      "statistics": {
+        "relevant_files": 3,
+        "nested_asar_containers": 0,
+        "text_bytes_read": 88620,
+        "invalid_utf8_files": 0,
+        "parsed_javascript_files": 2,
+        "visited_ast_nodes": 14806,
+        "findings": 83,
+        "modules": 0,
+        "parse_failures": 0
+      },
+      "graphCoverage": {
+        "status": "partial",
+        "truncated": false,
+        "omitted_count": null,
+        "limits": []
+      },
+      "semanticCoverage": {
+        "status": "unknown",
+        "truncated": false,
+        "omitted_nodes": 0,
+        "omitted_relations": 0,
+        "limits": []
+      },
+      "semanticUnknownCount": 3596,
+      "limitations": [
+        "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+        "Dynamic IPC channel expressions remain unresolved and are never paired by textual similarity.",
+        "Electron API identity follows proven lexical module aliases. Reassigned bindings, dynamic selections, and visibly overwritten namespace members are unresolved; missing findings do not establish absence. Arbitrary call side effects and runtime registration are not evaluated.",
+        "Electron relationships are derived from inert syntax; runtime registration, reachability, defaults, and enforcement remain unproven.",
+        "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+        "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+        "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+        "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+        "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+      ]
+    },
+    {
+      "file": "/private/tmp/systemcontainer-permissions-2026-10-31/rea-renderer-focused-evidence.json",
+      "fileSha256": "b62e4291c7282e6434d2812c4379eee4d257d4841b35e88f229c3088369c68e8",
+      "evidenceId": "ev_e6633160cf72687bec86f15f766ed2c32d7fa6bfecc9803ca97904a09e4bc212",
+      "subject": {
+        "name": "renderer-focused",
+        "digest": {
+          "sha256": "0f5e0c6c4674f577f6af80304d3575b71d27525ffc43d93976e5f64d70f348fd"
+        },
+        "format": "directory",
+        "architecture": null,
+        "local_path": "/private/tmp/systemcontainer-permissions-2026-10-31/renderer-focused"
+      },
+      "statistics": {
+        "relevant_files": 2,
+        "nested_asar_containers": 0,
+        "text_bytes_read": 18254,
+        "invalid_utf8_files": 0,
+        "parsed_javascript_files": 1,
+        "visited_ast_nodes": 3736,
+        "findings": 157,
+        "modules": 0,
+        "parse_failures": 0
+      },
+      "graphCoverage": {
+        "status": "complete",
+        "truncated": false,
+        "omitted_count": 0,
+        "limits": []
+      },
+      "semanticCoverage": {
+        "status": "unknown",
+        "truncated": false,
+        "omitted_nodes": 0,
+        "omitted_relations": 0,
+        "limits": []
+      },
+      "semanticUnknownCount": 752,
+      "limitations": [
+        "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+        "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+        "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+        "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+        "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+      ]
+    }
+  ],
+  "sourceFragmentsFile": "/private/tmp/systemcontainer-permissions-2026-10-31/source-fragments.json",
+  "fragments": [
+    {
+      "id": "platform-main",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 1142,
+      "byteEndExclusive": 1389,
+      "asarByteStart": 201173745,
+      "asarByteEndExclusive": 201173992,
+      "rangeSha256": "e1e311c90b75691d63d9df7048ac3abc31fd91846c15b232ea570910c8dfb793",
+      "classification": "observed static source",
+      "claim": "B=darwin, S=win32, _e=linux."
+    },
+    {
+      "id": "first-run-persistence",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 3060,
+      "byteEndExclusive": 3412,
+      "asarByteStart": 201175663,
+      "asarByteEndExclusive": 201176015,
+      "rangeSha256": "fa2ec997e56536c2dd55788554a09377b0ec713f057d62f9cb54cf947b4183d4",
+      "classification": "observed static source",
+      "claim": "onboarding.done file existence is first-run marker; finish writes empty file then recreates windows; reset unlinks marker then recreates windows."
+    },
+    {
+      "id": "media-status-and-request",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 72780,
+      "byteEndExclusive": 73568,
+      "asarByteStart": 201245383,
+      "asarByteEndExclusive": 201246171,
+      "rangeSha256": "6beffebbbe69dde158fd0b42b3079f3ae3df05171682c9582509896d23aa4564",
+      "classification": "observed static source",
+      "claim": "Linux check-mic-permission returns true; elsewhere status is granted comparison. Darwin request screen calls desktopCapturer.getSources then true on promise success; microphone/camera requests only if status not-determined, otherwise equality with granted. Non-Darwin request returns true."
+    },
+    {
+      "id": "mac-settings-links",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 76562,
+      "byteEndExclusive": 76914,
+      "asarByteStart": 201249165,
+      "asarByteEndExclusive": 201249517,
+      "rangeSha256": "435d72e2527dfc4e9cd8ebf5249794c2fd79c65bae2f96221b2760d1963cae17",
+      "classification": "observed static source",
+      "claim": "mac handler chooses Privacy_Microphone or Privacy_ScreenCapture systempreferences links."
+    },
+    {
+      "id": "recall-startup-permission-options",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 56245,
+      "byteEndExclusive": 57118,
+      "asarByteStart": 201228848,
+      "asarByteEndExclusive": 201229721,
+      "rangeSha256": "915d3568a245124140fa5be8d4c66cb43edde921349fbfc37389b5a2aebb65d7",
+      "classification": "observed static source",
+      "claim": "Recall initialization options: Windows acquires []; Mac/Linux first tries accessibility/screen-capture/microphone, then [] fallback. These are configuration literals, not proof prompts occurred."
+    },
+    {
+      "id": "recall-invoked-at-app-startup",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 84727,
+      "byteEndExclusive": 86052,
+      "asarByteStart": 201257330,
+      "asarByteEndExclusive": 201258655,
+      "rangeSha256": "42ed4cf8b2a27d598298238cc19859fa33a7b000dfc240a84b7ea3cd13ba7af9",
+      "classification": "observed static source",
+      "claim": "Main startup creates windows/registers handlers then calls Recall init. This is static control flow; no app execution observed."
+    },
+    {
+      "id": "mac-screenshot-error-resets-onboarding",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 67227,
+      "byteEndExclusive": 67431,
+      "asarByteStart": 201239830,
+      "asarByteEndExclusive": 201240034,
+      "rangeSha256": "1ea840a55926c040d995c0833e19f39db7cab0de33f8f75bc73fa27c177122b6",
+      "classification": "observed static source",
+      "claim": "Screenshot calls ys; catch Darwin resets onboarding and rethrows, other OS fallback screenshot-desktop; finally restores preference."
+    },
+    {
+      "id": "real-screenshot-checks-source",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 70626,
+      "byteEndExclusive": 71421,
+      "asarByteStart": 201243229,
+      "asarByteEndExclusive": 201244024,
+      "rangeSha256": "1433a6302be7399ff11366fbc6a862a8f16192395bb6e8371d159e3daa1b16ac",
+      "classification": "observed static source",
+      "claim": "Actual screenshot requests target-size thumbnail and requires a source; permissions probe does not check source existence or thumbnail validity."
+    },
+    {
+      "id": "platform-renderer",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 385117,
+      "byteEndExclusive": 385249,
+      "asarByteStart": 205565055,
+      "asarByteEndExclusive": 205565187,
+      "rangeSha256": "83e2279951a86aae37c72a0f556658a3f8c1c42675c7b4dd0860386d0cc28619",
+      "classification": "observed static source",
+      "claim": "nn=darwin and lM=win32. Main renderer imports lM as Hr through export aS (separate original import/export observation)."
+    },
+    {
+      "id": "mic-stream",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 756449,
+      "byteEndExclusive": 757041,
+      "asarByteStart": 205936387,
+      "asarByteEndExclusive": 205936979,
+      "rangeSha256": "fca3cfbc865618344010c59c32e4959c32796416a2924c9437e9c43b8f695356",
+      "classification": "observed static source",
+      "claim": "Mic stream selects default audioinput and invokes getUserMedia audio; input hardware capture is distinct from system audio."
+    },
+    {
+      "id": "native-audio-helper-wrapper",
+      "member": "out/main/index.js",
+      "memberSha256": "b882aee1309a72c2557e7ced39e5337e26abf7225cfd3b9819e5c6cfb742b742",
+      "byteStart": 34335,
+      "byteEndExclusive": 37472,
+      "asarByteStart": 201206938,
+      "asarByteEndExclusive": 201210075,
+      "rangeSha256": "7de30b44e2c1aab1af7f4bf953ecd0e318c1794a521d78a0de284a8b5b67716f",
+      "classification": "observed static source",
+      "claim": "Mac system helper path macExtraResources/audiotee; child wrapper emits PCM/logs. Native helper implementation not inspected."
+    },
+    {
+      "id": "system-audio-paths",
+      "member": "out/renderer/assets/window-DsQ9GEov.js",
+      "memberSha256": "e62a3831a8afe8f797381d555925c4e543023950c7e249326362bc8b98564cb4",
+      "byteStart": 841979,
+      "byteEndExclusive": 843403,
+      "asarByteStart": 206021917,
+      "asarByteEndExclusive": 206023341,
+      "rangeSha256": "9a1dc92b101db199bdaaf655fb08039fbc08cb2a8fedddf9b6d00835140d61c9",
+      "classification": "observed static source",
+      "claim": "System stream uses getDisplayMedia branch under feature flag; normal Mac returns empty MediaStream and uses native recorder elsewhere; Windows tries virtual audio device then getDisplayMedia. No Linux support in this V1 system branch."
+    },
+    {
+      "id": "renderer-setup-state-enum",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1138719,
+      "byteEndExclusive": 1142332,
+      "asarByteStart": 205121528,
+      "asarByteEndExclusive": 205125141,
+      "rangeSha256": "5c12b4a632dfeb74b8f90f15f62b51d3c944061298672c00327a0da9bab74be3",
+      "classification": "observed static source",
+      "claim": "Setup state string literals."
+    },
+    {
+      "id": "renderer-UR",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1142414,
+      "byteEndExclusive": 1143234,
+      "asarByteStart": 205125223,
+      "asarByteEndExclusive": 205126043,
+      "rangeSha256": "f67ff7aefd92622b8ef1f8bad530b094f8b1ec715a65fe4aaeb9a9d1edb23647",
+      "classification": "observed static source",
+      "claim": "Startup reads mic permission only. Gate: unknown mic or no screen-granted/attempt -> permissions; mic-granted and screen-unknown after attempt -> quit; else language/mode/survey. DENIED is not excluded by the unknown test."
+    },
+    {
+      "id": "renderer-QR",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1154796,
+      "byteEndExclusive": 1156283,
+      "asarByteStart": 205137605,
+      "asarByteEndExclusive": 205139092,
+      "rangeSha256": "2dbef7a53691a7555a8ad46fedef19c209e87f53d7e0648a193298263f12df16",
+      "classification": "observed static source",
+      "claim": "Permission page has screen and mic rows; screen click marks attempt; on window focus after local click attempt sets didAttemptCapture."
+    },
+    {
+      "id": "renderer-v6",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1156283,
+      "byteEndExclusive": 1157892,
+      "asarByteStart": 205139092,
+      "asarByteEndExclusive": 205140701,
+      "rangeSha256": "8513ccf38aa29cf462b275e65fa4c280b50e20da78ac4d7cfa7970b8f2409e69",
+      "classification": "observed static source",
+      "claim": "Grant Access invokes request-media-permission; true sets GRANTED, false DENIED then opens relevant Mac Settings; granted button disabled."
+    },
+    {
+      "id": "renderer-JR",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1157892,
+      "byteEndExclusive": 1160491,
+      "asarByteStart": 205140701,
+      "asarByteEndExclusive": 205143300,
+      "rangeSha256": "9335ab6e3765ebb2e03b607757c065de30e5279cd04bf6010cceedcec869d5d3",
+      "classification": "observed static source",
+      "claim": "Quit page text asks to restart; button sends quit-app only. Existence does not establish runtime reachability or automatic relaunch."
+    },
+    {
+      "id": "renderer-tL",
+      "member": "out/renderer/assets/main-CLCIkAdW.js",
+      "memberSha256": "3da0151fe92aadebc5ce73497ff8e1b2276dd756361b2b549e22b316f205882e",
+      "byteStart": 1161411,
+      "byteEndExclusive": 1162503,
+      "asarByteStart": 205144220,
+      "asarByteEndExclusive": 205145312,
+      "rangeSha256": "bad50cfbbfccf20ff868e1a753531674828094e66f36b9ff786cbcdee76b643b",
+      "classification": "observed static source",
+      "claim": "Setup state selects landing, permissions, quit, mode, language, survey views."
+    }
+  ],
+  "limits": [
+    "No target execution, user microphone/system audio capture, system permission change or application-data credential read.",
+    "Current v3.0.1 Mac package is exact SHA match to 2026-10-20 report; this does not describe other versions or installed Windows/Linux artifacts.",
+    "REA main-only and renderer-focused analyses intentionally omit dependencies/native implementations and much of renderer; graph partial, semantic relationships unknown.",
+    "Renderer-focused input consists of exact original top-level AST statements separated with newline; original ranges retained in renderer-fragments-manifest.json.",
+    "Direct byte/source observations supplement REA parser Evidence and are separately labeled; static code cannot prove prompt UX, actual grants, successful capture, feature flags or restart necessity.",
+    "NSAudioCaptureUsageDescription and microphone/camera descriptions are declarations only. No independent system-audio grant UI observed in selected onboarding functions.",
+    "Windows no-permission and Linux mic-true behavior are shipped source branches, not actual OS/provider verification."
+  ],
+  "reaCosts": [
+    {
+      "analysis": "main-only",
+      "wallSeconds": 5.4,
+      "userCpuSeconds": 3.68,
+      "systemCpuSeconds": 0.71,
+      "maximumRssBytes": 517357568,
+      "peakMemoryFootprintBytes": 505044888
+    },
+    {
+      "analysis": "renderer-focused",
+      "wallSeconds": 1.9,
+      "userCpuSeconds": 1.69,
+      "systemCpuSeconds": 0.29,
+      "maximumRssBytes": 406257664,
+      "peakMemoryFootprintBytes": 384725872
+    }
+  ],
+  "costLimits": [
+    "Measured macOS /usr/bin/time -l; not simultaneous peak process-family memory.",
+    "First sandboxed attempt failed at internal Swift compiler cache write; successful retry used approved escalation.",
+    "Token totals, cold/warm classification and full-package cost not measured."
+  ]
+}

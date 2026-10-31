@@ -14,6 +14,7 @@ import { UpdateNotification } from "./components/UpdateNotification";
 import { ToastContext } from "./contexts/toast";
 import { WindowControls } from "./components/shared/WindowControls";
 import { CaptureRecovery } from "./components/Live/CaptureRecovery";
+import { PermissionOnboarding } from "./components/Permissions/PermissionOnboarding";
 import { readCodeLanguagePreference, saveCodeLanguage } from "./components/Live/livePreferences";
 import { getCodeLanguage } from "../electron/languages";
 
@@ -58,10 +59,12 @@ function App() {
   const [credits, setCredits] = useState(0);
   const [accountLoading, setAccountLoading] = useState(true);
   const [accountError, setAccountError] = useState("");
+  const [guideOpen, setGuideOpen] = useState(false);
+  const handlePermissionGuideOpenChange = useCallback((open: boolean) => setGuideOpen(open), []);
 
   useLayoutEffect(() => {
-    void window.electronAPI.setAuthWindow(!account).catch(console.error);
-  }, [Boolean(account)]);
+    void window.electronAPI.setAuthWindow(!account || guideOpen).catch(console.error);
+  }, [Boolean(account), guideOpen]);
 
   useEffect(() => {
     let active = true;
@@ -173,8 +176,9 @@ function App() {
     if (!saved.success) showToast("代码语言未保存", `本次会话已使用所选语言。${saved.error}重新打开后需再次选择。`, "error");
   }, [showToast]);
 
+  let content;
   if (accountLoading) {
-    return (
+    content = (
       <div className="h-screen relative grid place-items-center bg-[#111018] text-white rounded-2xl border border-white/10">
         <CaptureRecovery />
         <div className="absolute inset-x-0 top-0"><WindowControls /></div>
@@ -188,10 +192,8 @@ function App() {
         </div>
       </div>
     );
-  }
-
-  if (!account) {
-    return (
+  } else if (!account) {
+    content = (
       <><CaptureRecovery /><AuthPage
         initialError={accountError}
         onAuthenticated={(user) => {
@@ -201,38 +203,43 @@ function App() {
         }}
       /></>
     );
+  } else {
+    content = (
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <ToastContext.Provider value={{ showToast }}>
+            {/* Directly render the main UI; provide a default credits value */}
+            <SubscribedApp
+              credits={credits}
+              currentLanguage={currentLanguage}
+              setLanguage={setLanguage}
+              currentQuery={currentQuery}
+              setQuery={setQuery}
+            />
+            <div data-overlay-global><UpdateNotification /></div>
+            <Toast
+              data-overlay-interactive
+              open={toastState.open}
+              onOpenChange={(open) =>
+                setToastState((prev) => ({ ...prev, open }))
+              }
+              variant={toastState.variant}
+              duration={1500}
+            >
+              <ToastTitle>{toastState.title}</ToastTitle>
+              <ToastDescription>{toastState.description}</ToastDescription>
+            </Toast>
+            <ToastViewport />
+          </ToastContext.Provider>
+        </ToastProvider>
+      </QueryClientProvider>
+    );
   }
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <ToastContext.Provider value={{ showToast }}>
-          {/* Directly render the main UI; provide a default credits value */}
-          <SubscribedApp
-            credits={credits}
-            currentLanguage={currentLanguage}
-            setLanguage={setLanguage}
-            currentQuery={currentQuery}
-            setQuery={setQuery}
-          />
-          <div data-overlay-global><UpdateNotification /></div>
-          <Toast
-            data-overlay-interactive
-            open={toastState.open}
-            onOpenChange={(open) =>
-              setToastState((prev) => ({ ...prev, open }))
-            }
-            variant={toastState.variant}
-            duration={1500}
-          >
-            <ToastTitle>{toastState.title}</ToastTitle>
-            <ToastDescription>{toastState.description}</ToastDescription>
-          </Toast>
-          <ToastViewport />
-        </ToastContext.Provider>
-      </ToastProvider>
-    </QueryClientProvider>
-  );
+  return <>
+    <div className="contents" aria-hidden={guideOpen || undefined} {...(guideOpen ? { inert: "" } : {})}>{content}</div>
+    <PermissionOnboarding onOpenChange={handlePermissionGuideOpenChange} />
+  </>;
 }
 
 export default App;

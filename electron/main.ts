@@ -1,5 +1,7 @@
+import { PermissionService } from "./PermissionService";
+import { initializePermissionIpc } from "./permissionsIpc";
 import * as dotenv from "dotenv";
-import { app, BrowserWindow, nativeImage, screen, shell } from "electron";
+import { app, BrowserWindow, nativeImage, screen, shell, systemPreferences } from "electron";
 import fs from "node:fs";
 import path from "path";
 import { initAutoUpdater } from "./autoUpdater";
@@ -27,6 +29,7 @@ import { initializeLiveIpc } from "./live/ipc";
 import { OverlayWindowController, initializeOverlayIpc } from "./live/OverlayWindow";
 import type { LiveShortcutAction } from "./live/overlayTypes";
 import { MAX_SCREENSHOTS } from "./screenshotLimits";
+import { getRecallPermissionApiUrl } from "./serviceEndpoints";
 
 // Constants
 const isDev = !app.isPackaged;
@@ -616,9 +619,9 @@ function applyNativeHideMainWindow(mainWindow: BrowserWindow): void {
 function applyNativeShowMainWindow(mainWindow: BrowserWindow): void {
   if (state.mainWindow !== mainWindow || mainWindow.isDestroyed()) return;
   if (mainWindow.isMinimized()) mainWindow.restore();
-  if (!overlayWindow.isLive() && state.windowPosition && state.windowSize) {
-    mainWindow.setBounds({ ...state.windowPosition, ...state.windowSize });
-  }
+  // Showing changes visibility only. The active layout owner may have resized
+  // the hidden window (for example, when opening the permission guide).
+  // Reapplying an earlier hide snapshot would overwrite that current layout.
   overlayWindow.restoreMousePolicy();
   mainWindow.setVisibleOnAllWorkspaces(true, {
     visibleOnFullScreen: true,
@@ -727,7 +730,7 @@ async function initializeApp() {
   try {
     loadEnvVariables();
     initializeHelpers();
-    initializeWindowControls(getMainWindow, applyWorkspaceWindow);
+    initializeWindowControls(getMainWindow, applyWorkspaceWindow, () => overlayWindow.isLive());
     initializeOverlayIpc(overlayWindow, getMainWindow);
     const refreshOverlayDisplay = () => overlayWindow.refreshDisplay();
     screen.on("display-added", refreshOverlayDisplay);
@@ -778,6 +781,23 @@ async function initializeApp() {
         if (!available.includes(input.profileId)) throw new Error("当前采集方式不支持此转录引擎，请选择列表中的语音设置。");
         return publicTranscriptionSettings(state.settingsStore!.saveTranscriptionSettings(input), provider);
       },
+    });
+    const permissions = new PermissionService({
+      platform: process.platform, architecture: process.arch, stateDirectory: app.getPath("userData"),
+      mediaStatus: type => systemPreferences.getMediaAccessStatus(type),
+      askMicrophone: () => systemPreferences.askForMediaAccess("microphone"),
+      accessibilityTrusted: () => systemPreferences.isTrustedAccessibilityClient(false),
+      probeScreen: () => state.screenshotHelper!.probeScreenPermission(),
+      openSettings: url => shell.openExternal(url),
+      audioSnapshot: () => state.liveSession!.getAudioPermissionSnapshot(),
+      prepareAudio: options => state.liveSession!.preparePermissions(options),
+      captureState: () => state.liveSession!.getSnapshot(),
+      recallApiUrl: () => getRecallPermissionApiUrl(),
+    });
+    initializePermissionIpc(permissions, getMainWindow, async () => {
+      const capture = state.liveSession!.getSnapshot();
+      if (capture.captureNeedsCleanup || !["idle", "ended", "error"].includes(capture.captureStatus)) return { success: false, error: "请先结束当前音频采集。" };
+      app.relaunch(); app.quit(); return { success: true };
     });
     await createWindow();
     state.shortcutsHelper?.registerGlobalShortcuts();

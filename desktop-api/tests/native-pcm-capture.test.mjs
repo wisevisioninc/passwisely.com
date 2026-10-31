@@ -100,6 +100,55 @@ test("Intel macOS13 support and mandatory prepare reject unsupported hosts and i
   await capture.stop();
 });
 
+test("native permission preflight reads only retained evidence and prepares then disposes without PCM or ASR", async t => {
+  const h = harness(t, { autoPrepare: false }), capture = h.create();
+  assert.equal(capture.getPermissionSnapshot().microphone.status, "unknown");
+  assert.equal(h.children.length, 0);
+  const preparing = capture.preparePermissions(new AbortController().signal, {});
+  assert.deepEqual(h.commands, ["prepare"]); assert.equal(h.sockets.length, 0);
+  assert.equal(capture.getPermissionSnapshot().systemAudio.status, "unknown");
+  h.children[0].event({ event: "prepared" }); await preparing;
+  const snapshot = capture.getPermissionSnapshot();
+  for (const permission of ["microphone", "systemAudio"]) {
+    assert.equal(snapshot[permission].status, "granted"); assert.equal(snapshot[permission].observedAt, 1000);
+  }
+  snapshot.microphone.status = "denied";
+  assert.equal(capture.getPermissionSnapshot().microphone.status, "granted");
+  await capture.dispose();
+  assert.deepEqual(h.commands, ["prepare", "stop"]); assert.equal(h.sockets.length, 0); assert.deepEqual(h.transcripts, []);
+});
+
+test("native permission evidence distinguishes explicit denials from unavailable devices and sources", async t => {
+  for (const code of ["MICROPHONE_PERMISSION_DENIED", "SCREEN_PERMISSION_DENIED", "NO_DISPLAY", "MICROPHONE_UNAVAILABLE", "SYSTEM_AUDIO_UNAVAILABLE"]) {
+    const h = harness(t, { autoPrepare: false }), capture = h.create();
+    const preparing = capture.preparePermissions(new AbortController().signal, {});
+    const rejected = assert.rejects(preparing, error => error.message.includes(code));
+    h.children[0].event({ event: "error", code }); await rejected;
+    const snapshot = capture.getPermissionSnapshot();
+    assert.equal(snapshot.microphone.status, code === "MICROPHONE_PERMISSION_DENIED" ? "denied" : "unknown");
+    assert.equal(snapshot.systemAudio.status, code === "SCREEN_PERMISSION_DENIED" ? "denied" : "unknown");
+    await capture.dispose();
+    assert.equal(h.commands.includes("start"), false); assert.equal(h.sockets.length, 0);
+  }
+});
+
+test("native preflight cancellation keeps its owner until child close even when disposal times out", async t => {
+  const h = harness(t, { autoPrepare: false, autoExit: false }), capture = h.create(), controller = new AbortController();
+  const preparing = capture.preparePermissions(controller.signal, {}), rejected = assert.rejects(preparing, /取消/);
+  controller.abort(); await rejected;
+  const disposing = capture.dispose(), timedOut = assert.rejects(disposing, /清理尚未确认完成/);
+  await tick(); h.fire(15_000); await timedOut;
+  const next = h.create();
+  await assert.rejects(next.preparePermissions(new AbortController().signal, {}), /尚未关闭/);
+  h.children[0].emit("exit", 0, null); await tick();
+  await assert.rejects(next.preparePermissions(new AbortController().signal, {}), /尚未关闭/);
+  h.children[0].finish(); await tick(); await capture.dispose();
+  const retry = next.preparePermissions(new AbortController().signal, {});
+  h.children[1].event({ event: "prepared" }); await retry;
+  h.children[1].finish(); await next.dispose();
+  assert.equal(h.sockets.length, 0); assert.equal(h.commands.includes("start"), false);
+});
+
 test("permission preparation owns a child without ASR or PCM, so a fresh grant can follow a long permission wait", async t => {
   let now = 1000;
   const h = harness(t, { autoPrepare: false, options: { now: () => now } }), capture = h.create();

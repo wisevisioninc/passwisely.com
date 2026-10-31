@@ -15,7 +15,7 @@ import "./settingsPopover.css";
 
 type OutputLanguage = OutputLanguageId;
 export type LiveCodeLanguage = CodeLanguage;
-type SettingsApi = Pick<Window["electronAPI"], "getAiSettings" | "saveAiSettings" | "getTranscriptionSettings" | "saveTranscriptionSettings" | "accountOpenPortal"> & {
+type SettingsApi = Pick<Window["electronAPI"], "getAiSettings" | "saveAiSettings" | "getTranscriptionSettings" | "saveTranscriptionSettings" | "accountOpenPortal" | "openCapturePermissionGuide"> & {
   getOverlayDisplays: () => Promise<OverlayDisplay[]>;
   selectOverlayDisplay: (id: number) => Promise<OverlayGeometry | null>;
 };
@@ -240,7 +240,9 @@ export function LiveSettingsPopover({ currentLanguage, onLanguageChange, capture
     </div>
     <div className="pw-settings-section pw-settings-advanced"><button data-settings-control type="button" className="pw-settings-button pw-settings-open" disabled={settingsWriteBusy}
       onClick={() => void openPanel(onOpenAdvanced)}><span><strong>AI Models &amp; Settings</strong><small>模型、连接与语音设置</small></span><span>Open</span></button>
-      {settingsWriteBusy && <p className="pw-settings-hint">设置正在保存，完成后可打开高级设置。</p>}</div>
+      {settingsWriteBusy && <p className="pw-settings-hint">设置正在保存，完成后可打开高级设置。</p>}
+      <button data-settings-control type="button" className="pw-settings-button pw-settings-open" disabled={settingsWriteBusy}
+        onClick={() => void openPanel(() => api.openCapturePermissionGuide())}><span><strong>截图与语音权限</strong><small>查看状态、授权与系统设置</small></span><span>Open</span></button></div>
     <hr className="pw-settings-separator" />
     <div className="pw-settings-key-mode"><span>Key Display:</span><div role="group" aria-label="Key Display">
       <button data-settings-control type="button" aria-label="Icon mode" aria-pressed={mode === "icon"} onClick={() => { const result = saveKeyDisplayMode("icon"); setErrors(previous => ({ ...previous, preferences: result.success ? "" : result.error })); }}>{formatShortcutKeys(["CommandOrControl"], "icon")[0]}</button>

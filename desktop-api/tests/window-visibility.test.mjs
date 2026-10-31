@@ -13,7 +13,7 @@ const { WindowVisibilityController, WindowVisibilityCleanupError } = load(new UR
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 const syntheticFrame = [{ display_id: '22', thumbnail: { isEmpty: () => false, toPNG: () => Buffer.from('synthetic fixture PNG; no screen pixels') } }];
 
-function fixture(context, { visible = true, live = false, auth = false } = {}) {
+function fixture(context, { visible = true, live = false, auth = false, screenAccess = "unknown" } = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'passwisely-window-visibility-'));
   context.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const events = [], bindings = new Map(), captures = [], windows = [];
@@ -36,11 +36,14 @@ function fixture(context, { visible = true, live = false, auth = false } = {}) {
   const target = { id: 22, scaleFactor: 1, size: { width: 1440, height: 900 } };
   const electron = {
     app: { getPath: () => directory, on() {} }, screen: { getPrimaryDisplay: () => target },
+    systemPreferences: { getMediaAccessStatus: () => screenAccess },
     globalShortcut: { register(key, run) { bindings.set(key, run); return true; }, unregister(key) { bindings.delete(key); }, unregisterAll() { bindings.clear(); } },
     desktopCapturer: { getSources() { const capture = deferred(); captures.push(capture); return capture.promise; } },
     shell: { async trashItem() { assert.fail('No screenshot retirement expected'); } },
   };
   const production = createProductionTsLoader({ mocks: { electron }, env: {}, console: { log() {}, error() {} } });
+  // All production modules share the same error constructors, as in the app.
+  const visibility = production(new URL('../../electron/WindowVisibility.ts', import.meta.url).pathname);
   const { ScreenshotHelper } = production(new URL('../../electron/ScreenshotHelper.ts', import.meta.url).pathname);
   const { ShortcutsHelper } = production(new URL('../../electron/shortcuts.ts', import.meta.url).pathname);
   const mainSource = fs.readFileSync(new URL('../../electron/main.ts', import.meta.url), 'utf8');
@@ -52,7 +55,7 @@ function fixture(context, { visible = true, live = false, auth = false } = {}) {
   const state = { mainWindow: native.win, windowVisibility: null, screenshotHelper: new ScreenshotHelper('queue', () => target), windowPosition: null, windowSize: null };
   const main = {};
   vm.runInNewContext(code, {
-    exports: main, state, WindowVisibilityController, WindowVisibilityCleanupError,
+    exports: main, state, WindowVisibilityController: visibility.WindowVisibilityController, WindowVisibilityCleanupError: visibility.WindowVisibilityCleanupError,
     console: { log() {}, error() {} }, isAuthWindow: () => auth, createWindow: async () => { assert.fail('No native creation expected'); },
     overlayWindow: { isLive: () => live, setInteractive() {}, restoreMousePolicy() {}, publishGeometry: () => events.push(['geometry']), reset() {} },
     notifyScreenshotQueueChanged() {},
@@ -67,7 +70,7 @@ function fixture(context, { visible = true, live = false, auth = false } = {}) {
     processingHelper: null, clearQueues: async () => ({ success: true }), setView() {},
   });
   state.shortcutsHelper.registerGlobalShortcuts(); events.length = 0;
-  return { main, state, captures, bindings, events, windows, get native() { return native; },
+  return { main, state, captures, bindings, events, windows, WindowVisibilityCleanupError: visibility.WindowVisibilityCleanupError, get native() { return native; },
     async captured(count = 1) { for (let i = 0; i < 1000; i++) { if (captures.length >= count) return captures[count - 1]; await new Promise(resolve => setTimeout(resolve, 1)); } assert.fail('capture did not reach the native boundary'); },
     replace() { native.close(); native = nativeWindow(); state.mainWindow = native.win; install(); },
     failShow(value) { failShow = value; }, failHide(value) { failHide = value; },
@@ -130,7 +133,7 @@ test('capture failure releases suppression while window replacement prevents an 
 test('failed capture restoration keeps the exact release retryable and preserves both operation and cleanup errors', async context => {
   const f = fixture(context);
   const taking = f.main.takeScreenshot();
-  const rejected = assert.rejects(taking, error => error instanceof WindowVisibilityCleanupError && /fixture capture failed/.test(error.operationError.message) && /fixture show failed/.test(error.cleanupError.message));
+  const rejected = assert.rejects(taking, error => error instanceof f.WindowVisibilityCleanupError && /fixture capture failed/.test(error.operationError.message) && /fixture show failed/.test(error.cleanupError.message));
   const frame = await f.captured(); f.failShow(true); frame.reject(new Error('fixture capture failed')); await rejected;
   f.failShow(false); f.main.hideMainWindow(); assert.equal(f.native.visible(), false, 'a partially-applied failed show cannot be mistaken for a successful hidden state');
   f.main.showMainWindow(); assert.equal(f.native.visible(), true, 'the same owner recovers through explicit intent without creating a substitute');
@@ -155,4 +158,23 @@ test('failed suppression never starts capture and failed recovery remains owned 
   assert.throws(() => owner.suppressForCapture(), error => error instanceof WindowVisibilityCleanupError && /fixture hide failed/.test(error.operationError.message) && /fixture show failed/.test(error.cleanupError.message));
   failHide = false; failShow = false; owner.setRequestedVisible(false); owner.setRequestedVisible(true);
   assert.deepEqual(effects.slice(-2), ['hide', 'show']); assert.equal(owner.canPresent(), true);
+});
+
+
+test('actual screenshot hotkey preserves native capture and restoration failures and opens permission recovery only for observed denial', async context => {
+  for (const screenAccess of ['denied', 'granted', 'unknown']) {
+    const f = fixture(context, { screenAccess });
+    const taking = f.bindings.get('CommandOrControl+H')();
+    const frame = await f.captured(); f.failShow(true); frame.reject('Failed to get sources.'); await taking;
+    const failure = f.events.find(event => event[0] === 'send' && event[1] === 'screenshot-error');
+    assert.ok(failure); assert.match(failure[2], /Failed to get sources\./);
+    assert.match(failure[2], /stage=screen-enumeration/);
+    assert.ok(failure[2].includes(`screen=${['darwin', 'win32'].includes(process.platform) ? screenAccess : 'unknown'}`));
+    assert.match(failure[2], /fixture show failed/);
+    assert.equal(f.events.some(event => event[0] === 'send' && event[1] === 'capture-permissions-needed'),
+      process.platform === 'darwin' && screenAccess === 'denied');
+    assert.deepEqual(f.state.screenshotHelper.getPendingScreenshots(), []);
+    f.failShow(false); f.main.hideMainWindow(); f.main.showMainWindow();
+    assert.equal(f.native.visible(), true, 'the original visibility owner remains recoverable');
+  }
 });

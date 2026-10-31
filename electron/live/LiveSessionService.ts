@@ -8,9 +8,9 @@ import { DEFAULT_TRANSCRIPTION_PROFILE, getTranscriptionProfile } from "./transc
 import type { TranscriptionProfileId } from "./transcription";
 import type { CaptureStatus, LiveAnswer, LiveAskInput, LiveResult, LiveSnapshot, TranscriptSegment } from "./types";
 
-import type { AudioCapture, CaptureCallbacks, CaptureSession } from "./captureContracts";
+import type { AudioCapture, AudioPermissionOptions, AudioPermissionResult, AudioPermissionSnapshot, CaptureCallbacks, CaptureSession } from "./captureContracts";
 import type { CaptureProvider } from "./CaptureSelection";
-export type { AudioCapture, CaptureCallbacks } from "./captureContracts";
+export type { AudioCapture, AudioPermissionOptions, AudioPermissionResult, AudioPermissionSnapshot, CaptureCallbacks } from "./captureContracts";
 interface Dependencies {
   support: { supported: boolean; message?: string };
   provider?: CaptureProvider;
@@ -43,6 +43,7 @@ export class LiveSessionService {
   private generation = 0;
   private captureEpoch = 0;
   private capture: AudioCapture | null = null;
+  private audioPermissions: AudioPermissionSnapshot | null = null;
   private starting: AbortController | null = null;
   private answer: AbortController | null = null;
   private clearing: AbortController | null = null;
@@ -59,6 +60,52 @@ export class LiveSessionService {
     return { sessionId: randomUUID(), revision: this.revision, provider: this.deps.provider || "recall-v2", transcription: { ...transcription }, captureStatus: "idle", transcripts: [], answers: [], transcriptTruncated: false, captureNeedsCleanup: false, platformSupported: this.deps.support.supported, platformMessage: this.deps.support.message };
   }
   getSnapshot(): LiveSnapshot { return structuredClone(this.state); }
+  getAudioPermissionSnapshot(): AudioPermissionSnapshot | null {
+    const permissions = this.capture?.getPermissionSnapshot?.() || this.audioPermissions;
+    return permissions ? structuredClone(permissions) : null;
+  }
+  async preparePermissions(options: AudioPermissionOptions = {}): Promise<AudioPermissionResult> {
+    const result = (error?: string): AudioPermissionResult => ({ success: error === undefined, permissions: this.getAudioPermissionSnapshot(), cleanupRequired: this.state.captureNeedsCleanup, ...(error === undefined ? {} : { error }) });
+    if (this.closed) return result("会话服务已关闭。");
+    if (!this.deps.support.supported) return result(this.deps.support.message || "当前平台不支持音频采集。");
+    if (this.capture || this.starting || this.control) return result("请先结束当前采集或权限操作。");
+    const controller = new AbortController();
+    this.starting = controller;
+    let capture: AudioCapture | undefined, error: string | undefined;
+    try {
+      // This is the same factory and owner used by start. No broker session is
+      // requested, and permission callbacks cannot alter conversation content.
+      capture = this.deps.createCapture({ onTranscript: () => undefined, onState: () => undefined, onError: () => undefined });
+      this.capture = capture;
+      if (!capture.preparePermissions) throw new Error("当前音频采集器不支持独立权限准备。");
+      this.state.captureNeedsCleanup = true;
+      this.emit(true);
+      await capture.preparePermissions(controller.signal, options);
+      controller.signal.throwIfAborted();
+    } catch (failure) { error = controller.signal.aborted ? "音频权限申请已取消。" : message(failure) || "音频权限准备失败，请重试。"; }
+    finally {
+      if (capture) {
+        try {
+          await capture.dispose();
+          this.audioPermissions = capture.getPermissionSnapshot?.() || this.audioPermissions;
+          if (this.capture === capture) { this.capture = null; this.state.captureNeedsCleanup = false; }
+        } catch (failure) {
+          const cleanupError = message(failure) || "音频资源清理尚未完成，请停止后重试。";
+          error = error ? `${error} ${cleanupError}` : cleanupError;
+          // Do not lose the owner after a failed shutdown. Existing stop/reset
+          // paths can retry cleanup, and start remains blocked by this.capture.
+          if (this.capture === capture) {
+            this.state.captureNeedsCleanup = true;
+            this.state.captureStatus = "error";
+            this.state.error = cleanupError;
+          }
+        }
+      }
+      if (this.starting === controller) this.starting = null;
+      this.emit(true);
+    }
+    return result(error ?? (controller.signal.aborted ? "音频权限申请已取消。" : undefined));
+  }
   private emit(immediate = false): void {
     this.state.revision = ++this.revision;
     if (this.timer && immediate) { clearTimeout(this.timer); this.timer = null; }
@@ -178,6 +225,7 @@ export class LiveSessionService {
         // must still be attempted when a stop event can no longer arrive.
         await capture.stop().catch(() => undefined);
         await capture.dispose();
+        this.audioPermissions = capture.getPermissionSnapshot?.() || this.audioPermissions;
         if (this.capture === capture) this.capture = null;
         this.state.captureNeedsCleanup = false;
         ++this.generation;

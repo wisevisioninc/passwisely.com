@@ -1,4 +1,5 @@
 import { app, globalShortcut } from "electron";
+import { screenshotFailureMessage, screenshotNeedsPermission } from "./screenshotFailure";
 import type { IShortcutsHelperDeps } from "./main";
 import type { LiveShortcutAction } from "./live/overlayTypes";
 
@@ -72,9 +73,12 @@ export class ShortcutsHelper {
         const preview = await this.deps.getImagePreview(screenshotPath);
         if (!win.isDestroyed()) win.webContents.send("screenshot-taken", { path: screenshotPath, preview });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Screenshot capture failed";
+        const message = screenshotFailureMessage(error);
         console.error("Screenshot shortcut failed:", message);
-        if (!win.isDestroyed()) win.webContents.send("screenshot-error", message);
+        if (!win.isDestroyed()) {
+          win.webContents.send("screenshot-error", message);
+          if (screenshotNeedsPermission(error)) win.webContents.send("capture-permissions-needed");
+        }
       }
     });
     action("CommandOrControl+Enter", "ask", () => this.deps.processingHelper?.processScreenshots());

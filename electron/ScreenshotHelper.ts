@@ -1,8 +1,9 @@
-import { app, desktopCapturer, screen, shell, type Display } from "electron";
+import { app, desktopCapturer, screen, shell, systemPreferences, type Display } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { MAX_SCREENSHOTS } from "./screenshotLimits";
+import { ScreenshotFailure, screenshotFailureMessage, type ScreenAccessStatus, type ScreenshotStage } from "./screenshotFailure";
 
 export interface ScreenshotMutationResult {
   success: boolean;
@@ -99,27 +100,58 @@ export class ScreenshotHelper {
   deleteScreenshot(filePath: string): Promise<ScreenshotMutationResult> {
     return this.consumeScreenshots([path.resolve(filePath)]);
   }
+  private captureFailure(stage: ScreenshotStage, cause: unknown): ScreenshotFailure {
+    if (cause instanceof ScreenshotFailure) return cause;
+    let access: ScreenAccessStatus = "unknown";
+    if (process.platform === "darwin" || process.platform === "win32") {
+      try {
+        const observed = systemPreferences.getMediaAccessStatus("screen");
+        if (["not-determined", "granted", "denied", "restricted", "unknown"].includes(observed)) access = observed;
+      } catch { /* A failed status read is unknown, not proof of denied access. */ }
+    }
+    return new ScreenshotFailure(stage, cause, access, process.platform);
+  }
+  private freezeDisplay(): Display {
+    try {
+      const display = this.getDisplay();
+      return { ...display, size: { ...display.size } };
+    } catch (error) { throw this.captureFailure("display-selection", error); }
+  }
+  private async captureThumbnail(display: Display, thumbnailSize: Electron.Size): Promise<Electron.NativeImage> {
+    let sources: Electron.DesktopCapturerSource[];
+    try {
+      sources = await desktopCapturer.getSources({
+        types: ["screen"],
+        thumbnailSize,
+        fetchWindowIcons: false,
+      });
+    } catch (error) { throw this.captureFailure("screen-enumeration", error); }
+    const source = sources.find(candidate => candidate.display_id === String(display.id));
+    if (!source) throw this.captureFailure("display-selection", `The selected display (${display.id}) was not returned by the capture backend. Verify it is connected.`);
+    try {
+      if (source.thumbnail.isEmpty()) throw new Error("The selected display returned an empty image.");
+    } catch (error) { throw this.captureFailure("thumbnail", error); }
+    return source.thumbnail;
+  }
   private async captureScreenshot(display: Display): Promise<Buffer> {
     const scaleFactor = display.scaleFactor || 1;
-    const sources = await desktopCapturer.getSources({
-      types: ["screen"],
-      thumbnailSize: {
-        width: Math.max(1, Math.round(display.size.width * scaleFactor)),
-        height: Math.max(1, Math.round(display.size.height * scaleFactor)),
-      },
-      fetchWindowIcons: false,
+    const thumbnail = await this.captureThumbnail(display, {
+      width: Math.max(1, Math.round(display.size.width * scaleFactor)),
+      height: Math.max(1, Math.round(display.size.height * scaleFactor)),
     });
-    const source = sources.find(candidate => candidate.display_id === String(display.id));
-    if (!source || source.thumbnail.isEmpty()) {
-      throw new Error(process.platform === "darwin"
-        ? "Screen capture failed. Enable Screen Recording permission for PassWisely in System Settings and verify the selected display is connected."
-        : "Screen capture failed. Make sure the selected display is connected and screen capture is permitted.");
-    }
-    return source.thumbnail.toPNG();
+    try {
+      const png = thumbnail.toPNG();
+      if (!Buffer.isBuffer(png) || png.length === 0) throw new Error("PNG conversion returned no image data.");
+      return png;
+    } catch (error) { throw this.captureFailure("image-conversion", error); }
   }
-  private takeIntoQueue(queue: "main" | "extra"): Promise<string> {
-    const selectedDisplay = this.getDisplay();
-    const display = { ...selectedDisplay, size: { ...selectedDisplay.size } };
+  /** Explicit permission action only: validate one tiny thumbnail without encoding or retaining it. */
+  async probeScreenPermission(): Promise<void> {
+    const display = this.freezeDisplay();
+    await this.serialize(async () => { await this.captureThumbnail(display, { width: 1, height: 1 }); });
+  }
+  private async takeIntoQueue(queue: "main" | "extra"): Promise<string> {
+    const display = this.freezeDisplay();
     return this.serialize(async () => {
       try {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -134,13 +166,19 @@ export class ScreenshotHelper {
         (queue === "main" ? this.screenshotQueue : this.extraScreenshotQueue).push(filePath);
         try { await file.writeFile(screenshotBuffer); }
         catch (error) {
-          await file.close();
+          const detail = screenshotFailureMessage(error);
+          try { await file.close(); }
+          catch (closeError) {
+            // Do not retire the owned path while closing its handle is unresolved.
+            throw new Error(detail + " Closing the screenshot also failed: " + screenshotFailureMessage(closeError));
+          }
           const cleanup = await this.retire([filePath]);
-          throw new Error((error instanceof Error ? error.message : "Writing screenshot failed.") + (cleanup.success ? "" : " " + cleanup.error));
+          throw new Error(detail + (cleanup.success ? "" : " " + cleanup.error));
         }
         await file.close();
         return filePath;
-      } finally {
+      } catch (error) { throw this.captureFailure("storage", error); }
+      finally {
         await new Promise(resolve => setTimeout(resolve, 50));
       }
     });
@@ -153,7 +191,9 @@ export class ScreenshotHelper {
     return this.takeIntoQueue("main");
   }
   async getImagePreview(filePath: string): Promise<string> {
-    await this.verifyOwnedFile(filePath);
-    return "data:image/png;base64," + (await fs.promises.readFile(filePath)).toString("base64");
+    try {
+      await this.verifyOwnedFile(filePath);
+      return "data:image/png;base64," + (await fs.promises.readFile(filePath)).toString("base64");
+    } catch (error) { throw this.captureFailure("storage", error); }
   }
 }

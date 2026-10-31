@@ -8,6 +8,7 @@ import { IIpcHandlerDeps } from "./main";
 import { ResumeHelper } from "./ResumeHelper";
 import { ResumeRequest } from "./resumeTypes";
 import { SaveAiSettingsInput } from "./settings";
+import { screenshotFailureMessage, screenshotNeedsPermission } from "./screenshotFailure";
 
 export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
   console.log("Initializing IPC handlers");
@@ -319,8 +320,10 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
         });
         return { success: true };
       } catch (error) {
-        console.error("Error triggering screenshot:", error);
-        return { error: "Failed to trigger screenshot" };
+        const message = screenshotFailureMessage(error);
+        console.error("Error triggering screenshot:", message);
+        if (!mainWindow.isDestroyed() && screenshotNeedsPermission(error)) mainWindow.webContents.send("capture-permissions-needed");
+        return { error: message };
       }
     }
     return { error: "No main window available" };
@@ -332,8 +335,11 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
       const preview = await deps.getImagePreview(screenshotPath);
       return { path: screenshotPath, preview };
     } catch (error) {
-      console.error("Error taking screenshot:", error);
-      return { error: "Failed to take screenshot" };
+      const message = screenshotFailureMessage(error);
+      console.error("Error taking screenshot:", message);
+      const mainWindow = deps.getMainWindow();
+      if (mainWindow && !mainWindow.isDestroyed() && screenshotNeedsPermission(error)) mainWindow.webContents.send("capture-permissions-needed");
+      return { error: message };
     }
   });
 

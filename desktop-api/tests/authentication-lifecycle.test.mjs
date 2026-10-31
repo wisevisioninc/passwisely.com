@@ -203,6 +203,7 @@ test("the production App retains the recovery component while the authentication
     "./_pages/AuthPage": { default: AuthPage, __esModule: true }, "./components/ui/toast": {},
     "./components/UpdateNotification": {}, "./contexts/toast": {}, "./components/shared/WindowControls": {},
     "./components/Live/CaptureRecovery": { CaptureRecovery },
+    "./components/Permissions/PermissionOnboarding": { PermissionOnboarding: () => null },
   });
   const $ = parseHtml(renderToStaticMarkup(App()));
   assert.equal($("[data-auth]").length, 1); assert.equal($("[data-recovery]").length, 1);

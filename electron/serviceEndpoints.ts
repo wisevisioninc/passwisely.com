@@ -34,3 +34,10 @@ export function getServiceEndpoints(
     grpcInsecure: environment.PASSWISELY_GRPC_INSECURE === "1",
   };
 }
+
+/** Public region used only for permission preparation; recording always uses the
+ * broker-returned region. This deployment uses the user's Japan Recall project. */
+export function getRecallPermissionApiUrl(environment: Readonly<Record<string, string | undefined>> = process.env): string | undefined {
+  const selected = environment.PASSWISELY_RECALL_API_URL || "https://ap-northeast-1.recall.ai";
+  return ["https://us-west-2.recall.ai", "https://us-east-1.recall.ai", "https://eu-central-1.recall.ai", "https://ap-northeast-1.recall.ai"].includes(selected) ? selected : undefined;
+}

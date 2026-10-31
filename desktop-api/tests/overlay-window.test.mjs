@@ -4,11 +4,13 @@ import fs from 'node:fs'
 import vm from 'node:vm'
 import { EventEmitter } from 'node:events'
 import ts from 'typescript'
+import { createProductionTsLoader } from './helpers/production-typescript.mjs';
+const screenshotFailures = createProductionTsLoader({ env: {} })(new URL('../../electron/screenshotFailure.ts', import.meta.url).pathname);
 
 function load(relative, electron, platform = "darwin") {
   const exports = {};
   const code = ts.transpileModule(fs.readFileSync(new URL(`../../electron/${relative}`, import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  vm.runInNewContext(code, { exports, require: name => { assert.equal(name, 'electron'); return electron; }, console: { log() {}, error() {} }, process: { platform } });
+  vm.runInNewContext(code, { exports, require: name => { if (name === './screenshotFailure') return screenshotFailures; assert.equal(name, 'electron'); return electron; }, console: { log() {}, error() {} }, process: { platform } });
   return exports;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
@@ -292,7 +294,7 @@ test('screenshot hotkey failures use their own visible error channel rather than
   await h.registered.get('CommandOrControl+H')();
   assert.equal(h.events.length, 1);
   assert.equal(h.events[0][0], 'screenshot-error');
-  assert.equal(typeof h.events[0][1], 'string');
+  assert.equal(h.events[0][1], 'Screen permission denied');
 });
 
 test('hidden overlay retains only restore and session shortcuts, and restores visible bindings without polling', () => {

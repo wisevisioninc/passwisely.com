@@ -68,6 +68,107 @@ function fixture(context, overrides = {}) {
   return { service, deps, captures, uploads, streams, publications, consumed };
 }
 
+const permissionSnapshot = (status = "granted") => ({ microphone: { status, observedAt: 123 }, systemAudio: { status, observedAt: 123 } });
+test("permission preflight uses the capture owner without creating a session or changing conversation identity", async context => {
+  const f = fixture(context), originalFactory = f.deps.createCapture;
+  assert.equal(f.service.getAudioPermissionSnapshot(), null);
+  const before = f.service.getSnapshot();
+  f.deps.createCapture = callbacks => {
+    const capture = originalFactory(callbacks);
+    capture.getPermissionSnapshot = () => permissionSnapshot();
+    capture.preparePermissions = async (signal, options) => {
+      capture.calls.push(["permissions", options]); signal.throwIfAborted();
+      callbacks.onTranscript(segment("forbidden", "permission preflight cannot add conversation content"));
+      callbacks.onState("recording"); callbacks.onError("ignored provider callback");
+    };
+    return capture;
+  };
+  const result = await f.service.preparePermissions({ recallApiUrl: "https://ap-northeast-1.recall.ai" });
+  assert.equal(result.success, true); assert.equal(result.cleanupRequired, false);
+  assert.equal(result.permissions.microphone.status, "granted");
+  assert.deepEqual(f.captures[0].calls, [["permissions", { recallApiUrl: "https://ap-northeast-1.recall.ai" }], ["dispose"]]);
+  assert.deepEqual(f.uploads, []); assert.deepEqual(f.streams, []);
+  const after = f.service.getSnapshot();
+  assert.equal(after.sessionId, before.sessionId); assert.equal(after.captureStatus, "idle");
+  assert.deepEqual(after.transcripts, []); assert.deepEqual(after.answers, []);
+  result.permissions.microphone.status = "denied";
+  assert.equal(f.service.getAudioPermissionSnapshot().microphone.status, "granted");
+  assert.deepEqual(f.captures[0].calls.map(([name]) => name), ["permissions", "dispose"]);
+});
+
+test("permission refusal returns its evidence after cleanup and does not block a fresh recording start", async context => {
+  const f = fixture(context), originalFactory = f.deps.createCapture;
+  let failureMessage = "fixture permission denied";
+  f.deps.createCapture = callbacks => {
+    const capture = originalFactory(callbacks);
+    capture.getPermissionSnapshot = () => permissionSnapshot("denied");
+    capture.preparePermissions = async () => { capture.calls.push(["permissions"]); throw new Error(failureMessage); };
+    return capture;
+  };
+  const result = await f.service.preparePermissions();
+  assert.equal(result.success, false); assert.equal(result.cleanupRequired, false);
+  assert.match(result.error, /permission denied/); assert.equal(result.permissions.systemAudio.status, "denied");
+  assert.equal(f.service.getSnapshot().captureNeedsCleanup, false); assert.deepEqual(f.uploads, []);
+  failureMessage = "";
+  const emptyFailure = await f.service.preparePermissions();
+  assert.equal(emptyFailure.success, false); assert.match(emptyFailure.error, /权限准备失败/);
+  assert.deepEqual(f.uploads, []);
+  assert.equal((await f.service.start()).success, true); assert.equal(f.uploads.length, 1);
+});
+
+test("permission cleanup failure retains ownership and requires stop before another preflight or recording", async context => {
+  const f = fixture(context), originalFactory = f.deps.createCapture;
+  let attempts = 0;
+  f.deps.createCapture = callbacks => {
+    const capture = originalFactory(callbacks);
+    capture.getPermissionSnapshot = () => permissionSnapshot();
+    capture.preparePermissions = async () => capture.calls.push(["permissions"]);
+    capture.dispose = async () => { capture.calls.push(["dispose"]); if (++attempts === 1) throw new Error("fixture cleanup pending"); };
+    return capture;
+  };
+  const result = await f.service.preparePermissions();
+  assert.equal(result.success, false); assert.equal(result.cleanupRequired, true);
+  assert.equal(result.permissions.microphone.status, "granted"); assert.match(result.error, /cleanup pending/);
+  assert.equal((await f.service.start()).success, false);
+  assert.equal((await f.service.preparePermissions()).success, false);
+  assert.equal(f.captures.length, 1); assert.deepEqual(f.uploads, []);
+  assert.equal(f.service.getSnapshot().captureNeedsCleanup, true);
+  assert.equal((await f.service.stop()).success, true);
+  assert.equal(f.service.getSnapshot().captureNeedsCleanup, false); assert.equal(attempts, 2);
+});
+
+test("concurrent permission/start requests are rejected and stop cancels preflight without a broker credential", async context => {
+  const f = fixture(context), originalFactory = f.deps.createCapture, prepared = deferred();
+  let signal;
+  f.deps.createCapture = callbacks => {
+    const capture = originalFactory(callbacks);
+    capture.getPermissionSnapshot = () => permissionSnapshot("unknown");
+    capture.preparePermissions = async input => {
+      capture.calls.push(["permissions"]); signal = input;
+      input.addEventListener("abort", () => prepared.reject(new Error("native prepare cancelled")), { once: true });
+      await prepared.promise;
+    };
+    return capture;
+  };
+  const preparing = f.service.preparePermissions();
+  assert.equal((await f.service.start()).success, false);
+  assert.equal((await f.service.preparePermissions()).success, false);
+  assert.equal((await f.service.stop()).success, true);
+  const result = await preparing;
+  assert.equal(signal.aborted, true); assert.equal(result.success, false); assert.match(result.error, /取消/);
+  assert.equal(result.cleanupRequired, false); assert.equal(f.captures.length, 1); assert.deepEqual(f.uploads, []);
+  f.captures[0].callbacks.onTranscript(segment("late", "late permission event"));
+  assert.deepEqual(f.service.getSnapshot().transcripts, []);
+  assert.equal(f.service.getSnapshot().captureStatus, "ended");
+});
+
+test("unsupported permission preflight returns actionable support without constructing capture or calling the broker", async context => {
+  const f = fixture(context, { support: { supported: false, message: "fixture unsupported host" } });
+  const result = await f.service.preparePermissions();
+  assert.equal(result.success, false); assert.equal(result.permissions, null); assert.equal(result.cleanupRequired, false);
+  assert.equal(result.error, "fixture unsupported host"); assert.deepEqual(f.captures, []); assert.deepEqual(f.uploads, []);
+});
+
 test("session replaces partials with final text and preserves both capture sources through pause, resume and stop", async context => {
   const f = fixture(context);
   assert.equal((await f.service.start()).success, true);

@@ -58,7 +58,7 @@ function harness({ platform = "win32", arch = "x64", release = platform === "win
     onError: e => { errors.push(e); extra.onError?.(e); },
   });
   return { sdk, calls, states, transcripts, errors, emit, create, RecallCapture, imports: () => imports,
-    expire() { for (const timer of [...timers]) { assert.equal(timer.ms, 15_000); timers.delete(timer); timer.fn(); } },
+    expire(ms = 15_000) { for (const timer of [...timers]) if (timer.ms === ms) { timers.delete(timer); timer.fn(); } },
     listenerCount: () => [...callbacks.values()].reduce((n, set) => n + set.size, 0),
     normalizer: () => dependencies["./recallTranscript"].createRecallTranscriptNormalizer(),
   };
@@ -67,6 +67,98 @@ const input = { kind: "recall-upload", uploadToken: "fixture-upload-token", apiU
 const event = (id, text = "hello", partial = false, participant = { id: 1, is_host: true }, start = 0) => ({
   window: { id }, event: partial ? "transcript.partial_data" : "transcript.data",
   data: { data: { words: [{ text, start_timestamp: { relative: start }, end_timestamp: { relative: start + 0.5 } }], participant } },
+});
+
+test("explicit mac permission preflight shares the SDK owner and never prepares a source, records or uploads", async () => {
+  const h = harness({ platform: "darwin", arch: "arm64" }), capture = h.create();
+  const initial = capture.getPermissionSnapshot();
+  assert.equal(initial.microphone.status, "unknown"); assert.equal(initial.microphone.observedAt, undefined);
+  assert.equal(h.imports(), 0); assert.deepEqual(h.calls, []);
+  await capture.preparePermissions(new AbortController().signal, { recallApiUrl: input.apiUrl });
+  assert.deepEqual(h.calls.map(call => call[0]), ["init", "permission", "permission", "permission"]);
+  assert.equal(h.calls[0][1].apiUrl, input.apiUrl);
+  const observed = capture.getPermissionSnapshot();
+  for (const permission of ["microphone", "systemAudio", "accessibility"]) {
+    assert.equal(observed[permission].status, "granted"); assert.equal(typeof observed[permission].observedAt, "number");
+  }
+  observed.microphone.status = "denied";
+  assert.equal(capture.getPermissionSnapshot().microphone.status, "granted");
+  await assert.rejects(h.create().preparePermissions(new AbortController().signal, { recallApiUrl: input.apiUrl }), /仍持有/);
+  // A later real start reuses this owned process and its observed permissions.
+  await capture.start(input);
+  assert.equal(h.calls.filter(call => call[0] === "init").length, 1);
+  await capture.dispose(); assert.equal(h.listenerCount(), 0);
+});
+
+test("permission preflight has no implicit Recall region and Windows never imports or initializes the SDK", async () => {
+  for (const recallApiUrl of [undefined, "", "https://unknown.recall.ai", "https://us-west-2.recall.ai/", "https://sensitive.example/"]) {
+    const h = harness({ platform: "darwin", arch: "arm64" }), capture = h.create();
+    await assert.rejects(capture.preparePermissions(new AbortController().signal, { recallApiUrl }), /区域配置/);
+    assert.equal(h.imports(), 0); assert.deepEqual(h.calls, []);
+    await capture.dispose();
+  }
+  const h = harness(), capture = h.create();
+  await capture.preparePermissions(new AbortController().signal, {});
+  for (const permission of ["microphone", "systemAudio", "accessibility"]) assert.equal(capture.getPermissionSnapshot()[permission].status, "not-required");
+  await capture.dispose(); assert.equal(h.imports(), 0); assert.deepEqual(h.calls, []);
+});
+
+test("permission request acknowledgement cannot grant access and preflight keeps exact refusal states", async () => {
+  const h = harness({ platform: "darwin", arch: "arm64" }), capture = h.create();
+  h.sdk.requestPermission = async () => undefined;
+  const preparing = capture.preparePermissions(new AbortController().signal, { recallApiUrl: input.apiUrl });
+  const rejected = assert.rejects(preparing, /60 秒/);
+  await tick(); assert.equal(capture.getPermissionSnapshot().microphone.status, "unknown");
+  h.expire(60_000); await rejected;
+  assert.equal(h.calls.some(call => ["prepare", "start"].includes(call[0])), false);
+  await capture.dispose();
+  for (const status of ["denied", "not_installed", "error"]) {
+    const f = harness({ platform: "darwin", arch: "arm64" }), refused = f.create();
+    f.sdk.requestPermission = async permission => f.emit("permission-status", { permission, status: permission === "system-audio" ? status : "granted" });
+    await assert.rejects(refused.preparePermissions(new AbortController().signal, { recallApiUrl: input.apiUrl }), error => error.message.includes(`system-audio=${status}`));
+    assert.equal(refused.getPermissionSnapshot().systemAudio.status, status);
+    assert.equal(f.calls.some(call => ["prepare", "start"].includes(call[0])), false);
+    await refused.dispose();
+  }
+});
+
+test("cancelling pending init or permission cannot race shutdown or lose the owner after a cleanup deadline", async () => {
+  for (const command of ["init", "requestPermission"]) {
+    const h = harness({ platform: "darwin", arch: "arm64" }), capture = h.create(), controller = new AbortController();
+    let complete;
+    h.sdk[command] = async value => { h.calls.push([command, value]); await new Promise(resolve => { complete = resolve; }); };
+    const preparing = capture.preparePermissions(controller.signal, { recallApiUrl: input.apiUrl });
+    const cancelled = assert.rejects(preparing, /取消/);
+    await tick(); assert.equal(typeof complete, "function");
+    controller.abort(); await cancelled;
+    const disposing = capture.dispose(), timedOut = assert.rejects(disposing, /仍保留资源所有权/);
+    await tick(); h.expire(); await timedOut;
+    assert.equal(h.calls.some(call => call[0] === "shutdown"), false);
+    const next = h.create();
+    await assert.rejects(next.preparePermissions(new AbortController().signal, { recallApiUrl: input.apiUrl }), /仍持有/);
+    complete(); await tick();
+    assert.equal(h.calls.filter(call => call[0] === "shutdown").length, 0);
+    await capture.dispose(); assert.equal(h.listenerCount(), 0);
+    assert.equal(h.calls.filter(call => call[0] === "shutdown").length, 1);
+    // Restore an acknowledging command for a genuinely fresh owner.
+    h.sdk.init = async config => h.calls.push(["init", config]);
+    h.sdk.requestPermission = async permission => h.emit("permission-status", { permission, status: "granted" });
+    await next.preparePermissions(new AbortController().signal, { recallApiUrl: input.apiUrl });
+    await next.dispose();
+  }
+});
+
+test("a preflight cleanup retry may request shutdown again after acknowledgement without native exit", async () => {
+  const h = harness({ platform: "darwin", arch: "arm64" }), capture = h.create();
+  await capture.preparePermissions(new AbortController().signal, { recallApiUrl: input.apiUrl });
+  h.sdk.shutdown = async () => h.calls.push(["shutdown"]);
+  const disposing = capture.dispose(), timedOut = assert.rejects(disposing, /仍保留资源所有权/);
+  await tick(); h.expire(); await timedOut;
+  await assert.rejects(h.create().start(input), /仍持有/);
+  h.sdk.shutdown = async () => { h.calls.push(["shutdown"]); h.emit("shutdown", { code: 0 }); };
+  await capture.dispose();
+  assert.equal(h.calls.filter(call => call[0] === "shutdown").length, 2);
+  assert.equal(h.listenerCount(), 0);
 });
 
 test("startup diagnostics distinguish prepare from start while disclosing only fixed error categories and permission states", async () => {

@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { release } from "node:os";
 import path from "node:path";
 import type { CaptureStatus } from "./types";
-import type { AudioCapture, CaptureCallbacks, CaptureSession, NativeCaptureSession } from "./captureContracts";
+import type { AudioCapture, AudioPermissionOptions, AudioPermissionSnapshot, CaptureCallbacks, CaptureSession, NativeCaptureSession } from "./captureContracts";
 import { createDeepgramTranscriptNormalizer } from "./DeepgramTranscript";
 import type { NativeAudioSource } from "./DeepgramTranscript";
 
@@ -87,6 +87,7 @@ export class NativePcmCapture implements AudioCapture {
   private stopping?: Promise<void>;
   private disposed = false;
   private status: CaptureStatus = "idle";
+  private permissions: AudioPermissionSnapshot = { microphone: { status: "unknown" }, systemAudio: { status: "unknown" } };
   private readonly clock: Clock;
   private readonly now: () => number;
 
@@ -125,12 +126,21 @@ export class NativePcmCapture implements AudioCapture {
           (input.transcriptionProfile === "deepgram-zh" && input.language === "zh"))) throw new Error("原生转写会话配置无效或凭据已过期；请重新启动会话。");
     return input;
   }
+  getPermissionSnapshot(): AudioPermissionSnapshot {
+    return { microphone: { ...this.permissions.microphone }, systemAudio: { ...this.permissions.systemAudio } };
+  }
+  preparePermissions(signal: AbortSignal, _options: AudioPermissionOptions): Promise<void> {
+    // The same owner prepares native permissions and discovers a display. It
+    // does not create an ASR socket or send the helper's audio-start command.
+    return this.prepare(signal);
+  }
   prepare(signal: AbortSignal): Promise<void> {
     if (this.disposed || this.run || this.operation || this.stopping || NativePcmCapture.owner && NativePcmCapture.owner !== this) return Promise.reject(new Error("上一次原生音频采集尚未关闭。"));
     if (signal.aborted) return Promise.reject(new Error("音频操作已取消。"));
     const support = NativePcmCapture.support(this.options.host);
     if (!support.supported) return Promise.reject(new Error(support.message));
     if (!path.isAbsolute(this.options.helperPath) || this.options.helperPath.includes("\0")) return Promise.reject(new Error("原生音频程序路径无效。"));
+    this.permissions = { microphone: { status: "unknown" }, systemAudio: { status: "unknown" } };
     const run: Run = { childClosed: false, childDone: deferred(), channels: new Map(), queues: { system: [], microphone: [] },
       bytes: { system: 0, microphone: 0 }, line: Buffer.alloc(0), helperRecording: false, helperEnded: false,
       stopping: false, prepared: false, started: false, listeners: [] };
@@ -257,11 +267,19 @@ export class NativePcmCapture implements AudioCapture {
     const value = input as Record<string, unknown>;
     if (value.event === "error") {
       const code = typeof value.code === "string" && Object.prototype.hasOwnProperty.call(nativeFailures, value.code) ? value.code : "INTERNAL_ERROR";
+      if (code === "MICROPHONE_PERMISSION_DENIED") this.permissions.microphone = { status: "denied", observedAt: this.now() };
+      if (code === "SCREEN_PERMISSION_DENIED") this.permissions.systemAudio = { status: "denied", observedAt: this.now() };
       this.fail(run, `${nativeFailures[code]} [native=${code}]`); return;
     }
     if (value.event === "prepared") {
       const waiter = run.waiter;
-      if (waiter?.state === "prepared" && !run.stopping && !run.prepared) waiter.done.resolve();
+      if (waiter?.state === "prepared" && !run.stopping && !run.prepared) {
+        // The helper emits prepared only after AVAuthorizationAuthorized and
+        // CGPreflightScreenCaptureAccess, followed by display discovery.
+        const observedAt = this.now();
+        this.permissions = { microphone: { status: "granted", observedAt }, systemAudio: { status: "granted", observedAt } };
+        waiter.done.resolve();
+      }
       else this.fail(run, "原生音频准备状态与请求不一致。");
       return;
     }

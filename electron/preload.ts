@@ -1,3 +1,4 @@
+import type { CapturePermissionAPI } from "./permissionsTypes";
 import type { PublicTranscriptionSettings } from "./live/CaptureSelection";
 import { contextBridge, ipcRenderer } from "electron";
 import type { LiveSessionAPI, LiveSnapshot } from "./live/types";
@@ -15,7 +16,7 @@ import type { PublicSettings, SaveAiSettingsInput } from "./settings";
 console.log("Preload script starting...");
 
 // Types for the exposed Electron API
-interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
+interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI, CapturePermissionAPI {
   getTranscriptionSettings: () => Promise<PublicTranscriptionSettings>;
   saveTranscriptionSettings: (input: TranscriptionSettings) => Promise<{ success: boolean; settings?: PublicTranscriptionSettings; error?: string }>;
   accountGet: () => Promise<{
@@ -150,6 +151,17 @@ export const PROCESSING_EVENTS = {
 console.log("Preload script is running");
 
 const electronAPI = {
+  getCapturePermissions: () => ipcRenderer.invoke("capture-permissions-get"),
+  requestCapturePermission: (id: Parameters<CapturePermissionAPI["requestCapturePermission"]>[0]) => ipcRenderer.invoke("capture-permissions-request", id),
+  openCapturePermissionSettings: (id: Parameters<CapturePermissionAPI["openCapturePermissionSettings"]>[0]) => ipcRenderer.invoke("capture-permissions-settings", id),
+  acknowledgeCapturePermissionGuide: () => ipcRenderer.invoke("capture-permissions-acknowledge"),
+  openCapturePermissionGuide: () => ipcRenderer.invoke("capture-permissions-open"),
+  restartForCapturePermissions: () => ipcRenderer.invoke("capture-permissions-restart"),
+  onCapturePermissionsNeeded: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("capture-permissions-needed", listener);
+    return () => ipcRenderer.removeListener("capture-permissions-needed", listener);
+  },
   getOverlayDisplays: () => ipcRenderer.invoke("overlay-get-displays"),
   selectOverlayDisplay: (displayId: number) => ipcRenderer.invoke("overlay-select-display", displayId),
   getOverlayGeometry: () => ipcRenderer.invoke("overlay-get-geometry"),

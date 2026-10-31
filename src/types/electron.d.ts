@@ -1,3 +1,4 @@
+import type { CapturePermissionAPI } from "../../electron/permissionsTypes";
 import type { PublicTranscriptionSettings } from "../../electron/live/CaptureSelection";
 import type { CreditBalanceDetails } from "../../shared/billing"
 import type { AiProviderId } from "../../electron/aiProviders"
@@ -15,7 +16,7 @@ import type {
   SaveAiSettingsInput,
 } from "../../electron/settings"
 
-export interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI {
+export interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI, CapturePermissionAPI {
   getTranscriptionSettings: () => Promise<PublicTranscriptionSettings>
   saveTranscriptionSettings: (input: TranscriptionSettings) => Promise<{ success: boolean; settings?: PublicTranscriptionSettings; error?: string }>
   accountGet: () => Promise<{

@@ -15,7 +15,7 @@ function load(name) {
   const module = { exports: {} };
   new Function("require", "module", "exports", js)(id => {
     if (id === "electron") return { app: { getAppPath: () => root, getVersion: () => "fixture" } };
-    if (id.startsWith("./")) return load(id.slice(2));
+    if (id.startsWith(".")) return load(path.relative(path.join(root, "electron"), path.resolve(path.dirname(filename), id)));
     return require(id);
   }, module, module.exports);
   modules.set(name, module.exports); return module.exports;

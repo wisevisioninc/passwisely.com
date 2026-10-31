@@ -1,4 +1,4 @@
-import type { CaptureSession } from "./captureContracts";
+import type { AudioCapture, AudioPermissionOptions, AudioPermissionSnapshot, CaptureSession } from "./captureContracts";
 import { release } from "node:os";
 import type { CaptureStatus, TranscriptSegment } from "./types";
 import { createRecallTranscriptNormalizer } from "./recallTranscript";
@@ -12,9 +12,11 @@ type Callbacks = {
 type EventValue = { window?: { id?: string }; [key: string]: unknown };
 type Waiter = { event: string; generation: number; windowId: string; resolve: () => void; reject: (error: Error) => void };
 const DEADLINE_MS = 15_000;
+const PERMISSION_DEADLINE_MS = 60_000;
 class CaptureFailure extends Error {}
 class CaptureTimeout extends CaptureFailure {}
 const REQUIRED_PERMISSIONS = ["accessibility", "microphone", "system-audio"] as const;
+const API_URLS = ["https://us-west-2.recall.ai", "https://us-east-1.recall.ai", "https://eu-central-1.recall.ai", "https://ap-northeast-1.recall.ai"];
 type RequiredPermission = typeof REQUIRED_PERMISSIONS[number];
 const PERMISSION_STATUSES = ["granted", "not_requested", "denied", "not_installed", "error"] as const;
 type PermissionStatus = typeof PERMISSION_STATUSES[number] | "unknown";
@@ -45,7 +47,7 @@ function safeNativeFailure(value: unknown): { cause: string; httpStatus?: number
   return { cause: "unknown" };
 }
 
-export class RecallCapture {
+export class RecallCapture implements AudioCapture {
   private static owner: RecallCapture | null = null;
   private sdk?: Sdk;
   private initialized = false;
@@ -61,7 +63,7 @@ export class RecallCapture {
   private disposing?: Promise<void>;
   private waiter?: Waiter;
   private listeners: Array<{ event: string; callback: (event: EventValue) => void }> = [];
-  private permissions = new Map<RequiredPermission, PermissionStatus>();
+  private permissions = new Map<RequiredPermission, { status: PermissionStatus; observedAt: number }>();
   private permissionChanged?: () => void;
   private processExited?: () => void;
   private retiredWindows = new Set<string>();
@@ -106,11 +108,11 @@ export class RecallCapture {
     if (this.disposed || generation !== this.generation) throw new Error("音频操作已取消。");
   }
 
-  private async deadline<T>(promise: Promise<T>, description: string): Promise<T> {
+  private async deadline<T>(promise: Promise<T>, description: string, milliseconds = DEADLINE_MS): Promise<T> {
     let timer: ReturnType<typeof setTimeout>;
     try {
       return await Promise.race([promise, new Promise<T>((_resolve, reject) => {
-        timer = setTimeout(() => reject(new CaptureTimeout(`${description}超时（15 秒），请检查系统权限后停止并重试。`)), DEADLINE_MS);
+        timer = setTimeout(() => reject(new CaptureTimeout(`${description}超时（${milliseconds / 1000} 秒），请检查系统权限后停止并重试。`)), milliseconds);
       })]);
     } finally { clearTimeout(timer!); }
   }
@@ -161,7 +163,7 @@ export class RecallCapture {
       if (RecallCapture.owner !== this || this.disposed || !REQUIRED_PERMISSIONS.includes(event.permission as RequiredPermission)) return;
       const status: PermissionStatus = PERMISSION_STATUSES.includes(event.status as typeof PERMISSION_STATUSES[number])
         ? event.status as PermissionStatus : "unknown";
-      this.permissions.set(event.permission as RequiredPermission, status);
+      this.permissions.set(event.permission as RequiredPermission, { status, observedAt: Date.now() });
       this.permissionChanged?.();
     });
     this.add("error", event => {
@@ -201,23 +203,24 @@ export class RecallCapture {
   }
 
   private permissionFailure(reason: string): CaptureFailure {
-    const missing = REQUIRED_PERMISSIONS.filter(permission => this.permissions.get(permission) !== "granted")
-      .map(permission => `${permission}=${this.permissions.get(permission) || "unknown"}`).join("；");
+    const missing = REQUIRED_PERMISSIONS.filter(permission => this.permissions.get(permission)?.status !== "granted")
+      .map(permission => `${permission}=${this.permissions.get(permission)?.status || "unknown"}`).join("；");
     return new CaptureFailure(`Recall 权限${reason}：${missing || "unknown"}。请在系统设置中确认对应的 PassWisely 权限，停止后重试。`);
   }
 
   private startFailureDetails(error: unknown, progress: StartProgress): string {
     const safe = safeNativeFailure(error);
     const permissions = process.platform === "win32" ? "macos-consent-not-required-on-windows"
-      : REQUIRED_PERMISSIONS.map(permission => `${permission}=${this.permissions.get(permission) || "unknown"}`).join(",");
+      : REQUIRED_PERMISSIONS.map(permission => `${permission}=${this.permissions.get(permission)?.status || "unknown"}`).join(",");
     return ` [phase=${progress.phase}; cause=${safe.cause}${safe.httpStatus ? `; http=${safe.httpStatus}` : ""}${safe.code ? `; code=${safe.code}` : ""}; commandAck=${progress.commandAcknowledged}; startedEvent=${progress.recordingStarted}; permissions=${permissions}]`;
   }
 
   private async ensurePermissions(generation: number): Promise<void> {
+    this.assertGeneration(generation);
     if (process.platform !== "darwin") return;
     const required = REQUIRED_PERMISSIONS;
     for (const permission of required) {
-      if (this.permissions.get(permission) !== "granted") {
+      if (this.permissions.get(permission)?.status !== "granted") {
         try { await this.command(this.sdk!.requestPermission(permission)); }
         catch {
           this.assertGeneration(generation);
@@ -229,50 +232,108 @@ export class RecallCapture {
     await new Promise<void>((resolve, reject) => {
       this.permissionChanged = () => {
         if (generation !== this.generation || this.disposed) reject(new Error("音频权限申请已取消。"));
-        else if (required.some(permission => ["denied", "error", "not_installed"].includes(this.permissions.get(permission) || ""))) {
+        else if (required.some(permission => ["denied", "error", "not_installed"].includes(this.permissions.get(permission)?.status || ""))) {
           reject(this.permissionFailure("检查未通过"));
-        } else if (required.every(permission => this.permissions.get(permission) === "granted")) resolve();
+        } else if (required.every(permission => this.permissions.get(permission)?.status === "granted")) resolve();
       };
       this.permissionChanged();
     }).finally(() => { this.permissionChanged = undefined; });
+  }
+
+  getPermissionSnapshot(): AudioPermissionSnapshot {
+    // Windows has no corresponding SDK consent flow. This says nothing about
+    // the separate Windows microphone privacy switch, checked by the app host.
+    if (process.platform === "win32") return {
+      microphone: { status: "not-required" }, systemAudio: { status: "not-required" }, accessibility: { status: "not-required" },
+    };
+    const observation = (permission: RequiredPermission) => ({ ...(this.permissions.get(permission) || { status: "unknown" as const }) });
+    return { microphone: observation("microphone"), systemAudio: observation("system-audio"), accessibility: observation("accessibility") };
+  }
+
+  private claim(apiUrl: string | undefined): string {
+    if (this.disposed) throw new Error("音频采集器已关闭。");
+    if (this.operation || this.nativePending || this.stopping || this.disposing || this.windowId || this.ownsProcess && !this.initialized) throw new Error("请先停止或关闭上一次音频操作。");
+    if (RecallCapture.owner && RecallCapture.owner !== this) throw new Error("另一个音频采集器仍持有 Recall 进程，请先关闭它。");
+    if (typeof apiUrl !== "string" || !API_URLS.includes(apiUrl)) throw this.failure("Recall 区域配置无效或缺失，请检查服务区域配置后重试授权。");
+    if (this.initialized && apiUrl !== this.initializedApiUrl) throw new Error("Recall 区域已变化，请关闭采集器后重新启动。");
+    RecallCapture.owner = this;
+    return apiUrl;
+  }
+
+  private async initialize(apiUrl: string, generation: number): Promise<void> {
+    this.assertGeneration(generation);
+    if (!this.sdk) {
+      const module = require("@recallai/desktop-sdk") as { default?: Sdk } & Sdk;
+      this.sdk = module.default || module;
+      this.attach();
+    }
+    if (!this.initialized) {
+      this.ownsProcess = true;
+      this.permissions.clear();
+      await this.command(this.sdk.init({ apiUrl, acquirePermissionsOnStartup: [], restartOnError: false, telemetryMode: "off" }));
+      this.assertGeneration(generation);
+      this.initialized = true;
+      this.initializedApiUrl = apiUrl;
+    }
+  }
+
+  async preparePermissions(signal: AbortSignal, options: AudioPermissionOptions): Promise<void> {
+    const support = RecallCapture.support();
+    if (!support.supported) throw new Error(support.message);
+    if (signal.aborted) throw new Error("音频权限申请已取消。");
+    if (this.disposed) throw new Error("音频采集器已关闭。");
+    if (process.platform === "win32") return;
+    const apiUrl = this.claim(options.recallApiUrl);
+    const generation = ++this.generation;
+    let rejectAbort!: (error: Error) => void;
+    const cancelled = new Promise<void>((_resolve, reject) => { rejectAbort = reject; });
+    const abort = () => {
+      if (generation === this.generation) { ++this.generation; this.permissionChanged?.(); }
+      rejectAbort(new Error("音频权限申请已取消。"));
+    };
+    signal.addEventListener("abort", abort, { once: true });
+    const work = (async () => {
+      this.assertGeneration(generation);
+      await this.initialize(apiUrl, generation);
+      this.assertGeneration(generation);
+      await this.ensurePermissions(generation);
+      this.assertGeneration(generation);
+    })();
+    this.operation = work;
+    try { await this.deadline(Promise.race([work, cancelled]), "音频权限申请", PERMISSION_DEADLINE_MS); }
+    catch (error) {
+      if (generation !== this.generation || this.disposed) throw new Error("音频权限申请已取消。");
+      ++this.generation; this.permissionChanged?.();
+      throw this.failure(error instanceof CaptureTimeout ? this.permissionFailure("检查超时（60 秒）").message
+        : error instanceof CaptureFailure ? error.message : "Recall 权限准备失败，请检查系统权限与服务区域配置后重试。");
+    } finally {
+      signal.removeEventListener("abort", abort);
+      // A deadline or cancellation does not settle a native command. Retain it
+      // until it completes so dispose cannot race a late native initialization.
+      void work.finally(() => { if (this.operation === work) this.operation = undefined; }).catch(() => undefined);
+    }
   }
 
   async start(input: CaptureSession): Promise<void> {
     if (input.kind !== "recall-upload") throw this.failure("Recall 采集器收到不匹配的音频会话。 ");
     const support = RecallCapture.support();
     if (!support.supported) throw this.failure(support.message!);
-    if (this.disposed) throw new Error("音频采集器已关闭。");
-    if (this.operation || this.nativePending || this.stopping || this.disposing || this.windowId || this.ownsProcess && !this.initialized) throw new Error("请先停止或关闭上一次音频操作。");
-    if (RecallCapture.owner && RecallCapture.owner !== this) throw new Error("另一个音频采集器仍持有 Recall 进程，请先关闭它。");
-    if (!input.uploadToken || !["https://us-west-2.recall.ai", "https://us-east-1.recall.ai", "https://eu-central-1.recall.ai", "https://ap-northeast-1.recall.ai"].includes(input.apiUrl)) {
+    if (!input.uploadToken) {
       throw this.failure("音频会话凭据或 Recall 区域无效。");
     }
-    if (this.initialized && input.apiUrl !== this.initializedApiUrl) throw new Error("Recall 区域已变化，请关闭采集器后重新启动。");
-    RecallCapture.owner = this;
+    this.claim(input.apiUrl);
     const generation = ++this.generation;
     this.setState("starting");
     this.normalizer = createRecallTranscriptNormalizer();
     const progress: StartProgress = { phase: "initializing", commandAcknowledged: false, recordingStarted: false };
     this.startProgress = progress;
     const work = (async () => {
-      if (!this.sdk) {
-        const module = require("@recallai/desktop-sdk") as { default?: Sdk } & Sdk;
-        this.sdk = module.default || module;
-        this.attach();
-      }
-      if (!this.initialized) {
-        this.ownsProcess = true;
-        this.permissions.clear();
-        await this.command(this.sdk.init({ apiUrl: input.apiUrl, acquirePermissionsOnStartup: [], restartOnError: false, telemetryMode: "off" }));
-        this.assertGeneration(generation);
-        this.initialized = true;
-        this.initializedApiUrl = input.apiUrl;
-      }
+      await this.initialize(input.apiUrl, generation);
       progress.phase = "permissions";
       await this.ensurePermissions(generation);
       this.assertGeneration(generation);
       progress.phase = "preparing-source";
-      const id = await this.command(this.sdk.prepareDesktopAudioRecording());
+      const id = await this.command(this.sdk!.prepareDesktopAudioRecording());
       this.assertGeneration(generation);
       if (!id || this.retiredWindows.has(id)) throw new CaptureFailure("Recall 返回了无效或已使用的音频来源，请关闭后重试。");
       this.windowId = id;
@@ -383,21 +444,32 @@ export class RecallCapture {
 
   private async disposeInternal(): Promise<void> {
     if (this.disposed) return;
-    ++this.generation;
+    const generation = ++this.generation;
     this.rejectWaiter("音频采集器正在关闭。");
     this.permissionChanged?.();
     this.setState("stopping");
-    try {
+    const pending = this.operation;
+    let releaseWaiter: (() => void) | undefined;
+    const work = (async () => {
+      // Native commands can outlive the caller's deadline. A timed-out dispose
+      // cannot race late init or issue another shutdown after a newer attempt.
+      if (pending) await pending.catch(() => undefined);
+      if (this.nativePending) await this.nativePending.catch(() => undefined);
+      if (generation !== this.generation) throw new Error("音频关闭操作已取消。");
       if (this.sdk && this.ownsProcess) {
-        const exited = new Promise<void>(resolve => { this.processExited = resolve; });
+        const exited = new Promise<void>(resolve => { releaseWaiter = resolve; this.processExited = resolve; });
         // SDK2.0.39 resolves shutdown after its force-kill attempt even without
-        // a close event. Only the shutdown event proves that the process exited.
-        const requested = Promise.resolve().then(() => this.command(this.sdk!.shutdown())).then(() => exited);
-        await this.deadline(Promise.race([exited, requested]), "关闭音频进程");
+        // close. Require both the command to settle and actual process exit.
+        const requested = Promise.resolve().then(() => this.command(this.sdk!.shutdown()));
+        await Promise.all([exited, requested]);
       }
+    })();
+    try {
+      await this.deadline(work, "关闭音频进程");
     } catch (error) {
-      if (this.ownsProcess) throw this.failure(error instanceof CaptureFailure ? `${error.message}仍保留资源所有权。` : "Recall 进程未确认退出，仍保留资源所有权，请重试关闭。");
-    } finally { this.processExited = undefined; }
+      if (generation === this.generation) ++this.generation;
+      if (this.ownsProcess || this.operation || this.nativePending) throw this.failure(error instanceof CaptureFailure ? `${error.message}仍保留资源所有权。` : "Recall 进程未确认退出，仍保留资源所有权，请重试关闭。");
+    } finally { if (this.processExited === releaseWaiter) this.processExited = undefined; }
     this.initialized = false;
     this.ownsProcess = false;
     this.retireWindow();

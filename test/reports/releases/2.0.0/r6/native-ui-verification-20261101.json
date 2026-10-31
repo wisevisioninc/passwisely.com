@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-01",
+  "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+  "host": {
+    "macOS": "26.6.2",
+    "architecture": "arm64"
+  },
+  "scope": "Real signed candidates launched by exact App path through native UI; no security warning bypass, no login, no new OS grant, no audio start or permission preparation. One local 1x1 screen-source thumbnail check per architecture under already-granted screen permission.",
+  "appleSilicon": {
+    "actualLoadedUrl": "file:///private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/Resources/app.asar/dist/index.html",
+    "guideBeforeLogin": true,
+    "screenInitiallyGranted": true,
+    "microphoneInitiallyGranted": true,
+    "systemAudioInitiallyUnknown": true,
+    "accessibilityInitiallyGranted": true,
+    "refreshPreservedObservedStatuses": true,
+    "maximizeThenRestoreControlLabelsCorrect": true,
+    "closeGuideRevealedLogin": true,
+    "quitAndReopenWithoutAcknowledgingShowsGuideAgain": true,
+    "screenProbeBusyThenReadyWithoutVisibleError": true
+  },
+  "intelBuildOnRosetta": {
+    "actualLoadedUrl": "file:///private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/Resources/app.asar/dist/index.html",
+    "guideBeforeLogin": true,
+    "architectureShown": "x64",
+    "screenInitiallyGranted": true,
+    "microphoneInitiallyGranted": true,
+    "systemAudioInitiallyUnknown": true,
+    "accessibilityRowNotPresent": true,
+    "screenProbeReturnedReadyWithoutVisibleError": true
+  },
+  "captureSessionStarted": false,
+  "notes": [
+    "Thumbnail checks validate the explicit permission-test path, not a full-resolution normal screenshot or authenticated hotkey.",
+    "No physical Intel machine, macOS11.7.10, clean TCC/denied-state or audio OS consent was tested. Big Sur remains pending user acceptance.",
+    "Candidates were quit normally after checks; fresh inventory showed PassWisely not running.",
+    "Native protected-window screenshot buffers were used only for dimension observation, not saved or exported. Mock screenshots are separately retained."
+  ],
+  "acknowledgementActionPerformed": false,
+  "screenProbeImplementationScope": "Source-derived: permission probe validates 1x1 thumbnails without PNG encoding, image-file writes, queueing or upload. UI observation was ready state with no visible error."
+}

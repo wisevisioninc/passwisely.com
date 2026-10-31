@@ -1,0 +1,107 @@
+{
+  "sourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+  "date": "2026-11-01",
+  "scope": "Actual in-app-browser rendering and interaction of production PermissionOnboarding/WindowControls components with explicitly mocked Electron API; no real OS permission, capture, account or native window operation. Isolated fixture, no product source change.",
+  "cases": {
+    "macArm600": {
+      "viewport": [
+        600,
+        720
+      ],
+      "horizontalOverflow": false,
+      "card": {
+        "x": 20,
+        "y": 40,
+        "width": 560,
+        "height": 664
+      },
+      "body": {
+        "clientHeight": 441,
+        "initialScrollHeight": 787
+      },
+      "footerBottom": 703,
+      "nativeGrantInferred": false
+    },
+    "macIntel360": {
+      "viewport": [
+        360,
+        720
+      ],
+      "horizontalOverflow": false,
+      "card": {
+        "left": 8,
+        "right": 352,
+        "top": 36,
+        "bottom": 712
+      },
+      "footerBottom": 711,
+      "body": {
+        "clientHeight": 437,
+        "scrollHeight": 739
+      },
+      "audioUnsupportedVisible": true,
+      "screenAndMicrophoneRowsRetained": true
+    },
+    "windows600": {
+      "viewport": [
+        600,
+        720
+      ],
+      "horizontalOverflow": false,
+      "footerBottom": 703,
+      "body": {
+        "clientHeight": 440,
+        "scrollHeight": 658,
+        "scrolledTop": 217.5
+      },
+      "screenTestAndMicrophoneSoundSettingsButtonsPresent": true
+    },
+    "cleanup600": {
+      "restartButtonEnabled": false,
+      "releaseGuidancePresent": true
+    }
+  },
+  "interactions": {
+    "mockScreenSettingsLeavesDeniedStatus": true,
+    "mockMicrophoneRequestShowsBusyThenGranted": true,
+    "lastButtonTabWrapsToFirst": true,
+    "escapeClosesAndMockEventReopens": true,
+    "acknowledgementClosesAndOnlyRecordsSeen": true,
+    "bodyScrollReachesBottomAndFooterRemainsVisible": true
+  },
+  "browserViewportRestored": true,
+  "temporaryTabClosed": true,
+  "nativeOrPhysicalAcceptance": false,
+  "screenshots": [
+    {
+      "file": "/Users/chenyejin/.codex/visualizations/2026/10/14/01a139b2-9f2d-7231-87ff-3b68f2566c9c/passwisely-permissions-r6/cleanup-600x720.jpg",
+      "bytes": 41427,
+      "sha256": "7bd94014354389034f6d8a381622e15e6752b068ab9ef0182a7dc29bf2658c14"
+    },
+    {
+      "file": "/Users/chenyejin/.codex/visualizations/2026/10/14/01a139b2-9f2d-7231-87ff-3b68f2566c9c/passwisely-permissions-r6/mac-arm-600x720.jpg",
+      "bytes": 40266,
+      "sha256": "92d3f5a1e0f754557649eb8098017007479008951ad829f7845334e770b40c7d"
+    },
+    {
+      "file": "/Users/chenyejin/.codex/visualizations/2026/10/14/01a139b2-9f2d-7231-87ff-3b68f2566c9c/passwisely-permissions-r6/mac-arm-scrolled.jpg",
+      "bytes": 39446,
+      "sha256": "84adf53db33eaeefdf1673bcd5ba5b8a316f981886d892614e530cc2cb6ab3ef"
+    },
+    {
+      "file": "/Users/chenyejin/.codex/visualizations/2026/10/14/01a139b2-9f2d-7231-87ff-3b68f2566c9c/passwisely-permissions-r6/mac-intel-360x720.jpg",
+      "bytes": 38559,
+      "sha256": "a44079838161f4d6d103afefe6a238f81f0dd49005595d15103befc6c385e901"
+    },
+    {
+      "file": "/Users/chenyejin/.codex/visualizations/2026/10/14/01a139b2-9f2d-7231-87ff-3b68f2566c9c/passwisely-permissions-r6/mac-intel-scrolled.jpg",
+      "bytes": 38103,
+      "sha256": "548c17855450c9294de1348b559515d10b87111b4db7b6dab9a4853fa31d80e3"
+    },
+    {
+      "file": "/Users/chenyejin/.codex/visualizations/2026/10/14/01a139b2-9f2d-7231-87ff-3b68f2566c9c/passwisely-permissions-r6/windows-600x720.jpg",
+      "bytes": 37672,
+      "sha256": "1ae4813704e8aef6ce42559e7927e2ee8cbbe8adbcddceee239298524a407c45"
+    }
+  ]
+}

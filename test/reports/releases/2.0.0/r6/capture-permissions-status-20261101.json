@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "status": "mac_notarization_awaiting_explicit_apple_upload_authorization",
+  "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+  "windowsBuildSourceCommit": "acc1a0f1760327748dd9406d98ed404307dc3aa4",
+  "version": "2.0.0",
+  "revision": 6,
+  "mac": {
+    "signedCandidatesVerified": true,
+    "unlocked": true,
+    "existingNotaryProfileReadable": true,
+    "notarizationUploaded": false,
+    "finalDmgReady": false,
+    "approvalReviewRejection": {
+      "action": "Upload both signed r6 Mac Apps and their subsequent DMGs to Apple official notarization service",
+      "reason": "Explicit authorization for these payloads and recipient required",
+      "scriptStarted": false,
+      "confirmationRequested": true,
+      "confirmationReceived": false
+    }
+  },
+  "windows": {
+    "packageGatePassed": true,
+    "ciRunUrl": "https://github.com/yejinchen-ai/passwisely/actions/runs/41231031525",
+    "bytes": 123234204,
+    "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a",
+    "localInstaller": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/PassWisely-Windows-x64.exe",
+    "authenticodeSigned": false,
+    "physicalCaptureAcceptance": false
+  },
+  "ui": {
+    "browserMockVisualAcceptance": true,
+    "nativeMacGuideAcceptance": true,
+    "physicalIntelBigSurAcceptance": false
+  },
+  "published": false,
+  "downloadCatalogChanged": false,
+  "productionChanged": false,
+  "resumeScript": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/tools/resume-r6.py",
+  "downloadPreparation": "/private/tmp/passwisely-r6-download-prep-20261031/README.md"
+}

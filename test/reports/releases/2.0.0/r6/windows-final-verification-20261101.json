@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "success": true,
+  "verifiedAt": "2026-10-31T18:51:55.022489+00:00",
+  "version": "2.0.0",
+  "revision": 6,
+  "platform": "windows-x64",
+  "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+  "windowsBuildSourceCommit": "acc1a0f1760327748dd9406d98ed404307dc3aa4",
+  "provenance": {
+    "runUrl": "https://github.com/yejinchen-ai/passwisely/actions/runs/41231031525",
+    "artifactId": "13053388802",
+    "artifactName": "PassWisely-Windows-x64-unsigned",
+    "browserDownloadedPath": "/Users/chenyejin/Downloads/PassWisely-Windows-x64-unsigned (3).zip",
+    "retainedArchive": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/windows-final-acc1a0f-run25/downloaded-artifact/PassWisely-Windows-x64-unsigned.zip",
+    "archiveBytes": 123360780,
+    "archiveSha256": "172b24aba3ef27298bc99cf1557ee4ec5dfacf4e3cd027b1bf16dbdff89f2a08",
+    "archiveDigestMatchesGitHubUi": true
+  },
+  "archiveSafety": {
+    "entries": 8,
+    "duplicates": false,
+    "unsafePaths": false,
+    "symlinks": false,
+    "allManifestEntriesVerified": true
+  },
+  "files": [
+    {
+      "file": "PassWisely-Windows-x64.exe",
+      "bytes": 123234204,
+      "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a"
+    },
+    {
+      "file": "PassWisely-Windows-x64.exe.blockmap",
+      "bytes": 130909,
+      "sha256": "6b8ad993e2253cd537a834ec8e2b1ff0b3355d4d50524c27bff90ded420b3269"
+    },
+    {
+      "file": "latest.yml",
+      "bytes": 349,
+      "sha256": "d5e05ce1fcdcb3efa77d559bbd80507c1dcd8f7c71f99b2c730dd8d7138c0dce"
+    },
+    {
+      "file": "windows-runtime.json",
+      "bytes": 499,
+      "sha256": "bcfe1b606e247d7e51610a1eda44dfe0a8c0efad6012c29733a41c5c1cbd7387"
+    },
+    {
+      "file": "windows-nsis-compat.json",
+      "bytes": 835,
+      "sha256": "64188d66a3983d1dea062a4a68d1df11dd40b8877023544cbd1f1370c3bb57e3"
+    },
+    {
+      "file": "windows-install.json",
+      "bytes": 1454,
+      "sha256": "f620a52f79b348dbeb333a07fd4617df33f108aaa66565b9b27fdf51803a79fa"
+    },
+    {
+      "file": "windows-artifacts.json",
+      "bytes": 1075,
+      "sha256": "9f3746a1f93e3943917dfaa9a39c9609586d8c98192935c7cf33281b4d37c119"
+    },
+    {
+      "file": "windows-signature.json",
+      "bytes": 227,
+      "sha256": "f22565b75ff9790a4e8b0d75476a378d59b11405bab9403b7ebaf5b9d52c7a7a"
+    }
+  ],
+  "installer": {
+    "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/windows-final-acc1a0f-run25/artifacts/PassWisely-Windows-x64.exe",
+    "file": "PassWisely-Windows-x64.exe",
+    "bytes": 123234204,
+    "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a",
+    "carrierPeMachine": "0x14c"
+  },
+  "runner": {
+    "recordedAt": "2026-10-31T18:47:55.883719+00:00",
+    "observationSource": "Chrome GitHub Actions rendered Set up job logs",
+    "runId": 41231031525,
+    "runAttempt": 1,
+    "jobId": 124625108972,
+    "runnerVersion": "2.338.2",
+    "os": "Microsoft Windows Server 2025",
+    "osBuild": "10.0.26100",
+    "edition": "Datacenter",
+    "image": "windows-2025-vs2026",
+    "imageVersion": "20261021.278.1",
+    "imageReadme": "https://github.com/actions/runner-images/blob/win25-vs2026/20261021.278/images/windows/Windows2025-VS2026-Readme.md",
+    "imageRelease": "https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20261021.278",
+    "actionCommits": {
+      "checkout@v4": "11d5960a326750d5838078e36cf38b85af677262",
+      "setup-node@v4": "49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "upload-artifact@v4": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+    },
+    "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+    "windowsBuildSourceCommit": "acc1a0f1760327748dd9406d98ed404307dc3aa4"
+  },
+  "nsisCompat": {
+    "success": true,
+    "status": "applied",
+    "scope": "Windows installer build template only; does not establish a previous crash cause.",
+    "upstream": "https://github.com/electron-userland/electron-builder/commit/13d8535",
+    "builder": "app-builder-lib",
+    "version": "24.13.3",
+    "template": "templates/nsis/multiUser.nsh",
+    "beforeSha256": "afa9046492317e72e79e022cdb1f42edba4687ea605300bfc01c002f3106201c",
+    "originalSha256": "afa9046492317e72e79e022cdb1f42edba4687ea605300bfc01c002f3106201c",
+    "patchedSha256": "461144ae7e8e04d87a6d195530dba063c85fe340e8fb48997df86339564cd231",
+    "backup": {
+      "relativeTo": "RUNNER_TEMP",
+      "path": "passwisely-nsis-compat-41231031525-1/multiUser.nsh.original",
+      "sha256": "afa9046492317e72e79e022cdb1f42edba4687ea605300bfc01c002f3106201c"
+    },
+    "buildSourceCommit": "acc1a0f1760327748dd9406d98ed404307dc3aa4",
+    "runId": "41231031525",
+    "runAttempt": "1"
+  },
+  "nsisCompatReceiptSha256": "64188d66a3983d1dea062a4a68d1df11dd40b8877023544cbd1f1370c3bb57e3",
+  "sourceIdentity": {
+    "recordedAt": "2026-10-31T18:47:05.304126+00:00",
+    "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+    "windowsBuildSourceCommit": "acc1a0f1760327748dd9406d98ed404307dc3aa4",
+    "branch": "codex/capture-permissions-v2.0.0-r6-nsis",
+    "remoteBranchCommitVerified": "acc1a0f1760327748dd9406d98ed404307dc3aa4",
+    "changedFiles": [
+      ".github/workflows/build-windows.yml",
+      "desktop-api/tests/windows-nsis-compat.test.mjs",
+      "scripts/apply-windows-nsis-compat.cjs",
+      "test/reports/capture-permissions-2026-10-31.md",
+      "test/reports/releases/2.0.0/r6/arm64-app-candidate-verification.json",
+      "test/reports/releases/2.0.0/r6/arm64-runtime-smoke.json",
+      "test/reports/releases/2.0.0/r6/capture-permissions-build-readiness.json",
+      "test/reports/releases/2.0.0/r6/capture-permissions-regression.json",
+      "test/reports/releases/2.0.0/r6/x64-app-candidate-verification.json",
+      "test/reports/releases/2.0.0/r6/x64-runtime-smoke.json"
+    ],
+    "changesLimitedToBuildToolingTestsAndReports": true,
+    "unchangedTrackedPathCount": 544,
+    "unchangedPathManifestSha256": "da8b84c5f69c09feedbad5acaef40f8f247c7ff6fd8b57f8f8afce119aa0b56d",
+    "buildToolSourceFiles": [
+      {
+        "path": ".github/workflows/build-windows.yml",
+        "bytes": 19597,
+        "sha256": "46316246c316b503b494f73b8b5197d79dd4d068f4002f402179e494d639cdcc"
+      },
+      {
+        "path": "desktop-api/tests/windows-nsis-compat.test.mjs",
+        "bytes": 6275,
+        "sha256": "0256b65bb336d252674fd7107887714c0bfc8084b844605f1ca61704e53b425d"
+      },
+      {
+        "path": "scripts/apply-windows-nsis-compat.cjs",
+        "bytes": 6375,
+        "sha256": "4dac030273174065e9d156643580c412d7f51fa1668ac2a622262628c4bce423"
+      }
+    ],
+    "runtimeCodeDiffEmpty": true,
+    "runId": 41231031525,
+    "runAttempt": 1,
+    "jobId": 124625108972,
+    "runUrl": "https://github.com/yejinchen-ai/passwisely/actions/runs/41231031525",
+    "signedBuildRequested": false,
+    "phase": "verified-final-candidate",
+    "published": false,
+    "ciElapsedSeconds": 260,
+    "actualInstallUninstallStepSeconds": 15,
+    "artifactId": 13053388802,
+    "artifactZipBytes": 123360780,
+    "artifactZipSha256": "172b24aba3ef27298bc99cf1557ee4ec5dfacf4e3cd027b1bf16dbdff89f2a08",
+    "updatedAt": "2026-10-31T18:52:02.811456+00:00",
+    "installer": {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/windows-final-acc1a0f-run25/artifacts/PassWisely-Windows-x64.exe",
+      "file": "PassWisely-Windows-x64.exe",
+      "bytes": 123234204,
+      "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a",
+      "carrierPeMachine": "0x14c"
+    },
+    "nsisCompatReceiptSha256": "64188d66a3983d1dea062a4a68d1df11dd40b8877023544cbd1f1370c3bb57e3",
+    "unchangedPathManifest": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/windows-final-acc1a0f-run25/unchanged-runtime-source-manifest.json"
+  },
+  "runtime": {
+    "success": true,
+    "code": "WINDOWS_IMPORT_OK",
+    "stage": "complete",
+    "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+    "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+    "methods": [
+      "init",
+      "prepareDesktopAudioRecording",
+      "startRecording",
+      "pauseRecording",
+      "resumeRecording",
+      "stopRecording",
+      "shutdown"
+    ],
+    "native": [
+      "agent-windows.exe:PE-x64-header",
+      "gstreamer-1.0:unpacked-DLLs"
+    ],
+    "scope": "Package resources and SDK JavaScript import only; no native agent initialization, capture, upload or ASR."
+  },
+  "install": {
+    "success": true,
+    "scope": "Actual per-user silent NSIS install, installed-package import/resources, and uninstall. No normal GUI startup, login, native agent init, recording, upload or ASR.",
+    "buildSourceCommit": "acc1a0f1760327748dd9406d98ed404307dc3aa4",
+    "installer": {
+      "file": "PassWisely-Windows-x64.exe",
+      "bytes": 123234204,
+      "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a"
+    },
+    "installDirectory": "D:\\a\\_temp\\pw-nsis-723af667785846bab31957b3e98fdf5a",
+    "installExit": 0,
+    "installStartUtc": "2026-10-31T18:50:20.8158569Z",
+    "installEndUtc": "2026-10-31T18:50:33.1697313Z",
+    "installProcessId": 6892,
+    "failure": null,
+    "cleanupFailure": null,
+    "installedRuntime": {
+      "success": true,
+      "code": "WINDOWS_IMPORT_OK",
+      "stage": "complete",
+      "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+      "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+      "methods": [
+        "init",
+        "prepareDesktopAudioRecording",
+        "startRecording",
+        "pauseRecording",
+        "resumeRecording",
+        "stopRecording",
+        "shutdown"
+      ],
+      "native": [
+        "agent-windows.exe:PE-x64-header",
+        "gstreamer-1.0:unpacked-DLLs"
+      ],
+      "scope": "Package resources and SDK JavaScript import only; no native agent initialization, capture, upload or ASR."
+    },
+    "uninstallExit": 0,
+    "installedPayloadRemoved": true
+  },
+  "signatures": [
+    {
+      "file": "PassWisely.exe",
+      "status": "NotSigned",
+      "signedBuildRequested": false
+    },
+    {
+      "file": "PassWisely-Windows-x64.exe",
+      "status": "NotSigned",
+      "signedBuildRequested": false
+    }
+  ],
+  "published": false,
+  "artifactRole": "final-candidate",
+  "windowsPackageGatePassed": true,
+  "scope": "Exact downloaded Actions ZIP and all CI file hashes/sizes verified locally. CI evidence establishes real hosted-Windows package import and per-user NSIS install/uninstall. Installer not executed on this Mac; no normal GUI, native capture, login or ASR verified. Runtime sources are unchanged relative to d8c9dbe; Windows build tooling is pinned separately to acc1a0f. Initial stock installer crash cause remains unconfirmed. No macOS notarization was attempted."
+}

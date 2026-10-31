@@ -1,6 +1,6 @@
 # Screenshot diagnosis and capture permission onboarding — 2026-10-31
 
-Status: implementation and source regression prepared; package and physical-device acceptance are recorded separately when completed.
+Status: implementation and 419 source tests passed. Both Mac v2.0.0 r6 candidates signed and independently checked, but not notarized or distributed. Windows branch pushed; CI and visual acceptance await the unlocked Mac. Physical Big Sur screenshot acceptance remains pending.
 
 ## Reported failure and confirmed defect
 
@@ -34,3 +34,15 @@ Final desktop source regression: **419/419 passed, 22.332 seconds**. Root and El
 [Reusable manual cases](../permissions/README.md) cover first launch, Big Sur ⌘H, denied/return, both Mac audio providers, Windows, cleanup and upgrades. Mocked source checks do not establish native TCC prompts, physical Intel capture, actual Windows privacy behavior or screen-share visibility. Browser visual verification was initially blocked by the locked Mac; no visual pass is inferred.
 
 Primary compatibility references: [Electron 29 capture wrapper](https://raw.githubusercontent.com/electron/electron/v29.4.6/lib/browser/api/desktop-capturer.ts), [Electron native capturer](https://raw.githubusercontent.com/electron/electron/v29.4.6/shell/browser/api/electron_api_desktop_capturer.cc), [Chromium 122 Mac capturer](https://raw.githubusercontent.com/chromium/chromium/122.0.6261.156/chrome/browser/media/webrtc/thumbnail_capturer_mac.mm), [Recall macOS permissions](https://docs.recall.ai/docs/macos-permissions).
+
+## Frozen package readiness
+
+Runtime source commit: `d8c9dbe556fb89c39a30ffede72db2511c6a6fe4`; source archive SHA-256 `ec9e99bff67dc9c7d2e097a3bede4fbabadf044c7f31657d2df343080225b9e5`. Both candidates retain version 2.0.0 / revision 6 and identical 57 compiled assets, with App minimum macOS 10.15 and native audio helper minimum 13.0.
+
+Intel has 17 native leaves / 26 signature targets; ARM has 124 native leaves / 134 signature targets, checked for architecture, Developer ID, hardened runtime and signing timestamp. Actual packaged Node-mode imports, Canvas pixels/PNG and synthetic PDF checks passed on each runtime (Intel through Rosetta). Simulated Big Sur keeps screenshot action available, marks audio unsupported and launches no helper. No normal GUI, permission request, SDK initialization, recording or physical Big Sur capture was exercised.
+
+The first ARM packaging attempt omitted Canvas asar-unpack, was rejected and retained as failed evidence. Its isolated packaging configuration was corrected; the second candidate includes the signed native Canvas leaf. Frozen product source and compiled assets did not change.
+
+[Build readiness and resumption receipt](releases/2.0.0/r6/capture-permissions-build-readiness.json) and [source regression receipt](releases/2.0.0/r6/capture-permissions-regression.json) retain the exact scopes and identities. Notary history succeeded before the Mac locked; current history and original hooks report the existing profile unavailable. This is a temporal correlation, not proof of profile deletion. No keychain changes or credential extraction were attempted. Unlock then re-check the existing profile before resuming the original App/DMG notarization flow. Final verification still requires stapled tickets and Gatekeeper acceptance.
+
+Windows branch `codex/capture-permissions-v2.0.0-r6` points to the same frozen source; unsigned workflow dispatch is pending the unlocked browser. No final DMG, Windows installer, OSS upload, download catalog switch or production activation has occurred. A self-contained clone of the currently published website source was prepared under `/private/tmp/passwisely-r6-download-prep-20261031` for later catalog-only updates. Wise's active source remains `dadd41f9646609d7a2dfa1b76c836dcb1683dbb2` and its compiled fingerprint `d29d6cba35f5a5df47d8949b6c64b2bb835856d6fe3ded396caeb75e6123bd6e`; bindings were not opened. Pending WeChat source was not used.

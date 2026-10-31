@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-31T15:57:02.386563+00:00",
+  "state": "blocked-awaiting-manual-unlock-and-keychain-access",
+  "version": "2.0.0",
+  "revision": 6,
+  "sourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+  "sourceArchiveSha256": "ec9e99bff67dc9c7d2e097a3bede4fbabadf044c7f31657d2df343080225b9e5",
+  "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/source",
+  "candidates": [
+    {
+      "architecture": "x64",
+      "state": "signed-not-notarized",
+      "app": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app",
+      "version": "2.0.0",
+      "minimumMacOS": "10.15",
+      "audioHelperMinimumMacOS": "13.0",
+      "asarSha256": "3b47d19ce3db224275790c859e98e0f6da4c671493d2db90ff32b9e817a8b259",
+      "nativeCodeFiles": 17,
+      "verifiedUniqueSignatureTargets": 26,
+      "compiledAssetsMatched": 57,
+      "candidateReport": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/x64/app-candidate-verification.json",
+      "runtimeReport": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/x64/runtime-smoke.json",
+      "recoveryReceipt": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/x64/signed-app-awaiting-notarization.json",
+      "runtimeArch": "x64",
+      "runtimeElectron": "29.4.6",
+      "captureStarted": false
+    },
+    {
+      "architecture": "arm64",
+      "state": "signed-not-notarized",
+      "app": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app",
+      "version": "2.0.0",
+      "minimumMacOS": "10.15",
+      "audioHelperMinimumMacOS": "13.0",
+      "asarSha256": "e9a4dd0d053aef04875cd150eb8c6fd83ff25649062de11b69c97d8cc7c3f2d3",
+      "nativeCodeFiles": 124,
+      "verifiedUniqueSignatureTargets": 134,
+      "compiledAssetsMatched": 57,
+      "candidateReport": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/arm64/app-candidate-verification.json",
+      "runtimeReport": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/arm64/runtime-smoke.json",
+      "recoveryReceipt": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/arm64/signed-app-awaiting-notarization.json",
+      "runtimeArch": "arm64",
+      "runtimeElectron": "29.4.6",
+      "captureStarted": false
+    }
+  ],
+  "commonCompiledAssets": 57,
+  "macCandidatesUseSameCompiledBytes": true,
+  "completedMacInstallers": false,
+  "notarizationVerified": false,
+  "published": false,
+  "windows": {
+    "version": "2.0.0",
+    "revision": 6,
+    "repository": "yejinchen-ai/passwisely",
+    "workflow": ".github/workflows/build-windows.yml",
+    "branch": "codex/capture-permissions-v2.0.0-r6",
+    "sourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+    "remoteBranchPushed": true,
+    "signedBuild": false,
+    "phase": "awaiting-unlocked-browser",
+    "dispatched": false,
+    "reason": "Computer-use tool reported the Mac is locked; no workaround or credential extraction attempted."
+  },
+  "blockers": [
+    {
+      "kind": "notary-profile-unavailable",
+      "profile": "passwisely-notary",
+      "message": "No Keychain password item found for profile: passwisely-notary",
+      "observations": "Read-only history succeeded before the Mac locked; current history and both original afterSign hooks fail lookup. Temporal correlation does not prove the credential profile was removed. No credential/keychain changes attempted."
+    },
+    {
+      "kind": "browser-locked",
+      "message": "Computer-use tool reports Mac locked; frozen Windows branch pushed, workflow not dispatched."
+    }
+  ],
+  "resume": {
+    "command": "/usr/bin/python3 /private/tmp/passwisely-r6-build-20261031-pwv95fw3/tools/resume-r6.py",
+    "precondition": "User manually unlocks Mac and existing profile lookup succeeds. Wrapper checks read-only notary history first.",
+    "behavior": "Require source-bound signed candidate receipts; keep App source/compiled/signature bytes; notarize retained Apps; use --prepackaged to produce/sign/notarize DMGs; full verification still requires tickets and Gatekeeper.",
+    "windowsWorkflow": "https://github.com/yejinchen-ai/passwisely/actions/workflows/build-windows.yml",
+    "windowsBranch": "codex/capture-permissions-v2.0.0-r6",
+    "windowsSignedBuild": false
+  },
+  "rejectedCandidate": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/arm64/rejected-packed-native.json",
+  "limitations": [
+    "No normal GUI, login, permission request, native capture, ASR, model/provider call or physical Intel/macOS11 test.",
+    "No App/DMG notarization or final installer validation completed.",
+    "No Windows CI dispatch/build/artifact verification completed.",
+    "Builder/sign/failed-notary elapsed: Intel 198.715s; first ARM rejected package 641.298s; corrected ARM 636.899s. CPU time, peak process-family memory and per-timestamp/network costs unmeasured.",
+    "No main-repository clean, user-file deletion, unrelated software upgrade, credential/password read or upload/publication."
+  ],
+  "reaEvidenceDirectoryPreserved": "/private/tmp/systemcontainer-permissions-2026-10-31"
+}

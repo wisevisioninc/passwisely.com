@@ -1,0 +1,103 @@
+{
+  "success": true,
+  "runtime": {
+    "arch": "x64",
+    "electron": "29.4.6",
+    "node": "20.9.0"
+  },
+  "canvas": {
+    "version": "0.1.100",
+    "pixel": [
+      18,
+      52,
+      86,
+      255
+    ],
+    "pngBytes": 99
+  },
+  "serviceEndpoints": {
+    "apiBase": "https://passwisely.cn/api",
+    "aiBase": "https://passwisely.cn/api/ai",
+    "accountUrl": "https://passwisely.cn/#account",
+    "grpcAddress": "passwisely.cn:443",
+    "grpcInsecure": false
+  },
+  "permissionRegion": "https://ap-northeast-1.recall.ai",
+  "oldIntel": {
+    "release": "20.6.0",
+    "systemAudioStatus": "unsupported",
+    "audioSupported": false,
+    "screenAction": "request",
+    "helperLaunches": 0
+  },
+  "ws": {
+    "version": "8.22.0",
+    "importOnly": true
+  },
+  "pdf": {
+    "version": "4.10.38",
+    "pages": 1,
+    "text": "R6 package smoke PDF"
+  },
+  "before": [
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/MacOS/PassWisely",
+      "bytes": 36512,
+      "sha256": "0146c0c57f155afc9c3d48f46e3c7fb74c3055c90e91c4dfd06e40554b1f7fc4",
+      "inode": 24140935,
+      "mtimeNs": 1793460434853503046
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/Resources/app.asar",
+      "bytes": 63886148,
+      "sha256": "3b47d19ce3db224275790c859e98e0f6da4c671493d2db90ff32b9e817a8b259",
+      "inode": 24140311,
+      "mtimeNs": 1793460246121011466
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/Resources/app.asar.unpacked/node_modules/@napi-rs/canvas-darwin-x64/skia.darwin-x64.node",
+      "bytes": 31795088,
+      "sha256": "2acb8b79de3ebd3e02e0fc628c725e72d1c8cf955fef7aa00c006693874699b2",
+      "inode": 24140711,
+      "mtimeNs": 1793460361321687607
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/Resources/audio/PassWiselyAudioHelper",
+      "bytes": 91168,
+      "sha256": "6fcdbdf105a799ad5ae69b52df7b7b17241e9f80621929b012dc3e107c8d4306",
+      "inode": 24140918,
+      "mtimeNs": 1793460425323569261
+    }
+  ],
+  "after": [
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/MacOS/PassWisely",
+      "bytes": 36512,
+      "sha256": "0146c0c57f155afc9c3d48f46e3c7fb74c3055c90e91c4dfd06e40554b1f7fc4",
+      "inode": 24140935,
+      "mtimeNs": 1793460434853503046
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/Resources/app.asar",
+      "bytes": 63886148,
+      "sha256": "3b47d19ce3db224275790c859e98e0f6da4c671493d2db90ff32b9e817a8b259",
+      "inode": 24140311,
+      "mtimeNs": 1793460246121011466
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/Resources/app.asar.unpacked/node_modules/@napi-rs/canvas-darwin-x64/skia.darwin-x64.node",
+      "bytes": 31795088,
+      "sha256": "2acb8b79de3ebd3e02e0fc628c725e72d1c8cf955fef7aa00c006693874699b2",
+      "inode": 24140711,
+      "mtimeNs": 1793460361321687607
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/Resources/audio/PassWiselyAudioHelper",
+      "bytes": 91168,
+      "sha256": "6fcdbdf105a799ad5ae69b52df7b7b17241e9f80621929b012dc3e107c8d4306",
+      "inode": 24140918,
+      "mtimeNs": 1793460425323569261
+    }
+  ],
+  "scope": "Packaged Electron Node mode imports, Canvas pixel/PNG, synthetic PDF, service defaults and simulated old-Intel support/permission snapshot. No GUI, permission request, native helper launch, recording, socket or provider call."
+}

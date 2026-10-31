@@ -1,0 +1,21 @@
+{
+  "sourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+  "version": "2.0.0",
+  "revision": 6,
+  "desktopTests": {
+    "passed": 419,
+    "failed": 0,
+    "elapsedSeconds": 22.332039458,
+    "logSha256": "e350fa80de695922c80c27757dcb0b8163af848664983ef9bc36a7b44b7c49f5",
+    "logPath": "/private/tmp/passwisely-permissions-full-tests-final-20261031.log"
+  },
+  "typescript": {
+    "rendererNoEmit": true,
+    "electronNoEmit": true
+  },
+  "diffCheckPassed": true,
+  "permissionAndCaptureOSOperations": false,
+  "physicalIntelAcceptance": false,
+  "nativeWindowsPermissionAcceptance": false,
+  "visualAcceptance": false
+}

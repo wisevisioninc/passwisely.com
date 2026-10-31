@@ -1,0 +1,421 @@
+{
+  "success": true,
+  "sourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+  "version": "2.0.0",
+  "arch": "x64",
+  "app": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app",
+  "info": {
+    "bundleIdentifier": "com.passwisely.desktop",
+    "version": "2.0.0",
+    "buildVersion": "2.0.0",
+    "minimumMacOS": "10.15",
+    "privacyDescriptions": [
+      "NSScreenCaptureUsageDescription",
+      "NSMicrophoneUsageDescription",
+      "NSAudioCaptureUsageDescription"
+    ]
+  },
+  "asarSha256": "3b47d19ce3db224275790c859e98e0f6da4c671493d2db90ff32b9e817a8b259",
+  "nativeCodeFiles": 17,
+  "verifiedUniqueSignatureTargets": 26,
+  "nativeCode": [
+    {
+      "path": "Contents/Frameworks/Electron Framework.framework/Versions/A/Helpers/chrome_crashpad_handler",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/Electron Framework.framework/Versions/A/Libraries/libEGL.dylib",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/Electron Framework.framework/Versions/A/Libraries/libffmpeg.dylib",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/Electron Framework.framework/Versions/A/Libraries/libGLESv2.dylib",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/Electron Framework.framework/Versions/A/Libraries/libvk_swiftshader.dylib",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/Squirrel.framework/Versions/A/Resources/ShipIt",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Resources/app.asar.unpacked/node_modules/@napi-rs/canvas-darwin-x64/skia.darwin-x64.node",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/Electron Framework.framework/Versions/A/Electron Framework",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/Mantle.framework/Versions/A/Mantle",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/PassWisely Helper (GPU).app/Contents/MacOS/PassWisely Helper (GPU)",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/PassWisely Helper (Plugin).app/Contents/MacOS/PassWisely Helper (Plugin)",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/PassWisely Helper (Renderer).app/Contents/MacOS/PassWisely Helper (Renderer)",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/PassWisely Helper.app/Contents/MacOS/PassWisely Helper",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/ReactiveObjC.framework/Versions/A/ReactiveObjC",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Frameworks/Squirrel.framework/Versions/A/Squirrel",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/Resources/audio/PassWiselyAudioHelper",
+      "archs": [
+        "x86_64"
+      ]
+    },
+    {
+      "path": "Contents/MacOS/PassWisely",
+      "archs": [
+        "x86_64"
+      ]
+    }
+  ],
+  "sourceMatch": [
+    {
+      "file": "dist/assets/index-DnD97df0.js",
+      "bytes": 1139563,
+      "sha256": "03667cc4f9c26465ee9c7002273cb70da1d258a66f32eec231a44b55c045f634"
+    },
+    {
+      "file": "dist/assets/index-M6eHAPjd.css",
+      "bytes": 49496,
+      "sha256": "cfce43993a307d5a77e7f1c848edb9cb88cce2d18a32f3d6203c528f87b2913b"
+    },
+    {
+      "file": "dist/favicon.ico",
+      "bytes": 19603,
+      "sha256": "c0fbb20ca9df072a524ebe810b617a584d11238e1f0b9be6bf97e0894778a113"
+    },
+    {
+      "file": "dist/fonts/Inter.ttf",
+      "bytes": 876576,
+      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031"
+    },
+    {
+      "file": "dist/fonts/OFL-Inter.txt",
+      "bytes": 4377,
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57"
+    },
+    {
+      "file": "dist/fonts/SOURCE.json",
+      "bytes": 401,
+      "sha256": "ac8d71d9f0290502bcd5db712d0d6fe04b1b5a4b12f1f9f0182a06cb78fdd230"
+    },
+    {
+      "file": "dist/index.html",
+      "bytes": 653,
+      "sha256": "f9df00642be77f8f407addb174799dee4e284b27c66d8e473de93f1b794fdecf"
+    },
+    {
+      "file": "dist/logo192.png",
+      "bytes": 24382,
+      "sha256": "c4dc37b969e1e2d0fdbe276b5d58e0fcc176a760c1af5de6c860704465999dbd"
+    },
+    {
+      "file": "dist/logo512.png",
+      "bytes": 102448,
+      "sha256": "63376bcd0e3c82e60d482be68577a5d73a26ebc088dd72827783376e68a66273"
+    },
+    {
+      "file": "dist-electron/electron/PermissionService.js",
+      "bytes": 10706,
+      "sha256": "07d02a39ec7ad0ef4132e5c2629dbe855ecf39f9acc679db72a3d8fa49fceee8"
+    },
+    {
+      "file": "dist-electron/electron/ProcessingHelper.js",
+      "bytes": 67870,
+      "sha256": "729d8f31c5cce9cfe604782a5c189151d9dad8dcba386e6892445de30b5901ee"
+    },
+    {
+      "file": "dist-electron/electron/ResumeHelper.js",
+      "bytes": 11981,
+      "sha256": "c1bdd56a82e60218b00c2c8ba708777218d897b5f7560a65c21ec63b15106784"
+    },
+    {
+      "file": "dist-electron/electron/ScreenshotHelper.js",
+      "bytes": 11218,
+      "sha256": "db3b033980a33263677bdd1c29fe2509877ef6fdcbe2fd0c05f6b6e20755dd01"
+    },
+    {
+      "file": "dist-electron/electron/WindowCaptureProtection.js",
+      "bytes": 1369,
+      "sha256": "f9df143224edc9bbd5a63fbf7a0df11c75b7bcda5380042b487e0d5ae3887650"
+    },
+    {
+      "file": "dist-electron/electron/WindowVisibility.js",
+      "bytes": 3910,
+      "sha256": "a030e0b818be32fb80a4bd068ba7aa75f107a1425935ad4b864445e4dd5c5ea6"
+    },
+    {
+      "file": "dist-electron/electron/WiseGrpcClient.js",
+      "bytes": 10607,
+      "sha256": "84f27afc19b12ddded379fbb498be7ebeca61c4e932bbff0baae61fd2dafae36"
+    },
+    {
+      "file": "dist-electron/electron/account.js",
+      "bytes": 14095,
+      "sha256": "a27d8b75ce809ba1419ddb5c5bba3f840a6da94bcf88e991ff4dab26cba2e3c2"
+    },
+    {
+      "file": "dist-electron/electron/aiProviders.js",
+      "bytes": 5599,
+      "sha256": "61fa4cd607e97832ea328d6db701ce153f864e17afdfb9cdbd23ad47c7c66983"
+    },
+    {
+      "file": "dist-electron/electron/autoUpdater.js",
+      "bytes": 4390,
+      "sha256": "fabfa457b1381a18677d04ac54bb03eba69d37c6f99f96bf9b04976c31f16fc0"
+    },
+    {
+      "file": "dist-electron/electron/ipcHandlers.js",
+      "bytes": 17581,
+      "sha256": "d19d111e70d9f32ed995a47113a43cc5e703f2f317acd1638aab4e4e75ec03b1"
+    },
+    {
+      "file": "dist-electron/electron/languages.js",
+      "bytes": 6334,
+      "sha256": "6f37d3701586c3955d8d153f0f8344f863285b2ffd9c7aba3f39db161a05fc2f"
+    },
+    {
+      "file": "dist-electron/electron/live/AuthenticationLoss.js",
+      "bytes": 872,
+      "sha256": "4febd30a271a2019066d59c75b7e1637c924204099de6eb0561d20faa383e4f7"
+    },
+    {
+      "file": "dist-electron/electron/live/CaptureSelection.js",
+      "bytes": 2649,
+      "sha256": "b1e6e0f9a543c614956bbe51cee6201b39c5f3f9c1e3b49d7be89ca4b96dc638"
+    },
+    {
+      "file": "dist-electron/electron/live/ConversationContext.js",
+      "bytes": 8311,
+      "sha256": "638f92b44f2b1f58eae3a85618a7a5d31cdce1e456c16347d80bf9a0913101a7"
+    },
+    {
+      "file": "dist-electron/electron/live/DeepgramTranscript.js",
+      "bytes": 3807,
+      "sha256": "43fffc7f5e7c40645bff0adfd596b173b6017b0f4d6a328534965af9612080c9"
+    },
+    {
+      "file": "dist-electron/electron/live/LiveSessionService.js",
+      "bytes": 26291,
+      "sha256": "d83e5efbe4f00445d712812a36ec1e139f192998c8cae1b100ee876f37076316"
+    },
+    {
+      "file": "dist-electron/electron/live/NativePcmCapture.js",
+      "bytes": 28548,
+      "sha256": "a682ad6f64fc250d112b71ffcbd5c138b995f0ccce20660e7e62bdb462cc91d7"
+    },
+    {
+      "file": "dist-electron/electron/live/OverlayWindow.js",
+      "bytes": 7419,
+      "sha256": "1080a91a4366236570def2c447b044b36a05f7c819857fe87ab30bd921b4ba94"
+    },
+    {
+      "file": "dist-electron/electron/live/RecallCapture.js",
+      "bytes": 26631,
+      "sha256": "c2f0986317ca3c96799054b79c44fc79e6a0d37bdcbd9ea9653a7acb34b638bd"
+    },
+    {
+      "file": "dist-electron/electron/live/TranscriptText.js",
+      "bytes": 1300,
+      "sha256": "eedc2fc8260fb514b9115d9a1c354e284d2d009e48b183ca641c6d2a5bbeec4f"
+    },
+    {
+      "file": "dist-electron/electron/live/WindowCloseGuard.js",
+      "bytes": 1173,
+      "sha256": "8d9cc5b1fd597fc0c503583505071a6e3b574d170f67f8528a18b2ccbc84f7fd"
+    },
+    {
+      "file": "dist-electron/electron/live/captureContracts.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "file": "dist-electron/electron/live/ipc.js",
+      "bytes": 3137,
+      "sha256": "423990cbee788b8728ddb9e16589a7f68f1839cc9bf2d078fa6e0feda48413d8"
+    },
+    {
+      "file": "dist-electron/electron/live/overlayTypes.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "file": "dist-electron/electron/live/recallTranscript.js",
+      "bytes": 9174,
+      "sha256": "1fd8d68d5c3e9279cf1a8ee904d97f4f42dcf2379380c4005487d275a620a410"
+    },
+    {
+      "file": "dist-electron/electron/live/transcription.js",
+      "bytes": 2503,
+      "sha256": "3fc5b355cefcb70f113f4ffe277664bb8f386bf4e45af8fc351b3dd7228f4167"
+    },
+    {
+      "file": "dist-electron/electron/live/types.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "file": "dist-electron/electron/main.js",
+      "bytes": 39389,
+      "sha256": "57d9ef3379f5249fdb73c9cade6090b9cf9b1c0565cef4260c0ee411a10b8db1"
+    },
+    {
+      "file": "dist-electron/electron/permissionsIpc.js",
+      "bytes": 1532,
+      "sha256": "64306fba199665afcc7b0fe4baa8c3e364a1aa5551c2d5e60eb8db47ef6db6df"
+    },
+    {
+      "file": "dist-electron/electron/permissionsTypes.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "file": "dist-electron/electron/preload.js",
+      "bytes": 17413,
+      "sha256": "66d14e65c66f83065906df6ea75810770937de83f646b9dabb5af1b2bfd1cfa3"
+    },
+    {
+      "file": "dist-electron/electron/resumeTypes.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "file": "dist-electron/electron/screenshotFailure.js",
+      "bytes": 2655,
+      "sha256": "ddd61e4340d01e4851a468ba8686ff7401d7317652c8ab081066e1071d374191"
+    },
+    {
+      "file": "dist-electron/electron/screenshotLimits.js",
+      "bytes": 140,
+      "sha256": "ad0e7741a78241ed7bc356d8a80a1e2080d9a4f94b22a82b3f4745c9ec4bef7c"
+    },
+    {
+      "file": "dist-electron/electron/serviceEndpoints.js",
+      "bytes": 1550,
+      "sha256": "28a9a4813b7f8b7fb6e32aa0cedac5f245096a9cfa36492d72916cc61b2fb704"
+    },
+    {
+      "file": "dist-electron/electron/settings.js",
+      "bytes": 14375,
+      "sha256": "80a8e06525acd9ce996489f3f7425349f709e35d7a13437bf75ca66491559262"
+    },
+    {
+      "file": "dist-electron/electron/shortcuts.js",
+      "bytes": 5972,
+      "sha256": "1d54495b15e607670389385e89fcfa767b635e5767dbbf12873079ab3063b01d"
+    },
+    {
+      "file": "dist-electron/electron/solutionStream.js",
+      "bytes": 7061,
+      "sha256": "8b0d92ec3943bf5ddb46dd3980103220bbb580037e5739888454b3cffedd17f4"
+    },
+    {
+      "file": "dist-electron/electron/windowControls.js",
+      "bytes": 3552,
+      "sha256": "5c32ed4772191b35980dd4f7901ccf4f342ba79b0ada7a4ed21f519ac671848b"
+    },
+    {
+      "file": "dist-electron/fileFromPath-BB9bOmxe.js",
+      "bytes": 4425,
+      "sha256": "f842647c2e9473fce92852287fb5f0be21fcc7907ed106c225c6f9b4d39039a6"
+    },
+    {
+      "file": "dist-electron/main-B7fvdOTY.js",
+      "bytes": 4541213,
+      "sha256": "e6b8ecde353a3f398dd201fbee63e4f4a781aeb6f2108507f676bcdf948a143e"
+    },
+    {
+      "file": "dist-electron/main.js",
+      "bytes": 1374,
+      "sha256": "511b190e67a6e7dcb7b68ea61cf94c0795f6cf605633aa7a0f44cbf4bdb5cb85"
+    },
+    {
+      "file": "dist-electron/preload.js",
+      "bytes": 10082,
+      "sha256": "576d5530e8f38599cf176000dcb46d6c3bebc7d2735291fe1f55f5af9a94d8a3"
+    },
+    {
+      "file": "dist-electron/shared/billing.js",
+      "bytes": 222,
+      "sha256": "081849aff4281fdc37995f443bd8e25f0451f4436896d41fe85d24cbc763cb49"
+    },
+    {
+      "file": "dist-electron/shared/captureSession.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "file": "dist-electron/shared/kimi.js",
+      "bytes": 1181,
+      "sha256": "480a1b21b79287555323cfe83d00947723da487cf9dbc96efeb35593a99a5fa2"
+    },
+    {
+      "file": "proto/desktop_ai.proto",
+      "bytes": 1226,
+      "sha256": "f6980436b7fff958eb4637376922735fdf8672c9995a1f70bc90e76f3f8d8c1c"
+    }
+  ],
+  "helper": {
+    "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/x64/mac/PassWisely.app/Contents/Resources/audio/PassWiselyAudioHelper",
+    "minimumMacOS": "13.0",
+    "sha256": "6fcdbdf105a799ad5ae69b52df7b7b17241e9f80621929b012dc3e107c8d4306"
+  },
+  "notarizationVerified": false,
+  "stapler": null,
+  "gatekeeper": null,
+  "scope": "Signed candidate verification only: identity, architecture, compiled assets and signatures. Not notarized or approved for distribution; ticket/Gatekeeper checks remain pending."
+}

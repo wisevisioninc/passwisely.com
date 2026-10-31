@@ -1,0 +1,110 @@
+{
+  "success": true,
+  "runtime": {
+    "arch": "arm64",
+    "electron": "29.4.6",
+    "node": "20.9.0"
+  },
+  "canvas": {
+    "version": "0.1.100",
+    "pixel": [
+      18,
+      52,
+      86,
+      255
+    ],
+    "pngBytes": 99
+  },
+  "serviceEndpoints": {
+    "apiBase": "https://passwisely.cn/api",
+    "aiBase": "https://passwisely.cn/api/ai",
+    "accountUrl": "https://passwisely.cn/#account",
+    "grpcAddress": "passwisely.cn:443",
+    "grpcInsecure": false
+  },
+  "permissionRegion": "https://ap-northeast-1.recall.ai",
+  "oldIntel": {
+    "release": "20.6.0",
+    "systemAudioStatus": "unsupported",
+    "audioSupported": false,
+    "screenAction": "request",
+    "helperLaunches": 0
+  },
+  "recall": {
+    "version": "2.0.39",
+    "methods": [
+      "init",
+      "prepareDesktopAudioRecording",
+      "startRecording",
+      "stopRecording",
+      "shutdown"
+    ],
+    "importOnly": true
+  },
+  "pdf": {
+    "version": "4.10.38",
+    "pages": 1,
+    "text": "R6 package smoke PDF"
+  },
+  "before": [
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/MacOS/PassWisely",
+      "bytes": 69232,
+      "sha256": "3b705d1ce38867980de92db98e68cfa0fb75458ae4d988e03ffc4cad93348bdc",
+      "inode": 24166578,
+      "mtimeNs": 1793462088815543955
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/Resources/app.asar",
+      "bytes": 63916828,
+      "sha256": "e9a4dd0d053aef04875cd150eb8c6fd83ff25649062de11b69c97d8cc7c3f2d3",
+      "inode": 24163330,
+      "mtimeNs": 1793461466546179281
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/Resources/app.asar.unpacked/node_modules/@napi-rs/canvas-darwin-arm64/skia.darwin-arm64.node",
+      "bytes": 26163088,
+      "sha256": "7619f6fa5a82034258cabf796d524a946239bef10db023f1362568a81aaed66d",
+      "inode": 24166232,
+      "mtimeNs": 1793462004023966972
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/Resources/audio/PassWiselyAudioHelper",
+      "bytes": 127584,
+      "sha256": "e6c36f7ebc22225742d66093da215f639ef4ca247a365464974e3ab2f5789724",
+      "inode": 24166562,
+      "mtimeNs": 1793462079468954224
+    }
+  ],
+  "after": [
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/MacOS/PassWisely",
+      "bytes": 69232,
+      "sha256": "3b705d1ce38867980de92db98e68cfa0fb75458ae4d988e03ffc4cad93348bdc",
+      "inode": 24166578,
+      "mtimeNs": 1793462088815543955
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/Resources/app.asar",
+      "bytes": 63916828,
+      "sha256": "e9a4dd0d053aef04875cd150eb8c6fd83ff25649062de11b69c97d8cc7c3f2d3",
+      "inode": 24163330,
+      "mtimeNs": 1793461466546179281
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/Resources/app.asar.unpacked/node_modules/@napi-rs/canvas-darwin-arm64/skia.darwin-arm64.node",
+      "bytes": 26163088,
+      "sha256": "7619f6fa5a82034258cabf796d524a946239bef10db023f1362568a81aaed66d",
+      "inode": 24166232,
+      "mtimeNs": 1793462004023966972
+    },
+    {
+      "path": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/output/arm64-corrected-unpack/mac-arm64/PassWisely.app/Contents/Resources/audio/PassWiselyAudioHelper",
+      "bytes": 127584,
+      "sha256": "e6c36f7ebc22225742d66093da215f639ef4ca247a365464974e3ab2f5789724",
+      "inode": 24166562,
+      "mtimeNs": 1793462079468954224
+    }
+  ],
+  "scope": "Packaged Electron Node mode imports, Canvas pixel/PNG, synthetic PDF, service defaults and simulated old-Intel support/permission snapshot. No GUI, permission request, native helper launch, recording, socket or provider call."
+}

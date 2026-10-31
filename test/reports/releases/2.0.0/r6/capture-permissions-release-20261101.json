@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-31T19:40:07.659414+00:00",
+  "status": "oss_public_verified_website_activation_pending",
+  "version": "2.0.0",
+  "revision": 6,
+  "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+  "windowsBuildSourceCommit": "acc1a0f1760327748dd9406d98ed404307dc3aa4",
+  "authorization": {
+    "explicitAppleAppAndDmgUploadAuthorizationReceived": true,
+    "releaseContinuationAuthorized": true,
+    "evidence": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/resume-authorized-identity-20261101.json",
+    "previousAutomaticReviewRejectionWasHistorical": true
+  },
+  "mac": {
+    "formalStagingReceipt": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/macos-formal-staging-20261101.json",
+    "artifacts": [
+      {
+        "architecture": "x64",
+        "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+        "filename": "PassWisely-macOS-x64.dmg",
+        "localArtifact": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/PassWisely-macOS-x64.dmg",
+        "bytes": 119294434,
+        "sha256": "7d1795b55a66f337c481ce3a7b458753520092e82796fe4434983cfcbff0e7f4",
+        "minimumMacOS": "10.15",
+        "nativeSystemAudioMinimumMacOS": "13.0",
+        "developerIdSigned": true,
+        "appAndDmgStaplerValidated": true,
+        "dmgAndMountedAppGatekeeperAccepted": true,
+        "readOnlyMountedBundleExact": true,
+        "verificationReports": [
+          {
+            "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/x64/verification-summary.json",
+            "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/x64/verification-summary.json",
+            "bytes": 634,
+            "sha256": "23a2213eaf856425d97ae5a0d91be75e755f83e5527bbe9283544b298b21bf05"
+          },
+          {
+            "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/x64/app-verification.json",
+            "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/x64/app-verification.json",
+            "bytes": 13646,
+            "sha256": "65255cee5ab047f9f7a3829bf4d87cd0e647a54adea2fe476bed7cc799d41364"
+          },
+          {
+            "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/x64/dmg-verification.json",
+            "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/x64/dmg-verification.json",
+            "bytes": 4054,
+            "sha256": "b305522b225e0f9a462dff44e3d1d0e1804945f14b17cabb060fa78d34ee21ac"
+          },
+          {
+            "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/x64/runtime-smoke.json",
+            "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/x64/runtime-smoke.json",
+            "bytes": 3771,
+            "sha256": "8bead8b61d1d9bc0efe9a3cfdd1845d941f6c9d70aa7f7fbb0577c67c9ce4db1"
+          }
+        ]
+      },
+      {
+        "architecture": "arm64",
+        "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
+        "filename": "PassWisely-macOS-arm64.dmg",
+        "localArtifact": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/PassWisely-macOS-arm64.dmg",
+        "bytes": 159712321,
+        "sha256": "9494852a6b3f2bec0da69bd5978982d42ea42c9f0df0baf4242002ec22c4d833",
+        "minimumMacOS": "10.15",
+        "nativeSystemAudioMinimumMacOS": "13.0",
+        "developerIdSigned": true,
+        "appAndDmgStaplerValidated": true,
+        "dmgAndMountedAppGatekeeperAccepted": true,
+        "readOnlyMountedBundleExact": true,
+        "verificationReports": [
+          {
+            "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/arm64/verification-summary.json",
+            "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/arm64/verification-summary.json",
+            "bytes": 663,
+            "sha256": "222b37813afddc2e4932c52595fdf3f56b5f461100e35af4e2ca29f4c95cc378"
+          },
+          {
+            "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/arm64/app-verification.json",
+            "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/arm64/app-verification.json",
+            "bytes": 36886,
+            "sha256": "093f75fa249987dd7855659c7cfb628c199c6944e459e7f0e00719c8b23c809b"
+          },
+          {
+            "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/arm64/dmg-verification.json",
+            "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/arm64/dmg-verification.json",
+            "bytes": 4018,
+            "sha256": "9a92efab60d658fb3ccd54492f602f9785a7589cb672feb5278b3612681a6f80"
+          },
+          {
+            "source": "/private/tmp/passwisely-r6-build-20261031-pwv95fw3/verification/arm64/runtime-smoke.json",
+            "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/arm64/runtime-smoke.json",
+            "bytes": 4127,
+            "sha256": "52af3bff35823810236cbcc07790e0696716ad127f7b7c1512c62efdb3df737a"
+          }
+        ]
+      }
+    ],
+    "originalSignedBytesPreserved": true,
+    "signedBytesEvidence": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/signed-bytes-preserved-after-notary-20261101.json",
+    "appleHistoryDelta": {
+      "evidence": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/notary-history-r6-delta-20261101.json",
+      "baselineCount": 47,
+      "afterCount": 51,
+      "newSubmissions": [
+        {
+          "status": "Accepted",
+          "createdDate": "2026-10-31T19:05:54.550Z",
+          "id": "f2fda0f4-a888-482a-aff3-f03311224cd9",
+          "name": "PassWisely-macOS-arm64.dmg"
+        },
+        {
+          "name": "PassWisely.zip",
+          "createdDate": "2026-10-31T19:04:00.263Z",
+          "id": "a944fd76-7347-42e5-a987-7d667c0ab739",
+          "status": "Accepted"
+        },
+        {
+          "id": "171de328-fbe1-474b-adc1-9d36cd149905",
+          "createdDate": "2026-10-31T19:01:28.183Z",
+          "name": "PassWisely-macOS-x64.dmg",
+          "status": "Accepted"
+        },
+        {
+          "id": "f0a0c612-e125-403d-a6ad-74e3bc169695",
+          "status": "Accepted",
+          "createdDate": "2026-10-31T18:59:56.463Z",
+          "name": "PassWisely.zip"
+        }
+      ],
+      "identityLimit": "History filename/time correlation alone does not bind a submission to artifact bytes. Two App ZIP submissions share a filename; no architecture mapping is inferred here. Artifact acceptance is established independently by the strict staple, Gatekeeper, and hash receipts."
+    }
+  },
+  "windows": {
+    "verificationReceipt": "windows-final-verification-20261101.json",
+    "ciRunUrl": "https://github.com/yejinchen-ai/passwisely/actions/runs/41231031525",
+    "filename": "PassWisely-Windows-x64.exe",
+    "bytes": 123234204,
+    "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a",
+    "authenticodeSigned": false,
+    "nativeInstallImportUninstallGatePassed": true,
+    "stockInstallerFirstCrashCause": "unconfirmed; no faulting module/offset was retained for that run"
+  },
+  "localHashVerification": {
+    "evidence": "/private/tmp/passwisely-r6-download-prep-20261031/receipts/local-artifacts-20261101.json",
+    "artifacts": [
+      {
+        "platform": "mac-arm64",
+        "filename": "PassWisely-macOS-arm64.dmg",
+        "bytes": 159712321,
+        "sha256": "9494852a6b3f2bec0da69bd5978982d42ea42c9f0df0baf4242002ec22c4d833",
+        "publicSha256Verified": false,
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-macOS-arm64.dmg"
+      },
+      {
+        "platform": "mac-x64",
+        "filename": "PassWisely-macOS-x64.dmg",
+        "bytes": 119294434,
+        "sha256": "7d1795b55a66f337c481ce3a7b458753520092e82796fe4434983cfcbff0e7f4",
+        "publicSha256Verified": false,
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-macOS-x64.dmg"
+      },
+      {
+        "platform": "windows-x64",
+        "filename": "PassWisely-Windows-x64.exe",
+        "bytes": 123234204,
+        "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a",
+        "publicSha256Verified": false,
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-Windows-x64.exe"
+      }
+    ],
+    "scope": "Historical pre-upload local identity evidence. The public-distribution state is established by the separate OSS receipt below."
+  },
+  "distribution": {
+    "ossUploadState": "completed",
+    "publicReadbackVerified": true,
+    "productionChanged": false,
+    "published": false,
+    "finalUploadAndDeploymentReceipts": [
+      "oss-public-artifacts-20261101.json"
+    ],
+    "ossArtifactsPublic": true,
+    "ossPublicReceipt": {
+      "path": "oss-public-artifacts-20261101.json",
+      "bytes": 1786,
+      "sha256": "35188a41973311d81036e1cc9210975a3f25060223f3afae06b0bef4e0f37fba"
+    },
+    "artifacts": [
+      {
+        "platform": "mac-arm64",
+        "filename": "PassWisely-macOS-arm64.dmg",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-macOS-arm64.dmg",
+        "sha256": "9494852a6b3f2bec0da69bd5978982d42ea42c9f0df0baf4242002ec22c4d833",
+        "bytes": 159712321,
+        "publicSha256Verified": true,
+        "created": false,
+        "putStatus": null,
+        "contentMd5VerifiedLocally": "5/w94wao2MoO1jnKOz6Plw=="
+      },
+      {
+        "platform": "mac-x64",
+        "filename": "PassWisely-macOS-x64.dmg",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-macOS-x64.dmg",
+        "sha256": "7d1795b55a66f337c481ce3a7b458753520092e82796fe4434983cfcbff0e7f4",
+        "bytes": 119294434,
+        "publicSha256Verified": true,
+        "created": true,
+        "putStatus": 200,
+        "contentMd5VerifiedLocally": "UvuO759bXdrBHQkVnV6CXQ=="
+      },
+      {
+        "platform": "windows-x64",
+        "filename": "PassWisely-Windows-x64.exe",
+        "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-Windows-x64.exe",
+        "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a",
+        "bytes": 123234204,
+        "publicSha256Verified": true,
+        "created": true,
+        "putStatus": 200,
+        "contentMd5VerifiedLocally": "OXW0sH2ZhjHXzeirGX81Sw=="
+      }
+    ],
+    "transferSecurityScope": {
+      "transport": "local-https-via-memory-only-wise-signed-v1-capabilities",
+      "apiSecretRemainedOnWise": true,
+      "signedCapabilitiesMemoryOnly": true,
+      "capabilityTtlSeconds": 600,
+      "bucketVersioningVerifiedNeverEnabled": true
+    },
+    "sourceCatalogPrepared": true,
+    "sourceCatalogUpdated": true,
+    "liveDownloadCatalogActivated": false
+  },
+  "limitations": [
+    "Physical Intel macOS 11.7.10 full-resolution screenshot / command-H acceptance is not established; user retest was requested and no answer has been received. The original native capture failure remains undiagnosed.",
+    "Native guide checks used Apple Silicon macOS 26.6.2, including Intel under Rosetta, with existing screen/microphone authorization; they do not establish first-time TCC consent.",
+    "Windows native installation/import/uninstallation passed, but physical Windows GUI, capture and audio acceptance remain unverified; the installer is unsigned.",
+    "Simulated source tests and package/notary verification do not establish real capture, audio/provider execution, or screen-share visibility.",
+    "All three OSS objects passed full public SHA-256 verification. Public website catalog activation and production deployment remain pending in this snapshot."
+  ],
+  "packagingFinalReceipt": {
+    "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/packaging-final-artifacts-20261101.json",
+    "bytes": 4553,
+    "sha256": "c7fb60b56fb837c30632eccdc4b221dbbb21b2304e08428a3348e85963bb1a27"
+  },
+  "physicalIntelRetest": {
+    "requested": true,
+    "responseReceived": false,
+    "acceptance": "unverified"
+  },
+  "website": {
+    "sourceCatalogPrepared": true,
+    "sourceCatalogUpdated": true,
+    "liveDownloadCatalogActivated": false,
+    "candidateSourceCommit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
+    "mainWorkingTreeApplication": {
+      "method": "git cherry-pick --no-commit",
+      "files": [
+        "website/lib/download-artifacts.json",
+        "website/tests/oss-download.test.mjs"
+      ],
+      "scope": "download catalog plus four existing test identity pins; no other product code"
+    },
+    "candidateState": "prepared-not-activated",
+    "finalOwnerValidationState": "verified-ready",
+    "manifest": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-r6-6391ee0/web/web-manifest.json",
+    "manifestSha256": "6ed8b9f44b600deb37c0170894d5f5a8288411fdc80fb70342e3d2bf8a25a29c",
+    "compiledTreeFingerprint": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+    "compiledFiles": 57,
+    "compiledBytes": 5498833,
+    "stagedIncoming": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-r6-6391ee0",
+    "candidate": "/home/jerry/codebase/passwisely/website/.release-candidates/v2.0.0-download-r6-6391ee0/dist",
+    "planExecuted": false,
+    "activationExecuted": false,
+    "stageEvidence": {
+      "path": "/private/tmp/passwisely-r6-download-prep-20261031/receipts/wise-candidate-stage-output-20261101.log",
+      "sha256": "d1fe245c904be35c803fa5d026953d2c490b8fca0d6bca1651b0dca4227287ce"
+    },
+    "finalValidationEvidence": {
+      "path": "/private/tmp/passwisely-r6-download-prep-20261031/final-web/final-pure-validation.json",
+      "sha256": "91fd62c3f2d2e9bac12f85575dbf6cb860d492bff74ecc42fbe8514c7518dce9"
+    },
+    "actualDeployOwnerValidateManifestPassed": true,
+    "sourceCleanAfterValidation": true,
+    "pythonBytecodeDirectoryPresent": false,
+    "archiveSha256": "458216c3a0a1eb98dd97ae1b348ea81d923c4c2add62629eb13e7b5127ad75ed",
+    "activationEntrySha256": "9b00eba6dcbaf6ac893a1b1a7214fa74fd642945e744ccdce9c2ff0be6ca8523",
+    "productionBindingsRead": false
+  }
+}

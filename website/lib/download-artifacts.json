@@ -4,20 +4,20 @@
     "mac-arm64": {
       "version": "2.0.0",
       "filename": "PassWisely-macOS-arm64.dmg",
-      "sha256": "89e6f1132c151ef90860183ffbcec523db61a639cd2f16c6f8b21ffb412f1b26",
-      "bytes": 159694334,
+      "sha256": "9494852a6b3f2bec0da69bd5978982d42ea42c9f0df0baf4242002ec22c4d833",
+      "bytes": 159712321,
       "legacy": false,
       "liveAudio": "included",
-      "revision": 5
+      "revision": 6
     },
     "mac-x64": {
       "version": "2.0.0",
       "filename": "PassWisely-macOS-x64.dmg",
-      "sha256": "938e2c785916b12ded9fc547ab9fff076ef4a7196335fe635a82e4ae3e6923ca",
-      "bytes": 119247160,
+      "sha256": "7d1795b55a66f337c481ce3a7b458753520092e82796fe4434983cfcbff0e7f4",
+      "bytes": 119294434,
       "legacy": false,
       "liveAudio": "included",
-      "revision": 5,
+      "revision": 6,
       "notice": {
         "zh": "原生音频需 macOS 13 或更新版本。",
         "en": "Native live audio requires macOS 13 or later."
@@ -26,15 +26,15 @@
     "windows-x64": {
       "version": "2.0.0",
       "filename": "PassWisely-Windows-x64.exe",
-      "sha256": "6b60227935fe3559b5cedd4daf091b8a4fbee69e1858fe3371cc0d4f12f9c1a6",
-      "bytes": 123221074,
+      "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a",
+      "bytes": 123234204,
       "legacy": false,
       "liveAudio": "included",
       "notice": {
         "zh": "Windows 安装包未签名；录音功能尚待 Windows 实机验证。",
         "en": "Unsigned Windows installer. Audio functionality still awaits testing on a Windows device."
       },
-      "revision": 5
+      "revision": 6
     }
   }
 }

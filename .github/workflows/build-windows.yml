@@ -21,6 +21,7 @@ on:
       - 'assets/**'
       - 'build/**'
       - 'desktop-api/tests/windows-package.test.mjs'
+      - 'desktop-api/tests/windows-nsis-compat.test.mjs'
       - 'package.json'
       - 'package-lock.json'
       - 'tsconfig*.json'
@@ -47,7 +48,17 @@ jobs:
       - name: Install native Windows dependencies
         run: npm ci
       - name: Verify Windows package-check contracts
-        run: node --test desktop-api/tests/windows-package.test.mjs
+        run: node --test desktop-api/tests/windows-package.test.mjs desktop-api/tests/windows-nsis-compat.test.mjs
+      - name: Apply pinned upstream NSIS Windows compatibility backport
+        shell: pwsh
+        run: |
+          $receiptDirectory = Join-Path $env:RUNNER_TEMP ('passwisely-nsis-compat-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT)
+          New-Item -ItemType Directory -Path $receiptDirectory -Force | Out-Null
+          $receipt = & node scripts/apply-windows-nsis-compat.cjs
+          $patchExit = $LASTEXITCODE
+          $receipt | Set-Content -Encoding utf8NoBOM (Join-Path $receiptDirectory 'receipt.json')
+          Write-Output $receipt
+          if ($patchExit -ne 0) { throw 'Pinned NSIS compatibility backport failed; do not build an unknown installer template.' }
       - name: Build x64 NSIS installer without publishing
         env:
           WIN_CSC_LINK: ${{ github.event_name == 'workflow_dispatch' && inputs.signed_build && secrets.WIN_CSC_LINK || '' }}
@@ -65,6 +76,15 @@ jobs:
           }
           npm run dist:win -- @builderFlags
           if ($LASTEXITCODE -ne 0) { throw 'Windows build failed.' }
+      - name: Preserve NSIS compatibility receipt after build cleanup
+        if: always()
+        shell: pwsh
+        run: |
+          $receiptPath = Join-Path $env:RUNNER_TEMP ('passwisely-nsis-compat-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT + '/receipt.json')
+          if (Test-Path -LiteralPath $receiptPath -PathType Leaf) {
+            New-Item -ItemType Directory -Path release -Force | Out-Null
+            Copy-Item -LiteralPath $receiptPath -Destination release/windows-nsis-compat.json
+          }
       - name: Check packaged Electron and Recall resources
         shell: pwsh
         run: |
@@ -106,6 +126,9 @@ jobs:
             }
             installDirectory = $installDir
             installExit = $null
+            installStartUtc = $null
+            installEndUtc = $null
+            installProcessId = $null
             failure = $null
             cleanupFailure = $null
             installedRuntime = $null
@@ -117,7 +140,10 @@ jobs:
           try {
             # NSIS /D must be last and unquoted, even if a path contains spaces.
             # This assisted installer does not start the app in silent mode.
+            $report.installStartUtc = [datetime]::UtcNow.ToString('o')
             $install = Start-Process -FilePath $installer -ArgumentList "/S /currentuser /D=$installDir" -PassThru -Wait
+            $report.installEndUtc = [datetime]::UtcNow.ToString('o')
+            $report.installProcessId = $install.Id
             $report.installExit = $install.ExitCode
             $installExitText = if ($null -eq $report.installExit) { 'unknown (null ExitCode)' } else { [string]$report.installExit }
             Write-Output "NSIS silent install exit: $installExitText"
@@ -151,6 +177,7 @@ jobs:
               $report.cleanupFailure = $_.Exception.Message
               if ($null -eq $primaryFailure) { $primaryFailure = $_ }
             }
+            if ($null -ne $report.installStartUtc -and $null -eq $report.installEndUtc) { $report.installEndUtc = [datetime]::UtcNow.ToString('o') }
             if ($null -ne $primaryFailure) { $report.failure = $primaryFailure.Exception.Message }
             # Preserve diagnostic state on failure; do not delete files first and call that uninstall success.
             $report | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8NoBOM release/windows-install.json
@@ -197,6 +224,99 @@ jobs:
             }
           } catch { $diagnostics.metadataErrors += 'INSTALLER_IDENTITY_UNAVAILABLE' }
           $diagnostics | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8NoBOM release/windows-failure.json
+      - name: Capture bounded installer crash module diagnostics
+        if: failure()
+        shell: pwsh
+        timeout-minutes: 1
+        run: |
+          # Retain selected event fields only, never full event messages/XML or dumps.
+          $diagnostics = [ordered]@{
+            success = $false
+            scope = 'Application Error 1000 / Windows Error Reporting 1001 for this installer attempt; absence does not establish no crash.'
+            buildSourceCommit = $env:GITHUB_SHA
+            runId = $env:GITHUB_RUN_ID
+            runAttempt = $env:GITHUB_RUN_ATTEMPT
+            runnerImage = $env:ImageOS
+            runnerImageVersion = $env:ImageVersion
+            osVersion = [System.Environment]::OSVersion.VersionString
+            powerShellVersion = $PSVersionTable.PSVersion.ToString()
+            installerProcessId = $null
+            queryStartUtc = $null
+            queryEndUtc = $null
+            maxEvents = 40
+            eventLimitReached = $false
+            fieldsTruncated = $false
+            events = @()
+            failureCode = $null
+          }
+          function Read-BoundedField($value) {
+            if ($null -eq $value) { return $null }
+            $text = [string]$value
+            if ($text.Length -gt 512) { $diagnostics.fieldsTruncated = $true; return $text.Substring(0, 512) }
+            return $text
+          }
+          try {
+            if ($env:RUNNER_OS -ne 'Windows' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'DISPOSABLE_WINDOWS_RUNNER_REQUIRED' }
+            if (!(Test-Path -LiteralPath release/windows-install.json -PathType Leaf)) { throw 'NO_INSTALL_ATTEMPT_REPORT' }
+            $installReport = Get-Content -LiteralPath release/windows-install.json -Raw | ConvertFrom-Json
+            if (!$installReport.installStartUtc) { throw 'NO_INSTALL_ATTEMPT_START' }
+            $diagnostics.installerProcessId = $installReport.installProcessId
+            $start = ([datetimeoffset]::Parse($installReport.installStartUtc)).UtcDateTime
+            $earliest = [datetime]::UtcNow.AddMinutes(-10)
+            if ($start -lt $earliest) { $start = $earliest }
+            $diagnostics.queryStartUtc = $start.ToString('o')
+            $expectedPath = [IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE 'release/PassWisely-Windows-x64.exe'))
+            $expectedName = [IO.Path]::GetFileName($expectedPath)
+            for ($attempt = 0; $attempt -lt 3; $attempt++) {
+              $end = [datetime]::UtcNow
+              $diagnostics.queryEndUtc = $end.ToString('o')
+              try {
+                $events = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; ProviderName = @('Application Error', 'Windows Error Reporting'); Id = @(1000, 1001); StartTime = $start; EndTime = $end } -MaxEvents 40 -ErrorAction Stop)
+              } catch {
+                if ($_.FullyQualifiedErrorId -notlike 'NoMatchingEventsFound*') { throw 'EVENT_QUERY_FAILED' }
+                $events = @()
+              }
+              $diagnostics.eventLimitReached = $events.Count -ge 40
+              $selected = @()
+              foreach ($event in $events) {
+                $xml = [xml]$event.ToXml()
+                $data = @{}
+                foreach ($field in $xml.Event.EventData.Data) { $data[$field.GetAttribute('Name')] = $field.InnerText }
+                if ($event.Id -eq 1000) {
+                  if (![string]::Equals($data['AppPath'], $expectedPath, [StringComparison]::OrdinalIgnoreCase)) { continue }
+                  $selected += [ordered]@{
+                    eventId = 1000; recordId = $event.RecordId; createdUtc = $event.TimeCreated.ToUniversalTime().ToString('o')
+                    matchBasis = 'exact-app-path+time-window'
+                    appName = Read-BoundedField $data['AppName']; moduleName = Read-BoundedField $data['ModuleName']
+                    moduleVersion = Read-BoundedField $data['ModuleVersion']; exceptionCode = Read-BoundedField $data['ExceptionCode']
+                    faultOffset = Read-BoundedField $data['FaultingOffset']; processId = Read-BoundedField $data['ProcessId']
+                  }
+                } elseif ($event.Id -eq 1001) {
+                  if (![string]::Equals($data['P1'], $expectedName, [StringComparison]::OrdinalIgnoreCase)) { continue }
+                  # WER signature positions depend on EventName. Preserve their
+                  # source names rather than assuming every report is APPCRASH.
+                  $selected += [ordered]@{
+                    eventId = 1001; recordId = $event.RecordId; createdUtc = $event.TimeCreated.ToUniversalTime().ToString('o')
+                    matchBasis = 'app-name+time-window-candidate'
+                    eventName = Read-BoundedField $data['EventName']; appName = Read-BoundedField $data['P1']
+                    signature = [ordered]@{
+                      P4 = Read-BoundedField $data['P4']; P5 = Read-BoundedField $data['P5']
+                      P7 = Read-BoundedField $data['P7']; P8 = Read-BoundedField $data['P8']
+                    }
+                  }
+                }
+              }
+              $diagnostics.events = $selected
+              if ($selected.Count -gt 0 -or $attempt -eq 2) { break }
+              Start-Sleep -Seconds 2
+            }
+            $diagnostics.success = $true
+          } catch {
+            $code = $_.Exception.Message
+            $diagnostics.failureCode = if ($code -match '^[A-Z_]+$') { $code } else { 'EVENT_DIAGNOSTICS_FAILED' }
+          }
+          New-Item -ItemType Directory -Path release -Force | Out-Null
+          $diagnostics | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8NoBOM release/windows-installer-crash.json
       - name: Upload failed verification diagnostics only
         if: failure()
         uses: actions/upload-artifact@v4
@@ -204,8 +324,10 @@ jobs:
           name: PassWisely-Windows-failed-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             release/windows-failure.json
+            release/windows-installer-crash.json
             release/windows-runtime.json
             release/windows-signature.json
+            release/windows-nsis-compat.json
             release/windows-install.json
             release/windows-artifacts.json
           if-no-files-found: warn
@@ -221,6 +343,7 @@ jobs:
             release/latest.yml
             release/windows-runtime.json
             release/windows-signature.json
+            release/windows-nsis-compat.json
             release/windows-install.json
             release/windows-artifacts.json
           if-no-files-found: error

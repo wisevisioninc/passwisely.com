@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "phase": "wise_active_independently_verified",
+  "probe": {
+    "checkedAt": "2026-11-01T01:25:07.096929+00:00",
+    "scope": "read-only Git metadata and compiled runtime bytes; environment binding never opened",
+    "checkoutHead": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+    "publishedSource": {
+      "path": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-download-r6-prep-dadd41f",
+      "commit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
+      "gitTree": "3bed2aabc6c110db1462692bba83cd64076ef733",
+      "trackedStatus": "",
+      "alternatesFilePresent": false,
+      "expectedCommitMatches": true
+    },
+    "runtime": {
+      "path": "/home/jerry/codebase/passwisely/website/dist",
+      "fingerprint": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+      "expectedFingerprintMatches": true,
+      "files": 57,
+      "bytes": 5498833,
+      "excludedBindingsNotRead": [
+        "server/.dev.vars"
+      ],
+      "unexpectedEntries": []
+    },
+    "service": {
+      "WorkingDirectory": "/home/jerry/codebase/passwisely/website",
+      "User": "jerry",
+      "ActiveState": "active",
+      "FragmentPath": "/etc/systemd/system/passwisely-web.service",
+      "DropInPaths": ""
+    },
+    "productionWrites": 0,
+    "environmentValuesRead": false,
+    "providerCalls": 0,
+    "paymentCalls": 0
+  },
+  "r6Transactions": [
+    {
+      "path": "/home/jerry/codebase/passwisely/website/.release-backups/v2.0.0-20261101T011022Z-bd4b3275/transaction.json",
+      "sha256": "39d5e6b64e5c41c499844fd0504ee21b02f8fab675c15e7b2fd3c6ab82fe8a2d",
+      "status": "active",
+      "sourceCommit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
+      "manifestSha256": "6ed8b9f44b600deb37c0170894d5f5a8288411fdc80fb70342e3d2bf8a25a29c",
+      "oldFingerprint": "d29d6cba35f5a5df47d8949b6c64b2bb835856d6fe3ded396caeb75e6123bd6e",
+      "newFingerprint": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+      "productionDataModified": false,
+      "desktopApiModified": false,
+      "runtimeExchanged": true,
+      "nginxInstalled": false,
+      "liveSourceCommit": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+      "sourceRepo": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-download-r6-prep-dadd41f"
+    }
+  ]
+}

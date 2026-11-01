@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-01T01:28:23.515447+00:00",
+  "success": true,
+  "status": "active",
+  "sourceCommit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
+  "manifestSha256": "6ed8b9f44b600deb37c0170894d5f5a8288411fdc80fb70342e3d2bf8a25a29c",
+  "ownerSha256": "90d565d9f8690450e03234837b7bbfbed59dfcf5167718a05221b4cae67d37f8",
+  "fullReceipt": {
+    "path": "/private/tmp/passwisely-r6-download-prep-20261031/mirror-prep-20261101/activation-verified-20261101.json",
+    "bytes": 14294,
+    "sha256": "2856321353bbf376d3d35f96571a6d7aacb76702562c8a76c3daf753cac699ca"
+  },
+  "journalPath": "/opt/passwisely/.frontend-release-backups/20261101T012722Z-f98109291c954becb11e681251243e7c/transaction.json",
+  "journalSha256": "706b7659522116380c8c5990e93e758f220f7b9c4f9b165645f3e1658390d429",
+  "journal": {
+    "status": "active",
+    "sourceCommit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
+    "manifestSha256": "6ed8b9f44b600deb37c0170894d5f5a8288411fdc80fb70342e3d2bf8a25a29c",
+    "oldTree": "d29d6cba35f5a5df47d8949b6c64b2bb835856d6fe3ded396caeb75e6123bd6e",
+    "newTree": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+    "active": "/opt/passwisely/app/website/dist",
+    "backupSlot": "/opt/passwisely/.frontend-release-backups/20261101T012722Z-f98109291c954becb11e681251243e7c/dist-slot",
+    "service": "passwisely-frontend.service",
+    "unitSha256": "695d11eff3a960be95bc103b814b1b96fa93e53da2fb998d2e8719842617ab56",
+    "backendWrites": 0,
+    "configurationWrites": 0,
+    "bindingNames": [
+      "PUBLIC_SITE_URL"
+    ],
+    "oldDirectoryIdentity": [
+      64515,
+      269485
+    ],
+    "newDirectoryIdentity": [
+      64515,
+      269561
+    ],
+    "health": {
+      "homepageEndpoints": 3,
+      "assetChecks": 24,
+      "allAssetsMatchedManifest": true
+    },
+    "activePlacement": "new",
+    "backupPlacement": "old",
+    "productionActivated": true
+  },
+  "active": {
+    "path": "/opt/passwisely/app/website/dist",
+    "treeFingerprint": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+    "files": 57,
+    "bytes": 5498833,
+    "exactlyMatchesPinnedManifest": true,
+    "directoryIdentity": [
+      64515,
+      269561
+    ]
+  },
+  "retainedOldBackup": {
+    "path": "/opt/passwisely/.frontend-release-backups/20261101T012722Z-f98109291c954becb11e681251243e7c/dist-slot",
+    "treeFingerprint": "d29d6cba35f5a5df47d8949b6c64b2bb835856d6fe3ded396caeb75e6123bd6e",
+    "files": 57,
+    "bytes": 5511157,
+    "directoryIdentity": [
+      64515,
+      269485
+    ]
+  },
+  "hostPinMatched": true,
+  "unitPinMatched": true,
+  "nginxPinsAndRosterMatched": true,
+  "publicFrontendBindingPreserved": true,
+  "frontendBindingMetadataPreserved": true,
+  "independentHealth": {
+    "homepageEndpoints": 3,
+    "assetChecks": 24,
+    "allAssetsMatchedManifest": true
+  },
+  "samePostActivationServiceLifecycle": true,
+  "serviceActive": true,
+  "backendEnvironmentRead": false,
+  "backendWrites": 0,
+  "configurationWrites": 0,
+  "scope": "Independent frontend activation verification only. Zero backend/configuration writes describes this website owner transaction; it is not a claim about unrelated account/credit operations. Full compiled-file hashes remain in the bound original receipt."
+}

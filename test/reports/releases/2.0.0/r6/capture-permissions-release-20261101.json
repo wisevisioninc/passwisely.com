@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-10-31T19:40:07.659414+00:00",
-  "status": "oss_public_verified_website_activation_pending",
+  "recordedAt": "2026-11-01T01:32:02.194196+00:00",
+  "status": "published_verified",
   "version": "2.0.0",
   "revision": 6,
   "runtimeSourceCommit": "d8c9dbe556fb89c39a30ffede72db2511c6a6fe4",
@@ -174,10 +174,13 @@
   "distribution": {
     "ossUploadState": "completed",
     "publicReadbackVerified": true,
-    "productionChanged": false,
-    "published": false,
+    "productionChanged": true,
+    "published": true,
     "finalUploadAndDeploymentReceipts": [
-      "oss-public-artifacts-20261101.json"
+      "oss-public-artifacts-20261101.json",
+      "wise-activation-verification-20261101.json",
+      "public-download-verification-20261101.json",
+      "mirror-activation-verification-20261101.json"
     ],
     "ossArtifactsPublic": true,
     "ossPublicReceipt": {
@@ -229,14 +232,18 @@
     },
     "sourceCatalogPrepared": true,
     "sourceCatalogUpdated": true,
-    "liveDownloadCatalogActivated": false
+    "liveDownloadCatalogActivated": true,
+    "publicationComplete": true,
+    "publicationScope": "Versioned OSS artifacts verified; Wise and mirror frontend runtimes activated on the pinned website source; public HTTPS homepages and non-tracking download routes verified.",
+    "mirrorActivationState": "active-verified",
+    "publicWebsiteVerificationState": "verified"
   },
   "limitations": [
-    "Physical Intel macOS 11.7.10 full-resolution screenshot / command-H acceptance is not established; user retest was requested and no answer has been received. The original native capture failure remains undiagnosed.",
+    "The user reports Command-H screenshot success after installing r6 on physical Intel macOS 11.7.10. This was not independently reproduced and does not establish first-time TCC, audio, all features or image resolution. The earlier native capture failure cause remains undiagnosed.",
     "Native guide checks used Apple Silicon macOS 26.6.2, including Intel under Rosetta, with existing screen/microphone authorization; they do not establish first-time TCC consent.",
     "Windows native installation/import/uninstallation passed, but physical Windows GUI, capture and audio acceptance remain unverified; the installer is unsigned.",
     "Simulated source tests and package/notary verification do not establish real capture, audio/provider execution, or screen-share visibility.",
-    "All three OSS objects passed full public SHA-256 verification. Public website catalog activation and production deployment remain pending in this snapshot."
+    "No first-time TCC or audio/all-feature acceptance is inferred from the user-reported Intel screenshot pass. No-global-data-change claim is made: unchanged production data/API and zero backend/configuration writes are scoped only to the website activation transactions; independent account/credit work is outside this release record."
   ],
   "packagingFinalReceipt": {
     "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r6/verification/packaging-final-artifacts-20261101.json",
@@ -245,13 +252,21 @@
   },
   "physicalIntelRetest": {
     "requested": true,
-    "responseReceived": false,
-    "acceptance": "unverified"
+    "responseReceived": true,
+    "acceptance": "user-reported-pass",
+    "evidenceType": "explicit user reply in this conversation, relayed by release coordinator",
+    "platform": "physical Intel Mac",
+    "macOS": "11.7.10",
+    "release": "2.0.0 r6",
+    "action": "installed r6 and pressed Command-H to capture a screenshot",
+    "reportedResult": "\u622a\u56fe\u6210\u529f",
+    "independentlyReproducedByAgent": false,
+    "scopeLimit": "Does not establish first-time TCC consent, audio, all features, or image resolution. The earlier native failure cause remains undiagnosed."
   },
   "website": {
     "sourceCatalogPrepared": true,
     "sourceCatalogUpdated": true,
-    "liveDownloadCatalogActivated": false,
+    "liveDownloadCatalogActivated": true,
     "candidateSourceCommit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
     "mainWorkingTreeApplication": {
       "method": "git cherry-pick --no-commit",
@@ -261,7 +276,7 @@
       ],
       "scope": "download catalog plus four existing test identity pins; no other product code"
     },
-    "candidateState": "prepared-not-activated",
+    "candidateState": "active-on-wise-and-mirror",
     "finalOwnerValidationState": "verified-ready",
     "manifest": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-r6-6391ee0/web/web-manifest.json",
     "manifestSha256": "6ed8b9f44b600deb37c0170894d5f5a8288411fdc80fb70342e3d2bf8a25a29c",
@@ -270,8 +285,7 @@
     "compiledBytes": 5498833,
     "stagedIncoming": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-r6-6391ee0",
     "candidate": "/home/jerry/codebase/passwisely/website/.release-candidates/v2.0.0-download-r6-6391ee0/dist",
-    "planExecuted": false,
-    "activationExecuted": false,
+    "activationExecuted": true,
     "stageEvidence": {
       "path": "/private/tmp/passwisely-r6-download-prep-20261031/receipts/wise-candidate-stage-output-20261101.log",
       "sha256": "d1fe245c904be35c803fa5d026953d2c490b8fca0d6bca1651b0dca4227287ce"
@@ -285,6 +299,125 @@
     "pythonBytecodeDirectoryPresent": false,
     "archiveSha256": "458216c3a0a1eb98dd97ae1b348ea81d923c4c2add62629eb13e7b5127ad75ed",
     "activationEntrySha256": "9b00eba6dcbaf6ac893a1b1a7214fa74fd642945e744ccdce9c2ff0be6ca8523",
-    "productionBindingsRead": false
+    "preActivationExecutionSnapshot": {
+      "planExecuted": false,
+      "activationExecuted": false,
+      "scope": "historical prepared candidate before the user executed activation",
+      "productionBindingsRead": false
+    },
+    "wiseActivation": {
+      "evidence": {
+        "path": "wise-activation-verification-20261101.json",
+        "bytes": 2295,
+        "sha256": "c0fe8b0f99accffdc4d6199a6bc3adcedc505a83c972709e97da0eb175e3a966"
+      },
+      "checkedAt": "2026-11-01T01:25:07.096929+00:00",
+      "activationStatus": "active",
+      "publishedSourceCommit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
+      "publishedSourceAlternatesFilePresent": false,
+      "runtimeFingerprint": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+      "runtimeFiles": 57,
+      "runtimeBytes": 5498833,
+      "serviceActive": true,
+      "liveCheckoutHead": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+      "environmentValuesReadByProbe": false,
+      "transaction": {
+        "path": "/home/jerry/codebase/passwisely/website/.release-backups/v2.0.0-20261101T011022Z-bd4b3275/transaction.json",
+        "sha256": "39d5e6b64e5c41c499844fd0504ee21b02f8fab675c15e7b2fd3c6ab82fe8a2d",
+        "status": "active",
+        "sourceCommit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
+        "manifestSha256": "6ed8b9f44b600deb37c0170894d5f5a8288411fdc80fb70342e3d2bf8a25a29c",
+        "oldFingerprint": "d29d6cba35f5a5df47d8949b6c64b2bb835856d6fe3ded396caeb75e6123bd6e",
+        "newFingerprint": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+        "productionDataModified": false,
+        "desktopApiModified": false,
+        "runtimeExchanged": true,
+        "nginxInstalled": false,
+        "liveSourceCommit": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+        "sourceRepo": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-download-r6-prep-dadd41f"
+      },
+      "publishedSourceTrackedClean": true
+    },
+    "mirrorActivationState": "active-verified",
+    "publicWebsiteVerificationState": "verified",
+    "mirrorActivation": {
+      "evidence": {
+        "path": "mirror-activation-verification-20261101.json",
+        "bytes": 3273,
+        "sha256": "486e042391eec8c1d575ab0c5afa2acb1df1d67f448e82bae7a8fe6715f7ceda"
+      },
+      "status": "active",
+      "sourceCommit": "6391ee0813913ff9cc192a0d7f32b607d5db99f8",
+      "runtimeFingerprint": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+      "runtimeFiles": 57,
+      "runtimeBytes": 5498833,
+      "journalPath": "/opt/passwisely/.frontend-release-backups/20261101T012722Z-f98109291c954becb11e681251243e7c/transaction.json",
+      "journalSha256": "706b7659522116380c8c5990e93e758f220f7b9c4f9b165645f3e1658390d429",
+      "activePlacement": "new",
+      "backupPlacement": "old",
+      "oldBackupRetained": true,
+      "independentHealth": {
+        "homepageEndpoints": 3,
+        "assetChecks": 24,
+        "allAssetsMatchedManifest": true
+      },
+      "hostUnitNginxAndFrontendBindingPreserved": true,
+      "websiteActivationBackendWrites": 0,
+      "websiteActivationConfigurationWrites": 0
+    },
+    "publicVerification": {
+      "evidence": {
+        "path": "public-download-verification-20261101.json",
+        "bytes": 1679,
+        "sha256": "8231cef2e2d11279788dfd13fe3be355c30fcd355ec7a0ac22ac434d2b602cd9"
+      },
+      "checkedAt": "2026-11-01T01:27:35.018501+00:00",
+      "homepageChecks": [
+        {
+          "url": "https://passwisely.cn/",
+          "status": 200,
+          "finalUrl": "https://passwisely.cn/",
+          "tlsCertificateVerified": true,
+          "bytes": 73213
+        },
+        {
+          "url": "https://www.passwisely.cn/",
+          "status": 200,
+          "finalUrl": "https://www.passwisely.cn/",
+          "tlsCertificateVerified": true,
+          "bytes": 73213
+        }
+      ],
+      "downloadRouteMethod": "HEAD (non-tracking)",
+      "downloadChecks": [
+        {
+          "platform": "mac-arm64",
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-macOS-arm64.dmg",
+          "version": "2.0.0",
+          "sha256": "9494852a6b3f2bec0da69bd5978982d42ea42c9f0df0baf4242002ec22c4d833",
+          "cacheControl": "no-store"
+        },
+        {
+          "platform": "mac-x64",
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-macOS-x64.dmg",
+          "version": "2.0.0",
+          "sha256": "7d1795b55a66f337c481ce3a7b458753520092e82796fe4434983cfcbff0e7f4",
+          "cacheControl": "no-store"
+        },
+        {
+          "platform": "windows-x64",
+          "status": 307,
+          "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r6/PassWisely-Windows-x64.exe",
+          "version": "2.0.0",
+          "sha256": "25e4fe05cfa00681c775dd332755b98f483931db2f0381e97df8d16a32725f6a",
+          "cacheControl": "no-store"
+        }
+      ],
+      "trackingCalls": 0,
+      "providerCalls": 0,
+      "paymentCalls": 0
+    }
   }
 }

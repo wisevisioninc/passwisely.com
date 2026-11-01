@@ -151,10 +151,10 @@ export const PROCESSING_EVENTS = {
 console.log("Preload script is running");
 
 const electronAPI = {
+  getCapturePermissionStartupCheck: () => ipcRenderer.invoke("capture-permissions-startup"),
   getCapturePermissions: () => ipcRenderer.invoke("capture-permissions-get"),
   requestCapturePermission: (id: Parameters<CapturePermissionAPI["requestCapturePermission"]>[0]) => ipcRenderer.invoke("capture-permissions-request", id),
   openCapturePermissionSettings: (id: Parameters<CapturePermissionAPI["openCapturePermissionSettings"]>[0]) => ipcRenderer.invoke("capture-permissions-settings", id),
-  acknowledgeCapturePermissionGuide: () => ipcRenderer.invoke("capture-permissions-acknowledge"),
   openCapturePermissionGuide: () => ipcRenderer.invoke("capture-permissions-open"),
   restartForCapturePermissions: () => ipcRenderer.invoke("capture-permissions-restart"),
   onCapturePermissionsNeeded: (callback: () => void) => {

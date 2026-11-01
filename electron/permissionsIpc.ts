@@ -12,10 +12,10 @@ export function initializePermissionIpc(service: PermissionService, getWindow: (
     if (!IDS.includes(input as never)) throw new Error("Invalid capture permission.");
     return input as CapturePermissionId;
   };
+  handle("capture-permissions-startup", () => service.startupCheck());
   handle("capture-permissions-get", () => service.snapshot());
   handle("capture-permissions-request", input => service.request(id(input)));
   handle("capture-permissions-settings", input => service.settings(id(input)));
-  handle("capture-permissions-acknowledge", () => service.acknowledge());
   handle("capture-permissions-open", () => { getWindow()!.webContents.send("capture-permissions-needed"); });
   handle("capture-permissions-restart", async () => {
     const state = service.snapshot();

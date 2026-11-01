@@ -18,18 +18,18 @@ function fixture(context, options = {}) {
   const state = {
     now: 1000, media: { screen: "unknown", microphone: "unknown", ...options.media }, trusted: false, audio: null,
     capture: { captureNeedsCleanup: false, captureStatus: "idle", platformSupported: true, ...options.capture },
-    failRename: false,
   };
   const fileSystem = { ...fs,
+    readFileSync(...args) { reads.push(["file", ...args]); return fs.readFileSync(...args); },
     mkdirSync(...args) { writes.push(["mkdir", ...args]); return fs.mkdirSync(...args); },
     copyFileSync(...args) { writes.push(["backup", ...args]); return fs.copyFileSync(...args); },
     openSync(...args) { writes.push(["open", ...args]); return fs.openSync(...args); },
     writeFileSync(...args) { writes.push(["write", ...args]); return fs.writeFileSync(...args); },
-    renameSync(...args) { writes.push(["rename", ...args]); if (state.failRename) throw new Error("fixture marker rename failed"); return fs.renameSync(...args); },
+    renameSync(...args) { writes.push(["rename", ...args]); return fs.renameSync(...args); },
     unlinkSync(...args) { writes.push(["unlink", ...args]); return fs.unlinkSync(...args); },
   };
   const deps = {
-    platform: options.platform || "darwin", architecture: options.architecture || "x64", stateDirectory: directory,
+    platform: options.platform || "darwin", architecture: options.architecture || "x64",
     mediaStatus(type) { reads.push(["media", type]); const value = state.media[type]; return typeof value === "function" ? value() : value; },
     async askMicrophone() { effects.push(["microphone"]); return options.microphone ? options.microphone(state) : false; },
     accessibilityTrusted() { reads.push(["accessibility"]); if (typeof state.trusted === "function") return state.trusted(); return state.trusted; },
@@ -47,8 +47,9 @@ function fixture(context, options = {}) {
 
 test("constructor and snapshots only observe state, without capture, authorization, settings or persistence", context => {
   const f = fixture(context, { architecture: "arm64" });
+  assert.deepEqual(f.reads, [], "construction does not perform a second screen query before startup");
   const first = f.service.snapshot(); f.state.now = 2000; const second = f.service.snapshot();
-  assert.equal(first.firstRun, true); assert.equal(second.audioCheckBusy, false);
+  assert.equal("firstRun" in first, false); assert.equal(second.audioCheckBusy, false);
   assert.equal(item(second, "screen").status, "unknown");
   assert.equal(item(second, "microphone").status, "unknown");
   assert.deepEqual(f.effects, []); assert.deepEqual(f.writes, []);
@@ -96,6 +97,26 @@ test("probe success never invents a granted OS status, and unreadable statuses s
   }
 });
 
+test("restart advice follows observed missing screen permission within this launch, including revocation after startup", context => {
+  for (const initial of ["granted", "unknown"]) {
+    const f = fixture(context, { media: { screen: initial, microphone: "granted" } });
+    const startup = f.service.startupCheck();
+    assert.equal(startup.snapshot.restartRecommended, false);
+    f.state.media.screen = "denied";
+    assert.equal(f.service.snapshot().restartRecommended, false);
+    f.state.media.screen = "granted";
+    assert.equal(f.service.snapshot().restartRecommended, true, `${initial} → denied → granted needs restart advice`);
+    assert.equal(f.service.startupCheck(), startup, "manual changes do not replace the cached startup decision");
+    assert.equal(startup.snapshot.restartRecommended, false);
+    assert.deepEqual(f.effects, []); assert.deepEqual(f.writes, []);
+  }
+  const unknown = fixture(context, { media: { screen: "unknown", microphone: "granted" } });
+  unknown.service.startupCheck();
+  unknown.state.media.screen = "granted";
+  assert.equal(unknown.service.snapshot().restartRecommended, false, "unknown → granted alone cannot prove a new authorization");
+  assert.deepEqual(unknown.effects, []); assert.deepEqual(unknown.writes, []);
+});
+
 test("Mac microphone asks only from not-determined and reports the actual state after the prompt", async context => {
   const first = fixture(context, { media: { microphone: "not-determined" }, microphone(state) { state.media.microphone = "denied"; return false; } });
   const refused = await first.service.request("microphone");
@@ -135,41 +156,83 @@ test("audio preflight invokes only its actual owner and preserves the timestamp 
   assert.deepEqual(f.writes, []);
 });
 
-test("absent accessibility trust does not claim a permission was never requested", context => {
+test("current accessibility trust distinguishes known not-granted from unknown without reusing provider history", context => {
   const f = fixture(context, { architecture: "arm64" });
   f.state.audio = { microphone: { status: "unknown" }, systemAudio: { status: "unknown" }, accessibility: { status: "denied", observedAt: 80 } };
   const retained = item(f.service.snapshot(), "accessibility");
-  assert.equal(retained.status, "denied"); assert.equal(retained.observedAt, 80);
+  assert.equal(retained.status, "not-granted"); assert.equal(retained.observedAt, 1000);
   f.state.audio.accessibility = { status: "granted", observedAt: 90 };
-  assert.equal(item(f.service.snapshot(), "accessibility").status, "unknown", "current absent trust cannot reuse a historical grant");
+  assert.equal(item(f.service.snapshot(), "accessibility").status, "not-granted", "current absent trust cannot reuse a historical grant");
   f.state.audio = null;
-  assert.equal(item(f.service.snapshot(), "accessibility").status, "unknown");
+  assert.equal(item(f.service.snapshot(), "accessibility").status, "not-granted");
   f.state.trusted = true;
   assert.equal(item(f.service.snapshot(), "accessibility").status, "granted");
+  for (const value of [undefined, "true", () => { throw new Error("unreadable"); }]) {
+    f.state.trusted = value;
+    const unreadable = item(f.service.snapshot(), "accessibility");
+    assert.equal(unreadable.status, "unknown"); assert.equal(unreadable.observedAt, undefined);
+  }
 });
 
-test("acknowledgement records only having seen the guide, remains retryable after atomic-write failure, and is idempotent", async context => {
-  const original = '{"version":2,"acknowledgedAt":50}\n';
-  const f = fixture(context, { marker: original, media: { screen: "denied", microphone: "unknown" } });
-  f.state.failRename = true;
-  const failed = await f.service.acknowledge();
-  assert.equal(failed.success, false); assert.equal(failed.snapshot.firstRun, true);
-  assert.match(failed.error, /rename failed/);
-  const marker = path.join(f.directory, "capture-permission-guide.json");
-  assert.equal(fs.readFileSync(marker, "utf8"), original);
-  const backups = fs.readdirSync(f.directory).filter(name => name.endsWith(".backup"));
-  assert.equal(backups.length, 1); assert.equal(fs.readFileSync(path.join(f.directory, backups[0]), "utf8"), original);
-  assert.equal(fs.readdirSync(f.directory).some(name => name.endsWith(".tmp")), false);
-  f.state.failRename = false;
-  const saved = await f.service.acknowledge();
-  assert.equal(saved.success, true); assert.equal(saved.snapshot.firstRun, false);
-  assert.equal(item(saved.snapshot, "screen").status, "denied"); assert.equal(item(saved.snapshot, "microphone").status, "unknown");
-  assert.deepEqual(JSON.parse(fs.readFileSync(marker, "utf8")), { version: 1, acknowledgedAt: 1000 });
-  const writes = f.writes.length;
-  assert.equal((await f.service.acknowledge()).success, true); assert.equal(f.writes.length, writes);
-  const restored = new f.PermissionService(f.deps).snapshot();
-  assert.equal(restored.firstRun, false); assert.equal(item(restored, "screen").status, "denied");
-  assert.deepEqual(f.effects, []);
+test("startup caches one current OS check, while manual snapshots stay fresh and the next launch rechecks", context => {
+  const f = fixture(context, { architecture: "arm64", media: { screen: "granted", microphone: "granted" } });
+  f.state.trusted = true;
+  const startup = f.service.startupCheck();
+  assert.equal(startup.shouldPrompt, false);
+  assert.equal(item(startup.snapshot, "system-audio").status, "unknown", "uninitialized audio is not a grant and does not force the guide");
+  assert.deepEqual(f.reads.filter(([kind]) => kind === "media" || kind === "accessibility"), [["media", "screen"], ["media", "microphone"], ["accessibility"]]);
+  const reads = f.reads.length;
+  f.state.media.screen = "denied"; f.state.trusted = false; f.state.now = 2000;
+  assert.equal(f.service.startupCheck(), startup);
+  assert.equal(f.reads.length, reads, "repeated startup getters never query or operate again");
+  const manual = f.service.snapshot();
+  assert.equal(item(manual, "screen").status, "denied");
+  assert.equal(item(manual, "accessibility").status, "not-granted");
+  assert.equal(startup.shouldPrompt, false); assert.equal(item(startup.snapshot, "screen").status, "granted");
+  const nextLaunch = new f.PermissionService(f.deps).startupCheck();
+  assert.equal(nextLaunch.shouldPrompt, true); assert.equal(item(nextLaunch.snapshot, "screen").observedAt, 2000);
+  assert.deepEqual(f.effects, []); assert.deepEqual(f.writes, []);
+});
+
+test("startup prompts for known missing OS permission only, independently of SDK history and audio capability", context => {
+  const cases = [
+    { media: { screen: "not-determined" }, expected: true },
+    { media: { screen: "denied" }, expected: true },
+    { media: { screen: "restricted" }, expected: true },
+    { media: { microphone: "not-determined" }, expected: true },
+    { media: { microphone: "denied" }, expected: true },
+    { media: { microphone: "restricted" }, expected: true },
+    { media: { screen: "unknown", microphone: "unknown" }, expected: false },
+    { media: { screen: () => { throw new Error("unreadable"); }, microphone: "unexpected" }, expected: false },
+    { architecture: "arm64", trusted: false, expected: true },
+    { architecture: "arm64", trusted: () => { throw new Error("unreadable"); }, expected: false },
+    { architecture: "arm64", trusted: false, media: { microphone: "denied" }, capture: { platformSupported: false }, expected: false },
+    { media: { screen: "denied", microphone: "denied" }, capture: { platformSupported: false }, expected: true },
+    { platform: "win32", media: { screen: "denied", microphone: "unknown" }, expected: false },
+    { platform: "win32", media: { microphone: "denied" }, expected: true },
+    { platform: "win32", media: { microphone: "restricted" }, capture: { platformSupported: false }, expected: false },
+    { platform: "linux", media: { screen: "denied", microphone: "denied" }, expected: false },
+  ];
+  for (const entry of cases) {
+    const f = fixture(context, { ...entry, media: { screen: "granted", microphone: "granted", ...entry.media } });
+    f.state.trusted = entry.trusted ?? true;
+    f.state.audio = { microphone: { status: "denied", observedAt: 1 }, systemAudio: { status: "denied", observedAt: 1 }, accessibility: { status: "granted", observedAt: 1 } };
+    assert.equal(f.service.startupCheck().shouldPrompt, entry.expected, JSON.stringify(entry));
+    assert.deepEqual(f.effects, []); assert.deepEqual(f.writes, []);
+    assert.equal(f.reads.some(([kind]) => kind === "file"), false);
+  }
+});
+
+test("an old acknowledged marker neither suppresses missing permissions nor forces the guide for granted permissions", context => {
+  const original = '{"version":1,"acknowledgedAt":50}\n';
+  for (const status of ["denied", "granted"]) {
+    const f = fixture(context, { marker: original, media: { screen: status, microphone: "granted" } });
+    assert.equal(f.service.startupCheck().shouldPrompt, status === "denied");
+    assert.equal(fs.readFileSync(path.join(f.directory, "capture-permission-guide.json"), "utf8"), original);
+    assert.equal(typeof f.service.acknowledge, "undefined");
+    assert.equal(f.reads.some(([kind]) => kind === "file"), false);
+    assert.deepEqual(f.writes, []);
+  }
 });
 
 function ipcFixture(service) {
@@ -182,9 +245,70 @@ function ipcFixture(service) {
     setAvailable(value) { available = value; }, setDestroyed(value) { destroyed = value; } };
 }
 
+test("actual main startup boundary continues on a cached failure; IPC repeats the failure and manual checks can recover", context => {
+  const source = fs.readFileSync(sourcePath("main.ts"), "utf8");
+  const ast = ts.createSourceFile("main.ts", source, ts.ScriptTarget.Latest, true), calls = [];
+  const visit = node => {
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.expression.getText(ast) === "permissions" && node.expression.name.text === "startupCheck") calls.push(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(ast); assert.equal(calls.length, 1);
+  const statement = calls[0].parent, block = statement.parent, boundary = block.parent;
+  assert.ok(ts.isExpressionStatement(statement) && ts.isBlock(block) && ts.isTryStatement(boundary) && boundary.tryBlock === block);
+  const javascript = ts.transpileModule(`${boundary.getText(ast)}; return "application-continues";`, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  for (const owner of ["captureState", "audioSnapshot"]) {
+    const f = fixture(context, { media: { screen: "granted", microphone: "granted" } });
+    const failure = new Error(`fixture ${owner} snapshot clone failed`), original = f.deps[owner];
+    f.deps[owner] = () => { f.reads.push([owner]); throw failure; };
+    assert.equal(new Function("permissions", javascript)(f.service), "application-continues");
+    const reads = f.reads.length, h = ipcFixture(f.service);
+    for (let replay = 0; replay < 2; replay++) {
+      assert.throws(() => h.handlers.get("capture-permissions-startup")(h.event), error => error === failure);
+      assert.equal(f.reads.length, reads, "a rejected startup observation is cached without OS retries");
+    }
+    f.deps[owner] = original;
+    const manual = h.handlers.get("capture-permissions-get")(h.event);
+    assert.equal(item(manual, "screen").status, "granted");
+    assert.equal(item(manual, "microphone").status, "granted");
+    assert.ok(f.reads.length > reads, "manual checks retain a fresh recovery path");
+    const afterManual = f.reads.length;
+    assert.throws(() => h.handlers.get("capture-permissions-startup")(h.event), error => error === failure);
+    assert.equal(f.reads.length, afterManual, "manual recovery never silently retries the failed startup check");
+    assert.equal(new f.PermissionService(f.deps).startupCheck().shouldPrompt, false, "a new launch starts a new check");
+    assert.deepEqual(f.effects, []); assert.deepEqual(f.writes, []); assert.deepEqual(h.effects, []);
+  }
+});
+
+test("startup and manual IPC expose their owners through the actual preload without an acknowledgement API", async context => {
+  const f = fixture(context, { media: { screen: "denied", microphone: "granted" } });
+  const startup = f.service.startupCheck();
+  const h = ipcFixture(f.service), exposed = new Map();
+  const electron = {
+    contextBridge: { exposeInMainWorld: (name, value) => exposed.set(name, value) },
+    ipcRenderer: { invoke: (channel, input) => Promise.resolve(h.handlers.get(channel)(h.event, input)), on() {}, removeListener() {} },
+  };
+  createProductionTsLoader({ mocks: { electron }, env: {}, console: { log() {}, error() {} } })(sourcePath("preload.ts"));
+  const api = exposed.get("electronAPI"); assert.ok(api);
+  assert.equal(await api.getCapturePermissionStartupCheck(), startup);
+  assert.equal(startup.shouldPrompt, true);
+  const reads = f.reads.length;
+  f.state.media.screen = "granted";
+  assert.equal(await api.getCapturePermissionStartupCheck(), startup);
+  assert.equal(f.reads.length, reads);
+  const refreshed = await api.getCapturePermissions();
+  assert.equal(item(refreshed, "screen").status, "granted");
+  assert.equal(item(startup.snapshot, "screen").status, "denied");
+  assert.equal(typeof api.acknowledgeCapturePermissionGuide, "undefined");
+  assert.equal(h.handlers.has("capture-permissions-acknowledge"), false);
+  assert.deepEqual(f.effects, []); assert.deepEqual(f.writes, []);
+});
+
 test("permission IPC rejects foreign senders, iframes, missing frames and stale windows before any operation", () => {
   const calls = [];
-  const service = { snapshot() { calls.push("get"); return {}; }, request() { calls.push("request"); }, settings() { calls.push("settings"); }, acknowledge() { calls.push("acknowledge"); } };
+  const service = { startupCheck() { calls.push("startup"); return {}; }, snapshot() { calls.push("get"); return {}; }, request() { calls.push("request"); }, settings() { calls.push("settings"); } };
   const h = ipcFixture(service);
   for (const handler of h.handlers.values()) {
     for (const event of [{ sender: {}, senderFrame: h.event.senderFrame }, { sender: h.win.webContents, senderFrame: {} }, { sender: h.win.webContents }]) {
@@ -198,7 +322,7 @@ test("permission IPC rejects foreign senders, iframes, missing frames and stale 
 
 test("permission IPC accepts only named permission IDs without coercion or arbitrary settings URLs", () => {
   const calls = [];
-  const service = { snapshot: () => ({}), request: id => calls.push(["request", id]), settings: id => calls.push(["settings", id]), acknowledge() {} };
+  const service = { snapshot: () => ({}), request: id => calls.push(["request", id]), settings: id => calls.push(["settings", id]) };
   const h = ipcFixture(service);
   for (const [channel, kind] of [["capture-permissions-request", "request"], ["capture-permissions-settings", "settings"]]) {
     for (const id of ["screen", "microphone", "system-audio", "accessibility"]) h.handlers.get(channel)(h.event, id);
@@ -211,14 +335,13 @@ test("permission IPC accepts only named permission IDs without coercion or arbit
   assert.deepEqual(h.effects, [["send", "capture-permissions-needed"]]); assert.deepEqual(calls, []);
 });
 
-test("pending permission actions serialize requests and prevent guide acknowledgement or controlled restart", async context => {
+test("pending permission actions serialize requests and prevent controlled restart", async context => {
   const pending = deferred();
   const f = fixture(context, { probe: () => pending.promise });
   const h = ipcFixture(f.service);
   const probing = f.service.request("screen");
   assert.equal(f.service.snapshot().audioCheckBusy, true);
   assert.equal((await f.service.request("microphone")).success, false);
-  assert.equal((await f.service.acknowledge()).success, false);
   assert.equal((await h.handlers.get("capture-permissions-restart")(h.event)).success, false);
   assert.deepEqual(f.effects, [["probe"]]); assert.deepEqual(f.writes, []); assert.deepEqual(h.effects, []);
   pending.resolve(); assert.equal((await probing).success, true);
@@ -271,6 +394,14 @@ test("the actual main restart callback refuses active audio and cleanup before r
     ts.forEachChild(node, visit);
   };
   visit(ast); assert.equal(candidates.length, 1);
+  const startupCalls = [];
+  const findStartup = node => {
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.expression.getText(ast) === "permissions" && node.expression.name.text === "startupCheck") startupCalls.push(node);
+    ts.forEachChild(node, findStartup);
+  };
+  findStartup(ast); assert.equal(startupCalls.length, 1);
+  assert.ok(startupCalls[0].pos < candidates[0].pos, "main caches the startup check before exposing IPC or creating the renderer");
   const callback = candidates[0].arguments[2]; assert.ok(ts.isArrowFunction(callback));
   const javascript = ts.transpileModule(`exports.restart = ${callback.getText(ast)};`, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   let capture = { captureNeedsCleanup: false, captureStatus: "recording" };

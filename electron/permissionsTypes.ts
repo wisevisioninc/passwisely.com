@@ -1,5 +1,5 @@
 export type CapturePermissionId = "screen" | "microphone" | "system-audio" | "accessibility";
-export type CapturePermissionStatus = "granted" | "not-determined" | "not_requested" | "denied" | "restricted" | "not_installed" | "error" | "unknown" | "not-required" | "unsupported";
+export type CapturePermissionStatus = "granted" | "not-granted" | "not-determined" | "not_requested" | "denied" | "restricted" | "not_installed" | "error" | "unknown" | "not-required" | "unsupported";
 export interface CapturePermissionItem {
   id: CapturePermissionId;
   status: CapturePermissionStatus;
@@ -10,7 +10,6 @@ export interface CapturePermissionItem {
 export interface CapturePermissionSnapshot {
   platform: "darwin" | "win32" | "other";
   architecture: string;
-  firstRun: boolean;
   restartRecommended: boolean;
   audioCheckBusy: boolean;
   cleanupRequired: boolean;
@@ -18,16 +17,20 @@ export interface CapturePermissionSnapshot {
   audioSupportMessage?: string;
   items: CapturePermissionItem[];
 }
+export interface CapturePermissionStartupCheck {
+  shouldPrompt: boolean;
+  snapshot: CapturePermissionSnapshot;
+}
 export interface CapturePermissionResult {
   success: boolean;
   snapshot: CapturePermissionSnapshot;
   error?: string;
 }
 export interface CapturePermissionAPI {
+  getCapturePermissionStartupCheck(): Promise<CapturePermissionStartupCheck>;
   getCapturePermissions(): Promise<CapturePermissionSnapshot>;
   requestCapturePermission(id: CapturePermissionId): Promise<CapturePermissionResult>;
   openCapturePermissionSettings(id: CapturePermissionId): Promise<CapturePermissionResult>;
-  acknowledgeCapturePermissionGuide(): Promise<CapturePermissionResult>;
   openCapturePermissionGuide(): Promise<void>;
   restartForCapturePermissions(): Promise<{success: boolean; error?: string}>;
   onCapturePermissionsNeeded(callback: () => void): () => void;

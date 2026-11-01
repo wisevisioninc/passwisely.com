@@ -783,7 +783,7 @@ async function initializeApp() {
       },
     });
     const permissions = new PermissionService({
-      platform: process.platform, architecture: process.arch, stateDirectory: app.getPath("userData"),
+      platform: process.platform, architecture: process.arch,
       mediaStatus: type => systemPreferences.getMediaAccessStatus(type),
       askMicrophone: () => systemPreferences.askForMediaAccess("microphone"),
       accessibilityTrusted: () => systemPreferences.isTrustedAccessibilityClient(false),
@@ -794,6 +794,8 @@ async function initializeApp() {
       captureState: () => state.liveSession!.getSnapshot(),
       recallApiUrl: () => getRecallPermissionApiUrl(),
     });
+    try { permissions.startupCheck(); }
+    catch { /* Cached startup failure remains available through IPC; manual checks may recover. */ }
     initializePermissionIpc(permissions, getMainWindow, async () => {
       const capture = state.liveSession!.getSnapshot();
       if (capture.captureNeedsCleanup || !["idle", "ended", "error"].includes(capture.captureStatus)) return { success: false, error: "请先结束当前音频采集。" };

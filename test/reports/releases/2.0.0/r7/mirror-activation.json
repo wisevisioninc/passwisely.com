@@ -1,0 +1,32 @@
+{
+  "exitCode": 0,
+  "rows": [
+    {
+      "status": "planned",
+      "sourceCommit": "1d91d8b08cab57cdf83f87043a27257850c6a7fa",
+      "manifestSha256": "f88ba61398cfdb5ea3e0b52c9bfd60e1bcb5091e4260ef79fc4aa79fa52b651f",
+      "oldTree": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+      "newTree": "8d6fbae7e8b3a5e1fc3750dc52345d77ff90f81d100271ba9f72c4cfcc15a38d",
+      "compiledFiles": 57,
+      "servicesToRestart": [
+        "passwisely-frontend.service"
+      ],
+      "backendWrites": 0,
+      "configurationWrites": 0
+    },
+    {
+      "success": true,
+      "status": "active",
+      "journal": "/opt/passwisely/.frontend-release-backups/r7-20261102T155007Z-d569bd04932f4fa3a9d34f4eb84cb1bd/transaction.json",
+      "sourceCommit": "1d91d8b08cab57cdf83f87043a27257850c6a7fa",
+      "runtimeFingerprint": "8d6fbae7e8b3a5e1fc3750dc52345d77ff90f81d100271ba9f72c4cfcc15a38d",
+      "health": {
+        "homepageEndpoints": 3,
+        "assetChecks": 24,
+        "allAssetsMatchedManifest": true
+      },
+      "oldBackupRetained": true,
+      "bindingBytesPreserved": true
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "package": "@electric-sql/pglite",
+  "version": "0.3.14",
+  "lockIntegrityVerified": true,
+  "downloadBytes": 6803270,
+  "lifecycleScriptsRun": false,
+  "destination": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-download-r7-prep-6391ee0/website/node_modules/@electric-sql/pglite",
+  "productionWrites": 0
+}

@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "arch": "arm64",
+  "electron": "29.4.6",
+  "node": "20.9.0",
+  "startupPermissions": {
+    "grantedSilent": true,
+    "cachedDecision": true,
+    "manualFresh": true,
+    "missingPrompt": true,
+    "unknownSilent": true,
+    "startupReadCount": 3
+  },
+  "nativeCanvas": true,
+  "serviceEndpoints": {
+    "apiBase": "https://passwisely.cn/api",
+    "aiBase": "https://passwisely.cn/api/ai",
+    "accountUrl": "https://passwisely.cn/#account",
+    "grpcAddress": "passwisely.cn:443",
+    "grpcInsecure": false
+  },
+  "scope": "Actual packaged Electron/Canvas/SDK imports; startup permission OS boundary mocked. Network/process/capture side effects blocked.",
+  "packageBytesUnchanged": true
+}

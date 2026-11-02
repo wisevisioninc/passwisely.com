@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "revision": 7,
+  "artifacts": [
+    {
+      "platform": "mac-arm64",
+      "filename": "PassWisely-macOS-arm64.dmg",
+      "bytes": 161123731,
+      "sha256": "3f83f6d6848006097e3c24ab28416a853daef4e59e8ec402dfb20b8bb0676821",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-arm64.dmg",
+      "created": true,
+      "publicSha256Verified": true
+    },
+    {
+      "platform": "mac-x64",
+      "filename": "PassWisely-macOS-x64.dmg",
+      "bytes": 120690164,
+      "sha256": "9436f80c79a95f3b1da37b490439c5f1d98e7dc4a933627023e7de54f417f209",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-x64.dmg",
+      "created": true,
+      "publicSha256Verified": true
+    },
+    {
+      "platform": "windows-x64",
+      "filename": "PassWisely-Windows-x64.exe",
+      "bytes": 123234032,
+      "sha256": "cb8b2d66550e4180473c7e2f5f7ce57ab5394ab36325f84a2eb3f2f2d017f8df",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-Windows-x64.exe",
+      "created": true,
+      "publicSha256Verified": true
+    }
+  ],
+  "secretStayedOnWise": true,
+  "capabilitiesPersisted": false,
+  "bucketVersioningVerifiedNeverEnabled": true
+}

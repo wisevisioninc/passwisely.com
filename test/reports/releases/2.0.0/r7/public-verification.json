@@ -1,0 +1,318 @@
+{
+  "success": true,
+  "checkedAt": "2026-11-02T15:51:26.592695+00:00",
+  "version": "2.0.0",
+  "revision": 7,
+  "sourceCommit": "1d91d8b08cab57cdf83f87043a27257850c6a7fa",
+  "homepages": [
+    {
+      "url": "https://passwisely.cn/",
+      "status": 200,
+      "tlsCertificateVerified": true,
+      "bytes": 73213,
+      "elapsedSeconds": 0.651
+    },
+    {
+      "url": "https://www.passwisely.cn/",
+      "status": 200,
+      "tlsCertificateVerified": true,
+      "bytes": 73213,
+      "elapsedSeconds": 0.608
+    },
+    {
+      "url": "http://47.95.66.86/",
+      "status": 200,
+      "tlsCertificateVerified": false,
+      "bytes": 73225,
+      "elapsedSeconds": 0.055
+    }
+  ],
+  "downloads": [
+    {
+      "url": "https://passwisely.cn/api/download/mac-arm64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "mac-arm64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-arm64.dmg",
+      "version": "2.0.0",
+      "sha256": "3f83f6d6848006097e3c24ab28416a853daef4e59e8ec402dfb20b8bb0676821",
+      "cacheControl": "no-store"
+    },
+    {
+      "url": "https://passwisely.cn/api/download/mac-x64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "mac-x64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-x64.dmg",
+      "version": "2.0.0",
+      "sha256": "9436f80c79a95f3b1da37b490439c5f1d98e7dc4a933627023e7de54f417f209",
+      "cacheControl": "no-store"
+    },
+    {
+      "url": "https://passwisely.cn/api/download/windows-x64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "windows-x64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-Windows-x64.exe",
+      "version": "2.0.0",
+      "sha256": "cb8b2d66550e4180473c7e2f5f7ce57ab5394ab36325f84a2eb3f2f2d017f8df",
+      "cacheControl": "no-store"
+    },
+    {
+      "url": "https://www.passwisely.cn/api/download/mac-arm64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "mac-arm64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-arm64.dmg",
+      "version": "2.0.0",
+      "sha256": "3f83f6d6848006097e3c24ab28416a853daef4e59e8ec402dfb20b8bb0676821",
+      "cacheControl": "no-store"
+    },
+    {
+      "url": "https://www.passwisely.cn/api/download/mac-x64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "mac-x64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-x64.dmg",
+      "version": "2.0.0",
+      "sha256": "9436f80c79a95f3b1da37b490439c5f1d98e7dc4a933627023e7de54f417f209",
+      "cacheControl": "no-store"
+    },
+    {
+      "url": "https://www.passwisely.cn/api/download/windows-x64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "windows-x64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-Windows-x64.exe",
+      "version": "2.0.0",
+      "sha256": "cb8b2d66550e4180473c7e2f5f7ce57ab5394ab36325f84a2eb3f2f2d017f8df",
+      "cacheControl": "no-store"
+    },
+    {
+      "url": "http://47.95.66.86/api/download/mac-arm64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "mac-arm64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-arm64.dmg",
+      "version": "2.0.0",
+      "sha256": "3f83f6d6848006097e3c24ab28416a853daef4e59e8ec402dfb20b8bb0676821",
+      "cacheControl": "no-store"
+    },
+    {
+      "url": "http://47.95.66.86/api/download/mac-x64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "mac-x64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-x64.dmg",
+      "version": "2.0.0",
+      "sha256": "9436f80c79a95f3b1da37b490439c5f1d98e7dc4a933627023e7de54f417f209",
+      "cacheControl": "no-store"
+    },
+    {
+      "url": "http://47.95.66.86/api/download/windows-x64",
+      "method": "HEAD",
+      "status": 307,
+      "platform": "windows-x64",
+      "location": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-Windows-x64.exe",
+      "version": "2.0.0",
+      "sha256": "cb8b2d66550e4180473c7e2f5f7ce57ab5394ab36325f84a2eb3f2f2d017f8df",
+      "cacheControl": "no-store"
+    }
+  ],
+  "assets": [
+    {
+      "url": "https://passwisely.cn/assets/PassWiselySite-0_0pyKin.css",
+      "status": 200,
+      "bytes": 87281,
+      "sha256": "ba1f91b821af6d8cacc0eebe48608ffdb08a665e1cc52f9107c321f6a49f8ead",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://passwisely.cn/assets/PassWiselySite-B9-yZ2QX.js",
+      "status": 200,
+      "bytes": 93654,
+      "sha256": "2603cdb463117157ae9a21799dff5288d59b968ea55fe892568243b615f89741",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://passwisely.cn/assets/catalog-1Z1fRbBh.js",
+      "status": 200,
+      "bytes": 2810,
+      "sha256": "0f82f98e6550cf40f5463fb129dc39c3e8ac0bb8a13b106fffec0db3337775e2",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://passwisely.cn/assets/framework-CXnKph_e.js",
+      "status": 200,
+      "bytes": 189805,
+      "sha256": "73b45b606448e4dc310fbe851d8089ee752f3eb081980b3a6fec88988820ee12",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://passwisely.cn/assets/index-DKs42zSM.css",
+      "status": 200,
+      "bytes": 66037,
+      "sha256": "17885751dc64918df41425f8d52f0aa936febf109f819303c68a5c175008ca83",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://passwisely.cn/assets/index-iq8fEezM.js",
+      "status": 200,
+      "bytes": 81233,
+      "sha256": "c624747c45aaa19c1bab7e4c8459c7d0882b24d99251b2de9ba0fc28e78fa73c",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://passwisely.cn/assets/layout-segment-context-z7ErnWit.js",
+      "status": 200,
+      "bytes": 288,
+      "sha256": "d847d8857faf0b7b7745519982c42e1bd5c57e8e615a01a48b3ebee9b97e0b1c",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://passwisely.cn/assets/rolldown-runtime-S-ySWqyJ.js",
+      "status": 200,
+      "bytes": 694,
+      "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://www.passwisely.cn/assets/PassWiselySite-0_0pyKin.css",
+      "status": 200,
+      "bytes": 87281,
+      "sha256": "ba1f91b821af6d8cacc0eebe48608ffdb08a665e1cc52f9107c321f6a49f8ead",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://www.passwisely.cn/assets/PassWiselySite-B9-yZ2QX.js",
+      "status": 200,
+      "bytes": 93654,
+      "sha256": "2603cdb463117157ae9a21799dff5288d59b968ea55fe892568243b615f89741",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://www.passwisely.cn/assets/catalog-1Z1fRbBh.js",
+      "status": 200,
+      "bytes": 2810,
+      "sha256": "0f82f98e6550cf40f5463fb129dc39c3e8ac0bb8a13b106fffec0db3337775e2",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://www.passwisely.cn/assets/framework-CXnKph_e.js",
+      "status": 200,
+      "bytes": 189805,
+      "sha256": "73b45b606448e4dc310fbe851d8089ee752f3eb081980b3a6fec88988820ee12",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://www.passwisely.cn/assets/index-DKs42zSM.css",
+      "status": 200,
+      "bytes": 66037,
+      "sha256": "17885751dc64918df41425f8d52f0aa936febf109f819303c68a5c175008ca83",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://www.passwisely.cn/assets/index-iq8fEezM.js",
+      "status": 200,
+      "bytes": 81233,
+      "sha256": "c624747c45aaa19c1bab7e4c8459c7d0882b24d99251b2de9ba0fc28e78fa73c",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://www.passwisely.cn/assets/layout-segment-context-z7ErnWit.js",
+      "status": 200,
+      "bytes": 288,
+      "sha256": "d847d8857faf0b7b7745519982c42e1bd5c57e8e615a01a48b3ebee9b97e0b1c",
+      "matchesManifest": true
+    },
+    {
+      "url": "https://www.passwisely.cn/assets/rolldown-runtime-S-ySWqyJ.js",
+      "status": 200,
+      "bytes": 694,
+      "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75",
+      "matchesManifest": true
+    },
+    {
+      "url": "http://47.95.66.86/assets/PassWiselySite-0_0pyKin.css",
+      "status": 200,
+      "bytes": 87281,
+      "sha256": "ba1f91b821af6d8cacc0eebe48608ffdb08a665e1cc52f9107c321f6a49f8ead",
+      "matchesManifest": true
+    },
+    {
+      "url": "http://47.95.66.86/assets/PassWiselySite-B9-yZ2QX.js",
+      "status": 200,
+      "bytes": 93654,
+      "sha256": "2603cdb463117157ae9a21799dff5288d59b968ea55fe892568243b615f89741",
+      "matchesManifest": true
+    },
+    {
+      "url": "http://47.95.66.86/assets/catalog-1Z1fRbBh.js",
+      "status": 200,
+      "bytes": 2810,
+      "sha256": "0f82f98e6550cf40f5463fb129dc39c3e8ac0bb8a13b106fffec0db3337775e2",
+      "matchesManifest": true
+    },
+    {
+      "url": "http://47.95.66.86/assets/framework-CXnKph_e.js",
+      "status": 200,
+      "bytes": 189805,
+      "sha256": "73b45b606448e4dc310fbe851d8089ee752f3eb081980b3a6fec88988820ee12",
+      "matchesManifest": true
+    },
+    {
+      "url": "http://47.95.66.86/assets/index-DKs42zSM.css",
+      "status": 200,
+      "bytes": 66037,
+      "sha256": "17885751dc64918df41425f8d52f0aa936febf109f819303c68a5c175008ca83",
+      "matchesManifest": true
+    },
+    {
+      "url": "http://47.95.66.86/assets/index-iq8fEezM.js",
+      "status": 200,
+      "bytes": 81233,
+      "sha256": "c624747c45aaa19c1bab7e4c8459c7d0882b24d99251b2de9ba0fc28e78fa73c",
+      "matchesManifest": true
+    },
+    {
+      "url": "http://47.95.66.86/assets/layout-segment-context-z7ErnWit.js",
+      "status": 200,
+      "bytes": 288,
+      "sha256": "d847d8857faf0b7b7745519982c42e1bd5c57e8e615a01a48b3ebee9b97e0b1c",
+      "matchesManifest": true
+    },
+    {
+      "url": "http://47.95.66.86/assets/rolldown-runtime-S-ySWqyJ.js",
+      "status": 200,
+      "bytes": 694,
+      "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75",
+      "matchesManifest": true
+    }
+  ],
+  "objects": [
+    {
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-arm64.dmg",
+      "status": 200,
+      "bytes": 161123731,
+      "sha256": "3f83f6d6848006097e3c24ab28416a853daef4e59e8ec402dfb20b8bb0676821",
+      "metadataMatchesFullReadbackReceipt": true
+    },
+    {
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-x64.dmg",
+      "status": 200,
+      "bytes": 120690164,
+      "sha256": "9436f80c79a95f3b1da37b490439c5f1d98e7dc4a933627023e7de54f417f209",
+      "metadataMatchesFullReadbackReceipt": true
+    },
+    {
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-Windows-x64.exe",
+      "status": 200,
+      "bytes": 123234032,
+      "sha256": "cb8b2d66550e4180473c7e2f5f7ce57ab5394ab36325f84a2eb3f2f2d017f8df",
+      "metadataMatchesFullReadbackReceipt": true
+    }
+  ],
+  "trackingCalls": 0,
+  "providerCalls": 0,
+  "paymentCalls": 0
+}

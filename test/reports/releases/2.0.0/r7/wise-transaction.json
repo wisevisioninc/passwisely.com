@@ -1,0 +1,17 @@
+{
+  "path": "/home/jerry/codebase/passwisely/website/.release-backups/v2.0.0-20261102T154659Z-385cb040/transaction.json",
+  "sha256": "39525502bb1fb4707131f8e7eb054f1ed2c49f4c4eb9d115b87e270a282a8913",
+  "transaction": {
+    "status": "active",
+    "sourceCommit": "1d91d8b08cab57cdf83f87043a27257850c6a7fa",
+    "manifestSha256": "f88ba61398cfdb5ea3e0b52c9bfd60e1bcb5091e4260ef79fc4aa79fa52b651f",
+    "oldFingerprint": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+    "newFingerprint": "8d6fbae7e8b3a5e1fc3750dc52345d77ff90f81d100271ba9f72c4cfcc15a38d",
+    "productionDataModified": false,
+    "desktopApiModified": false,
+    "runtimeExchanged": true,
+    "nginxInstalled": false,
+    "liveSourceCommit": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+    "sourceRepo": "/home/jerry/.passwisely-private/source-worktrees/v2.0.0-download-r7-prep-6391ee0"
+  }
+}

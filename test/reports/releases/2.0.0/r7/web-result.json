@@ -1,0 +1,326 @@
+{
+  "sourceCommit": "1d91d8b08cab57cdf83f87043a27257850c6a7fa",
+  "success": true,
+  "checks": [
+    {
+      "check": "build",
+      "exitCode": 0,
+      "elapsedSeconds": 4.956,
+      "log": "/home/jerry/.passwisely-private/release-incoming/r7-build-tools-1d91d8b/checks-complete/build.log"
+    },
+    {
+      "check": "website-tests",
+      "exitCode": 0,
+      "elapsedSeconds": 41.021,
+      "log": "/home/jerry/.passwisely-private/release-incoming/r7-build-tools-1d91d8b/checks-complete/website-tests.log"
+    },
+    {
+      "check": "typescript",
+      "exitCode": 0,
+      "elapsedSeconds": 9.901,
+      "log": "/home/jerry/.passwisely-private/release-incoming/r7-build-tools-1d91d8b/checks-complete/typescript.log"
+    },
+    {
+      "check": "deployment-owner-tests",
+      "exitCode": 0,
+      "elapsedSeconds": 0.304,
+      "log": "/home/jerry/.passwisely-private/release-incoming/r7-build-tools-1d91d8b/checks-complete/deployment-owner-tests.log"
+    }
+  ],
+  "bindingsRead": false,
+  "productionWrites": 0,
+  "providerCalls": 0,
+  "paymentCalls": 0,
+  "websiteTestsPassed": 253,
+  "deploymentOwnerTestsPassed": 19,
+  "compiledTreeFingerprint": "8d6fbae7e8b3a5e1fc3750dc52345d77ff90f81d100271ba9f72c4cfcc15a38d",
+  "files": [
+    {
+      "path": ".openai/drizzle/0000_rapid_sandman.sql",
+      "bytes": 1992,
+      "sha256": "2c22755d7e997f983b5bf981b88e1ee0d3a5ca90863f00531383765b29ecb8bc"
+    },
+    {
+      "path": ".openai/drizzle/0001_china_payments.sql",
+      "bytes": 679,
+      "sha256": "ffd04d721e427f617781b6d20915c05562355e1976ebb72eeea0fdc693088885"
+    },
+    {
+      "path": ".openai/drizzle/meta/0000_snapshot.json",
+      "bytes": 9462,
+      "sha256": "036dca865295b754f804de659da0126fc0fa15203e61b809e4eb9e01401399ee"
+    },
+    {
+      "path": ".openai/drizzle/meta/_journal.json",
+      "bytes": 346,
+      "sha256": "20afed80674807134dfe740e0536cf9508bb91a65f44f21220ce761f4f6b11ff"
+    },
+    {
+      "path": ".openai/hosting.json",
+      "bytes": 98,
+      "sha256": "ac9067663a3e9e4602000285f6cf954ae189d6090c06fe7103599b2e0ba5227a"
+    },
+    {
+      "path": "client/.assetsignore",
+      "bytes": 24,
+      "sha256": "4f83140d5f4293ab55bd1207327e995c83258f1e7d3145b1b5d7a3d17fdfe0a7"
+    },
+    {
+      "path": "client/.vite/manifest.json",
+      "bytes": 4516,
+      "sha256": "fa6539079e4311d69fc81e0b06a15efaa866c8ef1e3985ea674ae83bf270b9f3"
+    },
+    {
+      "path": "client/_headers",
+      "bytes": 125,
+      "sha256": "9e55124bccd40b43dbc6e002daa777fa8f32a230420152910784ca65501d9e0f"
+    },
+    {
+      "path": "client/assets/AdminDashboard-BK1r6c4b.js",
+      "bytes": 31124,
+      "sha256": "883cc0d6e13016cf231e4ff181570c4cfef4153105e77a24da3677aff1e7eca3"
+    },
+    {
+      "path": "client/assets/Dashboard-ug_5wqMz.js",
+      "bytes": 35616,
+      "sha256": "0398375ce12e2c326286e093a7197d6615c906da50a7996ce350affc57ae01c9"
+    },
+    {
+      "path": "client/assets/PassWiselySite-0_0pyKin.css",
+      "bytes": 87281,
+      "sha256": "ba1f91b821af6d8cacc0eebe48608ffdb08a665e1cc52f9107c321f6a49f8ead"
+    },
+    {
+      "path": "client/assets/PassWiselySite-B9-yZ2QX.js",
+      "bytes": 93654,
+      "sha256": "2603cdb463117157ae9a21799dff5288d59b968ea55fe892568243b615f89741"
+    },
+    {
+      "path": "client/assets/catalog-1Z1fRbBh.js",
+      "bytes": 2810,
+      "sha256": "0f82f98e6550cf40f5463fb129dc39c3e8ac0bb8a13b106fffec0db3337775e2"
+    },
+    {
+      "path": "client/assets/esm-1QbmXY48.js",
+      "bytes": 16187,
+      "sha256": "c6927d5eb079b8a8d5011057277504d627da831743ddcf1c0f39cd828bedb341"
+    },
+    {
+      "path": "client/assets/framework-CXnKph_e.js",
+      "bytes": 189805,
+      "sha256": "73b45b606448e4dc310fbe851d8089ee752f3eb081980b3a6fec88988820ee12"
+    },
+    {
+      "path": "client/assets/geist-latin-BgDaEnEv.woff2",
+      "bytes": 29400,
+      "sha256": "19f9c92546aa300c312235e3125af1b81394d8db9a4bc4a425cd5b641d2d54e1"
+    },
+    {
+      "path": "client/assets/index-DKs42zSM.css",
+      "bytes": 66037,
+      "sha256": "17885751dc64918df41425f8d52f0aa936febf109f819303c68a5c175008ca83"
+    },
+    {
+      "path": "client/assets/index-iq8fEezM.js",
+      "bytes": 81233,
+      "sha256": "c624747c45aaa19c1bab7e4c8459c7d0882b24d99251b2de9ba0fc28e78fa73c"
+    },
+    {
+      "path": "client/assets/layout-segment-context-z7ErnWit.js",
+      "bytes": 288,
+      "sha256": "d847d8857faf0b7b7745519982c42e1bd5c57e8e615a01a48b3ebee9b97e0b1c"
+    },
+    {
+      "path": "client/assets/query-DZOG5WwV.js",
+      "bytes": 1564,
+      "sha256": "5e3ecc5fd4f80c9c8228cef75d2d4a8bb5f8f95ca267e7a4e62923aad52b5db8"
+    },
+    {
+      "path": "client/assets/rolldown-runtime-S-ySWqyJ.js",
+      "bytes": 694,
+      "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75"
+    },
+    {
+      "path": "client/assets/router-CC1nfgSP.js",
+      "bytes": 9065,
+      "sha256": "88dc803ddc0a1615224bef44bcd10865852d7f973cd1a6b1307d4629e075c7a3"
+    },
+    {
+      "path": "client/compatibility-icons/amazon-chime.png",
+      "bytes": 7637,
+      "sha256": "41f36b4b97e9bc99db126e1e8f1c7dfd1a6dd5ecf5e24039fac8be467e4729c3"
+    },
+    {
+      "path": "client/compatibility-icons/coderpad.png",
+      "bytes": 4914,
+      "sha256": "56cde62f7c1ab4688a878a8dcd2a17465c16d7e76f2068b97c3f4b8f137c7dca"
+    },
+    {
+      "path": "client/compatibility-icons/codility.ico",
+      "bytes": 15086,
+      "sha256": "bee802ff1253a8c0d5b6523fe3abc7fcf024db08a6ac73eb7689e6d06ead1f23"
+    },
+    {
+      "path": "client/compatibility-icons/google-meet.png",
+      "bytes": 1076,
+      "sha256": "efd52204ada06e10e310e5bc4bf417e9e5a1b0da675950832402aba69b2a84e3"
+    },
+    {
+      "path": "client/compatibility-icons/hackerrank.png",
+      "bytes": 42432,
+      "sha256": "f2b8426bb10fdbede9365b87cf47d49c12bc0d7a38a4a084d1f51dc9dc3f0cb8"
+    },
+    {
+      "path": "client/compatibility-icons/lark-feishu.png",
+      "bytes": 3245,
+      "sha256": "f58d925630a7f1f99fd9bcb45d695d4446e6639fe774eabd69c6c2ebcfacdfb1"
+    },
+    {
+      "path": "client/compatibility-icons/microsoft-teams.ico",
+      "bytes": 63174,
+      "sha256": "5b47b12308f87a6a8060f63dc91ca2fd01b063e3d233aa62f5ec255cd68e6037"
+    },
+    {
+      "path": "client/compatibility-icons/zoom.ico",
+      "bytes": 4286,
+      "sha256": "58b6fee1a883d9b798dea9dbf8f262fb8875e035bfa571792b8967c4c0434d26"
+    },
+    {
+      "path": "client/favicon.ico",
+      "bytes": 19603,
+      "sha256": "c0fbb20ca9df072a524ebe810b617a584d11238e1f0b9be6bf97e0894778a113"
+    },
+    {
+      "path": "client/og-premium.png",
+      "bytes": 1347172,
+      "sha256": "98d8704b00164a6500e0d3eed991c1a32f03db804ff44ed7d24a532995b89ee3"
+    },
+    {
+      "path": "client/og.png",
+      "bytes": 1216105,
+      "sha256": "55c8a5695aee3dbf82e8bece58fc54ffbb87b55fd1eb49fcb6b056ca1c417e41"
+    },
+    {
+      "path": "client/passwisely-logo-192.png",
+      "bytes": 24382,
+      "sha256": "c4dc37b969e1e2d0fdbe276b5d58e0fcc176a760c1af5de6c860704465999dbd"
+    },
+    {
+      "path": "client/passwisely-logo.png",
+      "bytes": 102448,
+      "sha256": "63376bcd0e3c82e60d482be68577a5d73a26ebc088dd72827783376e68a66273"
+    },
+    {
+      "path": "server/.vite/manifest.json",
+      "bytes": 282,
+      "sha256": "5d68efd8c34c9d404b4de499ce124d3d199f21d351a3165e0181f39720276527"
+    },
+    {
+      "path": "server/__vite_rsc_assets_manifest.js",
+      "bytes": 1454,
+      "sha256": "11793843f32c4a082eaf0f73ee44bf13a646bdd03cb6e4e5db72cb8192bfb248"
+    },
+    {
+      "path": "server/assets/index-DKs42zSM.css",
+      "bytes": 66037,
+      "sha256": "17885751dc64918df41425f8d52f0aa936febf109f819303c68a5c175008ca83"
+    },
+    {
+      "path": "server/image-config.json",
+      "bytes": 2,
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "path": "server/index.js",
+      "bytes": 843057,
+      "sha256": "3929d2629189d813567560d6a47f1f3bf715154126431065003e9da39a064d9d"
+    },
+    {
+      "path": "server/ssr/__vite_rsc_assets_manifest.js",
+      "bytes": 1454,
+      "sha256": "11793843f32c4a082eaf0f73ee44bf13a646bdd03cb6e4e5db72cb8192bfb248"
+    },
+    {
+      "path": "server/ssr/assets/AdminDashboard-Bw3iS59t.js",
+      "bytes": 58818,
+      "sha256": "1cc396613846c6a381cd51e99cb0f1bfd7748a5facb3d601def24832a2bc9eae"
+    },
+    {
+      "path": "server/ssr/assets/Dashboard-Cy9pPo1G.js",
+      "bytes": 73994,
+      "sha256": "9c222145078bba6fa68269f4cd979b78afb6ac7dfc97fdb6d9a4e9d9b8327164"
+    },
+    {
+      "path": "server/ssr/assets/PassWiselySite-0_0pyKin.css",
+      "bytes": 87281,
+      "sha256": "ba1f91b821af6d8cacc0eebe48608ffdb08a665e1cc52f9107c321f6a49f8ead"
+    },
+    {
+      "path": "server/ssr/assets/PassWiselySite-CPiqEO2o.js",
+      "bytes": 157628,
+      "sha256": "c3bb9ed499e03990b36a9e72a5a831be483655b1bfa1c0a25799d34b7cabf67a"
+    },
+    {
+      "path": "server/ssr/assets/catalog-Dgqqzjr-.js",
+      "bytes": 4183,
+      "sha256": "ea115d7d74f43b4e50f58fbc0a57e7f4271c10fdd1787d8c985ae947139e46f9"
+    },
+    {
+      "path": "server/ssr/assets/error-boundary-in5xir5z.js",
+      "bytes": 8698,
+      "sha256": "7d2177c92d93f32cfbce2038934ba365c7464dac519e064530dcf1b0f3c82b2f"
+    },
+    {
+      "path": "server/ssr/assets/esm-CUZHvnd3.js",
+      "bytes": 31458,
+      "sha256": "64c092a7342c791361169fcaec995980aea9d21faa23256a5ad41c6c955c7da1"
+    },
+    {
+      "path": "server/ssr/assets/geist-latin-BgDaEnEv.woff2",
+      "bytes": 29400,
+      "sha256": "19f9c92546aa300c312235e3125af1b81394d8db9a4bc4a425cd5b641d2d54e1"
+    },
+    {
+      "path": "server/ssr/assets/layout-segment-context-BAFy4nLk.js",
+      "bytes": 1881,
+      "sha256": "ac6be70d49dae806e85e4f33f813447657a2e260e75f6bf9f02387783a03adba"
+    },
+    {
+      "path": "server/ssr/assets/query-BBEOuwKC.js",
+      "bytes": 4834,
+      "sha256": "5843d5c4c98f74468f194dbf7d4370cdedd9ba8edfa2b220a504605014c56d02"
+    },
+    {
+      "path": "server/ssr/assets/router-DILO7HzP.js",
+      "bytes": 23826,
+      "sha256": "9a83707c45fe0501c0a5097918e3bad76293ad673ac755a0653ca01fa290cf5c"
+    },
+    {
+      "path": "server/ssr/index.js",
+      "bytes": 589489,
+      "sha256": "3653773d19e94892a728b11826bd7e22943e77d0f54d075d3a2d263b0859743e"
+    },
+    {
+      "path": "server/ssr/vinext-server.json",
+      "bytes": 86,
+      "sha256": "19703bef15993242897dfe9cdfb1b038a1ecb7a3e8783748d772e90bfb0b7713"
+    },
+    {
+      "path": "server/vinext-externals.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "server/vinext-server.json",
+      "bytes": 86,
+      "sha256": "19703bef15993242897dfe9cdfb1b038a1ecb7a3e8783748d772e90bfb0b7713"
+    },
+    {
+      "path": "server/wrangler.json",
+      "bytes": 1322,
+      "sha256": "ecb509ff7b47479812fca33cc4397f41ecbb03020c5e912625d4d3f286f05074"
+    }
+  ],
+  "compiledFiles": 57,
+  "compiledBytes": 5498833
+}

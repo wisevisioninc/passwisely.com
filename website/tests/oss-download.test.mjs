@@ -38,10 +38,10 @@ test("published catalog identifies verified v2 installers for all three platform
   }
   const intel = app.downloadArtifact("mac-x64");
   assert.equal(intel.liveAudio, "included");
-  assert.equal(intel.revision, 6);
-  assert.equal(intel.sha256, "7d1795b55a66f337c481ce3a7b458753520092e82796fe4434983cfcbff0e7f4");
-  assert.equal(intel.bytes, 119294434);
-  assert.equal(intel.url, `${app.OSS_RELEASE_ORIGIN}/releases/v2.0.0/r6/PassWisely-macOS-x64.dmg`);
+  assert.equal(intel.revision, 7);
+  assert.equal(intel.sha256, "9436f80c79a95f3b1da37b490439c5f1d98e7dc4a933627023e7de54f417f209");
+  assert.equal(intel.bytes, 120690164);
+  assert.equal(intel.url, `${app.OSS_RELEASE_ORIGIN}/releases/v2.0.0/r7/PassWisely-macOS-x64.dmg`);
   assert.equal(intel.notice.zh, "原生音频需 macOS 13 或更新版本。");
   assert.equal(intel.notice.en, "Native live audio requires macOS 13 or later.");
   assert.doesNotMatch(intel.notice.zh, /不含实时音频/);

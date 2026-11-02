@@ -1,0 +1,1 @@
+{"success": true, "tests": 5, "passed": ["atomic-activation-binding-old-backup", "health-failure-real-atomic-rollback", "candidate-drift-no-active-or-binding-write", "unresolved-ownership-retains-resources-and-journal", "runtime-symlink-rejected"], "realLinuxRenameExchange": true, "syntheticBindingOnly": true, "testRoot": "/tmp/pw-r7-mirror-owner-nnfodby1"}

@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-02T15:53:37.402617+00:00",
+  "status": "published_verified",
+  "version": "2.0.0",
+  "revision": 7,
+  "appSourceCommit": "923a5fcc6cfe22381c443fd36dec1974f0f04c97",
+  "websiteSourceCommit": "1d91d8b08cab57cdf83f87043a27257850c6a7fa",
+  "behavior": [
+    "Query supported permissions once on each process startup; startup check does not capture screenshots, prepare audio or request permission.",
+    "Show concise guidance only for known missing required permissions; granted or unknown status alone stays silent.",
+    "Keep manual Settings checks and denial recovery available; do not reopen a dismissed guide from late results."
+  ],
+  "artifacts": [
+    {
+      "platform": "mac-arm64",
+      "filename": "PassWisely-macOS-arm64.dmg",
+      "bytes": 161123731,
+      "sha256": "3f83f6d6848006097e3c24ab28416a853daef4e59e8ec402dfb20b8bb0676821",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-arm64.dmg",
+      "created": true,
+      "publicSha256Verified": true
+    },
+    {
+      "platform": "mac-x64",
+      "filename": "PassWisely-macOS-x64.dmg",
+      "bytes": 120690164,
+      "sha256": "9436f80c79a95f3b1da37b490439c5f1d98e7dc4a933627023e7de54f417f209",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-macOS-x64.dmg",
+      "created": true,
+      "publicSha256Verified": true
+    },
+    {
+      "platform": "windows-x64",
+      "filename": "PassWisely-Windows-x64.exe",
+      "bytes": 123234032,
+      "sha256": "cb8b2d66550e4180473c7e2f5f7ce57ab5394ab36325f84a2eb3f2f2d017f8df",
+      "url": "https://passwisely-releases-prod.oss-cn-beijing.aliyuncs.com/releases/v2.0.0/r7/PassWisely-Windows-x64.exe",
+      "created": true,
+      "publicSha256Verified": true
+    }
+  ],
+  "validation": {
+    "sourceDesktopRegression": {
+      "passed": 431,
+      "failed": 0,
+      "skipped": 0,
+      "performedAt": "2026-11-01",
+      "evidence": "test/reports/startup-permissions-2026-11-01.md",
+      "notRepeatedForCatalogOnlyChange": true
+    },
+    "appTypechecks": {
+      "frontendPassed": true,
+      "electronPassed": true
+    },
+    "mac": {
+      "developerIdSigned": true,
+      "appAndDmgNotarizationAccepted": true,
+      "ticketsStapledAndValidated": true,
+      "gatekeeperAccepted": true,
+      "readOnlyMountedAppExact": true,
+      "actualPackagedElectronCanvasAndSdkImportsPassed": true,
+      "osPermissionBoundaryMocked": true,
+      "newPhysicalScreenshotAudioAcceptance": false
+    },
+    "windows": {
+      "ciRun": "https://github.com/yejinchen-ai/passwisely/actions/runs/41272545940",
+      "sameFrozenSourceAsMac": true,
+      "silentInstallAndUninstallPassed": true,
+      "installedSdkImportPassed": true,
+      "authenticodeSigned": false,
+      "physicalGuiCaptureAudioAcceptance": false
+    },
+    "website": {
+      "websiteTestsPassed": 253,
+      "deploymentOwnerTestsPassed": 19,
+      "typecheckPassed": true,
+      "actualOwnerManifestValidationPassed": true,
+      "isolatedTestDependencyRepair": "First run: 229 passed, 2 test files could not start due to missing locked PGlite 0.3.14. Official npm archive verified against pnpm-lock.yaml SHA512, extracted without scripts to isolated node_modules. Full rerun: 253 passed. No source tests were weakened.",
+      "publicHomepageChecks": 3,
+      "publicAssetChecks": 24,
+      "publicDownloadChecks": 9,
+      "publicObjectHeadChecks": 3,
+      "allInstallerFullPublicSha256ReadbacksPassed": true
+    }
+  },
+  "deployment": {
+    "wiseStatus": "active",
+    "wiseTransaction": "/home/jerry/codebase/passwisely/website/.release-backups/v2.0.0-20261102T154659Z-385cb040/transaction.json",
+    "runtimeFingerprint": "8d6fbae7e8b3a5e1fc3750dc52345d77ff90f81d100271ba9f72c4cfcc15a38d",
+    "mirrorStatus": "active",
+    "servicesRestarted": [
+      "passwisely-web.service",
+      "passwisely-frontend.service"
+    ],
+    "productionBindingsPreserved": true,
+    "oldRuntimeBackupsRetained": true,
+    "databaseMigrations": 0,
+    "modelConfigurationChanges": 0,
+    "paymentConfigurationChanges": 0,
+    "providerCalls": 0,
+    "paymentCalls": 0,
+    "downloadTrackingCalls": 0
+  },
+  "limitations": [
+    "Windows installers remain unsigned because no Windows certificate is available.",
+    "R7 automated permission acceptance mocks the OS boundary; no fresh physical capture/audio/login acceptance was performed. Intel native live audio requires macOS 13+. Earlier r6 Big Sur screenshot acceptance is historical."
+  ],
+  "evidence": [
+    {
+      "path": "test/reports/releases/2.0.0/r7/arm64-app-verification.json",
+      "sha256": "2458454a015c3b7f3cd3c3d5229da21251348baaafe748d6aad3db0575083155",
+      "bytes": 10705
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/arm64-dmg-verification.json",
+      "sha256": "006e6714acb67568173cc59549360ef34727ea84f3c2fac2cd8e54dce9726e50",
+      "bytes": 3915
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/arm64-runtime-smoke.json",
+      "sha256": "bec8f206528f718e4b0be2182723f910197cbf054cdb998fa06ce96d0bbb5243",
+      "bytes": 714
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/x64-app-verification.json",
+      "sha256": "5ef7b698b9e0147fbc79d9bfd73580d742561fa8ec0f74685d6a0979dd00818f",
+      "bytes": 10686
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/x64-dmg-verification.json",
+      "sha256": "5cce299434402358a68f50f995b94bc30a84310df32a269aef0d2e99e7d1d82e",
+      "bytes": 3889
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/x64-runtime-smoke.json",
+      "sha256": "04f0eba42c56e8983c0d758f3328b3c4f3e5f9abbb36624eaa7af983a935c8d7",
+      "bytes": 712
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/windows-verification.json",
+      "sha256": "bea303bff002e782ac6c2c36d049d069bde6775da6c9c354dff3a99917ebdb97",
+      "bytes": 4208
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/oss-public-artifacts.json",
+      "sha256": "5c9b8c337166f5a789472a55e7a6b28fa07c75fca4cb88b80e64d6c14f9f1e7d",
+      "bytes": 1320
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/public-verification.json",
+      "sha256": "de24f62f845d3c5a023039fcdcc57f07c307de9a79a9f2f5a25eaf1e063fa4c8",
+      "bytes": 11291
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/wise-after.json",
+      "sha256": "47f0343cb8e0ce24f9b448ee0922d293d2a9588eacac07f0ffd73745f99e7d0e",
+      "bytes": 10443
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/wise-transaction.json",
+      "sha256": "51d70ee4fcb054ce879b9063f831f51751b271ea0b9271233c8e6f5516245031",
+      "bytes": 883
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/mirror-after.json",
+      "sha256": "fbfa9760649a8dee0f539ac991a4005ba18c4459d2d9532b1c6296b713c04991",
+      "bytes": 10112
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/mirror-activation.json",
+      "sha256": "ed4bf852e1e2656e04626cc2c7db372fb8800f376445e127616664bdbbc77e09",
+      "bytes": 1116
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/mirror-transaction-tests.json",
+      "sha256": "cf6adc3c74f2e37503d6f5eb703019b51eeecdaa620af17af1716ee3dec6396c",
+      "bytes": 360
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/web-prepared.json",
+      "sha256": "ebdaccb45386279196e64b9db40ace9f0e98f220f537dbf4c6800b95a5f1a4f4",
+      "bytes": 1370
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/web-result.json",
+      "sha256": "a830506b8c56726679913acd1f312c8c6e95fa36a9d7a60abdba947c58f367fc",
+      "bytes": 10927
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/web-pure-manifest-validation.json",
+      "sha256": "e621df73660fcde61d16c3aac56ebc11a127fa437e96fa3ab955d76b95af7cb0",
+      "bytes": 273
+    },
+    {
+      "path": "test/reports/releases/2.0.0/r7/web-test-dependency-repair.json",
+      "sha256": "a487815517ac83359b34d16ff0d327924593da533f359d5cad400721443bf32b",
+      "bytes": 343
+    }
+  ]
+}

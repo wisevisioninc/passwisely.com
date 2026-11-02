@@ -1,0 +1,20 @@
+{
+  "status": "prepared-not-activated",
+  "sourceCommit": "1d91d8b08cab57cdf83f87043a27257850c6a7fa",
+  "treeFingerprint": "8d6fbae7e8b3a5e1fc3750dc52345d77ff90f81d100271ba9f72c4cfcc15a38d",
+  "manifest": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-r7-1d91d8b/web/web-manifest.json",
+  "manifestSha256": "f88ba61398cfdb5ea3e0b52c9bfd60e1bcb5091e4260ef79fc4aa79fa52b651f",
+  "candidate": "/home/jerry/codebase/passwisely/website/.release-candidates/v2.0.0-download-r7-1d91d8b/dist",
+  "incoming": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-r7-1d91d8b",
+  "archive": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-r7-1d91d8b/web-candidate.tar.gz",
+  "archiveSha256": "d59df5b1d925d55019bd4be1d73e2e2818b14154fe151e2a8f3d91aa2a43eb9d",
+  "entry": "/home/jerry/.passwisely-private/release-incoming/v2.0.0-download-r7-1d91d8b/activate-reviewed.sh",
+  "entrySha256": "76d3eb81b5357c9f8251f3dee7efb610fbb07b5bcb6c871542734d9a0d181849",
+  "compiledFiles": 57,
+  "compiledBytes": 5498833,
+  "checks": "/home/jerry/.passwisely-private/release-incoming/r7-build-tools-1d91d8b/checks-complete/result.json",
+  "expectedActiveTree": "594d210c9c91250b33015dac0538f1657f0761d43457100a4fc25e7ac66e2f7e",
+  "expectedLiveCommit": "35a12a339567fe4c5435b9db3e7a169d664f8f14",
+  "bindingsRead": false,
+  "productionWrites": 0
+}

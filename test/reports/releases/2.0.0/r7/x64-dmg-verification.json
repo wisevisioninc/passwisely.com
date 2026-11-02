@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "dmg": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/output/x64/PassWisely-macOS-x64.dmg",
+  "bytes": 120690164,
+  "sha256": "9436f80c79a95f3b1da37b490439c5f1d98e7dc4a933627023e7de54f417f209",
+  "checks": {
+    "diskImageIntegrity": "\u6b63\u5728\u68c0\u67e5\u201cProtective Master Boot Record\uff08MBR\uff1a0\uff09\u201d\u7684\u6821\u9a8c\u548c\u2026\nProtective Master Boot Record\uff08MBR\uff1a0\uff09\uff1a\u5df2\u9a8c\u8bc1CRC32 $C3345E0A\n\u6b63\u5728\u68c0\u67e5\u201cGPT Header\uff08Primary GPT Header\uff1a1\uff09\u201d\u7684\u6821\u9a8c\u548c\u2026\n    GPT Header\uff08Primary GPT Header\uff1a1\uff09\uff1a\u5df2\u9a8c\u8bc1CRC32 $7BCE9CCA\n\u6b63\u5728\u68c0\u67e5\u201cGPT Partition Data\uff08Primary GPT Table\uff1a2\uff09\u201d\u7684\u6821\u9a8c\u548c\u2026\nGPT Partition Data\uff08Primary GPT Table\uff1a\u5df2\u9a8c\u8bc1CRC32 $A8DAFAD3\n\u6b63\u5728\u68c0\u67e5\u201c\uff08Apple_Free\uff1a3\uff09\u201d\u7684\u6821\u9a8c\u548c\u2026\n                      \uff08Apple_Free\uff1a3\uff09\uff1a\u5df2\u9a8c\u8bc1CRC32 $00000000\n\u6b63\u5728\u68c0\u67e5\u201cdisk image\uff08Apple_APFS\uff1a4\uff09\u201d\u7684\u6821\u9a8c\u548c\u2026\n            disk image\uff08Apple_APFS\uff1a4\uff09\uff1a\u5df2\u9a8c\u8bc1CRC32 $1974A8B6\n\u6b63\u5728\u68c0\u67e5\u201c\uff08Apple_Free\uff1a5\uff09\u201d\u7684\u6821\u9a8c\u548c\u2026\n                      \uff08Apple_Free\uff1a5\uff09\uff1a\u5df2\u9a8c\u8bc1CRC32 $00000000\n\u6b63\u5728\u68c0\u67e5\u201cGPT Partition Data\uff08Backup GPT Table\uff1a6\uff09\u201d\u7684\u6821\u9a8c\u548c\u2026\nGPT Partition Data\uff08Backup GPT Table\uff1a\uff1a\u5df2\u9a8c\u8bc1CRC32 $A8DAFAD3\n\u6b63\u5728\u68c0\u67e5\u201cGPT Header\uff08Backup GPT Header\uff1a7\uff09\u201d\u7684\u6821\u9a8c\u548c\u2026\n     GPT Header\uff08Backup GPT Header\uff1a7\uff09\uff1a\u5df2\u9a8c\u8bc1CRC32 $64153396\n\u5df2\u9a8c\u8bc1CRC32 $C8C0142C\nhdiutil: verify: checksum of \"/Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/output/x64/PassWisely-macOS-x64.dmg\" is VALID\n",
+    "signature": "",
+    "signatureMetadata": "Executable=/Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/output/x64/PassWisely-macOS-x64.dmg\nIdentifier=PassWisely-macOS-x64\nFormat=disk image\nCodeDirectory v=20200 size=308 flags=0x0(none) hashes=1+6 location=embedded\nHash type=sha256 size=32\nCandidateCDHash sha256=081728d760e328a6b6c830073603af3a08a4547f\nCandidateCDHashFull sha256=081728d760e328a6b6c830073603af3a08a4547f55e9bb14247746de32b79995\nHash choices=sha256\nCMSDigest=081728d760e328a6b6c830073603af3a08a4547f55e9bb14247746de32b79995\nCMSDigestType=2\nPage size=none\nCDHash=081728d760e328a6b6c830073603af3a08a4547f\nSignature size=9028\nAuthority=Developer ID Application: Fujian Wise Vision Technology Co., Ltd. (VFF94RK9TN)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTimestamp=Nov 2, 2026 at 11:09:26\nNotarization Ticket=stapled\nInfo.plist=not bound\nTeamIdentifier=VFF94RK9TN\nSealed Resources=none\nInternal requirements count=1 size=180\n",
+    "stapler": "Processing: /Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/output/x64/PassWisely-macOS-x64.dmg\nThe validate action worked!\n",
+    "gatekeeper": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/output/x64/PassWisely-macOS-x64.dmg: accepted\nsource=Notarized Developer ID\n",
+    "mountedBundleExact": true,
+    "readOnly": true,
+    "mountedEntries": 215,
+    "mountedAppSignature": "",
+    "mountedAppStapler": "Processing: /Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/verification/x64/dmg-ro-ols87fv8/PassWisely.app\nThe validate action worked!\n",
+    "mountedAppGatekeeper": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/verification/x64/dmg-ro-ols87fv8/PassWisely.app: accepted\nsource=Notarized Developer ID\n",
+    "detached": true
+  }
+}

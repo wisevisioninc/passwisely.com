@@ -1,0 +1,114 @@
+{
+  "success": true,
+  "verifiedAt": "2026-11-02T03:03:24.675657+00:00",
+  "version": "2.0.0",
+  "revision": 7,
+  "sourceCommit": "923a5fcc6cfe22381c443fd36dec1974f0f04c97",
+  "runUrl": "https://github.com/yejinchen-ai/passwisely/actions/runs/41272545940",
+  "artifactId": 13070077387,
+  "archive": {
+    "path": "/Users/chenyejin/Downloads/PassWisely-Windows-x64-unsigned (5).zip",
+    "sha256": "7d8ceed934c9ef44de628a18c5862343e9e110a9ccd2ad0b59eedb563ec0664a",
+    "matchesPreviouslyObservedGitHubDigest": true
+  },
+  "installer": {
+    "path": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/windows/PassWisely-Windows-x64.exe",
+    "bytes": 123234032,
+    "sha256": "cb8b2d66550e4180473c7e2f5f7ce57ab5394ab36325f84a2eb3f2f2d017f8df"
+  },
+  "install": {
+    "success": true,
+    "scope": "Actual per-user silent NSIS install, installed-package import/resources, and uninstall. No normal GUI startup, login, native agent init, recording, upload or ASR.",
+    "buildSourceCommit": "923a5fcc6cfe22381c443fd36dec1974f0f04c97",
+    "installer": {
+      "file": "PassWisely-Windows-x64.exe",
+      "bytes": 123234032,
+      "sha256": "cb8b2d66550e4180473c7e2f5f7ce57ab5394ab36325f84a2eb3f2f2d017f8df"
+    },
+    "installDirectory": "D:\\a\\_temp\\pw-nsis-168a66a3fa5143b5919531a354952293",
+    "installExit": 0,
+    "installStartUtc": "2026-11-01T04:20:45.5311812Z",
+    "installEndUtc": "2026-11-01T04:20:56.9927843Z",
+    "installProcessId": 4360,
+    "failure": null,
+    "cleanupFailure": null,
+    "installedRuntime": {
+      "success": true,
+      "code": "WINDOWS_IMPORT_OK",
+      "stage": "complete",
+      "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+      "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+      "methods": [
+        "init",
+        "prepareDesktopAudioRecording",
+        "startRecording",
+        "pauseRecording",
+        "resumeRecording",
+        "stopRecording",
+        "shutdown"
+      ],
+      "native": [
+        "agent-windows.exe:PE-x64-header",
+        "gstreamer-1.0:unpacked-DLLs"
+      ],
+      "scope": "Package resources and SDK JavaScript import only; no native agent initialization, capture, upload or ASR."
+    },
+    "uninstallExit": 0,
+    "installedPayloadRemoved": true
+  },
+  "runtime": {
+    "success": true,
+    "code": "WINDOWS_IMPORT_OK",
+    "stage": "complete",
+    "sdk": "app.asar/node_modules/@recallai/desktop-sdk/index.js",
+    "uuid": "app.asar/node_modules/uuid/dist/cjs/index.js",
+    "methods": [
+      "init",
+      "prepareDesktopAudioRecording",
+      "startRecording",
+      "pauseRecording",
+      "resumeRecording",
+      "stopRecording",
+      "shutdown"
+    ],
+    "native": [
+      "agent-windows.exe:PE-x64-header",
+      "gstreamer-1.0:unpacked-DLLs"
+    ],
+    "scope": "Package resources and SDK JavaScript import only; no native agent initialization, capture, upload or ASR."
+  },
+  "nsisCompat": {
+    "success": true,
+    "status": "applied",
+    "scope": "Windows installer build template only; does not establish a previous crash cause.",
+    "upstream": "https://github.com/electron-userland/electron-builder/commit/13d8535",
+    "builder": "app-builder-lib",
+    "version": "24.13.3",
+    "template": "templates/nsis/multiUser.nsh",
+    "beforeSha256": "afa9046492317e72e79e022cdb1f42edba4687ea605300bfc01c002f3106201c",
+    "originalSha256": "afa9046492317e72e79e022cdb1f42edba4687ea605300bfc01c002f3106201c",
+    "patchedSha256": "461144ae7e8e04d87a6d195530dba063c85fe340e8fb48997df86339564cd231",
+    "backup": {
+      "relativeTo": "RUNNER_TEMP",
+      "path": "passwisely-nsis-compat-41272545940-1/multiUser.nsh.original",
+      "sha256": "afa9046492317e72e79e022cdb1f42edba4687ea605300bfc01c002f3106201c"
+    },
+    "buildSourceCommit": "923a5fcc6cfe22381c443fd36dec1974f0f04c97",
+    "runId": "41272545940",
+    "runAttempt": "1"
+  },
+  "signatures": [
+    {
+      "file": "PassWisely.exe",
+      "status": "NotSigned",
+      "signedBuildRequested": false
+    },
+    {
+      "file": "PassWisely-Windows-x64.exe",
+      "status": "NotSigned",
+      "signedBuildRequested": false
+    }
+  ],
+  "windowsPackageGatePassed": true,
+  "physicalWindowsGuiCaptureAudioVerified": false
+}

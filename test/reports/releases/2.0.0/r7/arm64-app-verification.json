@@ -1,0 +1,306 @@
+{
+  "success": true,
+  "sourceCommit": "923a5fcc6cfe22381c443fd36dec1974f0f04c97",
+  "version": "2.0.0",
+  "revision": 7,
+  "arch": "arm64",
+  "app": "/Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/output/arm64/mac-arm64/PassWisely.app",
+  "asarSha256": "87c6ba236325ac9e7ee510540f17b59f20ead9fb8c4311f08ec018a58496ad8b",
+  "nativeCodeFiles": 124,
+  "sourceMatch": [
+    {
+      "path": "dist/assets/index-B677oe4O.js",
+      "bytes": 1138529,
+      "sha256": "a91fac64edc3b271d05dd9b3ea2ec6e3ad5d156bdc9d8ecbe1122f597d43c60c"
+    },
+    {
+      "path": "dist/assets/index-iCpIQqK0.css",
+      "bytes": 49501,
+      "sha256": "4c212981ff4ebc5ceda43a73918587ead425a0fb58f1a80f96cbfc979d0cb91b"
+    },
+    {
+      "path": "dist/favicon.ico",
+      "bytes": 19603,
+      "sha256": "c0fbb20ca9df072a524ebe810b617a584d11238e1f0b9be6bf97e0894778a113"
+    },
+    {
+      "path": "dist/fonts/Inter.ttf",
+      "bytes": 876576,
+      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031"
+    },
+    {
+      "path": "dist/fonts/OFL-Inter.txt",
+      "bytes": 4377,
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57"
+    },
+    {
+      "path": "dist/fonts/SOURCE.json",
+      "bytes": 401,
+      "sha256": "ac8d71d9f0290502bcd5db712d0d6fe04b1b5a4b12f1f9f0182a06cb78fdd230"
+    },
+    {
+      "path": "dist/index.html",
+      "bytes": 653,
+      "sha256": "03ad52582dab055022f5ee5a973caeca53f579f407c5eb70f5451af239675aea"
+    },
+    {
+      "path": "dist/logo192.png",
+      "bytes": 24382,
+      "sha256": "c4dc37b969e1e2d0fdbe276b5d58e0fcc176a760c1af5de6c860704465999dbd"
+    },
+    {
+      "path": "dist/logo512.png",
+      "bytes": 102448,
+      "sha256": "63376bcd0e3c82e60d482be68577a5d73a26ebc088dd72827783376e68a66273"
+    },
+    {
+      "path": "dist-electron/electron/PermissionService.js",
+      "bytes": 8861,
+      "sha256": "a0508fdaccdf1f694b2221f02d42c82c81498fff5356f90264363d5b67f3bf7d"
+    },
+    {
+      "path": "dist-electron/electron/ProcessingHelper.js",
+      "bytes": 67870,
+      "sha256": "729d8f31c5cce9cfe604782a5c189151d9dad8dcba386e6892445de30b5901ee"
+    },
+    {
+      "path": "dist-electron/electron/ResumeHelper.js",
+      "bytes": 11981,
+      "sha256": "c1bdd56a82e60218b00c2c8ba708777218d897b5f7560a65c21ec63b15106784"
+    },
+    {
+      "path": "dist-electron/electron/ScreenshotHelper.js",
+      "bytes": 11218,
+      "sha256": "db3b033980a33263677bdd1c29fe2509877ef6fdcbe2fd0c05f6b6e20755dd01"
+    },
+    {
+      "path": "dist-electron/electron/WindowCaptureProtection.js",
+      "bytes": 1369,
+      "sha256": "f9df143224edc9bbd5a63fbf7a0df11c75b7bcda5380042b487e0d5ae3887650"
+    },
+    {
+      "path": "dist-electron/electron/WindowVisibility.js",
+      "bytes": 3910,
+      "sha256": "a030e0b818be32fb80a4bd068ba7aa75f107a1425935ad4b864445e4dd5c5ea6"
+    },
+    {
+      "path": "dist-electron/electron/WiseGrpcClient.js",
+      "bytes": 10607,
+      "sha256": "84f27afc19b12ddded379fbb498be7ebeca61c4e932bbff0baae61fd2dafae36"
+    },
+    {
+      "path": "dist-electron/electron/account.js",
+      "bytes": 14095,
+      "sha256": "a27d8b75ce809ba1419ddb5c5bba3f840a6da94bcf88e991ff4dab26cba2e3c2"
+    },
+    {
+      "path": "dist-electron/electron/aiProviders.js",
+      "bytes": 5599,
+      "sha256": "61fa4cd607e97832ea328d6db701ce153f864e17afdfb9cdbd23ad47c7c66983"
+    },
+    {
+      "path": "dist-electron/electron/autoUpdater.js",
+      "bytes": 4390,
+      "sha256": "fabfa457b1381a18677d04ac54bb03eba69d37c6f99f96bf9b04976c31f16fc0"
+    },
+    {
+      "path": "dist-electron/electron/ipcHandlers.js",
+      "bytes": 17581,
+      "sha256": "d19d111e70d9f32ed995a47113a43cc5e703f2f317acd1638aab4e4e75ec03b1"
+    },
+    {
+      "path": "dist-electron/electron/languages.js",
+      "bytes": 6334,
+      "sha256": "6f37d3701586c3955d8d153f0f8344f863285b2ffd9c7aba3f39db161a05fc2f"
+    },
+    {
+      "path": "dist-electron/electron/live/AuthenticationLoss.js",
+      "bytes": 872,
+      "sha256": "4febd30a271a2019066d59c75b7e1637c924204099de6eb0561d20faa383e4f7"
+    },
+    {
+      "path": "dist-electron/electron/live/CaptureSelection.js",
+      "bytes": 2649,
+      "sha256": "b1e6e0f9a543c614956bbe51cee6201b39c5f3f9c1e3b49d7be89ca4b96dc638"
+    },
+    {
+      "path": "dist-electron/electron/live/ConversationContext.js",
+      "bytes": 8311,
+      "sha256": "638f92b44f2b1f58eae3a85618a7a5d31cdce1e456c16347d80bf9a0913101a7"
+    },
+    {
+      "path": "dist-electron/electron/live/DeepgramTranscript.js",
+      "bytes": 3807,
+      "sha256": "43fffc7f5e7c40645bff0adfd596b173b6017b0f4d6a328534965af9612080c9"
+    },
+    {
+      "path": "dist-electron/electron/live/LiveSessionService.js",
+      "bytes": 26291,
+      "sha256": "d83e5efbe4f00445d712812a36ec1e139f192998c8cae1b100ee876f37076316"
+    },
+    {
+      "path": "dist-electron/electron/live/NativePcmCapture.js",
+      "bytes": 28548,
+      "sha256": "a682ad6f64fc250d112b71ffcbd5c138b995f0ccce20660e7e62bdb462cc91d7"
+    },
+    {
+      "path": "dist-electron/electron/live/OverlayWindow.js",
+      "bytes": 7419,
+      "sha256": "1080a91a4366236570def2c447b044b36a05f7c819857fe87ab30bd921b4ba94"
+    },
+    {
+      "path": "dist-electron/electron/live/RecallCapture.js",
+      "bytes": 26631,
+      "sha256": "c2f0986317ca3c96799054b79c44fc79e6a0d37bdcbd9ea9653a7acb34b638bd"
+    },
+    {
+      "path": "dist-electron/electron/live/TranscriptText.js",
+      "bytes": 1300,
+      "sha256": "eedc2fc8260fb514b9115d9a1c354e284d2d009e48b183ca641c6d2a5bbeec4f"
+    },
+    {
+      "path": "dist-electron/electron/live/WindowCloseGuard.js",
+      "bytes": 1173,
+      "sha256": "8d9cc5b1fd597fc0c503583505071a6e3b574d170f67f8528a18b2ccbc84f7fd"
+    },
+    {
+      "path": "dist-electron/electron/live/captureContracts.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "path": "dist-electron/electron/live/ipc.js",
+      "bytes": 3137,
+      "sha256": "423990cbee788b8728ddb9e16589a7f68f1839cc9bf2d078fa6e0feda48413d8"
+    },
+    {
+      "path": "dist-electron/electron/live/overlayTypes.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "path": "dist-electron/electron/live/recallTranscript.js",
+      "bytes": 9174,
+      "sha256": "1fd8d68d5c3e9279cf1a8ee904d97f4f42dcf2379380c4005487d275a620a410"
+    },
+    {
+      "path": "dist-electron/electron/live/transcription.js",
+      "bytes": 2503,
+      "sha256": "3fc5b355cefcb70f113f4ffe277664bb8f386bf4e45af8fc351b3dd7228f4167"
+    },
+    {
+      "path": "dist-electron/electron/live/types.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "path": "dist-electron/electron/main.js",
+      "bytes": 39506,
+      "sha256": "01228d3b5fd322647858172edfaeafef399d015c10963b7c659c0a7bb58ea1f7"
+    },
+    {
+      "path": "dist-electron/electron/permissionsIpc.js",
+      "bytes": 1529,
+      "sha256": "302dcb7c023919891a16a3a72379e882b1c862a56c1ca727c331e15d300ab183"
+    },
+    {
+      "path": "dist-electron/electron/permissionsTypes.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "path": "dist-electron/electron/preload.js",
+      "bytes": 17408,
+      "sha256": "6a2ba787982fc4a3d37a1fc692c85f1345413ef43e5debcafbf504bd7000da0d"
+    },
+    {
+      "path": "dist-electron/electron/resumeTypes.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "path": "dist-electron/electron/screenshotFailure.js",
+      "bytes": 2655,
+      "sha256": "ddd61e4340d01e4851a468ba8686ff7401d7317652c8ab081066e1071d374191"
+    },
+    {
+      "path": "dist-electron/electron/screenshotLimits.js",
+      "bytes": 140,
+      "sha256": "ad0e7741a78241ed7bc356d8a80a1e2080d9a4f94b22a82b3f4745c9ec4bef7c"
+    },
+    {
+      "path": "dist-electron/electron/serviceEndpoints.js",
+      "bytes": 1550,
+      "sha256": "28a9a4813b7f8b7fb6e32aa0cedac5f245096a9cfa36492d72916cc61b2fb704"
+    },
+    {
+      "path": "dist-electron/electron/settings.js",
+      "bytes": 14375,
+      "sha256": "80a8e06525acd9ce996489f3f7425349f709e35d7a13437bf75ca66491559262"
+    },
+    {
+      "path": "dist-electron/electron/shortcuts.js",
+      "bytes": 5972,
+      "sha256": "1d54495b15e607670389385e89fcfa767b635e5767dbbf12873079ab3063b01d"
+    },
+    {
+      "path": "dist-electron/electron/solutionStream.js",
+      "bytes": 7061,
+      "sha256": "8b0d92ec3943bf5ddb46dd3980103220bbb580037e5739888454b3cffedd17f4"
+    },
+    {
+      "path": "dist-electron/electron/windowControls.js",
+      "bytes": 3552,
+      "sha256": "5c32ed4772191b35980dd4f7901ccf4f342ba79b0ada7a4ed21f519ac671848b"
+    },
+    {
+      "path": "dist-electron/fileFromPath-Dzxbo3hg.js",
+      "bytes": 4425,
+      "sha256": "96522983004ae60a05b64cedbf4ac52f8cd1950728b180f1a5b4fe9a0b85b977"
+    },
+    {
+      "path": "dist-electron/main-B2G1Bsrm.js",
+      "bytes": 4539892,
+      "sha256": "a66481e0a2d24456809add8e932e94b554fbd10c2a89de1305e818f887761628"
+    },
+    {
+      "path": "dist-electron/main.js",
+      "bytes": 1374,
+      "sha256": "fcc3368affd47e1f338e62146bc8596d031f20aec30b2fc87d1cd3bebc29a03c"
+    },
+    {
+      "path": "dist-electron/preload.js",
+      "bytes": 10077,
+      "sha256": "28a44a3a65ad2bb77841d6f8176c7de0f79a43c5e0820abb451524e3b38724e5"
+    },
+    {
+      "path": "dist-electron/shared/billing.js",
+      "bytes": 222,
+      "sha256": "081849aff4281fdc37995f443bd8e25f0451f4436896d41fe85d24cbc763cb49"
+    },
+    {
+      "path": "dist-electron/shared/captureSession.js",
+      "bytes": 77,
+      "sha256": "d43aa81f5bc89faa359e0f97c814ba25155591ff078fbb9bfd40f8c7c9683230"
+    },
+    {
+      "path": "dist-electron/shared/kimi.js",
+      "bytes": 1181,
+      "sha256": "480a1b21b79287555323cfe83d00947723da487cf9dbc96efeb35593a99a5fa2"
+    },
+    {
+      "path": "proto/desktop_ai.proto",
+      "bytes": 1226,
+      "sha256": "f6980436b7fff958eb4637376922735fdf8672c9995a1f70bc90e76f3f8d8c1c"
+    }
+  ],
+  "minimumMacOS": "10.15",
+  "helper": {
+    "minimumMacOS": "13.0",
+    "sha256": "e53330aecf3126aca5f3f8f457cacd7843f2dcfc0768f7c06c2342e92798eec1"
+  },
+  "notarizationVerified": true,
+  "stapler": "Processing: /Users/chenyejin/codebase/passwisely/release/v2.0.0/r7-work/output/arm64/mac-arm64/PassWisely.app\nThe validate action worked!\n",
+  "gatekeeper": "",
+  "scope": "Exact packaged compiled inputs; architecture; mandatory Developer ID/hardened/timestamp signatures; Apple ticket and Gatekeeper. No GUI/capture/provider execution."
+}

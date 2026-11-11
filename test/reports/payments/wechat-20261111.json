@@ -1,0 +1,71 @@
+{
+  "recordedAt": "2026-11-11T15:54:59.790140+00:00",
+  "status": "wechat_active_real_payment_and_credit_grant_verified",
+  "deployment": {
+    "sourceCommit": "15bf81d5bcbd0e58101cfcb638c2e2cad77a2c70",
+    "runtimeFingerprint": "cee3dfa2ea3834156f50804e8c3ccef83522a68e34d7d815b6471e6185c05684",
+    "websiteServer": "47.95.66.86",
+    "apiOwner": "Wise / 8.219.140.215",
+    "website": "https://passwisely.com",
+    "additionalHomepage": "https://passwisely.cn",
+    "notifyUrl": "https://passwisely.com/api/payments/wechat/notify",
+    "wiseTransaction": "/home/jerry/codebase/passwisely/website/.release-backups/v2.0.0-20261111T154037Z-5bc22a6b/transaction.json",
+    "mirrorTransaction": "/opt/passwisely/.frontend-release-backups/wechat-20261111T154254Z-330da3f32da84c84b037edc502cf4e8e/transaction.json",
+    "configurationBackup": "/home/jerry/codebase/passwisely/website/.release-backups/wechat-runtime-config-78522375-99de-404c-84de-0e874f08f28d",
+    "actualRuntimeEnvironment": "Wrangler explicit .env.production; .dev.vars is not the active credential loader",
+    "configurationAndRuntimeJointAtomicRollback": false,
+    "existingAlipayConfigurationPreserved": true,
+    "pricesModelsDatabaseSchemaAndR7DownloadsUnchanged": true
+  },
+  "initialActivationFailure": {
+    "code": "UNSAFE_INPUT_FILE",
+    "productionWrites": 0,
+    "cause": "Build inherited umask 0002 and produced public wrangler.json mode 0664; the existing runtime-input validator rejected group-writable input.",
+    "repair": "Tightened owned public config to 0644 with unchanged bytes; build children now use umask 0022 and staging normalizes public config to 0644. Credential and certificate permissions were unchanged.",
+    "guardWeakened": false
+  },
+  "validation": {
+    "realLinuxWebsiteTestsPassed": 272,
+    "realLinuxDeploymentOwnerTestsPassed": 20,
+    "realLinuxTypecheckPassed": true,
+    "localFocusedDeploymentTestsPassedAfterFinalTestOwnerCorrection": 20,
+    "publicHttpsHomepagesWithIcp": 3,
+    "mirrorHomepageChecks": 3,
+    "mirrorAssetsMatchedManifest": 24,
+    "paymentOptionChooserShowsAlipayAndWechat": true,
+    "realWechatNativeApiReturnedQr": true,
+    "nativeResponseSignatureVerification": "Production createWechatNativePayment verifies timestamp, configured public key ID and RSA-SHA256 before accepting code_url.",
+    "realPaymentPerformedBy": "User, using WeChat on their device",
+    "realSuccessNotification": "wechat:TRANSACTION.SUCCESS persisted; matching provider transaction ID on completed purchase",
+    "browserAutomaticallyDismissedQrAndRefreshedBalance": true,
+    "readOnlyAcceptanceProbeDatabaseWrites": 0,
+    "readOnlyAcceptanceProbeProviderCalls": 0,
+    "liveDuplicateCallbackReplayPerformed": false,
+    "syntheticCoverage": "Protocol RSA/AES-GCM verification, malformed/tampered notifications, merchant/AppID/amount/currency rejection, checkout configuration preflight and SQL entitlement/idempotency regressions are covered by the source website suite; synthetic cases are separate from the real purchase below."
+  },
+  "realTestPurchase": {
+    "provider": "wechat",
+    "amountCny": "99.00",
+    "credits": 200,
+    "status": "completed",
+    "creditPolicy": "expiring",
+    "validityDays": 30,
+    "entitlementVersion": 2,
+    "createdAt": "2026-11-11T15:44:42.298591+00:00",
+    "completedAt": "2026-11-11T15:50:45.980309+00:00",
+    "creditLedgerEntries": 1,
+    "successWebhookEvents": 1,
+    "providerTransactionMatchesOrder": true,
+    "balanceBefore": 985,
+    "balanceAfter": 1185,
+    "permanentBalanceAfter": 985,
+    "expiringBalanceAfter": 200,
+    "expiresAt": "2026-12-11T15:50:45.980309+00:00",
+    "exactlyThirtyDaysAfterCompletion": true
+  },
+  "limitations": [
+    "Alipay collection-quota review is independent of this successful WeChat acceptance; this test does not establish Alipay paid acceptance.",
+    "No real duplicate-notification replay or refund was performed."
+  ],
+  "secretsOrRealAccountIdentifiersIncluded": false
+}

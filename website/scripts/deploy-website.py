@@ -68,6 +68,9 @@ KIMI_MODEL_RELEASE_PATHS={
  'website/tests/kimi-model.test.mjs','website/tests/ai-provider-fallback.test.mjs',
 }
 DOWNLOAD_ONLY_PATHS |= KIMI_MODEL_RELEASE_PATHS
+# Explicitly authorized Native checkout activation; configuration stays with its existing owner.
+WECHAT_CHANNEL_RELEASE_PATHS = {'website/app/api/payments/wechat/notify/route.ts', 'website/app/api/checkout/route.ts', 'website/tests/wechat-protocol.test.mjs', 'website/app/PassWiselySite.tsx', 'website/lib/payments/catalog.ts', 'website/tests/public-site-origin.test.mjs', 'website/tests/pricing-checkout.test.mjs'}
+DOWNLOAD_ONLY_PATHS |= WECHAT_CHANNEL_RELEASE_PATHS
 BROKER_SOURCE_PATHS={'website/lib/deepgram.ts','website/app/api/desktop/deepgram/token/route.ts','shared/captureSession.ts'}
 DEEPGRAM_ROUTE='/api/desktop/deepgram/token'
 _PRESERVED_BINDING=None

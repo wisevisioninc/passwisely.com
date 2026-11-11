@@ -74,7 +74,7 @@ class ReleaseTests(unittest.TestCase):
   expected={'website/lib/deepgram.ts','website/app/api/desktop/deepgram/token/route.ts','website/tests/deepgram-token.test.mjs','website/tests/recall-upload.test.mjs','shared/captureSession.ts','electron/live/transcription.ts'}
   self.assertEqual(m.BROKER_RELEASE_PATHS,expected)
   self.assertTrue(expected<=m.DOWNLOAD_ONLY_PATHS)
-  self.assertNotIn('website/app/api/payments/wechat/notify/route.ts',m.DOWNLOAD_ONLY_PATHS)
+  self.assertNotIn('website/app/api/payments/wechat/notify/route.ts',m.BROKER_RELEASE_PATHS)
   self.assertNotIn('desktop-api/server.mjs',m.DOWNLOAD_ONLY_PATHS)
   partial=json.loads(json.dumps(manifest));partial['sourceFiles']=[item for item in partial['sourceFiles'] if item['path']!='shared/captureSession.ts'];self.save_manifest(args,partial)
   with self.assertRaisesRegex(m.DeployError,'Incomplete Deepgram'):m.validate_manifest(args)
@@ -110,7 +110,7 @@ class ReleaseTests(unittest.TestCase):
    return ''
   with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):
    m.source_preflight(args,manifest)
-   for selector,value in [('source','c'*40),('branch','main'),('history',m.PENDING_COMMIT),('scope','website/app/api/checkout/route.ts'),('live','c'*40)]:
+   for selector,value in [('source','c'*40),('branch','main'),('history',m.PENDING_COMMIT),('scope','website/app/api/payments/alipay/notify/route.ts'),('live','c'*40)]:
     def bad(argv,**kwargs):
      if selector=='source' and argv[2]==str(self.source) and 'rev-parse' in argv and '--abbrev-ref' not in argv:return value
      if selector=='branch' and '--abbrev-ref' in argv:return value
@@ -157,8 +157,8 @@ class ReleaseTests(unittest.TestCase):
   expected={'website/lib/public-site.ts','website/app/layout.tsx','website/.env.example','website/README.md','website/tests/public-site-origin.test.mjs','website/tests/live-account.mjs','website/tests/live-ai.mjs','website/tests/live-ai-vision.mjs'}
   self.assertEqual(m.CN_DOMAIN_RELEASE_PATHS,expected)
   self.assertTrue(expected<=m.DOWNLOAD_ONLY_PATHS)
-  self.assertNotIn('website/app/api/checkout/route.ts',m.DOWNLOAD_ONLY_PATHS)
-  self.assertNotIn('website/app/api/payments/wechat/notify/route.ts',m.DOWNLOAD_ONLY_PATHS)
+  self.assertNotIn('website/app/api/checkout/route.ts',m.CN_DOMAIN_RELEASE_PATHS)
+  self.assertNotIn('website/app/api/payments/wechat/notify/route.ts',m.CN_DOMAIN_RELEASE_PATHS)
   self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
  def test_home_performance_scope_adds_exact_views_and_tests_without_payment_authority(self):
   expected={'website/app/PassWiselySite.tsx','website/app/DeferredViewBoundary.tsx','website/tests/helpers/lazy-components.mjs','website/tests/lazy-views.test.mjs','website/tests/fixtures/lazy-import-failure.tsx','website/tests/verify-lazy-failures.mjs'}
@@ -175,7 +175,7 @@ class ReleaseTests(unittest.TestCase):
   with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):
    m.source_preflight(args,manifest)
   for name in ['website/app/api/checkout/route.ts','website/app/api/payments/wechat/notify/route.ts','website/lib/payments/config.ts','website/lib/payments/catalog.ts','website/.env.production','desktop-api/server.mjs']:
-   self.assertNotIn(name,m.DOWNLOAD_ONLY_PATHS)
+   self.assertNotIn(name,m.HOME_PERFORMANCE_RELEASE_PATHS)
   self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
  def test_kimi_model_release_scope_accepts_exact_server_policy_without_configuration_or_payment_authority(self):
   expected={'shared/kimi.ts','website/lib/ai-catalog.ts','website/app/api/ai/chat/completions/route.ts','website/app/api/resume/agents/route.ts','website/tests/kimi-model.test.mjs','website/tests/ai-provider-fallback.test.mjs'}
@@ -191,7 +191,9 @@ class ReleaseTests(unittest.TestCase):
    return ''
   with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):
    m.source_preflight(args,manifest)
-  excluded=['website/app/api/checkout/route.ts','website/app/api/payments/alipay/notify/route.ts','website/app/api/payments/wechat/notify/route.ts','website/lib/ai-config.ts','website/lib/payments/config.ts','website/.env.production','electron/aiProviders.ts','electron/ProcessingHelper.ts','desktop-api/server.mjs']
+  self.assertNotIn('website/app/api/checkout/route.ts',m.KIMI_MODEL_RELEASE_PATHS)
+  self.assertNotIn('website/app/api/payments/wechat/notify/route.ts',m.KIMI_MODEL_RELEASE_PATHS)
+  excluded=['website/app/api/payments/alipay/notify/route.ts','website/lib/ai-config.ts','website/lib/payments/config.ts','website/.env.production','electron/aiProviders.ts','electron/ProcessingHelper.ts','desktop-api/server.mjs']
   for name in excluded:
    self.assertNotIn(name,m.DOWNLOAD_ONLY_PATHS)
    def unauthorized(argv,**kwargs):
@@ -214,7 +216,7 @@ class ReleaseTests(unittest.TestCase):
    return ''
   with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):
    m.source_preflight(args,manifest)
-  excluded=['website/public/compatibility-icons/webex.png','website/public/compatibility-icons/unreviewed.svg','website/public/unrelated.js','website/app/api/checkout/route.ts','website/app/api/payments/wechat/notify/route.ts','website/lib/ai-config.ts','website/.env.production','desktop-api/server.mjs']
+  excluded=['website/public/compatibility-icons/webex.png','website/public/compatibility-icons/unreviewed.svg','website/public/unrelated.js','website/app/api/payments/alipay/notify/route.ts','website/lib/ai-config.ts','website/.env.production','desktop-api/server.mjs']
   for name in excluded:
    self.assertNotIn(name,m.DOWNLOAD_ONLY_PATHS)
    def unauthorized(argv,**kwargs):
@@ -223,6 +225,22 @@ class ReleaseTests(unittest.TestCase):
     m.source_preflight(args,manifest)
   self.assertFalse(any('*' in name or name.endswith('/') for name in m.COMPATIBILITY_UI_RELEASE_PATHS))
   self.assertEqual(m.PENDING_COMMIT,'35a12a339567fe4c5435b9db3e7a169d664f8f14')
+ def test_wechat_scope_accepts_exact_channel_paths_and_keeps_other_backends_excluded(self):
+  expected={'website/app/PassWiselySite.tsx','website/app/api/checkout/route.ts','website/app/api/payments/wechat/notify/route.ts','website/lib/payments/catalog.ts','website/tests/pricing-checkout.test.mjs','website/tests/public-site-origin.test.mjs','website/tests/wechat-protocol.test.mjs'}
+  self.assertEqual(m.WECHAT_CHANNEL_RELEASE_PATHS,expected)
+  args,manifest,_=self.fixture()
+  def command(argv,**kwargs):
+   if argv[0]=='git' and argv[2]==str(self.repo):return 'b'*40
+   if 'rev-parse' in argv:return 'HEAD' if '--abbrev-ref' in argv else 'a'*40
+   if 'rev-list' in argv:return 'a'*40
+   if '--name-only' in argv:return '\n'.join(['website/lib/download-artifacts.json',*sorted(expected)])
+   if 'ls-files' in argv:return '\n'.join(row['path'] for row in manifest['sourceFiles'])
+   return ''
+  with patch.object(m,'command',side_effect=command),patch.object(m,'live_unit_pin'):m.source_preflight(args,manifest)
+  for name in ['website/app/api/payments/alipay/notify/route.ts','website/app/api/auth/login/route.ts','desktop-api/server.mjs','website/.env.production']:
+   self.assertNotIn(name,m.DOWNLOAD_ONLY_PATHS)
+   def unauthorized(argv,**kwargs):return '\n'.join(['website/lib/download-artifacts.json',name]) if '--name-only' in argv else command(argv,**kwargs)
+   with self.subTest(path=name),patch.object(m,'command',side_effect=unauthorized),patch.object(m,'live_unit_pin'),self.assertRaises(m.DeployError):m.source_preflight(args,manifest)
  def test_preserves_runtime_binding_bytes_without_staging_current_configuration(self):
   active=self.website/'dist';binding=self.binding(active);original=binding.read_bytes()
   env=self.write(self.website/'.env.production','PENDING_CONFIGURATION="not-staged"\n');before=env.read_bytes()

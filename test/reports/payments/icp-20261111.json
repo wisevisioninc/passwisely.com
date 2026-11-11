@@ -1,0 +1,131 @@
+{
+  "recordedAt": "2026-11-11T08:26:25.510915+00:00",
+  "status": "website_active_alipay_quota_review_pending",
+  "website": {
+    "domain": "passwisely.com",
+    "www": "www.passwisely.com",
+    "server": "47.95.66.86",
+    "icp": "闽ICP备2026044628号-1",
+    "icpAuthorityUrl": "https://beian.miit.gov.cn/",
+    "footerVisibleOnComAndWww": true,
+    "websiteCommit": "8794e415a0f1c32040cb00d5d27a6ee23b04e2c0",
+    "runtimeFingerprint": "54a5b9b8b2a9f4b54c385f4801e0a5baafe0c1bdf8bff25c21d8ff204a4db0ed",
+    "mirrorBackupJournal": "/opt/passwisely/.frontend-release-backups/icp-20261111T080710Z-b659f4afa30c4f368f8296c4092e5d67/transaction.json",
+    "mirrorHomepageHealthChecks": 3,
+    "mirrorAssetHealthChecks": 24
+  },
+  "https": {
+    "hosts": [
+      "passwisely.com",
+      "www.passwisely.com",
+      "api.passwisely.com",
+      "admin.passwisely.com"
+    ],
+    "freshPublicCertificateIssued": true,
+    "certificateExpires": "2027-02-09",
+    "existingAcmeAccountReused": true,
+    "certbotTimerEnabled": true,
+    "renewalDeployHook": "/etc/letsencrypt/renewal-hooks/deploy/passwisely-com-reload",
+    "nginxBackup": "/etc/nginx/.passwisely-com-backups/20261111T075427Z",
+    "nginxSiteSha256": "58a4640a888435917dca6b771d4cd4b636837d5ef214058f0bc4bd24d2e09996",
+    "privateKeyExported": false
+  },
+  "routing": {
+    "websiteOwner": "47.95.66.86",
+    "httpApiAndGrpcOwner": "Wise / 8.219.140.215",
+    "upstreamTlsVerificationEnabled": true,
+    "clientDefaultCnEndpointPreserved": true,
+    "grpcHealth": [
+      {
+        "address": "127.0.0.1:3012",
+        "tls": false,
+        "exitCode": 0,
+        "result": "SERVING grpc+protobuf"
+      },
+      {
+        "address": "passwisely.com:443",
+        "tls": true,
+        "exitCode": 0,
+        "result": "SERVING grpc+protobuf"
+      },
+      {
+        "address": "api.passwisely.com:443",
+        "tls": true,
+        "exitCode": 0,
+        "result": "SERVING grpc+protobuf"
+      },
+      {
+        "address": "passwisely.cn:443",
+        "tls": true,
+        "exitCode": 0,
+        "result": "SERVING grpc+protobuf"
+      }
+    ],
+    "supabaseRestReachable": true,
+    "publicServerOrigin": "https://passwisely.com",
+    "onlyEnvironmentFieldChanged": "PUBLIC_SITE_URL",
+    "environmentAndRuntimeBindingBackups": "/home/jerry/codebase/passwisely/website/.release-backups/public-origin-20261111T081123Z",
+    "websiteAndConfigurationJointAtomicRollback": false,
+    "databaseMigrations": 0
+  },
+  "validation": {
+    "websiteTestsPassed": 253,
+    "deploymentOwnerTestsPassed": 19,
+    "typecheckPassed": true,
+    "publicHomepagesWithIcp": 3,
+    "publicV2R7DownloadRedirects": 9,
+    "unsignedAlipayCallbackRejected": {
+      "status": 400,
+      "body": "failure"
+    },
+    "wechatEmptyCallback": {
+      "status": 500,
+      "code": "FAIL",
+      "expectedScope": "WeChat is not enabled in the active checkout catalog and AppID/merchant ID are missing from active bindings. This does not establish working WeChat payments."
+    },
+    "initialCombinedProbe": "An overly broad probe expected HTTP400 from both callbacks and failed on inactive WeChat HTTP500. Follow-up explicitly identified the inactive-provider configuration; homepage, downloads and Alipay assertions passed.",
+    "providerOrModelCallsByAcceptanceProbe": 0
+  },
+  "alipay": {
+    "appId": "2021007111631233",
+    "configurationComplete": true,
+    "cashierReachedInUserLoggedInBrowser": true,
+    "cashierAmountCny": "99.00",
+    "cashierMerchantName": "福建智感灵眸科技有限公司",
+    "cashierProduct": "PassWisely 进阶包",
+    "testPurchase": {
+      "amount_minor": 9900,
+      "credits": 200,
+      "currency": "CNY",
+      "status": "pending",
+      "credit_policy": "expiring",
+      "validity_days": 30,
+      "created_at": "2026-11-11T08:12:43.919235+00:00",
+      "completed_at": null
+    },
+    "quotaStatusBeforeSubmission": "电脑网站支付当日/单笔额度0；旧限制原因为网址尚未完成ICP备案",
+    "supplementaryMaterialsStatus": "审核中，请耐心等待",
+    "submittedAtChinaTime": "2026-11-11 16:15:48",
+    "platformEstimatedReviewTime": "1天",
+    "observedBrowserState": "User-operated submission was observed after uploading homepage, pricing and checkout materials. No password or account credentials were submitted by the agent.",
+    "screenshotLocalDirectory": "/Users/chenyejin/codebase/passwisely/release/website-icp-20261111/screenshots",
+    "payerIssueObserved": "付款人与收款人不能相同",
+    "paymentAcceptanceVerified": false,
+    "actualSuccessNotificationVerified": false,
+    "creditGrantVerified": false,
+    "requiredNextAcceptance": [
+      "Wait for Alipay product-quota approval and nonzero collection quota.",
+      "Use a payer different from the receiving merchant to make one authorized real purchase.",
+      "Verify signed provider notification, exactly 200 credits and independent 30-day expiry; browser return alone is not success."
+    ]
+  },
+  "wechat": {
+    "checkoutEnabled": false,
+    "nativePreparationPreviouslyRetained": true,
+    "merchantBindingAndRealPaymentAcceptanceRevalidationPending": true
+  },
+  "limitations": [
+    "No real successful payment or corresponding production credit grant was observed.",
+    "No fake callback, artificial paid status or manual credit top-up was used as payment acceptance."
+  ]
+}

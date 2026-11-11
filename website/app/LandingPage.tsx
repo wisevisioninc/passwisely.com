@@ -1583,6 +1583,14 @@ export function LandingPage({
           </div>
           <div className="pw-footer-bottom">
             <span>© {new Date().getFullYear()} PassWisely</span>
+            <a
+              href="https://beian.miit.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="passwisely.com"
+            >
+              闽ICP备2026044628号-1
+            </a>
             <span>
               {tr(
                 "福建智感灵眸科技有限公司",

@@ -1,0 +1,695 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-11T16:53:35.653441+00:00",
+  "environment": {
+    "localDate": "2026-11-12",
+    "timeZone": "Asia/Shanghai",
+    "sourceCommit": "d1d8c8e",
+    "appVersion": "2.0.0",
+    "installedAsarSha256": "e9a4dd0d053aef04875cd150eb8c6fd83ff25649062de11b69c97d8cc7c3f2d3",
+    "runtime": "installed Electron 29.4.6 / Node 20.9.0, arm64",
+    "hardware": "Apple M5 Max, 18 logical CPUs, 36 GiB RAM",
+    "desktopSourceMatchesR7FrozenSource": {
+      "filesCompared": 52,
+      "differences": 0
+    },
+    "model": "kimi-k3.1-pro",
+    "reasoningEffortInProductionOwner": "low",
+    "defaultClientEndpoint": "https://passwisely.cn/api",
+    "vpn": "Astrill 3.10.0.3073 kept unchanged; user declined on/off comparison; mode, node and per-process routing not verified",
+    "configurationChanges": 0,
+    "userMicrophoneOrScreenCapture": false
+  },
+  "primaryText": {
+    "attempted": 20,
+    "completed": 20,
+    "errors": 0,
+    "actualModels": [
+      "kimi-k3.1-pro"
+    ],
+    "firstContent": {
+      "p50": 9547.393770501018,
+      "p95": 22138.39400412888
+    },
+    "total": {
+      "p50": 17049.888583004475,
+      "p95": 39114.6903058961
+    },
+    "fixedCases": {
+      "problems": 20,
+      "passedProblems": 20,
+      "failedProblems": 0,
+      "unverifiedProblems": 0,
+      "passedCases": 169,
+      "totalCases": 169
+    },
+    "withExistingBoundaryCases": {
+      "problems": 20,
+      "passedProblems": 20,
+      "failedProblems": 0,
+      "unverifiedProblems": 0,
+      "passedCases": 172,
+      "totalCases": 172
+    },
+    "usage": {
+      "prompt_tokens": 9897,
+      "completion_tokens": 10896,
+      "total_tokens": 20793
+    },
+    "transportRequests": {
+      "grpc": 20
+    },
+    "resources": {
+      "wallSeconds": 372.73,
+      "userCpuSeconds": 1.43,
+      "systemCpuSeconds": 0.31,
+      "maxRssBytes": 149602304,
+      "peakFootprintBytes": 76366928
+    },
+    "observations": [
+      {
+        "slug": "minimum-number-of-taps-to-open-to-water-a-garden",
+        "status": "completed",
+        "firstContentMs": 12498.467415988445,
+        "totalMs": 22822.357707977295,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "pass-the-pillow",
+        "status": "completed",
+        "firstContentMs": 6166.439249992371,
+        "totalMs": 9191.092750012875,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "reducing-dishes",
+        "status": "completed",
+        "firstContentMs": 15272.745124995708,
+        "totalMs": 21514.179499983788,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "check-if-two-chessboard-squares-have-the-same-color",
+        "status": "completed",
+        "firstContentMs": 6235.729458004236,
+        "totalMs": 8638.494332998991,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "maximum-number-of-jumps-to-reach-the-last-index",
+        "status": "completed",
+        "firstContentMs": 10066.709666013718,
+        "totalMs": 16861.012166023254,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "delete-and-earn",
+        "status": "completed",
+        "firstContentMs": 6616.031791001558,
+        "totalMs": 15687.914499998093,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "split-a-string-in-balanced-strings",
+        "status": "completed",
+        "firstContentMs": 5381.172666013241,
+        "totalMs": 10312.232000023127,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "count-square-sum-triples",
+        "status": "completed",
+        "firstContentMs": 8364.88520899415,
+        "totalMs": 12920.859584003687,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "longest-zigzag-path-in-a-binary-tree",
+        "status": "completed",
+        "firstContentMs": 12914.996708005667,
+        "totalMs": 20697.146416008472,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "maximum-number-of-non-overlapping-palindrome-substrings",
+        "status": "completed",
+        "firstContentMs": 15721.65625,
+        "totalMs": 28829.100084006786,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "modify-graph-edge-weights",
+        "status": "completed",
+        "firstContentMs": 21583.87037497759,
+        "totalMs": 39671.20216599107,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "maximum-k-to-sort-a-permutation",
+        "status": "completed",
+        "firstContentMs": 32674.342958003283,
+        "totalMs": 39085.40020799637,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "minimum-time-to-collect-all-apples-in-a-tree",
+        "status": "completed",
+        "firstContentMs": 11187.226082980633,
+        "totalMs": 20894.881500005722,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "minimum-remove-to-make-valid-parentheses",
+        "status": "completed",
+        "firstContentMs": 10411.182875007391,
+        "totalMs": 17238.764999985695,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "accounts-merge",
+        "status": "completed",
+        "firstContentMs": 13279.059749990702,
+        "totalMs": 22544.96549999714,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "number-of-even-and-odd-bits",
+        "status": "completed",
+        "firstContentMs": 6034.775458991528,
+        "totalMs": 10524.875416994095,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "check-if-all-as-appears-before-all-bs",
+        "status": "completed",
+        "firstContentMs": 9028.077874988317,
+        "totalMs": 13330.131583988667,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "most-frequent-ids",
+        "status": "completed",
+        "firstContentMs": 7919.093041986227,
+        "totalMs": 19404.415333986282,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "majority-element",
+        "status": "completed",
+        "firstContentMs": 4876.240000009537,
+        "totalMs": 10063.464583009481,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "modify-the-matrix",
+        "status": "completed",
+        "firstContentMs": 7001.118083000183,
+        "totalMs": 12005.469583004713,
+        "model": "kimi-k3.1-pro"
+      }
+    ]
+  },
+  "network": [
+    {
+      "host": "passwisely.cn",
+      "kind": "https",
+      "path": "/",
+      "connection": "new",
+      "n": 3,
+      "p50Ms": 319.904374986887,
+      "p95Ms": 341.09442498087884,
+      "minMs": 312.5409580171108,
+      "maxMs": 343.44887498021126,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.com",
+      "kind": "https",
+      "path": "/",
+      "connection": "new",
+      "n": 3,
+      "p50Ms": 58.3715840280056,
+      "p95Ms": 368.6045837193727,
+      "minMs": 54.62712499499321,
+      "maxMs": 403.07491701841354,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.cn",
+      "kind": "https",
+      "path": "/api/account",
+      "connection": "new",
+      "n": 3,
+      "p50Ms": 478.420834004879,
+      "p95Ms": 621.4299331098795,
+      "minMs": 462.7784999907017,
+      "maxMs": 637.3198330104351,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.com",
+      "kind": "https",
+      "path": "/api/account",
+      "connection": "new",
+      "n": 3,
+      "p50Ms": 616.9743750095367,
+      "p95Ms": 778.3063868939877,
+      "minMs": 533.7265830039978,
+      "maxMs": 796.23216599226,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.cn",
+      "kind": "grpc-health",
+      "path": "",
+      "connection": "new",
+      "n": 3,
+      "p50Ms": 376.46666699647903,
+      "p95Ms": 410.27017921209335,
+      "minMs": 334.1741659939289,
+      "maxMs": 414.0261250138283,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.com",
+      "kind": "grpc-health",
+      "path": "",
+      "connection": "new",
+      "n": 3,
+      "p50Ms": 391.9097920060158,
+      "p95Ms": 416.3722788870335,
+      "minMs": 382.70145800709724,
+      "maxMs": 419.0903329849243,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.cn",
+      "kind": "https",
+      "path": "/",
+      "connection": "keep-alive",
+      "n": 7,
+      "p50Ms": 95.34191697835922,
+      "p95Ms": 218.73769120275963,
+      "minMs": 89.1100839972496,
+      "maxMs": 261.8450410068035,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.com",
+      "kind": "https",
+      "path": "/",
+      "connection": "keep-alive",
+      "n": 7,
+      "p50Ms": 21.18170902132988,
+      "p95Ms": 40.184300217032416,
+      "minMs": 19.44641700387001,
+      "maxMs": 45.70525002479553,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.cn",
+      "kind": "https",
+      "path": "/api/account",
+      "connection": "keep-alive",
+      "n": 7,
+      "p50Ms": 227.85879200696945,
+      "p95Ms": 333.75842859148975,
+      "minMs": 195.19262498617172,
+      "maxMs": 367.2860409915447,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.com",
+      "kind": "https",
+      "path": "/api/account",
+      "connection": "keep-alive",
+      "n": 7,
+      "p50Ms": 480.9323329925537,
+      "p95Ms": 694.4160206109284,
+      "minMs": 461.79304200410843,
+      "maxMs": 764.6483330130577,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.cn",
+      "kind": "grpc-health",
+      "path": "",
+      "connection": "reused",
+      "n": 7,
+      "p50Ms": 86.49487498402596,
+      "p95Ms": 273.6941295057534,
+      "minMs": 82.51458299160004,
+      "maxMs": 348.29254201054573,
+      "failures": 0
+    },
+    {
+      "host": "passwisely.com",
+      "kind": "grpc-health",
+      "path": "",
+      "connection": "reused",
+      "n": 7,
+      "p50Ms": 367.2847499847412,
+      "p95Ms": 403.8529747843742,
+      "minMs": 320.32833299040794,
+      "maxMs": 405.33874997496605,
+      "failures": 0
+    }
+  ],
+  "vision": {
+    "completed": 3,
+    "attempted": 3,
+    "graded": {
+      "problems": 3,
+      "passedProblems": 3,
+      "failedProblems": 0,
+      "unverifiedProblems": 0,
+      "passedCases": 26,
+      "totalCases": 26
+    },
+    "records": [
+      {
+        "slug": "pass-the-pillow",
+        "transport": "production ProcessingHelper multimodal gRPC stream",
+        "imageSha256": "da837ae45e165208c3a23c3f7ad7aae3578660dd20204afd2ce17eace278bfc9",
+        "imageBytes": 63968,
+        "firstContentMs": 6923.1738339960575,
+        "firstParseableProgressMs": 7479.460375010967,
+        "totalMs": 13317.853208988905,
+        "model": "kimi-k3.1-pro",
+        "finishReason": "stop",
+        "usage": {
+          "prompt_tokens": 2025,
+          "completion_tokens": 357,
+          "total_tokens": 2382
+        },
+        "productionModelCalls": 1,
+        "success": true,
+        "error": null
+      },
+      {
+        "slug": "delete-and-earn",
+        "transport": "production ProcessingHelper multimodal gRPC stream",
+        "imageSha256": "e5c642fbc848e2d54ecd518bb6ee93744722165cbf3aa1050b853732e6597217",
+        "imageBytes": 69441,
+        "firstContentMs": 13033.066875010729,
+        "firstParseableProgressMs": 13907.419874995947,
+        "totalMs": 22648.591583013535,
+        "model": "kimi-k3.1-pro",
+        "finishReason": "stop",
+        "usage": {
+          "prompt_tokens": 2071,
+          "completion_tokens": 506,
+          "total_tokens": 2577
+        },
+        "productionModelCalls": 1,
+        "success": true,
+        "error": null
+      },
+      {
+        "slug": "minimum-number-of-taps-to-open-to-water-a-garden",
+        "transport": "production ProcessingHelper multimodal gRPC stream",
+        "imageSha256": "0081ec7d42cbb5607319ee6ee15764b5e4842efa5d1ab5f5f7e7b7b510bb05a5",
+        "imageBytes": 80788,
+        "firstContentMs": 19281.868375003338,
+        "firstParseableProgressMs": 20325.821500003338,
+        "totalMs": 30835.636334002018,
+        "model": "kimi-k3.1-pro",
+        "finishReason": "stop",
+        "usage": {
+          "prompt_tokens": 2209,
+          "completion_tokens": 826,
+          "total_tokens": 3035
+        },
+        "productionModelCalls": 1,
+        "success": true,
+        "error": null
+      }
+    ],
+    "resources": {
+      "wallSeconds": 67.13,
+      "userCpuSeconds": 0.76,
+      "systemCpuSeconds": 0.13,
+      "maxRssBytes": 149716992,
+      "peakFootprintBytes": 75351144
+    }
+  },
+  "httpStreamControl": {
+    "completed": 3,
+    "attempted": 3,
+    "graded": {
+      "problems": 3,
+      "passedProblems": 3,
+      "failedProblems": 0,
+      "unverifiedProblems": 0,
+      "passedCases": 26,
+      "totalCases": 26
+    },
+    "firstContent": {
+      "p50": 9044.466917008162,
+      "p95": 18386.862128597495
+    },
+    "total": {
+      "p50": 19077.91225001216,
+      "p95": 27499.264187180997
+    },
+    "observations": [
+      {
+        "slug": "pass-the-pillow",
+        "status": "completed",
+        "firstContentMs": 7536.619083017111,
+        "totalMs": 11137.571833014488,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "delete-and-earn",
+        "status": "completed",
+        "firstContentMs": 9044.466917008162,
+        "totalMs": 19077.91225001216,
+        "model": "kimi-k3.1-pro"
+      },
+      {
+        "slug": "minimum-number-of-taps-to-open-to-water-a-garden",
+        "status": "completed",
+        "firstContentMs": 19424.906040996313,
+        "totalMs": 28434.969957977533,
+        "model": "kimi-k3.1-pro"
+      }
+    ]
+  },
+  "audio": [
+    {
+      "language": "zh",
+      "model": "nova-3",
+      "profile": "deepgram-zh",
+      "status": "passed",
+      "synthetic": true,
+      "routes": [
+        {
+          "reference": "面试官问：数组可以包含负数吗？",
+          "observedFinalsByReplay": [
+            "面世观稳,数组可以包含负数吗?",
+            "是官稳数组可以包含负数吗"
+          ],
+          "firstInterimMsFromAudioStart": 1682,
+          "firstFinalMsFromAudioStart": 5194,
+          "audioDurationMs": 3624,
+          "pauseAudioBytes": 0,
+          "connectionSurvivedPause": true,
+          "closeCode": 1000
+        },
+        {
+          "reference": "可以。先处理空数组，再检查左右边界。",
+          "observedFinalsByReplay": [
+            "先处理空数组,再检查左右边界,",
+            "可以;先处理空数组再检查左右边解;"
+          ],
+          "firstInterimMsFromAudioStart": 1524,
+          "firstFinalMsFromAudioStart": 5120,
+          "audioDurationMs": 4529,
+          "pauseAudioBytes": 0,
+          "connectionSurvivedPause": true,
+          "closeCode": 1000
+        }
+      ]
+    },
+    {
+      "language": "en",
+      "model": "nova-3",
+      "profile": "deepgram-en",
+      "status": "passed",
+      "synthetic": true,
+      "routes": [
+        {
+          "reference": "The blue notebook costs twenty dollars.",
+          "observedFinalsByReplay": [
+            "The blue notebook costs twenty dollars.",
+            "The blue notebook costs twenty dollars"
+          ],
+          "firstInterimMsFromAudioStart": 1607,
+          "firstFinalMsFromAudioStart": 3371,
+          "audioDurationMs": 2331,
+          "pauseAudioBytes": 0,
+          "connectionSurvivedPause": true,
+          "closeCode": 1000
+        },
+        {
+          "reference": "Use binary search and check both boundaries.",
+          "observedFinalsByReplay": [
+            "Use binary search and check both boundaries.",
+            "Use binary search and check both boundaries."
+          ],
+          "firstInterimMsFromAudioStart": 1721,
+          "firstFinalMsFromAudioStart": 3576,
+          "audioDurationMs": 2800,
+          "pauseAudioBytes": 0,
+          "connectionSurvivedPause": true,
+          "closeCode": 1000
+        }
+      ]
+    },
+    {
+      "language": "zh",
+      "model": "nova-3",
+      "profile": "deepgram-zh",
+      "status": "passed",
+      "synthetic": true,
+      "routes": [
+        {
+          "reference": "今天是2026年10月20日，订单金额是128.50元。",
+          "observedFinalsByReplay": [
+            "今天是二零二六年十月二十日,订单金额是128。50元,",
+            "今天是2026年10月20日订单金额是128。50元"
+          ],
+          "firstInterimMsFromAudioStart": 1621,
+          "firstFinalMsFromAudioStart": 5651,
+          "audioDurationMs": 6818,
+          "pauseAudioBytes": 0,
+          "connectionSurvivedPause": true,
+          "closeCode": 1000
+        },
+        {
+          "reference": "请用 Python 实现 binary search，时间复杂度是 O(log n)。",
+          "observedFinalsByReplay": [
+            "请用Python实现bingresearch。时间复杂度是olaband。",
+            "实现时间复杂度是olaband。"
+          ],
+          "firstInterimMsFromAudioStart": 1599,
+          "firstFinalMsFromAudioStart": 5606,
+          "audioDurationMs": 5460,
+          "pauseAudioBytes": 0,
+          "connectionSurvivedPause": true,
+          "closeCode": 1000
+        }
+      ]
+    }
+  ],
+  "audioScores": {
+    "zh-basic": {
+      "errors": 9,
+      "units": 56,
+      "observations": 4,
+      "errorRate": 0.16071428571428573,
+      "metric": "CER"
+    },
+    "en": {
+      "errors": 0,
+      "units": 26,
+      "observations": 4,
+      "errorRate": 0.0,
+      "metric": "WER"
+    }
+  },
+  "serverResources": {
+    "passwisely-web.service": {
+      "sampleSeconds": 30.093866109848022,
+      "cpuSeconds": 0.807775,
+      "percentOfOneCpu": 2.6841848669475565,
+      "observedPeakCgroupMemoryBytes": 439201792,
+      "mainPidStable": true
+    },
+    "passwisely-desktop-api.service": {
+      "sampleSeconds": 30.093866109848022,
+      "cpuSeconds": 0.143647,
+      "percentOfOneCpu": 0.47732983019085223,
+      "observedPeakCgroupMemoryBytes": 42274816,
+      "mainPidStable": true
+    }
+  },
+  "instrumentationFailures": [
+    {
+      "scope": "initial vision harness",
+      "error": "Missing setHasDebugged cleanup method in synthetic window dependency",
+      "requestOutcome": "One model call completed before cleanup failed; answer and latency were not retained, so no quality/speed claim is made for that attempt. Failure stderr retained.",
+      "repair": "Synthetic dependency now implements the same required setters as the existing live runner; product source was unchanged.",
+      "retainedFile": "vision-results.resources"
+    },
+    {
+      "scope": "first anonymous network harness",
+      "error": "Connection listeners were also attached to reused sockets, producing an observation-only MaxListeners warning.",
+      "repair": "Attach listeners only when socket.connecting is true; use the later warning-free authenticated 60-observation run for reported network values."
+    }
+  ],
+  "regressionTestsPassed": 65,
+  "limitations": [
+    "No Astrill-off trial, no verified Astrill mode/node or per-application VPN routing: no causal VPN slowdown or VPN overhead percentage can be established.",
+    "The primary score is one first attempt on 20 frozen problems / 169 fixed functional cases plus three existing adversarial cases; it does not prove all LeetCode inputs, complexity, general accuracy or pass@k.",
+    "Electron Node runtime and r7-equivalent source code were exercised, with synthetic UI dependencies; actual native GUI startup, paint latency, hotkey capture, image preprocessing and full GUI resource use were not measured.",
+    "ASR uses six unique synthetic sentences, each replayed twice, on the direct Deepgram/Intel transport with production options and normalizer; not real human speech, physical microphone/system attribution, or Apple Silicon Recall end-to-end ASR.",
+    "HTTP and vision auxiliary calls ran concurrently with each other (at most two model requests) and have only three scored cases each; they are separate from primary serial text latency and are not an A/B transport speed claim.",
+    "No Windows or Intel hardware test, mobile render/LCP test, destructive load test or prolonged soak test was performed. Server resource coverage is a 30-second window under this small workload.",
+    "One initial screenshot instrumentation failure is retained and excluded from successful-answer timing and scoring; it is included in test costs."
+  ],
+  "testCost": {
+    "observedAt": "2026-11-11T16:50:06.530Z",
+    "readOnly": true,
+    "timeWindowEvents": 27,
+    "timeWindowUsageCredits": 257,
+    "timeWindowAiLedgerEntries": 27,
+    "timeWindowAiLedgerCreditDelta": -257,
+    "exactKnownTextRequestMatches": 23,
+    "expectedKnownTextRequests": 23,
+    "actualModels": [
+      "kimi-k3.1-pro"
+    ],
+    "scope": "Time-window totals include four screenshot calls, including one instrumentation cleanup failure; exact request IDs independently match the 23 saved text calls. No credit or settings writes."
+  },
+  "conclusions": {
+    "vpn": "No VPN-off comparison was authorized. Current-state requests succeeded, but the VPN causal impact, connected node/mode and process routing remain unverified.",
+    "accuracy": "20/20 first-attempt text answers passed 169 fixed cases and three existing boundary cases. This is corpus pass rate, not general algorithm correctness.",
+    "dominantWait": "Observed 9.55s median first-content wait versus 86ms warm .cn gRPC health and 228ms account TTFB suggests backend/upstream reasoning is the main latency target; exact stage attribution requires additional spans.",
+    "recognition": "Ordinary Chinese synthetic CER was 9/56 (16.07%); English WER was 0/26. Numbers and technical terms show further errors; corpus is small and does not represent real-world ASR or Recall end-to-end."
+  },
+  "nextPriorities": [
+    {
+      "priority": "P0",
+      "item": "中文识别质量与纠错体验",
+      "proposal": "建立带数字、金额、英文术语、不同口音和噪声的真实授权语料；用 CER、术语召回、数字正确率验收候选识别方案，增加低置信度提示和快速修改。",
+      "acceptance": "先扩大至至少100条授权语音片段；固定当前供应商基线，逐条保留错误，不把分段合并作为字词识别准确率的通过证据。"
+    },
+    {
+      "priority": "P1",
+      "item": "减少用户等待首个可用内容",
+      "proposal": "评估 kimi-k3.1-pro-highspeed 和独立的短提示模式，完整解答保持当前代码预算与完整性检查；当前 low 推理强度和流式响应已启用。",
+      "acceptance": "用同一题库重复对照，候选首内容 P50 目标<5s、P95<12s，作为目标而非当前实测；功能通过率不得低于当前样本，长题不得截断。"
+    },
+    {
+      "priority": "P1",
+      "item": "补全分阶段耗时与错误观测",
+      "proposal": "按 requestId 关联鉴权、Supabase、扣费、模型连接、模型首字、生成结束与客户端发布/绘制时间；先不扩容。",
+      "acceptance": "出现慢请求时能定位具体阶段；区分未生成、传输失败、截断与生成内容错误，不保存认证凭据。"
+    },
+    {
+      "priority": "P2",
+      "item": "连接路径与质量覆盖",
+      "proposal": "保留客户端 .cn 直连 Wise 和连接复用，.com 留作官网；扩充至少200道分层题及大输入性质检查，保留所有未完成结果。",
+      "acceptance": "同条件评估额外中转开销；将真实 GUI、Intel/Windows 实机和长期稳定性作为单独验收。"
+    }
+  ],
+  "cleanup": {
+    "temporarySessionRevoked": true,
+    "postRevocationAccountStatus": 401,
+    "localTokenFileRemoved": true,
+    "otherSessionRecordsModified": false,
+    "ownedFixtureServerStopped": true
+  }
+}

@@ -91,8 +91,7 @@
   flex-direction: column;
   gap: 14px;
   min-width: 0;
-  padding: 22px 22px 18px;
-  border-right: 1px solid var(--d-line);
+  padding: 22px 66px 18px 22px;
 }
 .pw-demo-problem {
   position: relative;
@@ -144,14 +143,15 @@
   overflow: visible;
 }
 .pw-demo-map-grid {
-  stroke: rgba(255, 255, 255, 0.05);
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-dasharray: 2 4;
 }
 .pw-demo-map-bar {
-  fill: #5d5d56;
+  fill: #56564f;
 }
 .pw-demo-map-water {
   fill: var(--d-water);
-  opacity: 0.55;
+  opacity: 0.72;
   transform-box: fill-box;
   transform-origin: bottom;
   animation: pw-demo-fill 0.7s ease-out both;
@@ -758,7 +758,7 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
   .pw-demo-ide {
-    padding: 16px;
+    padding: 16px 44px 16px 16px;
   }
   .pw-demo-overlay {
     margin: 14px 14px 14px -30px;
@@ -783,7 +783,9 @@
   }
   .pw-demo-ide {
     padding: 14px 14px 0;
-    border-right: 0;
+  }
+  .pw-demo-figure code {
+    font-size: 10px;
   }
   .pw-demo-editor {
     display: none;
@@ -838,4 +840,8 @@
     animation: none !important;
     transition: none !important;
   }
+}
+.pw-demo-map-surface {
+  fill: #a9d4ff;
+  opacity: 0.9;
 }

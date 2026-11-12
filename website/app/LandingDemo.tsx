@@ -99,6 +99,15 @@ function ElevationMap({ pointers }: { pointers: boolean }) {
             height={WATER[index] * cell}
             style={{ animationDelay: `${index * 90}ms` }}
           />
+          {WATER[index] > 0 && (
+            <rect
+              className="pw-demo-map-surface"
+              x={index * cell + 1}
+              y={height - (bar + WATER[index]) * cell}
+              width={cell - 2}
+              height="2"
+            />
+          )}
           <rect
             className="pw-demo-map-bar"
             x={index * cell + 1}

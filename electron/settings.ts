@@ -7,6 +7,8 @@ import { DEFAULT_OUTPUT_LANGUAGE, getOutputLanguage } from "./languages";
 
 import {
   AI_PROVIDERS,
+  AnswerSpeed,
+  isAnswerSpeed,
   AiModelPreset,
   AiProviderId,
   AiRuntimeConfig,
@@ -27,6 +29,7 @@ interface StoredSettings {
   transcription?: TranscriptionSettings;
   activeProvider?: AiProviderId;
   responseLanguage?: ResponseLanguage;
+  answerSpeed?: AnswerSpeed;
   providers?: Partial<Record<AiProviderId, StoredProviderSettings>>;
   // Legacy OpenAI-only fields, migrated when settings are next saved.
   encryptedApiKey?: string;
@@ -51,6 +54,7 @@ export interface PublicProviderSettings {
 export interface PublicSettings {
   provider: AiProviderId;
   responseLanguage: ResponseLanguage;
+  answerSpeed: AnswerSpeed;
   hasApiKey: boolean;
   model: string;
   baseUrl: string;
@@ -63,6 +67,7 @@ export interface PublicSettings {
 export interface SaveAiSettingsInput {
   provider?: AiProviderId;
   responseLanguage?: ResponseLanguage;
+  answerSpeed?: AnswerSpeed;
   apiKey?: string;
   model?: string;
   baseUrl?: string;
@@ -305,6 +310,13 @@ export class SettingsStore {
     );
   }
 
+  public getAnswerSpeed(): AnswerSpeed {
+    const environment = process.env.AI_ANSWER_SPEED?.trim().toLowerCase();
+    if (isAnswerSpeed(environment)) return environment;
+    const stored = this.read().answerSpeed;
+    return isAnswerSpeed(stored) ? stored : "standard";
+  }
+
   public getRuntimeConfig(): AiRuntimeConfig {
     const provider = this.getActiveProvider();
     const definition = getAiProviderDefinition(provider);
@@ -317,6 +329,7 @@ export class SettingsStore {
       supportsVision: this.getSupportsVision(provider),
       supportsJsonMode: definition.supportsJsonMode,
       responseLanguage: this.getResponseLanguage(),
+      answerSpeed: this.getAnswerSpeed(),
       route:
         definition.route === "wise" ||
         (definition.defaultKeyViaWise && !this.getApiKey(provider))
@@ -361,6 +374,7 @@ export class SettingsStore {
     return {
       provider,
       responseLanguage: this.getResponseLanguage(),
+      answerSpeed: this.getAnswerSpeed(),
       hasApiKey: active.hasApiKey,
       model: active.model,
       baseUrl: active.baseUrl,
@@ -374,6 +388,7 @@ export class SettingsStore {
   public save(input: SaveAiSettingsInput): PublicSettings {
     const responseLanguage = input.responseLanguage === undefined ? undefined : getOutputLanguage(input.responseLanguage);
     if (responseLanguage === null) throw new Error("Unsupported output language. Choose a language in Settings.");
+    if (input.answerSpeed !== undefined && !isAnswerSpeed(input.answerSpeed)) throw new Error("Unsupported answer speed.");
     const settings = this.migrate(this.read());
     const provider = isAiProviderId(input.provider)
       ? input.provider
@@ -381,6 +396,7 @@ export class SettingsStore {
     const definition = getAiProviderDefinition(provider);
     settings.activeProvider = provider;
     if (responseLanguage) settings.responseLanguage = responseLanguage.id;
+    if (input.answerSpeed) settings.answerSpeed = input.answerSpeed;
     settings.providers ||= {};
     const providerSettings = (settings.providers[provider] ||= {});
     const apiKey = input.apiKey?.trim();

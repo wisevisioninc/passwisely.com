@@ -17,6 +17,8 @@ message ChatRequest {
   uint32 max_tokens = 6;
   double temperature = 7;
   bool json_mode = 8;
+  // Optional provider reasoning level ("none" for the fast answer mode).
+  string reasoning_effort = 9;
 }
 
 message ChatMessage {

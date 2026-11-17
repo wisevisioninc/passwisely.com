@@ -2,6 +2,7 @@ import { statfs } from "node:fs/promises";
 import { createServer } from "node:http";
 import os from "node:os";
 import { handleQwenTransport, QWEN_TRANSPORT_PATH } from "./qwen-transport.mjs";
+import { handleKimiTransport, KIMI_TRANSPORT_PATH } from "./kimi-transport.mjs";
 
 function percentage(used, total) {
   return total > 0 ? Math.round((used / total) * 1000) / 10 : 0;
@@ -33,12 +34,12 @@ export function startHostHealthServer(address = "127.0.0.1:3013") {
     ? requestedPort
     : 3013;
   const server = createServer(async (request, response) => {
-    if (request.url === QWEN_TRANSPORT_PATH) {
+    if (request.url === QWEN_TRANSPORT_PATH || request.url === KIMI_TRANSPORT_PATH) {
       if (!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(request.socket.remoteAddress)) {
         response.writeHead(403).end();
         return;
       }
-      await handleQwenTransport(request, response);
+      await (request.url === KIMI_TRANSPORT_PATH ? handleKimiTransport : handleQwenTransport)(request, response);
       return;
     }
     if (request.method !== "GET" || request.url !== "/health") {

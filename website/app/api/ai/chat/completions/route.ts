@@ -1,4 +1,4 @@
-import { getApiUser, jsonError } from "@/lib/auth";
+import { getApiUserId, jsonError } from "@/lib/auth";
 import { adminRpc } from "@/lib/supabase";
 import { recordUsage } from "@/lib/admin-data";
 import {
@@ -11,7 +11,7 @@ import { getDefaultAiConfig } from "@/lib/ai-config";
 import { fetchModelProvider } from "@/lib/model-fetch";
 import { prepareOpenAiChatBody } from "@/lib/openai-gateway";
 
-import { isKimiK3Model, prepareKimiChatBody } from "../../../../../../shared/kimi";
+import { isKimiK3Model, KIMI_REASONING_EFFORTS, KIMI_SHARED_KEY_EFFORTS, prepareKimiChatBody } from "../../../../../../shared/kimi";
 
 import { chatStreamResponse } from "@/lib/chat-stream";
 
@@ -127,8 +127,18 @@ function fromAnthropic(payload: Json, model: string): Json {
 }
 
 export async function POST(request: Request) {
-  const user = await getApiUser(request);
-  if (!user) return jsonError("Authentication required.", 401);
+  const startedAt = performance.now();
+  const stage: Record<string, number> = {};
+  const mark = (name: string) => { stage[name] = Math.round(performance.now() - startedAt); };
+  const usesSharedKey = !request.headers.get("x-wise-provider-key")?.trim();
+  // The shared model configuration does not depend on the caller; read it
+  // while the session is being verified instead of afterwards.
+  const sharedConfig = usesSharedKey ? getDefaultAiConfig() : null;
+  sharedConfig?.catch(() => undefined);
+  const userId = await getApiUserId(request);
+  mark("auth");
+  if (!userId) return jsonError("Authentication required.", 401);
+  const user = { id: userId };
 
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 12 * 1024 * 1024) {
@@ -156,7 +166,8 @@ export async function POST(request: Request) {
     apiKey = suppliedKey;
     origin = AI_PROVIDER_CATALOG[provider].origin;
   } else {
-    const configured = await getDefaultAiConfig();
+    const configured = sharedConfig ? await sharedConfig : await getDefaultAiConfig();
+    mark("config");
     provider = configured.provider;
     model = configured.model;
     apiKey = configured.apiKey;
@@ -187,6 +198,7 @@ export async function POST(request: Request) {
     });
     if (!result[0]?.success) return jsonError("Not enough credits.", 402);
     chargedCredits = cost;
+    mark("credits");
   }
 
   const headers = new Headers({ "content-type": "application/json" });
@@ -199,7 +211,8 @@ export async function POST(request: Request) {
 
   const upstreamBody =
     provider === "kimi"
-      ? prepareKimiChatBody(effectiveBody)
+      // Callers on the shared key may only pick the fast or the default level.
+      ? prepareKimiChatBody(effectiveBody, suppliedKey ? KIMI_REASONING_EFFORTS : KIMI_SHARED_KEY_EFFORTS)
       : provider === "qwen"
         ? { ...effectiveBody, enable_thinking: false, stream: streaming }
       : provider === "openai"
@@ -220,6 +233,11 @@ export async function POST(request: Request) {
       provider === "anthropic" ? toAnthropic(effectiveBody) : upstreamBody,
     ),
   }, 90_000);
+  mark("upstreamHeaders");
+  // One line per request so a slow answer can be attributed to a stage. No
+  // user identifier, prompt text or key material is logged.
+  console.log(JSON.stringify({ event: "ai_chat_timing", requestId, provider, model, streaming,
+    status: upstream?.status ?? 0, effort: (upstreamBody as Json).reasoning_effort ?? null, stageMs: stage }));
   if (!upstream) return jsonError("Model provider is unavailable.", 502);
 
   if (streaming && upstream.ok) {

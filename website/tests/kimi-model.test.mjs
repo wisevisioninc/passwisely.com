@@ -6,7 +6,7 @@ import * as sse from "../../shared/sse.mjs";
 const { encodeSSE } = sse;
 const source = relative => fileURLToPath(new URL(relative, import.meta.url));
 const loadOwner = createProductionTsLoader();
-const { KIMI_DEFAULT_MODEL, KIMI_MODEL_IDS, prepareKimiChatBody } = loadOwner(source("../../shared/kimi.ts"));
+const { KIMI_DEFAULT_MODEL, KIMI_MODEL_IDS, KIMI_SHARED_KEY_EFFORTS, prepareKimiChatBody } = loadOwner(source("../../shared/kimi.ts"));
 
 for (const model of KIMI_MODEL_IDS) test(`${model} uses the documented K3 request contract without mutating its caller`, () => {
   const messages = [{ role: "user", content: "Synthetic question" }];
@@ -20,6 +20,12 @@ for (const model of KIMI_MODEL_IDS) test(`${model} uses the documented K3 reques
   for (const key of ["thinking", "temperature", "top_p", "n", "presence_penalty", "frequency_penalty"]) assert.ok(!(key in prepared), key);
   assert.equal(original.temperature, 0.3); assert.equal(original.n, 2);
   assert.equal(prepareKimiChatBody({ ...original, reasoning_effort: "high" }).reasoning_effort, "high");
+  assert.equal(prepareKimiChatBody({ ...original, reasoning_effort: "none" }).reasoning_effort, "none");
+  // An unknown level makes the provider fall back to its slow default; never forward one.
+  for (const value of ["none low", "minimal", "off", "", 3, null, {}]) assert.equal(prepareKimiChatBody({ ...original, reasoning_effort: value }).reasoning_effort, "low");
+  // Shared-key callers may choose only the fast or the default level.
+  assert.equal(prepareKimiChatBody({ ...original, reasoning_effort: "max" }, KIMI_SHARED_KEY_EFFORTS).reasoning_effort, "low");
+  assert.equal(prepareKimiChatBody({ ...original, reasoning_effort: "none" }, KIMI_SHARED_KEY_EFFORTS).reasoning_effort, "none");
 });
 
 test("unselected Kimi models retain their own request contract", () => {
@@ -33,7 +39,7 @@ function app({ streaming = false } = {}) {
   const mocks = {
     "cloudflare:workers": { env: {} },
     "../../shared/sse.mjs": sse,
-    "@/lib/auth": { getApiUser: async () => ({ id: "synthetic-user" }), jsonError: (message, status) => Response.json({ error: message }, { status }) },
+    "@/lib/auth": { getApiUser: async () => ({ id: "synthetic-user" }), getApiUserId: async () => "synthetic-user", jsonError: (message, status) => Response.json({ error: message }, { status }) },
     "@/lib/ai-config": { getDefaultAiConfig: async () => config },
     "@/lib/supabase": {
       adminRpc: async (name, data) => { if (name === "consume_credits") { debits.push(data); return [{ success: true, balance: 1000 }]; } return 1000; },
@@ -86,4 +92,20 @@ test("resume uses the same effective Pro request policy and persists its actual 
   const body = f.requests[0].body;
   assert.equal(body.model, KIMI_DEFAULT_MODEL); assert.equal(body.reasoning_effort, "low"); assert.equal(body.temperature, undefined); assert.equal(body.thinking, undefined);
   assert.equal(f.usage[0].model, KIMI_DEFAULT_MODEL);
+});
+
+test("shared-key callers may select the fast level but never a slower or unknown one", async () => {
+  const send = async (reasoning_effort, headers = {}) => {
+    const f = app({ streaming: true });
+    const response = await f.chat(new Request("https://site.example.invalid/api/ai/chat/completions", { method: "POST", headers: { "content-type": "application/json", ...headers },
+      body: JSON.stringify({ model: KIMI_DEFAULT_MODEL, messages: [{ role: "user", content: "Synthetic public test" }], max_tokens: 4096, stream: true, reasoning_effort }) }));
+    assert.equal(response.status, 200); await response.text();
+    return f.requests[0].body.reasoning_effort;
+  };
+  assert.equal(await send("none"), "none");
+  assert.equal(await send("low"), "low");
+  for (const value of ["max", "high", "none low", "minimal", 7]) assert.equal(await send(value), "low", String(value));
+  const personal = { "x-wise-provider": "kimi", "x-wise-provider-key": "synthetic-personal-key" };
+  assert.equal(await send("max", personal), "max");
+  assert.equal(await send("none low", personal), "low");
 });

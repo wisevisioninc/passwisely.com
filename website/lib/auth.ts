@@ -163,21 +163,49 @@ export function getBearerToken(request: Request): string {
   return authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
 }
 
-export async function getApiUser(request: Request): Promise<AccountUser | null> {
-  const token = getBearerToken(request);
-  if (!token) return getCurrentUser();
+/** Supabase access tokens are JWTs (three dot-separated parts). Desktop session
+ * tokens are opaque base64url strings, so asking Supabase Auth about one always
+ * fails and only adds a network round trip. */
+function looksLikeJwt(token: string): boolean {
+  return token.split(".").length === 3;
+}
 
-  const supabaseUser = await userFromAccessToken(token);
-  if (supabaseUser) return supabaseUser;
-
+async function desktopSessionUserId(token: string): Promise<string | null> {
   const tokenHash = await sha256(token);
   const sessions = await adminRest<Array<{ user_id: string }>>(
     `desktop_sessions?token_hash=eq.${encodeURIComponent(tokenHash)}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=user_id&limit=1`,
   );
-  const userId = sessions[0]?.user_id;
+  return sessions[0]?.user_id || null;
+}
+
+export async function getApiUser(request: Request): Promise<AccountUser | null> {
+  const token = getBearerToken(request);
+  if (!token) return getCurrentUser();
+
+  if (looksLikeJwt(token)) {
+    const supabaseUser = await userFromAccessToken(token);
+    if (supabaseUser) return supabaseUser;
+  }
+
+  const userId = await desktopSessionUserId(token);
   if (!userId) return null;
   const profile = await getProfile(userId);
   return profile ? profileToUser(profile) : null;
+}
+
+/** Identity only, for hot paths that do not need the profile or balance (the
+ * AI relay debits atomically and fails with 402 on its own). A desktop token
+ * costs one session lookup instead of four sequential Supabase requests. */
+export async function getApiUserId(request: Request): Promise<string | null> {
+  const token = getBearerToken(request);
+  if (!token) return (await getCurrentUser())?.id || null;
+  if (looksLikeJwt(token)) {
+    const supabaseUser = await userFromAccessToken(token);
+    if (supabaseUser) return supabaseUser.id;
+  }
+  // A database failure propagates (as before) rather than posing as an
+  // expired session, which would send the desktop client to re-authenticate.
+  return desktopSessionUserId(token);
 }
 
 export async function createApiSession(userId: string): Promise<string> {

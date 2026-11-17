@@ -205,6 +205,8 @@ function initializeHelpers() {
     ...state.settingsStore.getRuntimeConfig(),
     wiseAccessToken: state.accountService.getToken(),
   });
+  // Open the model channel now so the first question skips connection setup.
+  state.processingHelper.warmUpTransport();
   const captureProvider = captureBackend(process.platform, process.arch);
   const nativeAudio = captureProvider === "native-deepgram";
   const effectiveSpeechSettings = () => publicTranscriptionSettings(state.settingsStore!.getTranscriptionSettings(), captureProvider);
@@ -924,6 +926,9 @@ async function clearQueues(): Promise<{ success: boolean; error?: string }> {
 async function takeScreenshot(): Promise<string> {
   const visibility = state.windowVisibility;
   if (!state.mainWindow || !visibility) throw new Error("No main window available");
+  // A screenshot usually precedes a question by seconds; make sure the model
+  // channel is connected by then (no-op when it was warmed recently).
+  state.processingHelper?.warmUpTransport();
   // Acquire before queueing: concurrent pending captures all retain suppression.
   const lease = visibility.suppressForCapture();
   let captureFailed = false, captureError: unknown;
@@ -983,6 +988,7 @@ function getAiSettings(): PublicSettings {
     return {
       provider: "kimi",
       responseLanguage: "zh-CN",
+      answerSpeed: "standard",
       hasApiKey: false,
       model: kimi.model,
       baseUrl: kimi.baseUrl,

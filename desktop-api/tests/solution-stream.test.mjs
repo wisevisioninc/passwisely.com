@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { encodeSSE, readSSE } from "../../shared/sse.mjs";
 import { createProductionTsLoader } from "./helpers/production-typescript.mjs";
-const { partialSolution, solutionFormat } = createProductionTsLoader({ env: {} })(fileURLToPath(new URL("../../electron/solutionStream.ts", import.meta.url)));
+const { partialSolution, salvageSolution, solutionFormat } = createProductionTsLoader({ env: {} })(fileURLToPath(new URL("../../electron/solutionStream.ts", import.meta.url)));
 
 test("partial JSON preserves code escapes and Unicode at every split point", () => {
   const answer = { thoughts: ["使用哈希表😀"], time_complexity: "O(n)，遍历一次", space_complexity: "O(n)，存储下标", code: 'print("\\n")\nprint("你好😀")', alternatives: ["排序后使用双指针。"] };
@@ -20,12 +20,28 @@ test("partial JSON preserves code escapes and Unicode at every split point", () 
   assert.equal(partialSolution('{"thoughts":["首段').thoughts[0], "首段");
 });
 
-test("prompt puts short Chinese explanation and complexity before complete code", () => {
+test("prompt asks for the complete code first, then complexity and a short Chinese explanation", () => {
   const prompt = solutionFormat("python", true);
-  const keys = ['"thoughts"', '"time_complexity"', '"space_complexity"', '"code"', '"alternatives"', '"problem_statement"'];
+  const keys = ['"code"', '"time_complexity"', '"space_complexity"', '"thoughts"', '"alternatives"', '"problem_statement"'];
   assert.deepEqual(keys.map(k => prompt.indexOf(k)), keys.map(k => prompt.indexOf(k)).sort((a, b) => a - b));
   assert.match(prompt, /完整 Python 代码/);
   assert.match(prompt, /最多两项/);
+});
+
+test("a cut-off stream is salvaged only once the code field has closed", () => {
+  const answer = { code: 'class Solution:\n    def f(self):\n        return "ok"', time_complexity: "O(n)，遍历一次", space_complexity: "O(1)", thoughts: ["一次遍历。"], alternatives: ["排序。"], problem_statement: "题面" };
+  const raw = JSON.stringify(answer);
+  const codeEnd = raw.indexOf('","time_complexity"') + 1;
+  for (let n = 0; n < codeEnd; n++) assert.equal(salvageSolution(raw.slice(0, n)), null, `split ${n}`);
+  for (let n = codeEnd; n <= raw.length; n++) {
+    const kept = JSON.parse(salvageSolution(raw.slice(0, n)));
+    assert.equal(kept.code, answer.code, `split ${n}`);
+    // Only fields that finished are kept; a half-written one is never shown as complete.
+    for (const [key, value] of Object.entries(kept)) assert.deepEqual(value, answer[key], `split ${n}: ${key}`);
+  }
+  assert.deepEqual(JSON.parse(salvageSolution(raw.slice(0, raw.indexOf('"thoughts"') + 14))), { code: answer.code, time_complexity: answer.time_complexity, space_complexity: answer.space_complexity });
+  assert.equal(salvageSolution('{"thoughts":["思路"],"code":"   "}'), null);
+  assert.equal(salvageSolution(""), null);
 });
 
 test("SSE handles fragmented UTF-8, CRLF, multiline data and ignores unfinished events", async () => {

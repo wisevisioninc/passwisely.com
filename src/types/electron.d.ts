@@ -97,7 +97,7 @@ export interface ElectronAPI extends LiveSessionAPI, OverlayWindowAPI, CapturePe
   onScreenshotQueueChanged: (callback: () => void) => () => void
   onScreenshotError: (callback: (message: string) => void) => () => void
   onResetView: (callback: () => void) => () => void
-  onSolutionProgress: (callback: (update: { requestId: string; phase: "initial" | "debug"; data: any; model: string }) => void) => () => void;
+  onSolutionProgress: (callback: (update: { requestId: string; phase: "initial" | "debug"; data: any; model: string; thinking?: number }) => void) => () => void;
   onProcessingCancelled: (callback: () => void) => () => void;
   cancelProcessing: () => Promise<{ success: boolean }>;
   onSolutionStart: (callback: () => void) => () => void

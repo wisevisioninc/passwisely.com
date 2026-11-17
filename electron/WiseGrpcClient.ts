@@ -7,6 +7,12 @@ import { getServiceEndpoints } from "./serviceEndpoints";
 
 type GrpcClient = grpc.Client & {
   ChatStream: (request: Record<string, unknown>, metadata: grpc.Metadata, options: grpc.CallOptions) => grpc.ClientReadableStream<any>;
+  Health: (
+    request: Record<string, unknown>,
+    metadata: grpc.Metadata,
+    options: grpc.CallOptions,
+    callback: (error: grpc.ServiceError | null, response: any) => void,
+  ) => grpc.ClientUnaryCall;
   Chat: (
     request: Record<string, unknown>,
     metadata: grpc.Metadata,
@@ -99,6 +105,17 @@ export class WiseGrpcClient {
     this.client.close();
   }
 
+  /** Establish the lazily created channel (DNS, TCP, TLS, HTTP/2) ahead of the
+   * first model request. Best effort: failures surface on the real request.
+   */
+  public warmUp(): Promise<boolean> {
+    return new Promise(resolve => {
+      try {
+        this.client.Health({}, new grpc.Metadata(), { deadline: Date.now() + 8_000 }, error => resolve(!error));
+      } catch { resolve(false); }
+    });
+  }
+
   public static isUnavailable(error: unknown): boolean {
     return (
       error instanceof WiseGrpcError &&
@@ -113,7 +130,9 @@ export class WiseGrpcClient {
 
   public async streamChat(
     body: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
-    options: { signal: AbortSignal; token: string; provider: string; providerApiKey?: string; requestId: string },
+    options: { signal: AbortSignal; token: string; provider: string; providerApiKey?: string; requestId: string;
+      /** Called for each hidden reasoning chunk that arrives before the first visible content. */
+      onThinking?: (chunks: number) => void },
     onContent: (content: string, model: string) => void,
   ): Promise<OpenAI.Chat.ChatCompletion> {
     options.signal.throwIfAborted();
@@ -123,9 +142,10 @@ export class WiseGrpcClient {
     const request = { requestId: options.requestId, provider: options.provider, model: body.model,
       providerApiKey: options.providerApiKey || "", maxTokens: body.max_tokens || 4096,
       temperature: body.temperature || 0, jsonMode: body.response_format?.type === "json_object",
+      reasoningEffort: typeof (body as { reasoning_effort?: unknown }).reasoning_effort === "string" ? (body as { reasoning_effort?: string }).reasoning_effort : "",
       messages: body.messages.map(message => ({ role: message.role, parts: contentParts(message.content) })) };
     return new Promise((resolve, reject) => {
-      let content = "", model = body.model, id = options.requestId, finish = "", done = false, settled = false;
+      let content = "", model = body.model, id = options.requestId, finish = "", done = false, settled = false, thinking = 0;
       let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
       const call = this.client.ChatStream(request, metadata, { deadline: Date.now() + 90_000 });
       const fail = (error: Error) => { if (settled) return; settled = true; options.signal.removeEventListener("abort", abort); reject(error); call.cancel(); };
@@ -140,6 +160,9 @@ export class WiseGrpcClient {
           content += chunk.delta;
           if (Buffer.byteLength(content) > 12 * 1024 * 1024) { fail(new Error("模型响应过大。")); return; }
           try { onContent(content, model); } catch (error) { fail(error as Error); }
+        } else if (!content && !chunk.done && !chunk.finishReason && options.onThinking) {
+          // The relay forwards hidden reasoning tokens as empty deltas.
+          try { options.onThinking(++thinking); } catch { /* progress is advisory */ }
         }
       });
       call.on("error", (error: grpc.ServiceError) => fail(new WiseGrpcError(error.details || error.message, error.code, Number(error.metadata?.get("x-http-status")?.[0]) || undefined)));
@@ -179,6 +202,7 @@ export class WiseGrpcClient {
       maxTokens: body.max_tokens || 4096,
       temperature: body.temperature || 0,
       jsonMode: body.response_format?.type === "json_object",
+      reasoningEffort: typeof (body as { reasoning_effort?: unknown }).reasoning_effort === "string" ? (body as { reasoning_effort?: string }).reasoning_effort : "",
     };
 
     return new Promise((resolve, reject) => {

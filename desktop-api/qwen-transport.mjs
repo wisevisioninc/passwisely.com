@@ -5,7 +5,9 @@ export const QWEN_ORIGIN = "https://dashscope.aliyuncs.com/compatible-mode/v1/ch
 export const CONNECT_TIMEOUT_MS = 20_000;
 export const TOTAL_TIMEOUT_MS = 90_000;
 const MAX_BYTES = 12 * 1024 * 1024;
-const RETRYABLE = new Set(["QWEN_CONNECT_TIMEOUT", "EAI_AGAIN", "ECONNREFUSED", "ECONNRESET", "ENETUNREACH", "ETIMEDOUT"]);
+const RETRYABLE = new Set(["EAI_AGAIN", "ECONNREFUSED", "ECONNRESET", "ENETUNREACH", "ETIMEDOUT"]);
+// A pooled keep-alive socket the provider already closed fails on first write.
+const STALE_SOCKET = new Set(["ECONNRESET", "EPIPE"]);
 
 class TransportError extends Error {
   constructor(code, message, status = 502) {
@@ -16,6 +18,8 @@ class TransportError extends Error {
 }
 
 // requestImpl is injectable for deterministic socket lifecycle tests only.
+// origin/agent/name/code let another fixed provider reuse the same connection
+// and total-time budgets; they are never taken from a client request.
 export async function requestQwen(body, authorization, {
   signal,
   totalTimeoutMs = TOTAL_TIMEOUT_MS,
@@ -24,13 +28,17 @@ export async function requestQwen(body, authorization, {
   requestImpl = httpsRequest,
   onHeaders,
   onChunk,
+  origin = QWEN_ORIGIN,
+  agent,
+  name = "Qwen",
+  code = "QWEN",
 } = {}) {
   const startedAt = performance.now();
   const controller = new AbortController();
   const totalTimer = setTimeout(() => controller.abort(new TransportError(
-    "QWEN_TOTAL_TIMEOUT", "Qwen request exceeded its total time budget.", 504,
+    `${code}_TOTAL_TIMEOUT`, `${name} request exceeded its total time budget.`, 504,
   )), Math.min(totalTimeoutMs, TOTAL_TIMEOUT_MS));
-  const cancel = () => controller.abort(new TransportError("QWEN_CANCELLED", "Qwen request was cancelled.", 499));
+  const cancel = () => controller.abort(new TransportError(`${code}_CANCELLED`, `${name} request was cancelled.`, 499));
   signal?.addEventListener("abort", cancel, { once: true });
   if (signal?.aborted) cancel();
   const timings = [];
@@ -39,7 +47,7 @@ export async function requestQwen(body, authorization, {
       if (controller.signal.aborted) throw controller.signal.reason;
       try {
         const result = await new Promise((resolve, reject) => {
-          let req, socket, connectTimer, settled = false, connected = false;
+          let req, socket, connectTimer, settled = false, connected = false, reused = false, responded = false;
           const attemptStart = performance.now();
           const timing = { attempt, connectMs: null };
           timings.push(timing);
@@ -52,7 +60,9 @@ export async function requestQwen(body, authorization, {
             timing.elapsedMs = Math.round(performance.now() - attemptStart);
             if (error) {
               error.beforeConnect = !connected;
-              timing.errorCode = error.code || "QWEN_NETWORK_ERROR";
+              // The provider never saw a request written to a socket it had closed.
+              error.staleSocket = reused && !responded && STALE_SOCKET.has(error.code);
+              timing.errorCode = error.code || `${code}_NETWORK_ERROR`;
               reject(error);
             } else resolve(value);
           };
@@ -67,16 +77,18 @@ export async function requestQwen(body, authorization, {
             clearTimeout(connectTimer);
           };
           connectTimer = setTimeout(() => {
-            const error = new TransportError("QWEN_CONNECT_TIMEOUT", "Qwen connection timed out (DNS/TCP/TLS).", 504);
+            const error = new TransportError(`${code}_CONNECT_TIMEOUT`, `${name} connection timed out (DNS/TCP/TLS).`, 504);
             req?.destroy(error);
             finish(error);
           }, Math.min(connectTimeoutMs, CONNECT_TIMEOUT_MS));
           controller.signal.addEventListener("abort", abort, { once: true });
           try {
-            req = requestImpl(QWEN_ORIGIN, {
+            req = requestImpl(origin, {
               method: "POST",
+              ...(agent ? { agent } : {}),
               headers: { authorization, "content-type": "application/json", "accept-encoding": "identity", "content-length": Buffer.byteLength(body) },
             }, response => {
+              responded = true;
               // The same connection/total budgets cover headers AND every body chunk.
               const chunks = [];
               let size = 0;
@@ -85,7 +97,7 @@ export async function requestQwen(body, authorization, {
                   onHeaders?.(response.statusCode, response.headers);
                   for await (const chunk of response) {
                     size += chunk.length;
-                    if (size > MAX_BYTES) throw new TransportError("QWEN_RESPONSE_TOO_LARGE", "Qwen response is too large.");
+                    if (size > MAX_BYTES) throw new TransportError(`${code}_RESPONSE_TOO_LARGE`, `${name} response is too large.`);
                     if (onChunk) await onChunk(chunk); else chunks.push(chunk);
                   }
                   finish(null, { status: response.statusCode, body: Buffer.concat(chunks) });
@@ -96,7 +108,7 @@ export async function requestQwen(body, authorization, {
             req.once("socket", assigned => {
               socket = assigned;
               // Pooled TLS connections will not emit secureConnect again.
-              if (req.reusedSocket) onConnected();
+              if (req.reusedSocket) { reused = true; timing.reusedSocket = true; onConnected(); }
               else socket.once("secureConnect", onConnected);
             });
             req.end(body);
@@ -106,8 +118,9 @@ export async function requestQwen(body, authorization, {
       } catch (error) {
         // Never repeat a request after TLS connected: it may already be billed.
         // All pre-connect retries share the same total timer, including body read.
-        if (controller.signal.aborted || !error.beforeConnect || !RETRYABLE.has(error.code) || attempt === maxAttempts) {
-          const failure = error instanceof TransportError ? error : new TransportError("QWEN_NETWORK_ERROR", "Unable to complete the Qwen connection or response.");
+        const retryable = (error.beforeConnect && (RETRYABLE.has(error.code) || error.code === `${code}_CONNECT_TIMEOUT`)) || error.staleSocket;
+        if (controller.signal.aborted || !retryable || attempt === maxAttempts) {
+          const failure = error instanceof TransportError ? error : new TransportError(`${code}_NETWORK_ERROR`, `Unable to complete the ${name} connection or response.`);
           failure.attempts = timings;
           throw failure;
         }
@@ -121,7 +134,18 @@ export async function requestQwen(body, authorization, {
 
 // Only mounted on the existing loopback health listener. No arbitrary URL,
 // redirects, client cookies, Supabase session or server-owned API key here.
-export async function handleQwenTransport(request, response, transport = requestQwen) {
+export function handleQwenTransport(request, response, transport = requestQwen) {
+  return handleProviderTransport(request, response, transport, QWEN_PROFILE);
+}
+
+const QWEN_PROFILE = {
+  name: "Qwen", code: "QWEN", modelPattern: /^qwen[\w.-]+$/, budgetHeader: "x-qwen-total-timeout-ms", timing: "qwen", attemptsHeader: "x-qwen-attempts",
+  prepare: (body, streaming) => ({ ...body, enable_thinking: false, stream: streaming }),
+};
+
+// profile is a fixed, server-owned description of one provider; nothing in it
+// comes from the request being handled.
+export async function handleProviderTransport(request, response, transport, profile) {
   const send = (status, body, headers = {}) => {
     if (!response.destroyed) {
       response.writeHead(status, { "content-type": "application/json", "cache-control": "no-store", ...headers });
@@ -145,13 +169,13 @@ export async function handleQwenTransport(request, response, transport = request
     clearTimeout(uploadTimer);
     let body;
     try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch {}
-    if (!body || !/^qwen[\w.-]+$/.test(body.model || "") || !Array.isArray(body.messages)) {
-      return send(400, '{"error":{"message":"Invalid Qwen request."}}');
+    if (!body || !profile.modelPattern.test(body.model || "") || !Array.isArray(body.messages)) {
+      return send(400, JSON.stringify({ error: { message: `Invalid ${profile.name} request.` } }));
     }
-    const requestedBudget = Number(request.headers["x-qwen-total-timeout-ms"]);
+    const requestedBudget = Number(request.headers[profile.budgetHeader]);
     const budget = Number.isFinite(requestedBudget) && requestedBudget > 0 ? Math.min(requestedBudget, TOTAL_TIMEOUT_MS) : TOTAL_TIMEOUT_MS;
     const streaming = body.stream === true;
-    const result = await transport(JSON.stringify({ ...body, enable_thinking: false, stream: streaming }), request.headers.authorization, {
+    const result = await transport(JSON.stringify(profile.prepare(body, streaming)), request.headers.authorization, {
       signal: controller.signal, totalTimeoutMs: budget,
       ...(streaming ? {
         onHeaders(status, headers) {
@@ -172,12 +196,12 @@ export async function handleQwenTransport(request, response, transport = request
     });
     if (streaming) { response.end(); return; }
     send(result.status, result.body, {
-      "x-qwen-attempts": String(result.attempts.length),
-      "server-timing": `qwen;dur=${result.elapsedMs},connect;dur=${result.attempts.at(-1).connectMs || 0}`,
+      [profile.attemptsHeader]: String(result.attempts.length),
+      "server-timing": `${profile.timing};dur=${result.elapsedMs},connect;dur=${result.attempts.at(-1).connectMs || 0}`,
     });
   } catch (error) {
     if (response.headersSent) { response.destroy(); return; }
-    send(error.status || 502, JSON.stringify({ error: { message: error.message, code: error.code || "QWEN_TRANSPORT_ERROR" } }));
+    send(error.status || 502, JSON.stringify({ error: { message: error.message, code: error.code || `${profile.code}_TRANSPORT_ERROR` } }));
   } finally {
     clearTimeout(uploadTimer);
     response.removeListener("close", disconnected);

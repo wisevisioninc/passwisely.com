@@ -1,4 +1,4 @@
-import { KIMI_DEFAULT_MODEL } from "../shared/kimi";
+import { KIMI_DEFAULT_MODEL, KIMI_HIGHSPEED_MODEL } from "../shared/kimi";
 
 export const AI_PROVIDER_IDS = [
   "kimi",
@@ -35,6 +35,14 @@ export interface AiProviderDefinition {
   defaultKeyViaWise?: boolean;
 }
 
+/** "fast" skips model reasoning where the provider supports it: quicker, but
+ * measurably less accurate on harder problems. Opt-in only. */
+export const ANSWER_SPEEDS = ["standard", "fast"] as const;
+export type AnswerSpeed = (typeof ANSWER_SPEEDS)[number];
+export function isAnswerSpeed(value: unknown): value is AnswerSpeed {
+  return ANSWER_SPEEDS.some(speed => speed === value);
+}
+
 export interface AiRuntimeConfig {
   provider: AiProviderId;
   providerLabel: string;
@@ -44,6 +52,7 @@ export interface AiRuntimeConfig {
   supportsVision: boolean;
   supportsJsonMode: boolean;
   responseLanguage: ResponseLanguage;
+  answerSpeed: AnswerSpeed;
   route: "direct" | "wise";
   usesWiseDefaultKey: boolean;
   wiseAccessToken?: string;
@@ -76,6 +85,11 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       {
         id: KIMI_DEFAULT_MODEL,
         label: "Kimi K3.1 Pro · 1M context",
+        supportsVision: true,
+      },
+      {
+        id: KIMI_HIGHSPEED_MODEL,
+        label: "Kimi K3.1 Pro Highspeed · 1M context",
         supportsVision: true,
       },
       {

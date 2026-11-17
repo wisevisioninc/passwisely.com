@@ -35,3 +35,35 @@ test("OpenAI/WisePA and Kimi keep their existing destinations and budget", async
   assert.deepEqual(calls.map(c => c.url), ["https://openai.example/v1", "https://kimi.example/v1"]);
   assert.ok(calls.every(c => !c.init.headers.has("x-qwen-total-timeout-ms")));
 });
+
+test("Kimi on the Moonshot origin uses the pooled loopback transport", async t => {
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (url, init) => { calls.push({ url, init }); return new Response('{}'); });
+  await fetchModelProvider("kimi", "https://api.moonshot.cn/v1/chat/completions", { method: "POST", headers: { authorization: "Bearer fixture" }, body: '{}' }, 90_000);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "http://127.0.0.1:3013/internal/kimi/chat/completions");
+  assert.equal(calls[0].init.headers.get("x-wise-total-timeout-ms"), "90000");
+  assert.equal(calls[0].init.headers.get("authorization"), "Bearer fixture");
+});
+
+test("Kimi falls back to the direct origin only when the loopback process is unreachable", async t => {
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    calls.push({ url, body: init.body, budget: init.headers.get("x-wise-total-timeout-ms") });
+    if (calls.length === 1) throw new TypeError("fetch failed");
+    return new Response('{"ok":true}');
+  });
+  const response = await fetchModelProvider("kimi", "https://api.moonshot.cn/v1/chat/completions", { method: "POST", headers: { authorization: "Bearer fixture" }, body: '{"model":"kimi-k3.1-pro"}' }, 90_000);
+  assert.equal(await response.text(), '{"ok":true}');
+  assert.deepEqual(calls.map(c => c.url), ["http://127.0.0.1:3013/internal/kimi/chat/completions", "https://api.moonshot.cn/v1/chat/completions"]);
+  assert.equal(calls[1].body, '{"model":"kimi-k3.1-pro"}');
+  assert.equal(calls[1].budget, null);
+});
+
+test("a cancelled Kimi request is not retried on the direct origin", async t => {
+  let attempts = 0;
+  const abort = new AbortController(); abort.abort();
+  t.mock.method(globalThis, "fetch", async () => { attempts++; throw new Error("cancelled"); });
+  assert.equal(await fetchModelProvider("kimi", "https://api.moonshot.cn/v1/chat/completions", { signal: abort.signal }, 90_000), null);
+  assert.equal(attempts, 1);
+});

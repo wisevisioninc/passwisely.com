@@ -110,6 +110,7 @@ const AIProviderSettings: React.FC<SettingsWriteProps> = ({ runSettingsWrite = d
       const result = await runSettingsWrite(() => window.electronAPI.saveAiSettings({
         provider: settings.provider,
         responseLanguage: settings.responseLanguage,
+        answerSpeed: settings.answerSpeed,
         apiKey: apiKey || undefined,
         model: activeProvider.model,
         baseUrl: activeProvider.baseUrl,
@@ -205,6 +206,29 @@ const AIProviderSettings: React.FC<SettingsWriteProps> = ({ runSettingsWrite = d
         </select>
         <p className="mt-1 text-[9px] leading-relaxed text-white/40">
           说明、回答和代码注释遵循所选语言；代码语法与技术标识保持原样。
+        </p>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-[9px] text-white/50" htmlFor={`${modelListId}-speed`}>
+          Answer speed
+        </label>
+        <select
+          id={`${modelListId}-speed`}
+          value={settings.answerSpeed === "fast" ? "fast" : "standard"}
+          onChange={(event) => {
+            const answerSpeed = event.target.value === "fast" ? "fast" as const : "standard" as const;
+            setSettings(current => current ? { ...current, answerSpeed } : current);
+          }}
+          className="w-full rounded bg-gray-900 px-2 py-1.5 text-[11px] outline-none"
+        >
+          <option value="standard">标准 · 先推理再作答（更准确）</option>
+          <option value="fast">极速 · 跳过推理（约快 5 秒）</option>
+        </select>
+        <p className="mt-1 text-[9px] leading-relaxed text-white/40">
+          {settings.provider === "kimi"
+            ? "极速档更早给出答案，但中等和困难题更容易出错；默认使用标准档。"
+            : "极速档目前只对 Kimi K3 系列模型生效，其他模型保持原有速度。"}
         </p>
       </div>
 

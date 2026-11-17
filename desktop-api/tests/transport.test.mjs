@@ -121,6 +121,7 @@ test("transports screenshot bytes and preserves relay metadata", async (t) => {
           },
         ],
         maxTokens: 200,
+        reasoningEffort: "none",
       },
       metadata,
       (error, response) => (error ? reject(error) : resolve(response)),
@@ -128,12 +129,20 @@ test("transports screenshot bytes and preserves relay metadata", async (t) => {
   });
 
   assert.equal(result.content, "binary transport ok");
+  assert.equal(relayRequest.body.reasoning_effort, "none");
   assert.equal(relayRequest.authorization, "Bearer desktop-test-token");
   assert.equal(relayRequest.provider, "openai");
   assert.equal(relayRequest.requestId, "transport_test_1234567890");
   assert.equal(relayRequest.transport, "grpc");
   const dataUrl = relayRequest.body.messages[0].content[1].image_url.url;
   assert.equal(Buffer.from(dataUrl.split(",")[1], "base64").length, imageBytes.length);
+  // A missing or malformed level is not forwarded; the relay then applies its default.
+  for (const reasoningEffort of [undefined, "", "none low", "MAX"]) {
+    await new Promise((resolve, reject) => client.Chat({ requestId: "transport_test_1234567890", provider: "openai", model: "gpt-4o-mini",
+      messages: [{ role: "user", parts: [{ text: "again" }] }], ...(reasoningEffort === undefined ? {} : { reasoningEffort }) },
+      metadata, (error, response) => (error ? reject(error) : resolve(response))));
+    assert.equal("reasoning_effort" in relayRequest.body, false, String(reasoningEffort));
+  }
 });
 
 test("gRPC streams before upstream EOF, propagates errors and cancellation", { timeout: 12000 }, async t => {

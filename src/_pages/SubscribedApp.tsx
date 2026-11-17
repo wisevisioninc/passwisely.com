@@ -14,6 +14,7 @@ type SolutionPayload = {
   time_complexity: string;
   space_complexity: string;
   alternatives: string[];
+  notice?: string;
 };
 
 function normalizeSolutionPayload(data: any): SolutionPayload | null {
@@ -32,6 +33,7 @@ function normalizeSolutionPayload(data: any): SolutionPayload | null {
       typeof data.space_complexity === "string"
         ? data.space_complexity
         : "未提供",
+    ...(typeof data.notice === "string" && data.notice ? { notice: data.notice } : {}),
   };
 }
 
@@ -140,7 +142,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
       }),
       window.electronAPI.onSolutionProgress((update) => {
         if (update.phase === "initial" ? !activeInitial : !activeDebug) return;
-        queryClient.setQueryData([update.phase === "debug" ? "new_solution" : "solution"], { ...update.data, isStreaming: true, model: update.model });
+        queryClient.setQueryData([update.phase === "debug" ? "new_solution" : "solution"], { ...update.data, isStreaming: true, model: update.model, ...(update.thinking ? { thinking: update.thinking } : {}) });
       }),
       window.electronAPI.onProcessingCancelled(() => {
         if (activeInitial || activeDebug) markIncomplete("已停止生成。");

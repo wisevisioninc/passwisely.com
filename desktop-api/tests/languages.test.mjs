@@ -65,7 +65,7 @@ test("output instructions cover every catalog language without overriding select
     assert.ok(solutionSystem(output.id).includes(instruction));
     if (output.id !== "zh-CN") assert.doesNotMatch(solutionSystem(output.id), /使用简体中文|一句中文|注释也使用中文/);
     const prompt = solutionFormat("rust", true, output.id);
-    const keys = ['"thoughts"', '"time_complexity"', '"space_complexity"', '"code"', '"alternatives"', '"problem_statement"'];
+    const keys = ['"code"', '"time_complexity"', '"space_complexity"', '"thoughts"', '"alternatives"', '"problem_statement"'];
     assert.deepEqual(keys.map(key => prompt.indexOf(key)), keys.map(key => prompt.indexOf(key)).sort((a, b) => a - b));
     if (output.id !== "zh-CN") { assert.match(prompt, /Rust code/); assert.ok(prompt.includes(output.instructionName)); assert.doesNotMatch(prompt, /中文/); }
   }

@@ -10,19 +10,19 @@ export function solutionFormat(language: string, screenshot = false, outputLangu
   const output = requireOutputLanguage(outputLanguage);
   if (output.id === "zh-CN") return `按以下字段顺序返回一个 JSON 对象，不使用 Markdown 围栏：
 {
-  "thoughts": ["用一至两句中文概括核心思路，总计不超过100字"],
+  "code": "可直接提交并正确运行的完整 ${codeLanguage.instructionName} 代码，保留给定的函数或类接口，补齐必要导入或声明；只保留最终采用的实现，不包含废弃函数、TODO或占位代码；注释最多三处，每处一句中文，只解释关键不变量或易错边界，不逐行解释，不写推理草稿",
   "time_complexity": "O(...)，用一句中文说明变量含义及原因，必须对应最终代码并计入排序、预处理等开销",
   "space_complexity": "O(...)，用一句中文说明最终代码的辅助空间，计入数组、集合和递归栈",
-  "code": "可直接提交并正确运行的完整 ${codeLanguage.instructionName} 代码，保留给定的函数或类接口，补齐必要导入或声明；只保留最终采用的实现，不包含废弃函数、TODO或占位代码；注释最多三处，每处一句中文，只解释关键不变量或易错边界，不逐行解释，不写推理草稿",
+  "thoughts": ["用一至两句中文概括核心思路，总计不超过100字"],
   "alternatives": ["其他可行解法及其主要取舍，各用一句中文概括，最多两项；没有值得补充的解法则返回空数组"]${screenshot ? ',\n  "problem_statement": "用中文简要保留题目核心要求、必要约束和接口，不重复全部题面"' : ''}
 }
 优先保证算法、边界条件和完整代码正确；不要输出追问、重复题目、冗长证明或多份代码。`;
   return `Return one JSON object in this exact field order, without Markdown fences. ${responseLanguageInstruction(output.id)}
 {
-  "thoughts": ["Summarize the approach in one or two concise sentences"],
+  "code": "Complete, directly runnable ${codeLanguage.instructionName} code preserving the required function/class interface, with necessary imports or declarations; only the final implementation, no TODOs, placeholders, or abandoned functions; at most three short comments explaining key invariants or edge cases",
   "time_complexity": "O(...); one sentence explaining the variables and the final algorithm's costs, including preprocessing and sorting",
   "space_complexity": "O(...); one sentence explaining auxiliary arrays, sets, and recursion stacks in the final code",
-  "code": "Complete, directly runnable ${codeLanguage.instructionName} code preserving the required function/class interface, with necessary imports or declarations; only the final implementation, no TODOs, placeholders, or abandoned functions; at most three short comments explaining key invariants or edge cases",
+  "thoughts": ["Summarize the approach in one or two concise sentences"],
   "alternatives": ["At most two alternatives with their tradeoffs, one sentence each; use an empty array when there is nothing useful to add"]${screenshot ? ',\n  "problem_statement": "Briefly preserve the core requirement, necessary constraints and interface; do not repeat the entire statement"' : ''}
 }
 Prioritize correct algorithms, edge cases and complete code. Do not ask follow-up questions, repeat the task, write a long proof, or return multiple implementations.`;
@@ -31,9 +31,24 @@ Prioritize correct algorithms, edge cases and complete code. Do not ask follow-u
 // Parse only completed keys and progressively decoded JSON string values. This
 // is a preview, never a substitute for JSON.parse/validation on completion.
 export function partialSolution(raw: string): Record<string, any> {
+  return scanSolution(raw).fields;
+}
+
+/** When a stream ends early but the code field had already closed, return the
+ * finished fields as one valid JSON object so the complete code is not lost.
+ * Unfinished fields are dropped rather than shown as if they were complete.
+ */
+export function salvageSolution(raw: string): string | null {
+  const { fields, complete } = scanSolution(raw);
+  if (!complete.has('code') || typeof fields.code !== 'string' || !fields.code.trim()) return null;
+  return JSON.stringify(Object.fromEntries(Object.entries(fields).filter(([key]) => complete.has(key))));
+}
+
+function scanSolution(raw: string): { fields: Record<string, any>; complete: Set<string> } {
   let at = raw.indexOf('{') + 1;
   const result: Record<string, any> = {};
-  if (!at) return result;
+  const complete = new Set<string>();
+  if (!at) return { fields: result, complete };
   const space = () => { while (/\s/.test(raw[at] || '') && at < raw.length) at++; };
   const string = (): { value: string; done: boolean } | null => {
     if (raw[at++] !== '"') return null;
@@ -67,20 +82,22 @@ export function partialSolution(raw: string): Record<string, any> {
       const value = string(); if (!value) break;
       if (allowed) result[key.value] = value.value;
       if (!value.done) break;
+      if (allowed) complete.add(key.value);
     } else if (raw[at] === '[') {
       at++; const values: string[] = [];
       if (allowed) result[key.value] = values;
-      let complete = false;
+      let closed = false;
       while (at < raw.length) {
         space(); if (raw[at] === ',') { at++; space(); }
-        if (raw[at] === ']') { at++; complete = true; break; }
+        if (raw[at] === ']') { at++; closed = true; break; }
         if (raw[at] !== '"') break;
         const value = string(); if (!value) break;
         if (value.value) values.push(value.value);
         if (!value.done) break;
       }
-      if (!complete) break;
+      if (!closed) break;
+      if (allowed) complete.add(key.value);
     } else break;
   }
-  return result;
+  return { fields: result, complete };
 }

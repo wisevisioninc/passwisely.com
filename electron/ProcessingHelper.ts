@@ -6,9 +6,9 @@ import { BrowserWindow, nativeImage } from "electron";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
 
-import { partialSolution, solutionFormat, solutionSystem } from "./solutionStream";
+import { partialSolution, salvageSolution, solutionFormat, solutionSystem } from "./solutionStream";
 import { AiRuntimeConfig } from "./aiProviders";
-import { KIMI_DEFAULT_MODEL, prepareKimiChatBody } from "../shared/kimi";
+import { isKimiK3Model, KIMI_DEFAULT_MODEL, KIMI_FAST_EFFORT, prepareKimiChatBody } from "../shared/kimi";
 import { requireCodeLanguage, responseLanguageInstruction } from "./languages";
 import type { CodeLanguage } from "./languages";
 import {
@@ -37,9 +37,11 @@ export class ProcessingHelper {
     supportsVision: true,
     supportsJsonMode: true,
     responseLanguage: "zh-CN",
+    answerSpeed: "standard",
     route: "wise",
     usesWiseDefaultKey: true,
   };
+  private lastTransportWarmUpAt = 0;
 
   // AbortControllers for API requests
   private currentProcessingAbortController: AbortController | null = null;
@@ -156,6 +158,25 @@ export class ProcessingHelper {
     }
   }
 
+  /** Open the Wise channel before the user asks, so the first request does not
+   * pay for DNS, TCP and TLS. Called on app start and when a screenshot is taken.
+   */
+  public warmUpTransport(): void {
+    const client = this.config.route === "wise" ? this.wiseGrpcClient : null;
+    if (!client || Date.now() - this.lastTransportWarmUpAt < 20_000) return;
+    this.lastTransportWarmUpAt = Date.now();
+    void client.warmUp();
+  }
+
+  /** Apply the provider request contract once for every route. The opt-in fast
+   * answer mode skips Kimi K3 reasoning; other providers are unaffected.
+   */
+  private prepareRequestBody<T extends OpenAI.Chat.ChatCompletionCreateParamsNonStreaming>(config: AiRuntimeConfig, body: T): T {
+    if (config.provider !== "kimi") return body;
+    const fast = config.answerSpeed === "fast" && isKimiK3Model(body.model);
+    return prepareKimiChatBody(fast ? { ...body, reasoning_effort: KIMI_FAST_EFFORT } as T : body);
+  }
+
   private async createChatCompletion(
     body: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
     signal: AbortSignal,
@@ -165,9 +186,7 @@ export class ProcessingHelper {
       throw new Error(`${this.config.providerLabel} client is not initialized.`);
     }
 
-    const requestBody = this.config.provider === "kimi"
-      ? prepareKimiChatBody(body)
-      : body;
+    const requestBody = this.prepareRequestBody(this.config, body);
     if (this.config.route === "wise" && this.wiseGrpcClient) {
       try {
         return await this.wiseGrpcClient.chat(requestBody, {
@@ -234,12 +253,13 @@ export class ProcessingHelper {
     signal: AbortSignal,
     onContent: (text: string, model: string) => void,
     requestId: string = randomUUID(),
+    onThinking?: (chunks: number) => void,
   ): Promise<OpenAI.Chat.ChatCompletion> {
     signal.throwIfAborted();
     // Capture the route and clients once. configure() aborts this operation
     // before replacing them, so a late result cannot use the next settings.
     const config = this.config;
-    const requestBody = config.provider === "kimi" ? prepareKimiChatBody(body) : body;
+    const requestBody = this.prepareRequestBody(config, body);
     const client = this.openaiClient;
     const grpcClient = config.route === "wise" ? this.wiseGrpcClient : null;
     const operation = new AbortController();
@@ -260,7 +280,7 @@ export class ProcessingHelper {
       if (grpcClient) {
         try {
           completion = await grpcClient.streamChat(requestBody, { signal: requestSignal, requestId,
-            token: this.deps.getWiseAccessToken(), provider: config.provider, providerApiKey: config.apiKey || undefined }, update);
+            token: this.deps.getWiseAccessToken(), provider: config.provider, providerApiKey: config.apiKey || undefined, onThinking }, update);
         } catch (error) {
           // Only a method-not-found response is safe to retry through HTTP.
           // Never restart a model request after partial output or a disconnect.
@@ -274,13 +294,15 @@ export class ProcessingHelper {
         if (config.provider === "qwen") request.enable_thinking = false;
         const stream = await client.chat.completions.create(request, { signal: requestSignal, maxRetries: 0, timeout: 90_000,
           headers: config.route === "wise" ? { "x-wise-request-id": requestId } : undefined });
-        let finish: any = "", id = requestId, usage: any;
+        let finish: any = "", id = requestId, usage: any, thinking = 0;
         for await (const chunk of stream as any) {
           requestSignal.throwIfAborted();
           id = chunk.id || id; actualModel = chunk.model || actualModel; usage = chunk.usage || usage;
           const choice = chunk.choices?.[0]; finish = choice?.finish_reason || finish;
           if (choice?.delta?.content) {
             update(latest + choice.delta.content, actualModel);
+          } else if (!latest && choice?.delta?.reasoning_content && onThinking) {
+            try { onThinking(++thinking); } catch { /* progress is advisory */ }
           }
         }
         if (!finish) throw new Error("数据流提前结束，答案未完成，请重试。");
@@ -311,7 +333,7 @@ export class ProcessingHelper {
     phase: "initial" | "debug" = "initial",
   ): Promise<OpenAI.Chat.ChatCompletion> {
     const window = this.deps.getMainWindow();
-    let lastAt = 0, latest = "", actualModel = body.model;
+    let lastAt = 0, latest = "", actualModel = body.model, thinkingAt = 0;
     const emit = (force = false) => {
       if (signal.aborted || !window || window.isDestroyed()) return;
       if (!force && Date.now() - lastAt < 40) return;
@@ -320,13 +342,37 @@ export class ProcessingHelper {
       lastAt = Date.now();
       window.webContents.send("solution-progress", { requestId, phase, data, model: actualModel });
     };
+    // Reasoning tokens are hidden, but their arrival proves the model is
+    // working; report a count so the wait before the first content is visible.
+    const thinking = (chunks: number) => {
+      if (signal.aborted || latest || !window || window.isDestroyed()) return;
+      if (chunks > 1 && Date.now() - thinkingAt < 250) return;
+      thinkingAt = Date.now();
+      window.webContents.send("solution-progress", { requestId, phase, data: {}, model: actualModel, thinking: chunks });
+    };
     try {
       const completion = await this.streamCompletion(body, signal, (content, model) => {
         latest = content; actualModel = model; emit();
-      }, requestId);
+      }, requestId, thinking);
       if (completion.choices[0]?.finish_reason !== "stop") throw new Error("答案未完整生成，请重试。当前代码可能被截断，不能直接使用。");
       return completion;
+    } catch (error) {
+      // A dropped or truncated stream after the code field closed still holds a
+      // complete answer. Keep it instead of discarding the whole request.
+      const salvaged = signal.aborted ? null : salvageSolution(latest);
+      if (!salvaged) throw error;
+      console.warn("Solution stream ended early after the code was complete; keeping the finished fields.");
+      return Object.assign({ id: requestId, model: actualModel, object: "chat.completion" as const, created: Math.floor(Date.now() / 1000),
+        choices: [{ index: 0, logprobs: null, finish_reason: "stop" as const, message: { role: "assistant" as const, content: salvaged, refusal: null } }] },
+        { salvaged: true }) as OpenAI.Chat.ChatCompletion;
     } finally { if (!signal.aborted) emit(true); }
+  }
+
+  private salvageNotice(completion: OpenAI.Chat.ChatCompletion): { notice?: string } {
+    if (!(completion as { salvaged?: boolean }).salvaged) return {};
+    return { notice: this.config.responseLanguage === "zh-CN"
+      ? "连接中途中断：代码已完整，其余说明可能缺失。"
+      : "The connection dropped mid-answer: the code is complete, but other sections may be missing." };
   }
 
   // --- Helper Function to Format API Errors ---
@@ -1286,6 +1332,12 @@ ${solutionFormat(language, true, this.config.responseLanguage)}`,
         hasProblemStatement: Boolean(problemStatement),
         hasSolution: Boolean(solution),
       });
+      const notice = this.salvageNotice(completion);
+      // The summary is the last field, so a salvaged answer usually lacks it.
+      // The connection just failed; do not spend another request to re-read it.
+      if (!problemStatement && notice.notice && solution) {
+        problemStatement = this.config.responseLanguage === "zh-CN" ? "题面摘要未生成（连接中断）。" : "Problem summary was not generated (connection dropped).";
+      }
 
       if (!problemStatement) {
         const mainWindow = this.deps.getMainWindow();
@@ -1340,7 +1392,7 @@ ${solutionFormat(language, true, this.config.responseLanguage)}`,
       }
       return {
         success: true,
-        data: { problem_statement: problemStatement, ...solution },
+        data: { problem_statement: problemStatement, ...solution, ...notice },
       };
     } catch (error: any) {
       return { success: false, error: this.formatApiError(error) };
@@ -1461,7 +1513,7 @@ ${solutionFormat(language, false, this.config.responseLanguage)}`;
               : "The model did not return a usable code solution. Please try again.",
         };
       }
-      return { success: true, data: formattedData };
+      return { success: true, data: { ...formattedData, ...this.salvageNotice(completion) } };
     } catch (error: any) {
       const errorMessage = this.formatApiError(error);
       console.error("Error generating solution:", errorMessage);
@@ -1543,7 +1595,7 @@ ${solutionFormat(language, false, this.config.responseLanguage)}`,
       const formattedData = this.normalizeSolutionPayload(this.parseJsonObject(fullResponse));
       if (!formattedData) throw new Error("模型未返回完整代码，请重试。");
 
-      return { success: true, data: formattedData };
+      return { success: true, data: { ...formattedData, ...this.salvageNotice(completion) } };
     } catch (error: any) {
       const errorMessage = this.formatApiError(error);
       console.error("Error processing extra screenshots:", errorMessage);

@@ -3,6 +3,7 @@ import { readSSE } from "../shared/sse.mjs";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { startHostHealthServer } from "./host-health.mjs";
+import { warmKimiConnection } from "./kimi-transport.mjs";
 
 const require = createRequire(import.meta.url);
 const grpc = require("@grpc/grpc-js");
@@ -16,6 +17,9 @@ const relayUrl =
 const listenAddress = process.env.PASSWISELY_GRPC_LISTEN || "127.0.0.1:3012";
 const healthListenAddress =
   process.env.PASSWISELY_HEALTH_LISTEN || "127.0.0.1:3013";
+// Opening provider connections ahead of requests is a production behaviour;
+// development and test processes must not contact the provider on their own.
+const prewarmKimi = process.env.PASSWISELY_KIMI_PREWARM === "1";
 
 const definition = protoLoader.loadSync(protoPath, {
   longs: String,
@@ -95,6 +99,8 @@ function relayRequest(call) {
     max_tokens: Number(request.maxTokens) || 4096,
     temperature: Number(request.temperature) || 0,
     ...(request.jsonMode ? { response_format: { type: "json_object" } } : {}),
+    // The relay owns validation; only forward a short identifier-like value.
+    ...(/^[a-z]{1,16}$/.test(request.reasoningEffort || "") ? { reasoning_effort: request.reasoningEffort } : {}),
   };
 
   const headers = new Headers({
@@ -152,6 +158,8 @@ async function chat(call, callback) {
 }
 
 async function chatStream(call) {
+  // Start the provider TLS handshake now; it overlaps with the relay's checks.
+  if (prewarmKimi && call.request?.provider === "kimi" && !call.request?.providerApiKey) warmKimiConnection();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new Error("模型请求超时。")), 90_000);
   const cancel = () => controller.abort(new Error("请求已取消。"));
@@ -200,6 +208,9 @@ async function chatStream(call) {
 }
 
 function health(_call, callback) {
+  // Desktop clients probe on start and when a screenshot is taken, shortly
+  // before a model request; use that as the cue to open a provider connection.
+  if (prewarmKimi) warmKimiConnection();
   callback(null, { status: "SERVING", transport: "grpc+protobuf" });
 }
 

@@ -8,10 +8,11 @@ import { loadProduction } from "../../test/leetcode/scripts/production-loader.mj
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 
-test("desktop and server choose Kimi K3.1 Pro while keeping the explicit legacy model", async () => {
+test("desktop and server choose Kimi K3.1 Pro Highspeed while keeping the standard and legacy models", async () => {
   const { AI_PROVIDERS } = loadProduction(root);
   const desktop = AI_PROVIDERS.find(provider => provider.id === "kimi");
-  assert.equal(KIMI_DEFAULT_MODEL, "kimi-k3.1-pro");
+  assert.equal(KIMI_DEFAULT_MODEL, "kimi-k3.1-pro-highspeed");
+  assert.ok(KIMI_MODEL_IDS.includes("kimi-k3.1-pro"));
   assert.equal(desktop.defaultModel, KIMI_DEFAULT_MODEL);
   assert.equal(desktop.models[0].id, KIMI_DEFAULT_MODEL);
   for (const model of KIMI_MODEL_IDS) assert.ok(desktop.models.some(preset => preset.id === model));

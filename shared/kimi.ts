@@ -2,9 +2,11 @@
  * Official parameters: https://platform.kimi.com/docs/api/models-overview
  * K3.1 Pro and K3 always reason; use reasoning_effort instead of K2 thinking.
  */
-export const KIMI_DEFAULT_MODEL = "kimi-k3.1-pro";
-export const KIMI_HIGHSPEED_MODEL = "kimi-k3.1-pro-highspeed";
-export const KIMI_MODEL_IDS = [KIMI_DEFAULT_MODEL, KIMI_HIGHSPEED_MODEL, "kimi-k3"] as const;
+// The highspeed variant is the default since 2026-11-17 by product decision.
+// It had not been benchmarked for speed or accuracy when it was selected.
+export const KIMI_DEFAULT_MODEL = "kimi-k3.1-pro-highspeed";
+export const KIMI_STANDARD_MODEL = "kimi-k3.1-pro";
+export const KIMI_MODEL_IDS = [KIMI_DEFAULT_MODEL, KIMI_STANDARD_MODEL, "kimi-k3"] as const;
 
 /** Documented levels are low/high/max (provider default: max). "none" is an
  * undocumented level observed on 2026-11-17 to skip reasoning entirely; it

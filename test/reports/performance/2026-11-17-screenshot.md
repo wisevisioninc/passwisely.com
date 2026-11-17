@@ -198,3 +198,12 @@
 - 未做：没有启动桌面应用看实际界面；没有在真实服务器上跑新的服务端代码。
 
 本节消耗：44 次请求（1 次探测、40 次回归、3 次 gRPC 验证），积分 9594 → 9120，共 474。
+
+## 追加：默认模型改为 kimi-k3.1-pro-highspeed
+
+按负责人决定，代码里的默认 Kimi 模型从 `kimi-k3.1-pro` 改为 `kimi-k3.1-pro-highspeed`（`shared/kimi.ts`、桌面端模型列表、两份 `.env.example`）。`kimi-k3.1-pro` 仍可选。
+
+- **这个模型没有实测过**：速度、准确率、是否接受 `reasoning_effort: "none"`、上游价格都未验证。本报告里的所有数据都来自 `kimi-k3.1-pro`。
+- **线上不会因为这次提交自动切换**：共享 Key 请求使用的模型来自 Supabase 里的后台设置 `ai_default_model`，代码默认值只在该设置缺失或数据库不可用时兜底。要让线上用 highspeed，需要在部署后到管理后台把“模型型号”改为 `kimi-k3.1-pro-highspeed`。
+- **必须先部署再改后台设置**：当前线上代码不认识 highspeed，会把客户端的 `temperature` 等参数原样发给上游（K3 系列对这些参数取固定值，传别的值会报错），并按每次 1 积分的固定价扣费。
+- 切换后建议用 `test/performance/results/2026-11-17-screenshot/scripts/` 里的脚本重跑 20 题，对比本报告的基线。

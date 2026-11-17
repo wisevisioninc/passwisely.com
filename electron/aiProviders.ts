@@ -1,4 +1,4 @@
-import { KIMI_DEFAULT_MODEL, KIMI_HIGHSPEED_MODEL } from "../shared/kimi";
+import { KIMI_DEFAULT_MODEL, KIMI_STANDARD_MODEL } from "../shared/kimi";
 
 export const AI_PROVIDER_IDS = [
   "kimi",
@@ -84,12 +84,12 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     models: [
       {
         id: KIMI_DEFAULT_MODEL,
-        label: "Kimi K3.1 Pro · 1M context",
+        label: "Kimi K3.1 Pro Highspeed · 1M context",
         supportsVision: true,
       },
       {
-        id: KIMI_HIGHSPEED_MODEL,
-        label: "Kimi K3.1 Pro Highspeed · 1M context",
+        id: KIMI_STANDARD_MODEL,
+        label: "Kimi K3.1 Pro · 1M context",
         supportsVision: true,
       },
       {
